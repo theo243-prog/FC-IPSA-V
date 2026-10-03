@@ -36,6 +36,10 @@ class AdminDeleteUserRequest(BaseModel):
     pseudo: str
 
 
+class AdminDeletePlayerRequest(BaseModel):
+    player_name: str
+
+
 class AdminUpdateCardStatsRequest(BaseModel):
     player_name: str
     tier: str  # "commune" | "rare" | "legendaire"
