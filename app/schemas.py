@@ -40,6 +40,11 @@ class AdminDeletePlayerRequest(BaseModel):
     player_name: str
 
 
+class AdminSetPlayerPhotoRequest(BaseModel):
+    player_name: str
+    photo_url: str  # ex: "/photos/mathis.jpg" ou une URL complète
+
+
 class AdminUpdateCardStatsRequest(BaseModel):
     player_name: str
     tier: str  # "commune" | "rare" | "legendaire"
