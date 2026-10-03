@@ -89,12 +89,23 @@ def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
 def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     game_logic.regen_user_packs(db, user)
     db.refresh(user.pack_state)
+    if user.is_test:
+        # affichage clair pour un compte de test : pas de cap, pas d'attente
+        return {
+            "pseudo": user.pseudo,
+            "credits": user.credits,
+            "stored_packs": 99,
+            "shop_pack_tokens": user.pack_state.shop_pack_tokens,
+            "seconds_until_next_pack": None,
+            "is_test": True,
+        }
     return {
         "pseudo": user.pseudo,
         "credits": user.credits,
         "stored_packs": user.pack_state.stored_packs,
         "shop_pack_tokens": user.pack_state.shop_pack_tokens,
         "seconds_until_next_pack": game_logic.seconds_until_next_pack(user),
+        "is_test": False,
     }
 
 
@@ -249,7 +260,7 @@ def shop_buy(payload: schemas.BuyShopItemRequest, user: User = Depends(get_curre
 @app.get("/leaderboard")
 def leaderboard(db: Session = Depends(get_db)):
     total_cards = db.query(Card).count()
-    users = db.query(User).all()
+    users = db.query(User).filter_by(is_test=False).all()
     rows = []
     for u in users:
         owned_count = (
@@ -303,6 +314,18 @@ def admin_set_player_photo(payload: schemas.AdminSetPlayerPhotoRequest, db: Sess
     player.photo_url = payload.photo_url
     db.commit()
     return {"status": "ok", "player": player.name, "photo_url": player.photo_url}
+
+
+@app.post("/admin/set-test-account", dependencies=[Depends(require_admin)])
+def admin_set_test_account(payload: schemas.AdminSetTestAccountRequest, db: Session = Depends(get_db)):
+    """Marque (ou démarque) un compte comme compte de test :
+    packs illimités, exclu du classement. N'affecte en rien les autres comptes."""
+    user = db.query(User).filter_by(pseudo=payload.pseudo).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    user.is_test = payload.is_test
+    db.commit()
+    return {"status": "ok", "pseudo": user.pseudo, "is_test": user.is_test}
 
 
 @app.post("/admin/update-card-stats", dependencies=[Depends(require_admin)])
