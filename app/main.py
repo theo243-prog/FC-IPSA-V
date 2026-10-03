@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db
 from . import game_logic, schemas
-from .models import User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist
+from .models import User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist, Team, TeamSlot, Duel
 from .security import hash_password, verify_password, generate_token, get_current_user
 
 # Clé secrète pour les routes /admin/*. À définir dans Railway (Variables -> ADMIN_KEY).
@@ -38,40 +38,13 @@ app.add_middleware(
 )
 
 
-# poste précis -> catégorie de note affichée sur la carte
-POSTE_CATEGORY = {
-    "GB": "gardien",
-    "DEF": "defenseur", "DD": "defenseur", "DC": "defenseur", "DG": "defenseur",
-    "MC": "milieu", "MDC": "milieu", "MOC": "milieu",
-    "ATT": "attaquant", "AD": "attaquant", "BU": "attaquant",
-}
-CATEGORY_LABEL = {"attaquant": "ATT", "milieu": "MIL", "defenseur": "DEF", "gardien": "GB"}
-
-# Bonus ajouté à la note de base selon la rareté de la carte (purement à l'affichage,
-# la valeur stockée sur le joueur reste la base "commune").
-TIER_NOTE_BONUS = {"commune": 0, "rare": 10, "legendaire": 20}
-
-
-def get_display_note(player: Player, tier: str = "commune"):
-    poste = player.poste or ""
-    bonus = TIER_NOTE_BONUS.get(tier, 0)
-    # pas de plafond à 99 : une légendaire peut dépasser 100, c'est voulu (effet "stylé")
-    if poste in POSTE_CATEGORY:
-        cat = POSTE_CATEGORY[poste]
-        return {"label": CATEGORY_LABEL[cat], "value": getattr(player, "note_" + cat) + bonus}
-    if poste == "X":
-        # poste pas encore défini : note neutre en attendant (toutes à 50 par défaut)
-        return {"label": "NOTE", "value": player.note_milieu + bonus}
-    return None  # FAN & co : pas de note affichée
-
-
 def card_out(card: Card) -> dict:
     return {
         "id": card.id,
         "player_name": card.player.name,
         "poste": card.player.poste,
         "player_photo_url": card.player.photo_url,
-        "display_note": get_display_note(card.player, card.tier.value),
+        "display_note": game_logic.get_display_note(card.player, card.tier.value),
         "tier": card.tier.value,
         "vitesse": card.vitesse,
         "tir": card.tir,
@@ -202,7 +175,7 @@ def player_detail(player_name: str, db: Session = Depends(get_db)):
         "note_milieu": player.note_milieu,
         "note_defenseur": player.note_defenseur,
         "note_gardien": player.note_gardien,
-        "display_note": get_display_note(player, "commune"),
+        "display_note": game_logic.get_display_note(player, "commune"),
     }
 
 
@@ -297,6 +270,75 @@ def cancel_listing(listing_id: str, user: User = Depends(get_current_user), db: 
     db.delete(listing)
     db.commit()
     return {"status": "ok"}
+
+
+# ----------------------------------------------------- Équipes & duels -----
+
+@app.get("/formations")
+def list_formations():
+    return game_logic.FORMATIONS
+
+
+@app.get("/team/me")
+def get_my_team(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    team = db.query(Team).filter_by(user_id=user.id).first()
+    if not team:
+        return None
+    return {
+        "formation": team.formation,
+        "stake": team.stake,
+        "slots": [
+            {"card_id": s.card_id, "slot_category": s.slot_category, "card": card_out(s.card)}
+            for s in team.slots
+        ],
+    }
+
+
+@app.post("/team")
+def save_team(payload: schemas.SaveTeamRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    slots_data = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in payload.slots]
+    try:
+        game_logic.validate_team_slots(db, user, payload.formation, slots_data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    team = db.query(Team).filter_by(user_id=user.id).first()
+    if not team:
+        team = Team(user_id=user.id, formation=payload.formation, stake=payload.stake)
+        db.add(team)
+    else:
+        team.formation = payload.formation
+        team.stake = payload.stake
+        team.updated_at = datetime.utcnow()
+        db.query(TeamSlot).filter_by(user_id=user.id).delete()
+    db.flush()
+
+    for entry in payload.slots:
+        db.add(TeamSlot(user_id=user.id, card_id=entry.card_id, slot_category=entry.slot_category))
+
+    db.commit()
+    return {"status": "ok"}
+
+
+@app.get("/ladder")
+def get_ladder(db: Session = Depends(get_db)):
+    rows = db.query(Team, User).join(User, Team.user_id == User.id).order_by(User.elo.desc()).all()
+    return [
+        {"pseudo": u.pseudo, "elo": u.elo, "formation": t.formation, "stake": t.stake}
+        for t, u in rows
+    ]
+
+
+@app.post("/duel/challenge")
+def challenge(payload: schemas.ChallengeRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    defender = db.query(User).filter_by(pseudo=payload.defender_pseudo).first()
+    if not defender:
+        raise HTTPException(status_code=404, detail="Adversaire introuvable")
+    try:
+        result = game_logic.resolve_duel(db, user, defender)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return result
 
 
 # --------------------------------------------------------------- Shop -----
