@@ -45,6 +45,11 @@ class AdminSetPlayerPhotoRequest(BaseModel):
     photo_url: str  # ex: "/photos/mathis.jpg" ou une URL complète
 
 
+class AdminSetTestAccountRequest(BaseModel):
+    pseudo: str
+    is_test: bool = True
+
+
 class AdminUpdateCardStatsRequest(BaseModel):
     player_name: str
     tier: str  # "commune" | "rare" | "legendaire"
