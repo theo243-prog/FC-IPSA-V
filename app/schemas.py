@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -48,6 +48,37 @@ class AdminSetPlayerPhotoRequest(BaseModel):
 class AdminSetTestAccountRequest(BaseModel):
     pseudo: str
     is_test: bool = True
+
+
+class AdminSetPlayerNotesRequest(BaseModel):
+    player_name: str
+    note_attaquant: Optional[int] = Field(default=None, ge=0, le=99)
+    note_milieu: Optional[int] = Field(default=None, ge=0, le=99)
+    note_defenseur: Optional[int] = Field(default=None, ge=0, le=99)
+    note_gardien: Optional[int] = Field(default=None, ge=0, le=99)
+
+
+class GoalEntry(BaseModel):
+    player_name: str
+    count: int = Field(default=1, ge=1)
+
+
+class AssistEntry(BaseModel):
+    player_name: str
+    count: int = Field(default=1, ge=1)
+
+
+class AdminRecordMatchRequest(BaseModel):
+    date: str  # "2026-10-12"
+    opponent: str
+    score_us: int = Field(ge=0)
+    score_them: int = Field(ge=0)
+    buteurs: List[GoalEntry] = []
+    passeurs: List[AssistEntry] = []
+    homme_du_match: Optional[str] = None
+    lineup: List[str] = []          # joueurs ayant joué ce match (pour matches_joues)
+    cartons_jaunes: List[str] = []
+    cartons_rouges: List[str] = []
 
 
 class AdminUpdateCardStatsRequest(BaseModel):
