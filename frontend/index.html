@@ -569,9 +569,21 @@
   }
 
   let opening = false;
+  let pendingTimers = [];
+  function trackTimeout(fn, delay){
+    const id = setTimeout(fn, delay);
+    pendingTimers.push(id);
+    return id;
+  }
+
   async function openPack(useShopToken){
     if (opening) return;
     opening = true;
+    // annule tout minuteur laissé par une ouverture précédente interrompue,
+    // pour ne jamais avoir deux séquences d'animation qui se marchent dessus
+    pendingTimers.forEach(clearTimeout);
+    pendingTimers = [];
+
     const packEl = document.getElementById('packEl');
     packEl.classList.add('disabled', 'spinning');
     document.getElementById('openFreePackBtn').disabled = true;
@@ -600,9 +612,9 @@
       });
 
       slots.forEach((s, i) => {
-        setTimeout(() => {
+        trackTimeout(() => {
           s.slot.classList.add('appear');                 // la carte sort / apparaît
-          setTimeout(() => {
+          trackTimeout(() => {
             s.flip.classList.add('revealed');              // puis elle se retourne
             if (s.card.tier === 'rare') s.slot.classList.add('glow-rare');
             if (s.card.tier === 'legendaire') {
@@ -614,7 +626,7 @@
       });
 
       const totalTime = slots.length * STAGGER_DELAY + 900;
-      setTimeout(() => {
+      trackTimeout(() => {
         document.getElementById('revealSummary').innerHTML = 'Tu as gagné <b>+' + result.credits_won + ' crédits</b>.';
         if (result.crafted && result.crafted.length) {
           const banner = document.createElement('div');
