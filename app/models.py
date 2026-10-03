@@ -19,7 +19,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
-    Column, String, Integer, Float, ForeignKey, DateTime, Enum, UniqueConstraint
+    Column, String, Integer, Float, Boolean, ForeignKey, DateTime, Enum, UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 
@@ -69,6 +69,7 @@ class User(Base):
     token = Column(String, nullable=True, unique=True)  # régénéré à chaque connexion
     credits = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
+    is_test = Column(Boolean, nullable=False, default=False)  # compte de test : packs illimités, exclu du classement
 
     owned_cards = relationship("OwnedCard", back_populates="user", cascade="all, delete-orphan")
     pack_state = relationship("PackState", back_populates="user", uselist=False, cascade="all, delete-orphan")
