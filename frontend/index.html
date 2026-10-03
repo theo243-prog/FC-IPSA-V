@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FC Format A5 — Cartes</title>
+<title>FC IPSA V — Cartes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -101,20 +101,30 @@
   .card-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;overflow:hidden;}
   .card-back{background:linear-gradient(160deg,var(--bg-sunk),var(--bg-elevated));border:1px solid var(--border);display:flex;align-items:center;justify-content:center;}
   .card-back .mark{font-family:var(--font-head);font-size:34px;color:var(--text-muted);}
-  .card-front{transform:rotateY(180deg);padding:9px;display:flex;flex-direction:column;justify-content:space-between;}
+  .card-front{position:relative;transform:rotateY(180deg);padding:10px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;}
   .card-front.tier-commune{background:linear-gradient(160deg,var(--commune-2),var(--commune-1));color:var(--commune-text);}
   .card-front.tier-rare{background:linear-gradient(160deg,var(--rare-2),var(--rare-1));color:var(--rare-text);}
-  .card-front.tier-legendaire{background:linear-gradient(160deg,var(--legend-2),var(--legend-1));color:var(--legend-text);position:relative;}
-  .card-front.tier-legendaire::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,0.55) 50%,transparent 60%);background-size:220% 100%;background-position:120% 0;animation:sheen 3.6s ease-in-out infinite;}
+  .card-front.tier-legendaire{background:linear-gradient(160deg,var(--legend-2),var(--legend-1));color:var(--legend-text);}
+  .card-front.tier-legendaire::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,0.55) 50%,transparent 60%);background-size:220% 100%;background-position:120% 0;animation:sheen 3.6s ease-in-out infinite;pointer-events:none;}
   @keyframes sheen{0%,60%{background-position:120% 0;}100%{background-position:-40% 0;}}
-  .card-top{display:flex;justify-content:space-between;align-items:flex-start;font-family:var(--font-head);gap:4px;}
-  .card-tier-label{font-size:11px;font-weight:600;opacity:.75;}
-  .card-poste{font-size:11.5px;font-weight:700;background:rgba(0,0,0,0.12);padding:2px 6px;border-radius:6px;white-space:nowrap;}
-  .card-mid{flex:1;display:flex;align-items:center;justify-content:center;font-size:40px;}
-  .card-name{font-family:var(--font-head);font-size:19px;font-weight:600;line-height:1.05;}
-  .card-stats{display:flex;gap:9px;font-size:10.5px;font-weight:700;opacity:.85;margin-top:3px;}
-  .card-count{position:absolute;top:50%;right:6px;transform:translateY(-50%);background:var(--accent);color:var(--accent-text);font-size:11px;font-weight:800;border-radius:20px;padding:1px 7px;}
-  .card{width:122px;aspect-ratio:2/3;border-radius:13px;padding:8px;display:flex;flex-direction:column;justify-content:space-between;position:relative;box-shadow:var(--shadow);}
+  /* fin glacis en haut de carte, sur toute carte "face visible" */
+  .card-front::before, .card:not(.locked)::before{
+    content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    background:linear-gradient(165deg, rgba(255,255,255,0.4), rgba(255,255,255,0) 45%);
+  }
+  .card-top{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;font-family:var(--font-head);gap:4px;}
+  .card-tier-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;background:rgba(255,255,255,0.4);padding:2px 6px;border-radius:5px;}
+  .card-poste{font-size:11px;font-weight:700;background:rgba(0,0,0,0.15);padding:2px 7px;border-radius:6px;white-space:nowrap;}
+  .card-mid{position:relative;z-index:1;flex:1;display:flex;align-items:center;justify-content:center;}
+  .card-photo{width:62%;aspect-ratio:1/1;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.6);box-shadow:0 4px 10px rgba(0,0,0,0.25);display:block;}
+  .ball-fallback{font-size:38px;display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));}
+  .card-name{position:relative;z-index:1;font-family:var(--font-head);font-size:19px;font-weight:600;line-height:1.05;text-shadow:0 1px 1px rgba(255,255,255,0.3);}
+  .card-stats{position:relative;z-index:1;display:flex;gap:6px;font-size:10px;font-weight:800;margin-top:4px;}
+  .card-stats span{background:rgba(0,0,0,0.14);padding:2px 6px;border-radius:6px;}
+  .card-watermark{position:absolute;bottom:5px;right:7px;z-index:1;font-family:var(--font-head);font-size:10px;letter-spacing:1px;opacity:.4;}
+  .card-count{position:absolute;top:50%;right:6px;transform:translateY(-50%);background:var(--accent);color:var(--accent-text);font-size:11px;font-weight:800;border-radius:20px;padding:1px 7px;z-index:2;box-shadow:0 2px 6px rgba(0,0,0,0.25);}
+  .card{width:122px;aspect-ratio:2/3;border-radius:13px;padding:9px;display:flex;flex-direction:column;justify-content:space-between;position:relative;box-shadow:var(--shadow);overflow:hidden;transition:transform .15s ease, box-shadow .15s ease;}
+  .card:not(.locked):hover{transform:translateY(-3px);box-shadow:0 16px 30px rgba(0,0,0,0.18);}
   .card.locked{background:var(--bg-sunk);color:var(--text-muted);border:1px dashed var(--border);opacity:.7;}
   .card.locked .card-mid{filter:grayscale(1);opacity:.6;}
   .card-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
@@ -180,7 +190,7 @@
 
 <div class="gate" id="gate">
   <div class="gate-card">
-    <h2>FC Format A5</h2>
+    <h2>FC IPSA V</h2>
     <p id="gateSubtitle">Crée ton compte pour commencer ta collection.</p>
     <div class="form-row">
       <label>Pseudo</label>
@@ -201,9 +211,9 @@
 
 <div id="app" style="display:none;">
   <header class="topbar">
-    <div class="crest">A5</div>
+    <div class="crest">V</div>
     <div class="titles">
-      <h1>FC Format A5</h1>
+      <h1>FC IPSA V</h1>
       <p>Cartes officielles du club</p>
     </div>
     <div class="stats-chip">
@@ -226,7 +236,7 @@
     <section id="tab-pack" class="tab-panel active">
       <div class="pitch-hero">
         <div class="pack" id="packEl">
-          <div class="pack-crest">A5</div>
+          <div class="pack-crest">V</div>
           <div class="pack-label">Pack officiel</div>
         </div>
       </div>
@@ -377,12 +387,28 @@
 
   function cardFrontHTML(card){
     const statsRow = isFan(card)
-      ? '<div class="card-stats"><span>SUPPORTER</span></div>'
-      : '<div class="card-stats"><span>VIT '+card.vitesse+'</span><span>TIR '+card.tir+'</span></div>';
+      ? '<div class="card-stats"><span>🎉 SUPPORTER</span></div>'
+      : '<div class="card-stats"><span>⚡ '+card.vitesse+'</span><span>🎯 '+card.tir+'</span></div>';
     const posteLabel = isFan(card) ? '🎉' : escapeHtml(card.poste);
+    const midHTML = card.player_photo_url
+      ? '<img class="card-photo" src="'+escapeHtml(card.player_photo_url)+'" alt="">'
+      : '<span class="ball-fallback">⚽</span>';
     return '<div class="card-top"><span class="card-tier-label">'+tierLabel(card.tier)+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
-      '<div class="card-mid">⚽</div>'+
-      '<div><div class="card-name"></div>'+statsRow+'</div>';
+      '<div class="card-mid">'+midHTML+'</div>'+
+      '<div><div class="card-name"></div>'+statsRow+'</div>'+
+      '<span class="card-watermark">V</span>';
+  }
+
+  // si l'image ne charge pas (lien cassé, photo pas encore ajoutée), on retombe sur le ballon
+  function attachPhotoFallback(container){
+    const img = container.querySelector('.card-photo');
+    if (!img) return;
+    img.addEventListener('error', () => {
+      const span = document.createElement('span');
+      span.className = 'ball-fallback';
+      span.textContent = '⚽';
+      img.replaceWith(span);
+    }, { once: true });
   }
   function tierLabel(t){ return t === 'legendaire' ? 'Légendaire' : (t === 'rare' ? 'Rare' : 'Commune'); }
   function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -394,6 +420,7 @@
     el.style.background = locked ? '' : 'linear-gradient(160deg, var(--' + (card.tier === 'legendaire' ? 'legend-2' : card.tier + '-2') + '), var(--' + (card.tier === 'legendaire' ? 'legend-1' : card.tier + '-1') + '))';
     el.innerHTML = cardFrontHTML(card);
     el.querySelector('.card-name').textContent = card.player_name;
+    attachPhotoFallback(el);
     if (!locked) {
       const badge = document.createElement('div');
       badge.className = 'card-count';
@@ -442,7 +469,8 @@
   function buildTierGroups(cards, withSell){
     const frag = document.createDocumentFragment();
     ['legendaire','rare','commune'].forEach(tier => {
-      const cardsOfTier = cards.filter(c => c.tier === tier);
+      const cardsOfTier = cards.filter(c => c.tier === tier)
+        .sort((a, b) => a.player_name.localeCompare(b.player_name, 'fr'));
       if (!cardsOfTier.length) return;
       const owned = cardsOfTier.filter(c => c.quantity > 0).length;
       const group = document.createElement('div'); group.className = 'tier-group';
@@ -526,12 +554,12 @@
       const slots = result.cards_won.map(card => {
         const slot = document.createElement('div'); slot.className = 'card-slot';
         const flip = document.createElement('div'); flip.className = 'card-flip';
-        const back = document.createElement('div'); back.className = 'card-face card-back'; back.innerHTML = '<span class="mark">A5</span>';
+        const back = document.createElement('div'); back.className = 'card-face card-back'; back.innerHTML = '<span class="mark">V</span>';
         const front = document.createElement('div'); front.className = 'card-face card-front tier-' + card.tier; front.innerHTML = cardFrontHTML(card);
         flip.appendChild(back); flip.appendChild(front); slot.appendChild(flip); area.appendChild(slot);
         return { flip, front, card };
       });
-      slots.forEach(s => { s.front.querySelector('.card-name').textContent = s.card.player_name; });
+      slots.forEach(s => { s.front.querySelector('.card-name').textContent = s.card.player_name; attachPhotoFallback(s.front); });
       slots.forEach((s, i) => setTimeout(() => s.flip.classList.add('revealed'), 500 + i * 450));
 
       setTimeout(() => {
