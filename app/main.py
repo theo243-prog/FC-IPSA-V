@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db
 from . import game_logic, schemas
-from .models import User, Card, Player, OwnedCard, PackState, Listing, Tier
+from .models import User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist
 from .security import hash_password, verify_password, generate_token, get_current_user
 
 # Clé secrète pour les routes /admin/*. À définir dans Railway (Variables -> ADMIN_KEY).
@@ -38,12 +38,34 @@ app.add_middleware(
 )
 
 
+# poste précis -> catégorie de note affichée sur la carte
+POSTE_CATEGORY = {
+    "GB": "gardien",
+    "DD": "defenseur", "DC": "defenseur", "DG": "defenseur",
+    "MDC": "milieu", "MC": "milieu", "MOC": "milieu",
+    "AD": "attaquant", "BU": "attaquant",
+}
+CATEGORY_LABEL = {"attaquant": "ATT", "milieu": "MIL", "defenseur": "DEF", "gardien": "GB"}
+
+
+def get_display_note(player: Player):
+    poste = player.poste or ""
+    if poste in POSTE_CATEGORY:
+        cat = POSTE_CATEGORY[poste]
+        return {"label": CATEGORY_LABEL[cat], "value": getattr(player, "note_" + cat)}
+    if poste == "X":
+        # poste pas encore défini : note neutre en attendant (toutes à 50 par défaut)
+        return {"label": "NOTE", "value": player.note_milieu}
+    return None  # FAN & co : pas de note affichée
+
+
 def card_out(card: Card) -> dict:
     return {
         "id": card.id,
         "player_name": card.player.name,
         "poste": card.player.poste,
         "player_photo_url": card.player.photo_url,
+        "display_note": get_display_note(card.player),
         "tier": card.tier.value,
         "vitesse": card.vitesse,
         "tir": card.tir,
@@ -153,6 +175,47 @@ def sell_duplicate(
     except ValueError:
         raise HTTPException(status_code=400, detail="Pas de doublon à vendre pour cette carte")
     return {"credits_gained": credits_gained, "credits_total": user.credits}
+
+
+@app.get("/players/{player_name}/detail")
+def player_detail(player_name: str, db: Session = Depends(get_db)):
+    player = db.query(Player).filter_by(name=player_name).first()
+    if not player:
+        raise HTTPException(status_code=404, detail="Joueur introuvable")
+    return {
+        "name": player.name,
+        "poste": player.poste,
+        "photo_url": player.photo_url,
+        "matches_joues": player.matches_joues,
+        "buts": player.buts,
+        "passes_decisives": player.passes_decisives,
+        "cartons_jaunes": player.cartons_jaunes,
+        "cartons_rouges": player.cartons_rouges,
+        "homme_du_match_count": player.homme_du_match_count,
+        "note_attaquant": player.note_attaquant,
+        "note_milieu": player.note_milieu,
+        "note_defenseur": player.note_defenseur,
+        "note_gardien": player.note_gardien,
+        "display_note": get_display_note(player),
+    }
+
+
+@app.get("/matches")
+def list_matches(db: Session = Depends(get_db)):
+    matches = db.query(Match).order_by(Match.date.desc(), Match.created_at.desc()).all()
+    return [
+        {
+            "id": m.id,
+            "date": m.date.date().isoformat(),
+            "opponent": m.opponent,
+            "score_us": m.score_us,
+            "score_them": m.score_them,
+            "homme_du_match": m.motm_player.name if m.motm_player else None,
+            "buteurs": [{"player_name": g.player.name, "count": g.count} for g in m.goals],
+            "passeurs": [{"player_name": a.player.name, "count": a.count} for a in m.assists],
+        }
+        for m in matches
+    ]
 
 
 @app.get("/users/{pseudo}/collection")
@@ -314,6 +377,74 @@ def admin_set_player_photo(payload: schemas.AdminSetPlayerPhotoRequest, db: Sess
     player.photo_url = payload.photo_url
     db.commit()
     return {"status": "ok", "player": player.name, "photo_url": player.photo_url}
+
+
+@app.post("/admin/set-player-notes", dependencies=[Depends(require_admin)])
+def admin_set_player_notes(payload: schemas.AdminSetPlayerNotesRequest, db: Session = Depends(get_db)):
+    player = db.query(Player).filter_by(name=payload.player_name).first()
+    if not player:
+        raise HTTPException(status_code=404, detail="Joueur introuvable")
+    if payload.note_attaquant is not None: player.note_attaquant = payload.note_attaquant
+    if payload.note_milieu is not None: player.note_milieu = payload.note_milieu
+    if payload.note_defenseur is not None: player.note_defenseur = payload.note_defenseur
+    if payload.note_gardien is not None: player.note_gardien = payload.note_gardien
+    db.commit()
+    return {
+        "status": "ok", "player": player.name,
+        "notes": {
+            "attaquant": player.note_attaquant, "milieu": player.note_milieu,
+            "defenseur": player.note_defenseur, "gardien": player.note_gardien,
+        },
+    }
+
+
+@app.post("/admin/record-match", dependencies=[Depends(require_admin)])
+def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = Depends(get_db)):
+    try:
+        match_date = datetime.fromisoformat(payload.date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="date doit être au format AAAA-MM-JJ")
+
+    def find_player(name: str) -> Player:
+        p = db.query(Player).filter_by(name=name).first()
+        if not p:
+            raise HTTPException(status_code=404, detail=f"Joueur introuvable : {name}")
+        return p
+
+    motm_player = find_player(payload.homme_du_match) if payload.homme_du_match else None
+
+    match = Match(
+        date=match_date, opponent=payload.opponent,
+        score_us=payload.score_us, score_them=payload.score_them,
+        motm_player_id=motm_player.id if motm_player else None,
+    )
+    db.add(match)
+    db.flush()
+
+    for name in payload.lineup:
+        find_player(name).matches_joues += 1
+
+    for entry in payload.buteurs:
+        p = find_player(entry.player_name)
+        p.buts += entry.count
+        db.add(MatchGoal(match_id=match.id, player_id=p.id, count=entry.count))
+
+    for entry in payload.passeurs:
+        p = find_player(entry.player_name)
+        p.passes_decisives += entry.count
+        db.add(MatchAssist(match_id=match.id, player_id=p.id, count=entry.count))
+
+    for name in payload.cartons_jaunes:
+        find_player(name).cartons_jaunes += 1
+
+    for name in payload.cartons_rouges:
+        find_player(name).cartons_rouges += 1
+
+    if motm_player:
+        motm_player.homme_du_match_count += 1
+
+    db.commit()
+    return {"status": "ok", "match_id": match.id}
 
 
 @app.post("/admin/set-test-account", dependencies=[Depends(require_admin)])
