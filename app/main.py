@@ -5,16 +5,26 @@ Lancer en local :
     uvicorn app.main:app --reload
 Puis ouvrir http://127.0.0.1:8000/docs pour tester chaque route.
 """
+import os
 from datetime import datetime
 
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db
 from . import game_logic, schemas
-from .models import User, Card, OwnedCard, PackState, Listing
+from .models import User, Card, Player, OwnedCard, PackState, Listing, Tier
 from .security import hash_password, verify_password, generate_token, get_current_user
+
+# Clé secrète pour les routes /admin/*. À définir dans Railway (Variables -> ADMIN_KEY).
+# Tant qu'elle n'est pas définie, toutes les routes admin refusent l'accès par sécurité.
+ADMIN_KEY = os.getenv("ADMIN_KEY", "")
+
+
+def require_admin(x_admin_key: str = Header(default=None)):
+    if not ADMIN_KEY or x_admin_key != ADMIN_KEY:
+        raise HTTPException(status_code=403, detail="Clé admin manquante ou invalide")
 
 Base.metadata.create_all(bind=engine)
 
@@ -239,3 +249,92 @@ def leaderboard(db: Session = Depends(get_db)):
         rows.append({"pseudo": u.pseudo, "completion_pct": completion, "credits": u.credits})
     rows.sort(key=lambda r: (-r["completion_pct"], -r["credits"]))
     return rows
+
+
+# ---------------------------------------------------------------- Admin ---
+# Toutes ces routes exigent l'en-tête  X-Admin-Key: <ta clé secrète>
+# (définie dans Railway -> Variables -> ADMIN_KEY). Rien de tout ça n'est
+# accessible depuis le site normal, uniquement par toi via /docs ou un appel direct.
+
+@app.post("/admin/delete-user", dependencies=[Depends(require_admin)])
+def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter_by(pseudo=payload.pseudo).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    db.query(Listing).filter_by(seller_id=user.id).delete()
+    db.delete(user)  # supprime en cascade ses cartes possédées et son pack_state
+    db.commit()
+    return {"status": "ok", "deleted": payload.pseudo}
+
+
+@app.post("/admin/update-card-stats", dependencies=[Depends(require_admin)])
+def admin_update_card_stats(payload: schemas.AdminUpdateCardStatsRequest, db: Session = Depends(get_db)):
+    try:
+        tier = Tier(payload.tier)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="tier doit être commune, rare ou legendaire")
+    card = (
+        db.query(Card)
+        .join(Player)
+        .filter(Player.name == payload.player_name, Card.tier == tier)
+        .first()
+    )
+    if not card:
+        raise HTTPException(status_code=404, detail="Carte introuvable pour ce joueur/tier")
+    card.vitesse = payload.vitesse
+    card.tir = payload.tir
+    db.commit()
+    return {"status": "ok", "card_id": card.id, "vitesse": card.vitesse, "tir": card.tir}
+
+
+@app.post("/admin/grant-legendary", dependencies=[Depends(require_admin)])
+def admin_grant_legendary(payload: schemas.AdminGrantLegendaryRequest, db: Session = Depends(get_db)):
+    player = db.query(Player).filter_by(name=payload.player_name).first()
+    if not player:
+        raise HTTPException(status_code=404, detail="Joueur introuvable")
+
+    legend = db.query(Card).filter_by(player_id=player.id, tier=Tier.legendaire).first()
+    if not legend:
+        legend = Card(player_id=player.id, tier=Tier.legendaire, vitesse=payload.vitesse, tir=payload.tir)
+        db.add(legend)
+        db.flush()
+    else:
+        legend.vitesse = payload.vitesse
+        legend.tir = payload.tir
+
+    granted_to = None
+    if payload.grant_to_pseudo:
+        user = db.query(User).filter_by(pseudo=payload.grant_to_pseudo).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="Utilisateur introuvable pour grant_to_pseudo")
+        owned = game_logic.get_or_create_owned(db, user, legend)
+        owned.quantity += 1
+        granted_to = user.pseudo
+
+    db.commit()
+    return {"status": "ok", "card_id": legend.id, "granted_to": granted_to}
+
+
+@app.post("/admin/grant-credits", dependencies=[Depends(require_admin)])
+def admin_grant_credits(payload: schemas.AdminGrantCreditsRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter_by(pseudo=payload.pseudo).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    user.credits += payload.amount
+    db.commit()
+    return {"status": "ok", "pseudo": user.pseudo, "credits_total": user.credits}
+
+
+@app.post("/admin/grant-packs", dependencies=[Depends(require_admin)])
+def admin_grant_packs(payload: schemas.AdminGrantPacksRequest, db: Session = Depends(get_db)):
+    """
+    Ajoute des packs à un joueur SANS toucher au cap de 3 packs gratuits —
+    ils atterrissent dans ses jetons shop (illimités), utilisables à tout moment.
+    Idéal pour offrir des packs aux supporters présents un jour de match.
+    """
+    user = db.query(User).filter_by(pseudo=payload.pseudo).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    user.pack_state.shop_pack_tokens += payload.count
+    db.commit()
+    return {"status": "ok", "pseudo": user.pseudo, "shop_pack_tokens": user.pack_state.shop_pack_tokens}
