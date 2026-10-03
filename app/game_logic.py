@@ -137,7 +137,10 @@ def open_pack_for_user(db: Session, user: User, use_shop_token: bool = False) ->
     regen_user_packs(db, user)
     ps = user.pack_state
 
-    if use_shop_token:
+    if getattr(user, "is_test", False):
+        # compte de test : aucune limite, rien n'est décompté
+        source = "test"
+    elif use_shop_token:
         if ps.shop_pack_tokens <= 0:
             raise ValueError("no_pack_available")
         ps.shop_pack_tokens -= 1
