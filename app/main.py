@@ -28,7 +28,7 @@ def require_admin(x_admin_key: str = Header(default=None)):
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="FC Format A5 — API")
+app = FastAPI(title="FC IPSA V — API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -43,6 +43,7 @@ def card_out(card: Card) -> dict:
         "id": card.id,
         "player_name": card.player.name,
         "poste": card.player.poste,
+        "player_photo_url": card.player.photo_url,
         "tier": card.tier.value,
         "vitesse": card.vitesse,
         "tir": card.tir,
@@ -292,6 +293,16 @@ def admin_delete_player(payload: schemas.AdminDeletePlayerRequest, db: Session =
     db.delete(player)  # cascade : supprime aussi ses Card (commune/rare/légendaire)
     db.commit()
     return {"status": "ok", "deleted_player": payload.player_name, "cards_removed": len(card_ids)}
+
+
+@app.post("/admin/set-player-photo", dependencies=[Depends(require_admin)])
+def admin_set_player_photo(payload: schemas.AdminSetPlayerPhotoRequest, db: Session = Depends(get_db)):
+    player = db.query(Player).filter_by(name=payload.player_name).first()
+    if not player:
+        raise HTTPException(status_code=404, detail="Joueur introuvable")
+    player.photo_url = payload.photo_url
+    db.commit()
+    return {"status": "ok", "player": player.name, "photo_url": player.photo_url}
 
 
 @app.post("/admin/update-card-stats", dependencies=[Depends(require_admin)])
