@@ -85,6 +85,7 @@ class User(Base):
     credits = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
     is_test = Column(Boolean, nullable=False, default=False)  # compte de test : packs illimités, exclu du classement
+    elo = Column(Integer, nullable=False, default=1000)  # classement des matchs 1v1
 
     owned_cards = relationship("OwnedCard", back_populates="user", cascade="all, delete-orphan")
     pack_state = relationship("PackState", back_populates="user", uselist=False, cascade="all, delete-orphan")
@@ -150,6 +151,53 @@ class MatchAssist(Base):
     count = Column(Integer, nullable=False, default=1)
 
     player = relationship("Player")
+
+
+class Team(Base):
+    """L'équipe de 11 enregistrée par un joueur, utilisée aussi bien pour
+    défier que pour être défié (toujours la même, une par compte)."""
+    __tablename__ = "teams"
+
+    user_id = Column(String, ForeignKey("users.id"), primary_key=True)
+    formation = Column(String, nullable=False)   # "4-4-2" / "4-3-3" / "3-4-3" / "5-3-2"
+    stake = Column(Integer, nullable=False, default=2)  # mise proposée (1 à 10 crédits)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+    slots = relationship("TeamSlot", cascade="all, delete-orphan")
+
+
+class TeamSlot(Base):
+    """Une carte placée dans un emplacement (GB/DEF/MIL/ATT) de l'équipe d'un joueur."""
+    __tablename__ = "team_slots"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    user_id = Column(String, ForeignKey("teams.user_id"), nullable=False)
+    card_id = Column(String, ForeignKey("cards.id"), nullable=False)
+    slot_category = Column(String, nullable=False)  # GB / DEF / MIL / ATT
+
+    card = relationship("Card")
+
+
+class Duel(Base):
+    """Un match 1v1 résolu entre deux équipes, avec son résultat et l'évolution Elo."""
+    __tablename__ = "duels"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    challenger_id = Column(String, ForeignKey("users.id"), nullable=False)
+    defender_id = Column(String, ForeignKey("users.id"), nullable=False)
+    stake = Column(Integer, nullable=False)
+    formation_challenger = Column(String, nullable=False)
+    formation_defender = Column(String, nullable=False)
+    score_challenger = Column(Integer, nullable=False)
+    score_defender = Column(Integer, nullable=False)
+    elo_challenger_before = Column(Integer, nullable=False)
+    elo_defender_before = Column(Integer, nullable=False)
+    elo_challenger_after = Column(Integer, nullable=False)
+    elo_defender_after = Column(Integer, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    challenger = relationship("User", foreign_keys=[challenger_id])
+    defender = relationship("User", foreign_keys=[defender_id])
 
 
 class Listing(Base):
