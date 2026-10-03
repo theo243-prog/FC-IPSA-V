@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -26,3 +28,33 @@ class CreateListingRequest(BaseModel):
 
 class BuyShopItemRequest(BaseModel):
     item: str
+
+
+# ----------------------------------------------------------- Admin -----
+
+class AdminDeleteUserRequest(BaseModel):
+    pseudo: str
+
+
+class AdminUpdateCardStatsRequest(BaseModel):
+    player_name: str
+    tier: str  # "commune" | "rare" | "legendaire"
+    vitesse: int = Field(ge=0, le=99)
+    tir: int = Field(ge=0, le=99)
+
+
+class AdminGrantLegendaryRequest(BaseModel):
+    player_name: str
+    vitesse: int = Field(ge=0, le=99)
+    tir: int = Field(ge=0, le=99)
+    grant_to_pseudo: Optional[str] = None  # si fourni, donne aussi 1 exemplaire à ce joueur
+
+
+class AdminGrantCreditsRequest(BaseModel):
+    pseudo: str
+    amount: int
+
+
+class AdminGrantPacksRequest(BaseModel):
+    pseudo: str
+    count: int = Field(gt=0)  # ajoutés aux jetons shop, hors cap des 3 packs gratuits
