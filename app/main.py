@@ -55,12 +55,13 @@ TIER_NOTE_BONUS = {"commune": 0, "rare": 10, "legendaire": 20}
 def get_display_note(player: Player, tier: str = "commune"):
     poste = player.poste or ""
     bonus = TIER_NOTE_BONUS.get(tier, 0)
+    # pas de plafond à 99 : une légendaire peut dépasser 100, c'est voulu (effet "stylé")
     if poste in POSTE_CATEGORY:
         cat = POSTE_CATEGORY[poste]
-        return {"label": CATEGORY_LABEL[cat], "value": min(99, getattr(player, "note_" + cat) + bonus)}
+        return {"label": CATEGORY_LABEL[cat], "value": getattr(player, "note_" + cat) + bonus}
     if poste == "X":
         # poste pas encore défini : note neutre en attendant (toutes à 50 par défaut)
-        return {"label": "NOTE", "value": min(99, player.note_milieu + bonus)}
+        return {"label": "NOTE", "value": player.note_milieu + bonus}
     return None  # FAN & co : pas de note affichée
 
 
