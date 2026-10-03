@@ -1,5 +1,18 @@
 """
 Tables de la base de données.
+
+Vue d'ensemble :
+- Player       : les joueurs du FC Format A5 (identité réelle : nom, poste)
+- Card         : une "version" d'un joueur (commune / rare / légendaire),
+                 chacune avec ses propres stats. Un joueur a toujours une
+                 carte commune et une carte rare ; la légendaire n'existe
+                 que si elle a été débloquée (but marqué, homme du match...).
+- User         : un compte (pseudo + mot de passe + crédits)
+- OwnedCard    : combien d'exemplaires d'une Card un User possède
+- PackState    : l'état des packs gratuits d'un joueur (combien il en a
+                 en stock, quand le prochain arrive) + ses jetons de pack
+                 achetés au shop (illimités, séparés du cap de 3)
+- Listing      : une carte mise en vente sur le marché
 """
 import enum
 import uuid
@@ -28,7 +41,8 @@ class Player(Base):
 
     id = Column(String, primary_key=True, default=gen_id)
     name = Column(String, nullable=False, unique=True)
-    poste = Column(String, nullable=False)
+    poste = Column(String, nullable=False)  # GB / DEF / MIL / ATT
+    photo_url = Column(String, nullable=True)  # ex: /photos/mathis.jpg
 
     cards = relationship("Card", back_populates="player", cascade="all, delete-orphan")
 
@@ -52,7 +66,7 @@ class User(Base):
     id = Column(String, primary_key=True, default=gen_id)
     pseudo = Column(String, nullable=False, unique=True)
     password_hash = Column(String, nullable=False)
-    token = Column(String, nullable=True, unique=True)
+    token = Column(String, nullable=True, unique=True)  # régénéré à chaque connexion
     credits = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -77,9 +91,9 @@ class PackState(Base):
     __tablename__ = "pack_states"
 
     user_id = Column(String, ForeignKey("users.id"), primary_key=True)
-    stored_packs = Column(Integer, nullable=False, default=3)
-    last_regen_at = Column(DateTime, default=datetime.utcnow)
-    shop_pack_tokens = Column(Integer, nullable=False, default=0)
+    stored_packs = Column(Integer, nullable=False, default=3)   # packs gratuits en stock (0 à 3)
+    last_regen_at = Column(DateTime, default=datetime.utcnow)   # dernier calcul de régénération
+    shop_pack_tokens = Column(Integer, nullable=False, default=0)  # jetons achetés au shop
 
     user = relationship("User", back_populates="pack_state")
 
