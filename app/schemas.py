@@ -50,6 +50,32 @@ class AdminSetTestAccountRequest(BaseModel):
     is_test: bool = True
 
 
+class AdminSetPlayerPosteRequest(BaseModel):
+    player_name: str
+    poste: str  # ATT, MC, DEF, GB (ou X / FAN...)
+
+
+class BulkNoteEntry(BaseModel):
+    player_name: str
+    note_attaquant: int = Field(default=50, ge=0, le=99)
+    note_milieu: int = Field(default=50, ge=0, le=99)
+    note_defenseur: int = Field(default=50, ge=0, le=99)
+    note_gardien: int = Field(default=50, ge=0, le=99)
+
+
+class AdminSetNotesBulkRequest(BaseModel):
+    notes: List[BulkNoteEntry]
+
+
+class BulkPosteEntry(BaseModel):
+    player_name: str
+    poste: str
+
+
+class AdminSetPostesBulkRequest(BaseModel):
+    postes: List[BulkPosteEntry]
+
+
 class AdminSetPlayerNotesRequest(BaseModel):
     player_name: str
     note_attaquant: Optional[int] = Field(default=None, ge=0, le=99)
