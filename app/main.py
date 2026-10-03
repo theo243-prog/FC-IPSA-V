@@ -143,6 +143,17 @@ def sell_duplicate(
     return {"credits_gained": credits_gained, "credits_total": user.credits}
 
 
+@app.get("/users/{pseudo}/collection")
+def get_user_collection(pseudo: str, db: Session = Depends(get_db)):
+    """Collection PUBLIQUE d'un autre joueur (lecture seule), pour le classement."""
+    user = db.query(User).filter_by(pseudo=pseudo).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    all_cards = db.query(Card).all()
+    owned_rows = {o.card_id: o.quantity for o in db.query(OwnedCard).filter_by(user_id=user.id).all()}
+    return [{**card_out(c), "quantity": owned_rows.get(c.id, 0)} for c in all_cards]
+
+
 # -------------------------------------------------------------- Marché ----
 
 @app.get("/market/listings")
