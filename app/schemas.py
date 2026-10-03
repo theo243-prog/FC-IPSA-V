@@ -1,36 +1,105 @@
-"""
-Migration ponctuelle :
-- ajoute les colonnes de stats de saison + notes par poste sur players
-- crée les tables matches / match_goals / match_assists si elles n'existent pas
-Ne supprime et ne touche à aucune donnée existante.
+from typing import List, Optional
 
-    python -m app.migrate_add_stats_and_matches
-"""
-from sqlalchemy import text
-from .database import Base, engine
-from . import models  # noqa: F401 — nécessaire pour enregistrer Match/MatchGoal/MatchAssist
-
-NEW_PLAYER_COLUMNS = [
-    ("matches_joues", "INTEGER NOT NULL DEFAULT 0"),
-    ("buts", "INTEGER NOT NULL DEFAULT 0"),
-    ("passes_decisives", "INTEGER NOT NULL DEFAULT 0"),
-    ("cartons_jaunes", "INTEGER NOT NULL DEFAULT 0"),
-    ("cartons_rouges", "INTEGER NOT NULL DEFAULT 0"),
-    ("homme_du_match_count", "INTEGER NOT NULL DEFAULT 0"),
-    ("note_attaquant", "INTEGER NOT NULL DEFAULT 50"),
-    ("note_milieu", "INTEGER NOT NULL DEFAULT 50"),
-    ("note_defenseur", "INTEGER NOT NULL DEFAULT 50"),
-    ("note_gardien", "INTEGER NOT NULL DEFAULT 50"),
-]
+from pydantic import BaseModel, Field
 
 
-def migrate():
-    with engine.begin() as conn:
-        for name, decl in NEW_PLAYER_COLUMNS:
-            conn.execute(text(f"ALTER TABLE players ADD COLUMN IF NOT EXISTS {name} {decl}"))
-    Base.metadata.create_all(bind=engine)  # crée matches/match_goals/match_assists s'ils manquent
-    print("OK : stats de saison + tables de matchs en place.")
+class RegisterRequest(BaseModel):
+    pseudo: str = Field(min_length=2, max_length=24)
+    password: str = Field(min_length=4, max_length=72)
 
 
-if __name__ == "__main__":
-    migrate()
+class LoginRequest(BaseModel):
+    pseudo: str
+    password: str
+
+
+class OpenPackRequest(BaseModel):
+    use_shop_token: bool = False
+
+
+class SellDuplicateRequest(BaseModel):
+    card_id: str
+
+
+class CreateListingRequest(BaseModel):
+    card_id: str
+    price: int = Field(gt=0)
+
+
+class BuyShopItemRequest(BaseModel):
+    item: str
+
+
+# ----------------------------------------------------------- Admin -----
+
+class AdminDeleteUserRequest(BaseModel):
+    pseudo: str
+
+
+class AdminDeletePlayerRequest(BaseModel):
+    player_name: str
+
+
+class AdminSetPlayerPhotoRequest(BaseModel):
+    player_name: str
+    photo_url: str  # ex: "/photos/mathis.jpg" ou une URL complète
+
+
+class AdminSetTestAccountRequest(BaseModel):
+    pseudo: str
+    is_test: bool = True
+
+
+class AdminSetPlayerNotesRequest(BaseModel):
+    player_name: str
+    note_attaquant: Optional[int] = Field(default=None, ge=0, le=99)
+    note_milieu: Optional[int] = Field(default=None, ge=0, le=99)
+    note_defenseur: Optional[int] = Field(default=None, ge=0, le=99)
+    note_gardien: Optional[int] = Field(default=None, ge=0, le=99)
+
+
+class GoalEntry(BaseModel):
+    player_name: str
+    count: int = Field(default=1, ge=1)
+
+
+class AssistEntry(BaseModel):
+    player_name: str
+    count: int = Field(default=1, ge=1)
+
+
+class AdminRecordMatchRequest(BaseModel):
+    date: str  # "2026-10-12"
+    opponent: str
+    score_us: int = Field(ge=0)
+    score_them: int = Field(ge=0)
+    buteurs: List[GoalEntry] = []
+    passeurs: List[AssistEntry] = []
+    homme_du_match: Optional[str] = None
+    lineup: List[str] = []          # joueurs ayant joué ce match (pour matches_joues)
+    cartons_jaunes: List[str] = []
+    cartons_rouges: List[str] = []
+
+
+class AdminUpdateCardStatsRequest(BaseModel):
+    player_name: str
+    tier: str  # "commune" | "rare" | "legendaire"
+    vitesse: int = Field(ge=0, le=99)
+    tir: int = Field(ge=0, le=99)
+
+
+class AdminGrantLegendaryRequest(BaseModel):
+    player_name: str
+    vitesse: int = Field(ge=0, le=99)
+    tir: int = Field(ge=0, le=99)
+    grant_to_pseudo: Optional[str] = None  # si fourni, donne aussi 1 exemplaire à ce joueur
+
+
+class AdminGrantCreditsRequest(BaseModel):
+    pseudo: str
+    amount: int
+
+
+class AdminGrantPacksRequest(BaseModel):
+    pseudo: str
+    count: int = Field(gt=0)  # ajoutés aux jetons shop, hors cap des 3 packs gratuits
