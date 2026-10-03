@@ -44,6 +44,21 @@ class Player(Base):
     poste = Column(String, nullable=False)  # GB / DEF / MIL / ATT
     photo_url = Column(String, nullable=True)  # ex: /photos/mathis.jpg
 
+    # Statistiques de saison (vraie personne, pas liées à une carte précise)
+    matches_joues = Column(Integer, nullable=False, default=0)
+    buts = Column(Integer, nullable=False, default=0)
+    passes_decisives = Column(Integer, nullable=False, default=0)
+    cartons_jaunes = Column(Integer, nullable=False, default=0)
+    cartons_rouges = Column(Integer, nullable=False, default=0)
+    homme_du_match_count = Column(Integer, nullable=False, default=0)
+
+    # Notes par poste (0-99). Seule celle correspondant au poste réel du
+    # joueur est affichée sur sa carte. Réglées manuellement par l'admin.
+    note_attaquant = Column(Integer, nullable=False, default=50)
+    note_milieu = Column(Integer, nullable=False, default=50)
+    note_defenseur = Column(Integer, nullable=False, default=50)
+    note_gardien = Column(Integer, nullable=False, default=50)
+
     cards = relationship("Card", back_populates="player", cascade="all, delete-orphan")
 
 
@@ -97,6 +112,44 @@ class PackState(Base):
     shop_pack_tokens = Column(Integer, nullable=False, default=0)  # jetons achetés au shop
 
     user = relationship("User", back_populates="pack_state")
+
+
+class Match(Base):
+    __tablename__ = "matches"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    date = Column(DateTime, nullable=False)
+    opponent = Column(String, nullable=False)
+    score_us = Column(Integer, nullable=False)
+    score_them = Column(Integer, nullable=False)
+    motm_player_id = Column(String, ForeignKey("players.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    motm_player = relationship("Player")
+    goals = relationship("MatchGoal", cascade="all, delete-orphan")
+    assists = relationship("MatchAssist", cascade="all, delete-orphan")
+
+
+class MatchGoal(Base):
+    __tablename__ = "match_goals"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    match_id = Column(String, ForeignKey("matches.id"), nullable=False)
+    player_id = Column(String, ForeignKey("players.id"), nullable=False)
+    count = Column(Integer, nullable=False, default=1)
+
+    player = relationship("Player")
+
+
+class MatchAssist(Base):
+    __tablename__ = "match_assists"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    match_id = Column(String, ForeignKey("matches.id"), nullable=False)
+    player_id = Column(String, ForeignKey("players.id"), nullable=False)
+    count = Column(Integer, nullable=False, default=1)
+
+    player = relationship("Player")
 
 
 class Listing(Base):
