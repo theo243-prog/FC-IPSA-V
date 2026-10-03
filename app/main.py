@@ -41,21 +41,26 @@ app.add_middleware(
 # poste précis -> catégorie de note affichée sur la carte
 POSTE_CATEGORY = {
     "GB": "gardien",
-    "DD": "defenseur", "DC": "defenseur", "DG": "defenseur",
-    "MDC": "milieu", "MC": "milieu", "MOC": "milieu",
-    "AD": "attaquant", "BU": "attaquant",
+    "DEF": "defenseur", "DD": "defenseur", "DC": "defenseur", "DG": "defenseur",
+    "MC": "milieu", "MDC": "milieu", "MOC": "milieu",
+    "ATT": "attaquant", "AD": "attaquant", "BU": "attaquant",
 }
 CATEGORY_LABEL = {"attaquant": "ATT", "milieu": "MIL", "defenseur": "DEF", "gardien": "GB"}
 
+# Bonus ajouté à la note de base selon la rareté de la carte (purement à l'affichage,
+# la valeur stockée sur le joueur reste la base "commune").
+TIER_NOTE_BONUS = {"commune": 0, "rare": 10, "legendaire": 20}
 
-def get_display_note(player: Player):
+
+def get_display_note(player: Player, tier: str = "commune"):
     poste = player.poste or ""
+    bonus = TIER_NOTE_BONUS.get(tier, 0)
     if poste in POSTE_CATEGORY:
         cat = POSTE_CATEGORY[poste]
-        return {"label": CATEGORY_LABEL[cat], "value": getattr(player, "note_" + cat)}
+        return {"label": CATEGORY_LABEL[cat], "value": min(99, getattr(player, "note_" + cat) + bonus)}
     if poste == "X":
         # poste pas encore défini : note neutre en attendant (toutes à 50 par défaut)
-        return {"label": "NOTE", "value": player.note_milieu}
+        return {"label": "NOTE", "value": min(99, player.note_milieu + bonus)}
     return None  # FAN & co : pas de note affichée
 
 
@@ -65,7 +70,7 @@ def card_out(card: Card) -> dict:
         "player_name": card.player.name,
         "poste": card.player.poste,
         "player_photo_url": card.player.photo_url,
-        "display_note": get_display_note(card.player),
+        "display_note": get_display_note(card.player, card.tier.value),
         "tier": card.tier.value,
         "vitesse": card.vitesse,
         "tir": card.tir,
@@ -196,7 +201,7 @@ def player_detail(player_name: str, db: Session = Depends(get_db)):
         "note_milieu": player.note_milieu,
         "note_defenseur": player.note_defenseur,
         "note_gardien": player.note_gardien,
-        "display_note": get_display_note(player),
+        "display_note": get_display_note(player, "commune"),
     }
 
 
@@ -377,6 +382,48 @@ def admin_set_player_photo(payload: schemas.AdminSetPlayerPhotoRequest, db: Sess
     player.photo_url = payload.photo_url
     db.commit()
     return {"status": "ok", "player": player.name, "photo_url": player.photo_url}
+
+
+@app.post("/admin/set-player-poste", dependencies=[Depends(require_admin)])
+def admin_set_player_poste(payload: schemas.AdminSetPlayerPosteRequest, db: Session = Depends(get_db)):
+    player = db.query(Player).filter_by(name=payload.player_name).first()
+    if not player:
+        raise HTTPException(status_code=404, detail="Joueur introuvable")
+    player.poste = payload.poste
+    db.commit()
+    return {"status": "ok", "player": player.name, "poste": player.poste}
+
+
+@app.post("/admin/set-notes-bulk", dependencies=[Depends(require_admin)])
+def admin_set_notes_bulk(payload: schemas.AdminSetNotesBulkRequest, db: Session = Depends(get_db)):
+    """Règle les 4 notes (attaquant/milieu/defenseur/gardien) de plusieurs joueurs
+    en un seul appel. Chaque joueur n'affichera que celle de son propre poste —
+    les 3 autres valeurs ne servent qu'en réserve si son poste change un jour."""
+    updated = []
+    for entry in payload.notes:
+        player = db.query(Player).filter_by(name=entry.player_name).first()
+        if not player:
+            raise HTTPException(status_code=404, detail=f"Joueur introuvable : {entry.player_name}")
+        player.note_attaquant = entry.note_attaquant
+        player.note_milieu = entry.note_milieu
+        player.note_defenseur = entry.note_defenseur
+        player.note_gardien = entry.note_gardien
+        updated.append(player.name)
+    db.commit()
+    return {"status": "ok", "updated": updated}
+
+
+@app.post("/admin/set-postes-bulk", dependencies=[Depends(require_admin)])
+def admin_set_postes_bulk(payload: schemas.AdminSetPostesBulkRequest, db: Session = Depends(get_db)):
+    updated = []
+    for entry in payload.postes:
+        player = db.query(Player).filter_by(name=entry.player_name).first()
+        if not player:
+            raise HTTPException(status_code=404, detail=f"Joueur introuvable : {entry.player_name}")
+        player.poste = entry.poste
+        updated.append({"player": player.name, "poste": player.poste})
+    db.commit()
+    return {"status": "ok", "updated": updated}
 
 
 @app.post("/admin/set-player-notes", dependencies=[Depends(require_admin)])
