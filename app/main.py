@@ -267,6 +267,22 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     return {"status": "ok", "deleted": payload.pseudo}
 
 
+@app.post("/admin/delete-player", dependencies=[Depends(require_admin)])
+def admin_delete_player(payload: schemas.AdminDeletePlayerRequest, db: Session = Depends(get_db)):
+    """Retire un joueur de l'effectif (ses cartes, les exemplaires possédés par
+    tout le monde, et les annonces du marché le concernant disparaissent aussi)."""
+    player = db.query(Player).filter_by(name=payload.player_name).first()
+    if not player:
+        raise HTTPException(status_code=404, detail="Joueur introuvable")
+    card_ids = [c.id for c in player.cards]
+    if card_ids:
+        db.query(Listing).filter(Listing.card_id.in_(card_ids)).delete(synchronize_session=False)
+        db.query(OwnedCard).filter(OwnedCard.card_id.in_(card_ids)).delete(synchronize_session=False)
+    db.delete(player)  # cascade : supprime aussi ses Card (commune/rare/légendaire)
+    db.commit()
+    return {"status": "ok", "deleted_player": payload.player_name, "cards_removed": len(card_ids)}
+
+
 @app.post("/admin/update-card-stats", dependencies=[Depends(require_admin)])
 def admin_update_card_stats(payload: schemas.AdminUpdateCardStatsRequest, db: Session = Depends(get_db)):
     try:
