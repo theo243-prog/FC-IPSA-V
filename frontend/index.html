@@ -355,10 +355,16 @@
   });
 
   // ---------- Card rendering ----------
+  function isFan(card){ return (card.poste || '').toUpperCase().startsWith('FAN'); }
+
   function cardFrontHTML(card){
-    return '<div class="card-top"><span class="card-tier-label">'+tierLabel(card.tier)+'</span><span class="card-poste">'+escapeHtml(card.poste)+'</span></div>'+
+    const statsRow = isFan(card)
+      ? '<div class="card-stats"><span>SUPPORTER</span></div>'
+      : '<div class="card-stats"><span>VIT '+card.vitesse+'</span><span>TIR '+card.tir+'</span></div>';
+    const posteLabel = isFan(card) ? '🎉' : escapeHtml(card.poste);
+    return '<div class="card-top"><span class="card-tier-label">'+tierLabel(card.tier)+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
       '<div class="card-mid">⚽</div>'+
-      '<div><div class="card-name"></div><div class="card-stats"><span>VIT '+card.vitesse+'</span><span>TIR '+card.tir+'</span></div></div>';
+      '<div><div class="card-name"></div>'+statsRow+'</div>';
   }
   function tierLabel(t){ return t === 'legendaire' ? 'Légendaire' : (t === 'rare' ? 'Rare' : 'Commune'); }
   function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
