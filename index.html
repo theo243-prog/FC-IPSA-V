@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FC Format A5 — Cartes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3F7F0; --bg-elevated:#FFFFFF; --bg-sunk:#E7EEE3;
+    --text:#122015; --text-muted:#56695B; --accent:#C97A1A; --accent-text:#FFFFFF;
+    --line:#CFDCC8; --border:#DCE5D6; --shadow:0 10px 24px rgba(20,40,25,0.10);
+    --commune-1:#9C6B3E; --commune-2:#D3A874; --commune-text:#2B1A0E;
+    --rare-1:#9AA6AC; --rare-2:#E9EEF0; --rare-text:#1F2A31;
+    --legend-1:#DFA82E; --legend-2:#FFE79A; --legend-text:#4A3400;
+    --font-head:'Teko', sans-serif; --font-body:'Manrope', sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0E2116; --bg-elevated:#173925; --bg-sunk:#0A1B12;
+      --text:#F1F6EE; --text-muted:#9FB6A6; --accent:#F2A93B; --accent-text:#20140A;
+      --line:rgba(255,255,255,0.08); --border:rgba(255,255,255,0.12);
+      --shadow:0 12px 28px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E2116; --bg-elevated:#173925; --bg-sunk:#0A1B12;
+    --text:#F1F6EE; --text-muted:#9FB6A6; --accent:#F2A93B; --accent-text:#20140A;
+    --line:rgba(255,255,255,0.08); --border:rgba(255,255,255,0.12);
+    --shadow:0 12px 28px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--text); font-family:var(--font-body); min-height:100vh;
+    background-image:repeating-linear-gradient(90deg, var(--line) 0px, var(--line) 1px, transparent 1px, transparent 120px);
+  }
+  #app{max-width:960px;margin:0 auto;padding:20px 16px 60px;}
+  .topbar{display:flex;align-items:center;gap:14px;padding:6px 4px 18px;flex-wrap:wrap;}
+  .crest{
+    width:52px;height:52px;border-radius:10px;flex:0 0 auto;
+    background:linear-gradient(155deg,var(--accent),var(--legend-1)); color:var(--accent-text);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-head);font-size:26px;font-weight:600;letter-spacing:1px; box-shadow:var(--shadow);
+  }
+  .titles h1{font-family:var(--font-head);font-weight:600;font-size:30px;line-height:1;margin:0;letter-spacing:0.5px;}
+  .titles p{margin:4px 0 0;color:var(--text-muted);font-size:13px;}
+  .stats-chip{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .stat-pill{
+    background:var(--bg-elevated);border:1px solid var(--border);border-radius:20px;
+    padding:6px 12px;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:6px;
+  }
+  .stat-pill .lab{color:var(--text-muted);font-weight:600;}
+  .logout-btn{background:none;border:none;color:var(--text-muted);font-size:12px;text-decoration:underline;cursor:pointer;padding:4px;}
+
+  .tabs{display:flex;gap:6px;border-bottom:1px solid var(--border);margin-bottom:24px;overflow-x:auto;}
+  .tab{appearance:none;border:none;background:none;color:var(--text-muted);font-family:var(--font-body);font-weight:700;font-size:14px;padding:11px 4px;margin-right:20px;cursor:pointer;position:relative;white-space:nowrap;}
+  .tab.active{color:var(--text);}
+  .tab.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;border-radius:3px;background:var(--accent);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  .pitch-hero{display:flex;justify-content:center;padding:28px 0 20px;}
+  .pack{
+    width:190px;aspect-ratio:3/4;border-radius:18px;cursor:pointer;
+    background:radial-gradient(120px 90px at 30% 20%, rgba(255,255,255,0.14), transparent 60%),
+      linear-gradient(160deg, var(--legend-1), var(--commune-1) 60%, var(--rare-1));
+    box-shadow:var(--shadow); display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+    transition:transform .18s ease; border:1px solid rgba(255,255,255,0.25);
+  }
+  .pack:active{transform:scale(0.97);}
+  .pack.disabled{opacity:.5;pointer-events:none;}
+  .pack-crest{width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,0.9);color:#2B1A0E;display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-size:26px;font-weight:600;}
+  .pack-label{font-family:var(--font-head);font-size:19px;color:#2B1A0E;letter-spacing:0.5px;}
+  .pack-status{text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:18px;}
+  .pack-actions{display:flex;flex-direction:column;align-items:center;gap:10px;}
+
+  .btn-primary,.btn-secondary{font-family:var(--font-body);font-weight:700;font-size:14.5px;border:none;border-radius:10px;padding:12px 22px;cursor:pointer;}
+  .btn-primary{background:var(--accent);color:var(--accent-text);box-shadow:var(--shadow);}
+  .btn-primary:disabled{opacity:.45;cursor:default;box-shadow:none;}
+  .btn-secondary{background:var(--bg-elevated);color:var(--text);border:1px solid var(--border);}
+  .btn-secondary:disabled{opacity:.45;cursor:default;}
+  .btn-small{font-family:var(--font-body);font-weight:700;font-size:12px;border:none;border-radius:8px;padding:7px 11px;cursor:pointer;background:var(--accent);color:var(--accent-text);}
+  .btn-small.ghost{background:transparent;border:1px solid var(--border);color:var(--text-muted);}
+  .btn-small:disabled{opacity:.4;cursor:default;}
+
+  .reveal-area{display:flex;gap:14px;justify-content:center;margin-top:28px;flex-wrap:wrap;min-height:10px;}
+  .reveal-summary{text-align:center;margin-top:16px;font-size:14px;color:var(--text-muted);min-height:20px;}
+  .reveal-summary b{color:var(--text);}
+  .craft-banner{
+    margin-top:10px;background:var(--bg-elevated);border:1px solid var(--legend-1);border-radius:10px;
+    padding:8px 14px;font-size:13px;text-align:center;color:var(--legend-text);
+  }
+
+  .card-slot{width:140px;aspect-ratio:2/3;perspective:1000px;}
+  .card-flip{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,.2,.2,1);}
+  .card-flip.revealed{transform:rotateY(180deg);}
+  .card-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;overflow:hidden;}
+  .card-back{background:linear-gradient(160deg,var(--bg-sunk),var(--bg-elevated));border:1px solid var(--border);display:flex;align-items:center;justify-content:center;}
+  .card-back .mark{font-family:var(--font-head);font-size:34px;color:var(--text-muted);}
+  .card-front{transform:rotateY(180deg);padding:9px;display:flex;flex-direction:column;justify-content:space-between;}
+  .card-front.tier-commune{background:linear-gradient(160deg,var(--commune-2),var(--commune-1));color:var(--commune-text);}
+  .card-front.tier-rare{background:linear-gradient(160deg,var(--rare-2),var(--rare-1));color:var(--rare-text);}
+  .card-front.tier-legendaire{background:linear-gradient(160deg,var(--legend-2),var(--legend-1));color:var(--legend-text);position:relative;}
+  .card-front.tier-legendaire::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,0.55) 50%,transparent 60%);background-size:220% 100%;background-position:120% 0;animation:sheen 3.6s ease-in-out infinite;}
+  @keyframes sheen{0%,60%{background-position:120% 0;}100%{background-position:-40% 0;}}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;font-family:var(--font-head);gap:4px;}
+  .card-tier-label{font-size:11px;font-weight:600;opacity:.75;}
+  .card-poste{font-size:11.5px;font-weight:700;background:rgba(0,0,0,0.12);padding:2px 6px;border-radius:6px;white-space:nowrap;}
+  .card-mid{flex:1;display:flex;align-items:center;justify-content:center;font-size:40px;}
+  .card-name{font-family:var(--font-head);font-size:19px;font-weight:600;line-height:1.05;}
+  .card-stats{display:flex;gap:9px;font-size:10.5px;font-weight:700;opacity:.85;margin-top:3px;}
+  .card-count{position:absolute;top:6px;right:6px;background:var(--accent);color:var(--accent-text);font-size:11px;font-weight:800;border-radius:20px;padding:1px 7px;}
+  .card{width:122px;aspect-ratio:2/3;border-radius:13px;padding:8px;display:flex;flex-direction:column;justify-content:space-between;position:relative;box-shadow:var(--shadow);}
+  .card.locked{background:var(--bg-sunk);color:var(--text-muted);border:1px dashed var(--border);opacity:.7;}
+  .card.locked .card-mid{filter:grayscale(1);opacity:.6;}
+  .card-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
+
+  .collection-intro{color:var(--text-muted);font-size:14px;margin-bottom:18px;}
+  .tier-group{margin-bottom:26px;}
+  .tier-group h3{font-family:var(--font-head);font-weight:600;font-size:20px;margin:0 0 12px;letter-spacing:.3px;}
+  .collection-grid{display:flex;flex-wrap:wrap;gap:12px;}
+
+  .panel-box{background:var(--bg-elevated);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:22px;}
+  .panel-box h2{font-family:var(--font-head);font-size:21px;font-weight:600;margin:0 0 14px;}
+  .form-row{margin-bottom:12px;}
+  .form-row label{display:block;font-size:12.5px;color:var(--text-muted);margin-bottom:5px;font-weight:600;}
+  select,input[type=number],input[type=text],input[type=password]{
+    width:100%;padding:10px;border-radius:9px;border:1px solid var(--border);
+    background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;
+  }
+  .listings{display:flex;flex-direction:column;gap:10px;}
+  .listing{background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .mini-badge{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-size:14px;flex:0 0 auto;}
+  .mini-badge.tier-commune{background:linear-gradient(160deg,var(--commune-2),var(--commune-1));color:var(--commune-text);}
+  .mini-badge.tier-rare{background:linear-gradient(160deg,var(--rare-2),var(--rare-1));color:var(--rare-text);}
+  .mini-badge.tier-legendaire{background:linear-gradient(160deg,var(--legend-2),var(--legend-1));color:var(--legend-text);}
+  .listing-text{font-size:13px;flex:1;min-width:170px;}
+  .listing-text b{font-weight:700;}
+  .listing-meta{font-size:11px;color:var(--text-muted);}
+  .empty-state{text-align:center;color:var(--text-muted);font-size:14px;padding:36px 20px;border:1px dashed var(--border);border-radius:14px;}
+
+  .shop-item{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;}
+  .shop-item-name{font-weight:700;font-size:14px;}
+  .shop-item-price{font-size:12.5px;color:var(--text-muted);}
+
+  table.leaderboard{width:100%;border-collapse:collapse;}
+  table.leaderboard th{text-align:left;font-size:11.5px;color:var(--text-muted);font-weight:700;padding:6px 10px;border-bottom:1px solid var(--border);}
+  table.leaderboard td{padding:10px;border-bottom:1px solid var(--border);font-size:14px;}
+  table.leaderboard tr.me{background:var(--bg-sunk);}
+  .rank-num{font-family:var(--font-head);font-size:18px;color:var(--text-muted);width:30px;display:inline-block;}
+
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:10px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .25s ease, transform .25s ease;z-index:50;max-width:90vw;text-align:center;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+
+  .gate{position:fixed;inset:0;background:rgba(10,20,14,0.6);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;}
+  .gate-card{background:var(--bg-elevated);border-radius:16px;padding:26px;max-width:340px;width:100%;box-shadow:var(--shadow);}
+  .gate-card h2{font-family:var(--font-head);font-size:26px;margin:0 0 4px;text-align:center;}
+  .gate-card p{color:var(--text-muted);font-size:13px;margin:0 0 16px;text-align:center;}
+  .gate-card .error{color:#C0392B;font-size:12.5px;margin:-6px 0 10px;min-height:16px;}
+  .gate-toggle{display:flex;justify-content:center;gap:6px;margin-top:14px;font-size:12.5px;color:var(--text-muted);}
+  .gate-toggle button{background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;font-size:12.5px;}
+
+  @media (max-width:480px){.titles h1{font-size:24px;} .card,.card-slot{width:108px;}}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <h2>FC Format A5</h2>
+    <p id="gateSubtitle">Crée ton compte pour commencer ta collection.</p>
+    <div class="form-row">
+      <label>Pseudo</label>
+      <input id="pseudoInput" type="text" maxlength="24" placeholder="Ton pseudo">
+    </div>
+    <div class="form-row">
+      <label>Mot de passe</label>
+      <input id="passwordInput" type="password" maxlength="72" placeholder="4 caractères minimum">
+    </div>
+    <div class="error" id="gateError"></div>
+    <button class="btn-primary" id="gateSubmit" style="width:100%;">Créer mon compte</button>
+    <div class="gate-toggle">
+      <span id="gateToggleText">Déjà un compte ?</span>
+      <button id="gateToggleBtn">Se connecter</button>
+    </div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <header class="topbar">
+    <div class="crest">A5</div>
+    <div class="titles">
+      <h1>FC Format A5</h1>
+      <p>Cartes officielles du club</p>
+    </div>
+    <div class="stats-chip">
+      <span class="stat-pill">💰 <span id="chipCredits">0</span></span>
+      <span class="stat-pill"><span class="lab">Packs</span> <span id="chipPacks">0/3</span></span>
+      <span class="stat-pill" id="chipPseudo">…</span>
+      <button class="logout-btn" id="logoutBtn">déconnexion</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="pack">Packs</button>
+    <button class="tab" data-tab="collection">Collection</button>
+    <button class="tab" data-tab="marche">Marché</button>
+    <button class="tab" data-tab="shop">Shop</button>
+    <button class="tab" data-tab="classement">Classement</button>
+  </nav>
+
+  <main>
+    <section id="tab-pack" class="tab-panel active">
+      <div class="pitch-hero">
+        <div class="pack" id="packEl">
+          <div class="pack-crest">A5</div>
+          <div class="pack-label">Pack officiel</div>
+        </div>
+      </div>
+      <p class="pack-status" id="packStatus">Chargement…</p>
+      <div class="pack-actions">
+        <button id="openFreePackBtn" class="btn-primary">Ouvrir un pack gratuit</button>
+        <button id="openShopPackBtn" class="btn-secondary">Ouvrir avec un jeton shop</button>
+      </div>
+      <div class="reveal-area" id="revealArea"></div>
+      <div class="reveal-summary" id="revealSummary"></div>
+    </section>
+
+    <section id="tab-collection" class="tab-panel">
+      <p class="collection-intro">Chaque pack ouvert ajoute des cartes ici. Un doublon peut être revendu contre des crédits.</p>
+      <div id="collectionByTier"></div>
+    </section>
+
+    <section id="tab-marche" class="tab-panel">
+      <div class="panel-box">
+        <h2>Proposer un échange</h2>
+        <div class="form-row"><label>Ta carte à vendre</label><select id="offerSelect"></select></div>
+        <div class="form-row"><label>Prix (en crédits)</label><input id="priceInput" type="number" min="1" value="10"></div>
+        <button id="createListingBtn" class="btn-secondary">Mettre en vente</button>
+      </div>
+      <div id="listingsEl"></div>
+    </section>
+
+    <section id="tab-shop" class="tab-panel">
+      <div id="shopItemsEl"></div>
+    </section>
+
+    <section id="tab-classement" class="tab-panel">
+      <div id="leaderboardEl"></div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  const API_BASE = "https://fc-ipsa-v-production.up.railway.app";
+
+  // ---------- Auth state ----------
+  let token = localStorage.getItem("fca5_token") || null;
+  let myPseudo = localStorage.getItem("fca5_pseudo") || null;
+  let gateMode = "register"; // or "login"
+
+  let myCollection = []; // raw array from /collection
+  let meInfo = null;
+
+  function toast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast._h);
+    toast._h = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  async function api(path, options = {}) {
+    const headers = Object.assign({ "Content-Type": "application/json" }, options.headers || {});
+    if (token) headers["Authorization"] = "Bearer " + token;
+    const res = await fetch(API_BASE + path, Object.assign({}, options, { headers }));
+    let data = null;
+    try { data = await res.json(); } catch(e) { /* no body */ }
+    if (res.status === 401) {
+      localStorage.removeItem("fca5_token");
+      localStorage.removeItem("fca5_pseudo");
+      token = null;
+      showGate("login", "Session expirée, reconnecte-toi.");
+      throw new Error("unauthorized");
+    }
+    if (!res.ok) {
+      const msg = (data && data.detail) ? data.detail : ("Erreur " + res.status);
+      throw new Error(msg);
+    }
+    return data;
+  }
+
+  // ---------- Gate (register/login) ----------
+  function showGate(mode, message){
+    gateMode = mode;
+    document.getElementById('gate').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('gateSubtitle').textContent = mode === 'register'
+      ? "Crée ton compte pour commencer ta collection."
+      : "Reconnecte-toi pour retrouver ta collection.";
+    document.getElementById('gateSubmit').textContent = mode === 'register' ? "Créer mon compte" : "Se connecter";
+    document.getElementById('gateToggleText').textContent = mode === 'register' ? "Déjà un compte ?" : "Pas encore de compte ?";
+    document.getElementById('gateToggleBtn').textContent = mode === 'register' ? "Se connecter" : "Créer un compte";
+    document.getElementById('gateError').textContent = message || "";
+  }
+
+  document.getElementById('gateToggleBtn').addEventListener('click', () => {
+    showGate(gateMode === 'register' ? 'login' : 'register');
+  });
+
+  document.getElementById('gateSubmit').addEventListener('click', async () => {
+    const pseudo = document.getElementById('pseudoInput').value.trim();
+    const password = document.getElementById('passwordInput').value;
+    const errEl = document.getElementById('gateError');
+    errEl.textContent = "";
+    if (!pseudo || !password) { errEl.textContent = "Remplis les deux champs."; return; }
+    try {
+      const path = gateMode === 'register' ? '/auth/register' : '/auth/login';
+      const data = await api(path, { method: 'POST', body: JSON.stringify({ pseudo, password }) });
+      token = data.token; myPseudo = data.pseudo;
+      localStorage.setItem("fca5_token", token);
+      localStorage.setItem("fca5_pseudo", myPseudo);
+      startApp();
+    } catch (e) {
+      errEl.textContent = e.message;
+    }
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.removeItem("fca5_token");
+    localStorage.removeItem("fca5_pseudo");
+    token = null;
+    showGate('login');
+  });
+
+  // ---------- Tabs ----------
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      if (btn.dataset.tab === 'collection') loadCollection();
+      if (btn.dataset.tab === 'marche') { loadCollection().then(renderMarketForm); loadListings(); }
+      if (btn.dataset.tab === 'shop') loadShop();
+      if (btn.dataset.tab === 'classement') loadLeaderboard();
+    });
+  });
+
+  // ---------- Card rendering ----------
+  function cardFrontHTML(card){
+    return '<div class="card-top"><span class="card-tier-label">'+tierLabel(card.tier)+'</span><span class="card-poste">'+escapeHtml(card.poste)+'</span></div>'+
+      '<div class="card-mid">⚽</div>'+
+      '<div><div class="card-name"></div><div class="card-stats"><span>VIT '+card.vitesse+'</span><span>TIR '+card.tir+'</span></div></div>';
+  }
+  function tierLabel(t){ return t === 'legendaire' ? 'Légendaire' : (t === 'rare' ? 'Rare' : 'Commune'); }
+  function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  function makeMiniCard(card){
+    const locked = !card.quantity;
+    const el = document.createElement('div');
+    el.className = 'card tier-' + card.tier + (locked ? ' locked' : '');
+    el.style.background = locked ? '' : 'linear-gradient(160deg, var(--' + (card.tier === 'legendaire' ? 'legend-2' : card.tier + '-2') + '), var(--' + (card.tier === 'legendaire' ? 'legend-1' : card.tier + '-1') + '))';
+    el.innerHTML = cardFrontHTML(card);
+    el.querySelector('.card-name').textContent = card.player_name;
+    if (!locked) {
+      const badge = document.createElement('div');
+      badge.className = 'card-count';
+      badge.textContent = '×' + card.quantity;
+      el.appendChild(badge);
+    } else {
+      el.querySelector('.card-mid').textContent = '?';
+    }
+    return el;
+  }
+
+  // ---------- /me ----------
+  async function refreshMe(){
+    try {
+      meInfo = await api('/me');
+      document.getElementById('chipCredits').textContent = meInfo.credits;
+      document.getElementById('chipPacks').textContent = meInfo.stored_packs + '/3' + (meInfo.shop_pack_tokens ? (' +' + meInfo.shop_pack_tokens + ' jeton') : '');
+      document.getElementById('chipPseudo').textContent = meInfo.pseudo;
+      const openFreeBtn = document.getElementById('openFreePackBtn');
+      const openShopBtn = document.getElementById('openShopPackBtn');
+      openFreeBtn.disabled = meInfo.stored_packs <= 0;
+      openShopBtn.disabled = meInfo.shop_pack_tokens <= 0;
+      let statusMsg = meInfo.stored_packs + ' pack(s) gratuit(s) disponible(s) sur 3.';
+      if (meInfo.seconds_until_next_pack !== null && meInfo.seconds_until_next_pack !== undefined) {
+        statusMsg += ' Prochain dans ' + formatDuration(meInfo.seconds_until_next_pack) + '.';
+      }
+      if (meInfo.shop_pack_tokens > 0) statusMsg += ' (' + meInfo.shop_pack_tokens + ' jeton(s) shop en stock)';
+      document.getElementById('packStatus').textContent = statusMsg;
+    } catch(e) { /* handled by api() for 401 */ }
+  }
+  function formatDuration(seconds){
+    const h = Math.floor(seconds/3600), m = Math.floor((seconds%3600)/60);
+    return h > 0 ? (h + 'h' + String(m).padStart(2,'0')) : (m + ' min');
+  }
+
+  // ---------- Collection ----------
+  async function loadCollection(){
+    try {
+      myCollection = await api('/collection');
+      renderCollection();
+      return myCollection;
+    } catch(e) { toast(e.message); return []; }
+  }
+
+  function renderCollection(){
+    const root = document.getElementById('collectionByTier');
+    root.innerHTML = '';
+    ['legendaire','rare','commune'].forEach(tier => {
+      const cardsOfTier = myCollection.filter(c => c.tier === tier);
+      if (!cardsOfTier.length) return;
+      const owned = cardsOfTier.filter(c => c.quantity > 0).length;
+      const group = document.createElement('div'); group.className = 'tier-group';
+      group.innerHTML = '<h3>' + tierLabel(tier) + ' <span style="color:var(--text-muted);font-size:14px;font-family:var(--font-body);">' + owned + '/' + cardsOfTier.length + '</span></h3>';
+      const grid = document.createElement('div'); grid.className = 'collection-grid';
+      cardsOfTier.forEach(card => {
+        const wrap = document.createElement('div'); wrap.className = 'card-wrap';
+        wrap.appendChild(makeMiniCard(card));
+        if (card.quantity > 1) {
+          const sellBtn = document.createElement('button');
+          sellBtn.className = 'btn-small ghost';
+          sellBtn.textContent = 'Vendre doublon';
+          sellBtn.addEventListener('click', () => sellDuplicate(card.id));
+          wrap.appendChild(sellBtn);
+        }
+        grid.appendChild(wrap);
+      });
+      group.appendChild(grid);
+      root.appendChild(group);
+    });
+  }
+
+  async function sellDuplicate(cardId){
+    try {
+      const res = await api('/collection/sell-duplicate', { method: 'POST', body: JSON.stringify({ card_id: cardId }) });
+      toast('+' + res.credits_gained + ' crédits');
+      await loadCollection();
+      await refreshMe();
+    } catch(e) { toast(e.message); }
+  }
+
+  // ---------- Packs ----------
+  document.getElementById('openFreePackBtn').addEventListener('click', () => openPack(false));
+  document.getElementById('openShopPackBtn').addEventListener('click', () => openPack(true));
+  document.getElementById('packEl').addEventListener('click', () => {
+    if (meInfo && meInfo.stored_packs > 0) openPack(false);
+  });
+
+  let opening = false;
+  async function openPack(useShopToken){
+    if (opening) return;
+    opening = true;
+    const packEl = document.getElementById('packEl');
+    packEl.classList.add('disabled');
+    document.getElementById('openFreePackBtn').disabled = true;
+    document.getElementById('openShopPackBtn').disabled = true;
+    document.getElementById('revealSummary').textContent = '';
+
+    try {
+      const result = await api('/pack/open', { method: 'POST', body: JSON.stringify({ use_shop_token: useShopToken }) });
+      const area = document.getElementById('revealArea');
+      area.innerHTML = '';
+      const slots = result.cards_won.map(card => {
+        const slot = document.createElement('div'); slot.className = 'card-slot';
+        const flip = document.createElement('div'); flip.className = 'card-flip';
+        const back = document.createElement('div'); back.className = 'card-face card-back'; back.innerHTML = '<span class="mark">A5</span>';
+        const front = document.createElement('div'); front.className = 'card-face card-front tier-' + card.tier; front.innerHTML = cardFrontHTML(card);
+        flip.appendChild(back); flip.appendChild(front); slot.appendChild(flip); area.appendChild(slot);
+        return { flip, front, card };
+      });
+      slots.forEach(s => { s.front.querySelector('.card-name').textContent = s.card.player_name; });
+      slots.forEach((s, i) => setTimeout(() => s.flip.classList.add('revealed'), 500 + i * 450));
+
+      setTimeout(() => {
+        document.getElementById('revealSummary').innerHTML = 'Tu as gagné <b>+' + result.credits_won + ' crédits</b>.';
+        if (result.crafted && result.crafted.length) {
+          const banner = document.createElement('div');
+          banner.className = 'craft-banner';
+          banner.textContent = result.crafted.map(c => (c.type === 'rare_debloquee' ? 'Carte rare débloquée : ' : 'Carte légendaire débloquée : ') + c.player).join(' · ');
+          document.getElementById('revealSummary').appendChild(banner);
+        }
+        refreshMe();
+        loadCollection();
+      }, 500 + slots.length * 450 + 400);
+    } catch(e) {
+      toast(e.message);
+    } finally {
+      setTimeout(() => {
+        packEl.classList.remove('disabled');
+        opening = false;
+        refreshMe();
+      }, 2200);
+    }
+  }
+
+  // ---------- Marché ----------
+  function renderMarketForm(){
+    const offerSel = document.getElementById('offerSelect');
+    const owned = myCollection.filter(c => c.quantity > 0);
+    if (!owned.length){
+      offerSel.innerHTML = '<option value="">Aucune carte disponible — ouvre un pack</option>';
+      offerSel.disabled = true;
+      document.getElementById('createListingBtn').disabled = true;
+    } else {
+      offerSel.disabled = false;
+      document.getElementById('createListingBtn').disabled = false;
+      offerSel.innerHTML = owned.map(c => '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' — ' + tierLabel(c.tier) + ' (×' + c.quantity + ')</option>').join('');
+    }
+  }
+
+  document.getElementById('createListingBtn').addEventListener('click', async () => {
+    const cardId = document.getElementById('offerSelect').value;
+    const price = parseInt(document.getElementById('priceInput').value, 10);
+    if (!cardId || !price || price <= 0) { toast('Choisis une carte et un prix valide'); return; }
+    try {
+      await api('/market/list', { method: 'POST', body: JSON.stringify({ card_id: cardId, price }) });
+      toast('Mise en vente publiée');
+      await loadCollection(); renderMarketForm();
+      loadListings();
+    } catch(e) { toast(e.message); }
+  });
+
+  async function loadListings(){
+    try {
+      const listings = await api('/market/listings');
+      renderListings(listings);
+    } catch(e) { toast(e.message); }
+  }
+
+  function renderListings(listings){
+    const root = document.getElementById('listingsEl');
+    if (!listings.length){
+      root.innerHTML = '<div class="empty-state">Aucune offre pour l\'instant. Sois le premier à proposer un échange.</div>';
+      return;
+    }
+    root.innerHTML = '';
+    const list = document.createElement('div'); list.className = 'listings';
+    listings.forEach(l => {
+      const mine = l.seller_pseudo === myPseudo;
+      const row = document.createElement('div'); row.className = 'listing';
+      row.innerHTML =
+        '<div class="mini-badge tier-' + l.card.tier + '">' + escapeHtml(l.card.player_name.slice(0,2)) + '</div>' +
+        '<div class="listing-text"><b>' + (mine ? 'Toi' : escapeHtml(l.seller_pseudo)) + '</b> vend <b>' + escapeHtml(l.card.player_name) + '</b> (' + tierLabel(l.card.tier) + ') pour <b>' + l.price + ' crédits</b>' +
+        '<div class="listing-meta">VIT ' + l.card.vitesse + ' · TIR ' + l.card.tir + '</div></div>';
+      const btn = document.createElement('button');
+      btn.className = 'btn-small' + (mine ? ' ghost' : '');
+      if (mine) {
+        btn.textContent = 'Annuler';
+        btn.addEventListener('click', () => cancelListing(l.id));
+      } else {
+        btn.textContent = 'Acheter';
+        btn.disabled = !meInfo || meInfo.credits < l.price;
+        btn.addEventListener('click', () => buyListing(l.id));
+      }
+      row.appendChild(btn);
+      list.appendChild(row);
+    });
+    root.appendChild(list);
+  }
+
+  async function cancelListing(id){
+    try {
+      await api('/market/listings/' + id, { method: 'DELETE' });
+      toast('Offre annulée');
+      await loadCollection(); renderMarketForm();
+      loadListings();
+    } catch(e) { toast(e.message); }
+  }
+
+  async function buyListing(id){
+    try {
+      await api('/market/buy/' + id, { method: 'POST' });
+      toast('Échange effectué !');
+      await refreshMe();
+      await loadCollection(); renderMarketForm();
+      loadListings();
+    } catch(e) { toast(e.message); }
+  }
+
+  // ---------- Shop ----------
+  async function loadShop(){
+    try {
+      const items = await api('/shop/items');
+      const root = document.getElementById('shopItemsEl');
+      root.innerHTML = '';
+      items.forEach(item => {
+        const row = document.createElement('div'); row.className = 'shop-item';
+        row.innerHTML = '<div><div class="shop-item-name">' + escapeHtml(item.label) + '</div><div class="shop-item-price">' + item.price + ' crédits</div></div>';
+        const btn = document.createElement('button'); btn.className = 'btn-small'; btn.textContent = 'Acheter';
+        btn.disabled = !meInfo || meInfo.credits < item.price;
+        btn.addEventListener('click', () => buyShopItem(item.item, btn));
+        row.appendChild(btn);
+        root.appendChild(row);
+      });
+    } catch(e) { toast(e.message); }
+  }
+
+  async function buyShopItem(itemKey, btn){
+    try {
+      btn.disabled = true;
+      const res = await api('/shop/buy', { method: 'POST', body: JSON.stringify({ item: itemKey }) });
+      toast('Achat effectué — ' + res.shop_pack_tokens + ' jeton(s) de pack en stock');
+      await refreshMe();
+      loadShop();
+    } catch(e) { toast(e.message); btn.disabled = false; }
+  }
+
+  // ---------- Classement ----------
+  async function loadLeaderboard(){
+    try {
+      const rows = await api('/leaderboard');
+      const root = document.getElementById('leaderboardEl');
+      if (!rows.length) { root.innerHTML = '<div class="empty-state">Personne n\'a encore de collection.</div>'; return; }
+      let html = '<table class="leaderboard"><thead><tr><th></th><th>Pseudo</th><th>Collection</th><th>Crédits</th></tr></thead><tbody>';
+      rows.forEach((r, i) => {
+        const mine = r.pseudo === myPseudo;
+        html += '<tr class="' + (mine ? 'me' : '') + '"><td><span class="rank-num">#' + (i+1) + '</span></td><td>' + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') + '</td><td>' + r.completion_pct + '%</td><td>' + r.credits + '</td></tr>';
+      });
+      html += '</tbody></table>';
+      root.innerHTML = html;
+    } catch(e) { toast(e.message); }
+  }
+
+  // ---------- Boot ----------
+  async function startApp(){
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    await refreshMe();
+    await loadCollection();
+    setInterval(refreshMe, 30000);
+  }
+
+  if (token) {
+    startApp().catch(() => showGate('login'));
+  } else {
+    showGate('register');
+  }
+})();
+</script>
+</body>
+</html>
