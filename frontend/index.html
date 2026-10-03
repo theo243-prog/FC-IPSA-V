@@ -272,6 +272,7 @@
     <button class="tab" data-tab="shop">Shop</button>
     <button class="tab" data-tab="classement">Classement</button>
     <button class="tab" data-tab="actualite">Actualité</button>
+    <button class="tab" data-tab="duels">Matchs 1v1</button>
   </nav>
 
   <main>
@@ -317,7 +318,43 @@
     <section id="tab-actualite" class="tab-panel">
       <div id="matchesEl"></div>
     </section>
+
+    <section id="tab-duels" class="tab-panel">
+      <div class="panel-box">
+        <h2>Mon équipe</h2>
+        <div class="form-row">
+          <label>Formation</label>
+          <select id="formationSelect">
+            <option value="4-4-2">4-4-2</option>
+            <option value="4-3-3">4-3-3</option>
+            <option value="3-4-3">3-4-3</option>
+            <option value="5-3-2">5-3-2</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Mise proposée aux autres (1 à 10 crédits)</label>
+          <input id="stakeInput" type="number" min="1" max="10" value="2">
+        </div>
+        <div id="teamSlotsEl"></div>
+        <button id="saveTeamBtn" class="btn-primary" style="margin-top:10px;">Enregistrer mon équipe</button>
+        <div id="teamStatusEl" style="margin-top:10px;font-size:13px;color:var(--text-muted);"></div>
+      </div>
+
+      <div class="panel-box">
+        <h2>Classement Elo</h2>
+        <div id="ladderEl"></div>
+      </div>
+    </section>
   </main>
+</div>
+<div class="modal-overlay" id="duelModal">
+  <div class="modal-box" style="text-align:center;">
+    <div id="duelVersus" style="font-family:var(--font-head);font-size:20px;margin-bottom:10px;"></div>
+    <div id="duelScoreboard" style="font-family:var(--font-head);font-size:52px;font-weight:600;margin:16px 0;">0 - 0</div>
+    <div id="duelResultText" style="font-size:16px;font-weight:700;margin-bottom:6px;"></div>
+    <div id="duelEloText" style="font-size:13px;color:var(--text-muted);margin-bottom:16px;"></div>
+    <button class="btn-primary" id="duelCloseBtn">Fermer</button>
+  </div>
 </div>
 <div class="modal-overlay" id="userCollectionModal">
   <div class="modal-box">
@@ -426,6 +463,7 @@
       if (btn.dataset.tab === 'shop') loadShop();
       if (btn.dataset.tab === 'classement') loadLeaderboard();
       if (btn.dataset.tab === 'actualite') loadMatches();
+      if (btn.dataset.tab === 'duels') loadDuelsTab();
     });
   });
 
@@ -876,6 +914,136 @@
         '</div>';
       }).join('');
     } catch(e) { toast(e.message); }
+  }
+
+  // ---------- Matchs 1v1 ----------
+  const FORMATIONS = {
+    "4-4-2": { GB: 1, DEF: 4, MC: 4, ATT: 2 },
+    "4-3-3": { GB: 1, DEF: 4, MC: 3, ATT: 3 },
+    "3-4-3": { GB: 1, DEF: 3, MC: 4, ATT: 3 },
+    "5-3-2": { GB: 1, DEF: 5, MC: 3, ATT: 2 },
+  };
+  const CATEGORY_FULL_LABEL = { GB: 'Gardien', DEF: 'Défenseur', MC: 'Milieu', ATT: 'Attaquant' };
+
+  async function loadDuelsTab(){
+    await loadCollection();
+    let existing = null;
+    try { existing = await api('/team/me'); } catch(e) { /* pas d'équipe encore */ }
+    const formation = existing ? existing.formation : document.getElementById('formationSelect').value;
+    document.getElementById('formationSelect').value = formation;
+    document.getElementById('stakeInput').value = existing ? existing.stake : 2;
+    renderTeamSlots(formation, existing ? existing.slots : null);
+    document.getElementById('teamStatusEl').textContent = existing ? 'Équipe actuellement enregistrée ci-dessus.' : 'Aucune équipe enregistrée pour l\'instant.';
+    loadLadder();
+  }
+
+  document.getElementById('formationSelect').addEventListener('change', () => {
+    renderTeamSlots(document.getElementById('formationSelect').value, null);
+  });
+
+  function renderTeamSlots(formation, existingSlots){
+    const required = FORMATIONS[formation];
+    const owned = myCollection.filter(c => c.quantity > 0 && c.display_note); // exclut FAN (pas de note) et non-possédées
+    const root = document.getElementById('teamSlotsEl');
+    root.innerHTML = '';
+    const selects = [];
+    ['GB', 'DEF', 'MC', 'ATT'].forEach(cat => {
+      for (let i = 0; i < required[cat]; i++){
+        const row = document.createElement('div'); row.className = 'form-row';
+        const label = document.createElement('label'); label.textContent = CATEGORY_FULL_LABEL[cat] + ' #' + (i + 1);
+        const select = document.createElement('select'); select.dataset.category = cat;
+        select.innerHTML = '<option value="">— choisir une carte —</option>' +
+          owned.map(c => '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + c.display_note.label + ' ' + c.display_note.value + ', ' + tierLabel(c.tier) + ')</option>').join('');
+        row.appendChild(label); row.appendChild(select);
+        root.appendChild(row);
+        selects.push(select);
+      }
+    });
+    if (existingSlots){
+      existingSlots.forEach(s => {
+        const target = selects.find(sel => sel.dataset.category === s.slot_category && !sel.value);
+        if (target) target.value = s.card_id;
+      });
+    }
+  }
+
+  document.getElementById('saveTeamBtn').addEventListener('click', async () => {
+    const formation = document.getElementById('formationSelect').value;
+    const stake = parseInt(document.getElementById('stakeInput').value, 10);
+    const selects = document.querySelectorAll('#teamSlotsEl select');
+    const slots = [];
+    for (const sel of selects){
+      if (!sel.value) { toast('Remplis tous les emplacements avant d\'enregistrer'); return; }
+      slots.push({ card_id: sel.value, slot_category: sel.dataset.category });
+    }
+    try {
+      await api('/team', { method: 'POST', body: JSON.stringify({ formation, stake, slots }) });
+      document.getElementById('teamStatusEl').textContent = 'Équipe enregistrée !';
+      toast('Équipe enregistrée');
+      loadLadder();
+    } catch(e) {
+      document.getElementById('teamStatusEl').textContent = e.message;
+      toast(e.message);
+    }
+  });
+
+  async function loadLadder(){
+    try {
+      const rows = await fetch(API_BASE + '/ladder').then(r => r.json());
+      const root = document.getElementById('ladderEl');
+      if (!rows.length){ root.innerHTML = '<div class="empty-state">Personne n\'a encore enregistré d\'équipe.</div>'; return; }
+      let html = '<table class="leaderboard"><thead><tr><th></th><th>Pseudo</th><th>Elo</th><th>Formation</th><th>Mise</th><th></th></tr></thead><tbody>';
+      rows.forEach((r, i) => {
+        const mine = r.pseudo === myPseudo;
+        html += '<tr class="' + (mine ? 'me' : '') + '"><td><span class="rank-num">#' + (i + 1) + '</span></td>' +
+          '<td>' + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') + '</td><td>' + r.elo + '</td><td>' + r.formation + '</td><td>' + r.stake + ' cr.</td>' +
+          '<td>' + (mine ? '' : '<button class="btn-small" data-pseudo="' + escapeHtml(r.pseudo) + '">Défier</button>') + '</td></tr>';
+      });
+      html += '</tbody></table>';
+      root.innerHTML = html;
+      root.querySelectorAll('button[data-pseudo]').forEach(btn => {
+        btn.addEventListener('click', () => challengePlayer(btn.dataset.pseudo, btn));
+      });
+    } catch(e) { toast(e.message); }
+  }
+
+  function animateScoreboard(scoreA, scoreB){
+    return new Promise(resolve => {
+      let a = 0, b = 0;
+      const interval = setInterval(() => {
+        if (a < scoreA) a++;
+        else if (b < scoreB) b++;
+        document.getElementById('duelScoreboard').textContent = a + ' - ' + b;
+        if (a >= scoreA && b >= scoreB) { clearInterval(interval); setTimeout(resolve, 400); }
+      }, 550);
+    });
+  }
+
+  document.getElementById('duelCloseBtn').addEventListener('click', () => {
+    document.getElementById('duelModal').style.display = 'none';
+  });
+
+  async function challengePlayer(pseudo, btn){
+    if (btn) btn.disabled = true;
+    try {
+      const result = await api('/duel/challenge', { method: 'POST', body: JSON.stringify({ defender_pseudo: pseudo }) });
+      document.getElementById('duelVersus').textContent = myPseudo + '  🆚  ' + pseudo;
+      document.getElementById('duelScoreboard').textContent = '0 - 0';
+      document.getElementById('duelResultText').textContent = '';
+      document.getElementById('duelEloText').textContent = '';
+      document.getElementById('duelModal').style.display = 'flex';
+      await animateScoreboard(result.score_challenger, result.score_defender);
+      const resultLabel = result.result === 'victoire' ? '🏆 Victoire ! +' + result.stake + ' crédits'
+        : (result.result === 'défaite' ? '😔 Défaite · -' + result.stake + ' crédits' : '🤝 Match nul');
+      document.getElementById('duelResultText').textContent = resultLabel;
+      document.getElementById('duelEloText').textContent = 'Elo : ' + result.elo_challenger_before + ' → ' + result.elo_challenger_after;
+      refreshMe();
+      loadLadder();
+    } catch(e) {
+      toast(e.message);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
   }
 
   // ---------- Boot ----------
