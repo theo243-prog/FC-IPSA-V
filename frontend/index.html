@@ -103,10 +103,18 @@
 
   .card-slot{width:140px;aspect-ratio:2/3;perspective:1000px;opacity:0;transform:translateY(16px) scale(.82);transition:opacity .35s ease, transform .45s cubic-bezier(.34,1.56,.64,1);}
   .card-slot.appear{opacity:1;transform:translateY(0) scale(1);}
-  .card-slot.glow-rare .card-flip{animation:glowRare 1.3s ease-in-out infinite;}
-  .card-slot.glow-legendaire .card-flip{animation:glowLegend 1.3s ease-in-out infinite;}
-  @keyframes glowRare{0%,100%{filter:drop-shadow(0 0 2px rgba(210,215,225,.35));}50%{filter:drop-shadow(0 0 16px rgba(225,230,240,.95));}}
-  @keyframes glowLegend{0%,100%{filter:drop-shadow(0 0 3px rgba(255,210,100,.4));}50%{filter:drop-shadow(0 0 20px rgba(255,210,100,1));}}
+  /* glow en box-shadow plutôt qu'en filter : un filter sur l'élément qui fait
+     la rotation 3D (card-flip) casse le rendu du flip dans plusieurs navigateurs */
+  .card-slot.glow-rare .card-front{animation:glowRareBox 1.3s ease-in-out infinite;}
+  .card-slot.glow-legendaire .card-front{animation:glowLegendBox 1.3s ease-in-out infinite;}
+  @keyframes glowRareBox{
+    0%,100%{box-shadow:var(--shadow), 0 0 3px rgba(210,215,225,.4);}
+    50%{box-shadow:var(--shadow), 0 0 24px 4px rgba(225,230,240,.95);}
+  }
+  @keyframes glowLegendBox{
+    0%,100%{box-shadow:var(--shadow), 0 0 4px rgba(255,210,100,.45);}
+    50%{box-shadow:var(--shadow), 0 0 28px 5px rgba(255,210,100,1);}
+  }
   .spark{position:absolute;left:50%;top:50%;font-size:13px;pointer-events:none;z-index:5;animation:sparkFly .9s ease-out forwards;}
   @keyframes sparkFly{to{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0;}}
   .card-flip{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,.2,.2,1);}
