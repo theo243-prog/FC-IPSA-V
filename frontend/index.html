@@ -225,6 +225,36 @@
   .note-box .num{font-family:var(--font-head);font-size:20px;font-weight:600;}
   .note-box .lab{font-size:10px;}
 
+  /* ---- Actualité ---- */
+  .news-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;margin-bottom:22px;}
+  .news-grid .panel-box{margin-bottom:0;}
+  @media (max-width:760px){.news-grid{grid-template-columns:1fr;}}
+  .news-subtitle{font-family:var(--font-head);font-size:22px;font-weight:600;margin:6px 0 12px;}
+  .upcoming-row{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+  .upcoming-row:last-child{border-bottom:none;}
+  .upcoming-date{min-width:52px;text-align:center;background:var(--bg-sunk);border-radius:10px;padding:6px 4px;line-height:1.1;}
+  .upcoming-date b{display:block;font-family:var(--font-head);font-size:24px;font-weight:600;}
+  .upcoming-date span{font-size:11px;color:var(--text-muted);text-transform:capitalize;}
+  .upcoming-main{flex:1;font-size:13.5px;}
+  .upcoming-meta{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+  .upcoming-badge{display:inline-block;background:var(--accent);color:var(--accent-text);border-radius:6px;font-size:10.5px;font-weight:800;padding:1px 6px;margin-left:6px;}
+  .stats-scroll{max-height:340px;overflow-y:auto;}
+  table.pstats{width:100%;border-collapse:collapse;font-size:13px;}
+  table.pstats th{position:sticky;top:0;background:var(--bg-elevated);text-align:left;font-size:11px;color:var(--text-muted);font-weight:700;padding:5px 6px;border-bottom:1px solid var(--border);}
+  table.pstats td{padding:7px 6px;border-bottom:1px solid var(--border);}
+  table.pstats .num{text-align:center;font-weight:700;}
+  table.pstats .zero{color:var(--text-muted);font-weight:400;opacity:.6;}
+  table.pstats .pname{cursor:pointer;}
+  table.pstats .pname:hover{color:var(--accent);}
+  table.pstats .poste{font-size:11px;color:var(--text-muted);}
+  /* ---- 1v1 : cartes stars ---- */
+  .duel-grid .duel-stars{grid-column:1 / -1;}
+  .stars-block{margin-bottom:16px;}
+  .stars-block:last-child{margin-bottom:0;}
+  .stars-block h3{font-family:var(--font-head);font-size:18px;font-weight:600;margin:0 0 8px;}
+  .stars-row{display:flex;gap:14px;flex-wrap:wrap;}
+  .star-item{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .star-caption{font-size:12px;font-weight:700;color:var(--text-muted);}
   /* ---- 1v1 ---- */
   .duel-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
   .duel-grid .panel-box{margin-bottom:0;}
@@ -380,6 +410,18 @@
     </section>
 
     <section id="tab-actualite" class="tab-panel">
+      <div class="news-grid">
+        <div class="panel-box">
+          <h2>Prochains matchs</h2>
+          <div id="upcomingEl"></div>
+        </div>
+        <div class="panel-box">
+          <h2>Stats des joueurs</h2>
+          <p class="duel-hint" style="margin-bottom:8px;">Statistiques réelles de la saison. Clique sur un joueur pour voir sa fiche.</p>
+          <div class="stats-scroll" id="playerStatsEl"></div>
+        </div>
+      </div>
+      <h2 class="news-subtitle">Résultats</h2>
       <div id="matchesEl"></div>
     </section>
 
@@ -400,6 +442,10 @@
           </div>
           <p class="duel-hint">Un défi bloque ta mise le temps qu'il est ouvert. Le gagnant d'un match remporte les deux mises et un pack match aux chances boostées. Les tactiques restent secrètes jusqu'au coup d'envoi.</p>
           <div id="duelProposalsEl"></div>
+        </div>
+        <div class="panel-box duel-stars">
+          <h2>Cartes stars du 1v1</h2>
+          <div id="duelStarsEl"></div>
         </div>
       </div>
     </section>
@@ -541,7 +587,7 @@
       if (btn.dataset.tab === 'marche') { loadCollection().then(renderMarketForm); loadListings(); }
       if (btn.dataset.tab === 'shop') loadShop();
       if (btn.dataset.tab === 'classement') loadLeaderboard();
-      if (btn.dataset.tab === 'actualite') loadMatches();
+      if (btn.dataset.tab === 'actualite') loadNews();
       if (btn.dataset.tab === 'duels') loadDuelsTab();
     });
   });
@@ -577,8 +623,9 @@
   function tierLabel(t){ return ({legendaire:'Légendaire', epique:'Épique', rare:'Rare', commune:'Commune'})[t] || t; }
   function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-  function makeMiniCard(card){
-    const locked = !card.quantity;
+  function makeMiniCard(card, opts){
+    const hideCount = !!(opts && opts.hideCount);      // carte "de vitrine" : toujours dévoilée, sans compteur
+    const locked = hideCount ? false : !card.quantity;
     const el = document.createElement('div');
     el.className = 'card tier-' + card.tier + (locked ? ' locked' : '');
     el.style.background = locked ? '' : 'linear-gradient(160deg, var(--' + (card.tier === 'legendaire' ? 'legend-2' : card.tier + '-2') + '), var(--' + (card.tier === 'legendaire' ? 'legend-1' : card.tier + '-1') + '))';
@@ -586,10 +633,12 @@
     el.querySelector('.card-name').textContent = card.player_name;
     attachPhotoFallback(el);
     if (!locked) {
-      const badge = document.createElement('div');
-      badge.className = 'card-count';
-      badge.textContent = '×' + card.quantity;
-      el.appendChild(badge);
+      if (!hideCount) {
+        const badge = document.createElement('div');
+        badge.className = 'card-count';
+        badge.textContent = '×' + card.quantity;
+        el.appendChild(badge);
+      }
     } else {
       el.querySelector('.card-mid').textContent = '?';
     }
@@ -986,13 +1035,51 @@
   }
 
   // ---------- Actualité ----------
+  // une date AAAA-MM-JJ lue comme jour LOCAL (évite le décalage d'un jour selon le fuseau horaire)
+  function localDay(iso){ const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); }
+
+  async function loadNews(){
+    await Promise.all([loadUpcoming(), loadPlayerStats(), loadMatches()]);
+  }
+
+  async function loadUpcoming(){
+    try {
+      const rows = await fetch(API_BASE + '/matches/upcoming').then(r => r.json());
+      const root = byId('upcomingEl');
+      if (!rows.length){ root.innerHTML = '<div class="empty-state">Aucun match prévu pour l\'instant.</div>'; return; }
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      root.innerHTML = rows.map(u => {
+        const d = localDay(u.date);
+        const past = d < today, isToday = d.getTime() === today.getTime();
+        const meta = [d.toLocaleDateString('fr-FR', { weekday: 'long' }), u.time, u.location].filter(Boolean).map(escapeHtml).join(' · ');
+        const badge = isToday ? '<span class="upcoming-badge">Aujourd\'hui</span>' : (past ? '<span class="upcoming-badge" style="background:var(--bg-sunk);color:var(--text-muted);">Résultat à venir</span>' : '');
+        return '<div class="upcoming-row"><div class="upcoming-date"><b>' + d.getDate() + '</b><span>' + d.toLocaleDateString('fr-FR', { month: 'short' }) + '</span></div>' +
+          '<div class="upcoming-main"><b>FC IPSA V — ' + escapeHtml(u.opponent) + '</b>' + badge + '<div class="upcoming-meta">' + meta + '</div></div></div>';
+      }).join('');
+    } catch(e) { toast(e.message); }
+  }
+
+  async function loadPlayerStats(){
+    try {
+      const rows = await fetch(API_BASE + '/players/stats').then(r => r.json());
+      const root = byId('playerStatsEl');
+      if (!rows.length){ root.innerHTML = '<div class="empty-state">Aucun joueur.</div>'; return; }
+      const cell = n => '<td class="num' + (n ? '' : ' zero') + '">' + n + '</td>';
+      root.innerHTML = '<table class="pstats"><thead><tr><th>Joueur</th><th class="num" title="Matchs joués">M</th><th class="num" title="Buts">⚽</th>' +
+        '<th class="num" title="Passes décisives">PD</th><th class="num" title="Homme du match">🏅</th></tr></thead><tbody>' +
+        rows.map(r => '<tr><td><span class="pname" data-name="' + escapeHtml(r.name) + '">' + escapeHtml(r.name) + '</span> <span class="poste">' + escapeHtml(r.poste) + '</span></td>' +
+          cell(r.matches_joues) + cell(r.buts) + cell(r.passes_decisives) + cell(r.homme_du_match_count) + '</tr>').join('') + '</tbody></table>';
+      root.querySelectorAll('.pname').forEach(el => el.addEventListener('click', () => openPlayerDetail(el.dataset.name, 'commune')));
+    } catch(e) { toast(e.message); }
+  }
+
   async function loadMatches(){
     try {
       const matches = await fetch(API_BASE + '/matches').then(r => r.json());
       const root = document.getElementById('matchesEl');
       if (!matches.length){ root.innerHTML = '<div class="empty-state">Aucun match enregistré pour l\'instant.</div>'; return; }
       root.innerHTML = matches.map(m => {
-        const dateStr = new Date(m.date).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
+        const dateStr = localDay(m.date).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
         const scorersHTML = m.buteurs.length
           ? '<div class="match-row">⚽ <b>Buteurs :</b> ' + m.buteurs.map(b => escapeHtml(b.player_name) + (b.count > 1 ? ' (×' + b.count + ')' : '')).join(', ') + '</div>'
           : '';
@@ -1027,7 +1114,7 @@
 
   async function loadDuelsTab(){
     try { await loadDuelConfig(); } catch(e) { toast('Impossible de charger les règles du 1v1'); return; }
-    await Promise.all([loadDuelBoard(), loadDuelHistory(), loadDuelProposals()]);
+    await Promise.all([loadDuelBoard(), loadDuelHistory(), loadDuelProposals(), loadDuelStars()]);
   }
 
   // ---- cellule 1 : profils et classement Elo
@@ -1044,6 +1131,36 @@
           '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.played + '</td><td class="num">' + r.wins + '</td><td class="num">' + r.losses + '</td><td class="num">' + r.draws + '</td></tr>';
       });
       root.innerHTML = html + '</tbody></table>';
+    } catch(e) { toast(e.message); }
+  }
+
+  // ---- cellule : cartes stars (les plus utilisées, les plus décisives)
+  async function loadDuelStars(){
+    try {
+      const data = await fetch(API_BASE + '/duel/card-stats?limit=3').then(r => r.json());
+      const root = byId('duelStarsEl');
+      if (!data.most_used.length){ root.innerHTML = '<div class="empty-state">Pas encore de statistiques : jouez des matchs !</div>'; return; }
+      const medals = ['🥇', '🥈', '🥉'];
+      const plural = (n, one, many) => n + ' ' + (n > 1 ? many : one);
+      const blocks = [
+        ['Les plus utilisées', data.most_used, n => plural(n, 'match', 'matchs')],
+        ['Les plus décisives en buts', data.top_scorers, n => plural(n, 'but', 'buts')],
+        ['Les plus décisives en passes', data.top_assisters, n => plural(n, 'passe décisive', 'passes décisives')],
+      ];
+      root.innerHTML = '';
+      blocks.forEach(([title, list, caption]) => {
+        const block = document.createElement('div'); block.className = 'stars-block';
+        const h = document.createElement('h3'); h.textContent = title; block.appendChild(h);
+        const row = document.createElement('div'); row.className = 'stars-row';
+        if (!list.length) { row.innerHTML = '<span class="duel-hint" style="margin:0;">Aucune pour l\'instant.</span>'; }
+        list.forEach((entry, i) => {
+          const item = document.createElement('div'); item.className = 'star-item';
+          item.appendChild(makeMiniCard(entry.card, { hideCount: true }));
+          const cap = document.createElement('div'); cap.className = 'star-caption'; cap.textContent = medals[i] + ' ' + caption(entry.count);
+          item.appendChild(cap); row.appendChild(item);
+        });
+        block.appendChild(row); root.appendChild(block);
+      });
     } catch(e) { toast(e.message); }
   }
 
