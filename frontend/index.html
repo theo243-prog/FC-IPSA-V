@@ -225,6 +225,58 @@
   .note-box .num{font-family:var(--font-head);font-size:20px;font-weight:600;}
   .note-box .lab{font-size:10px;}
 
+  /* ---- 1v1 ---- */
+  .duel-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+  .duel-grid .panel-box{margin-bottom:0;}
+  .duel-grid .duel-proposals{grid-column:1 / -1;}
+  @media (max-width:760px){.duel-grid{grid-template-columns:1fr;}}
+  .duel-proposals-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
+  .duel-proposals-head h2{margin:0;}
+  .duel-hint{font-size:12.5px;color:var(--text-muted);margin:0 0 12px;}
+  table.duel-table{width:100%;border-collapse:collapse;font-size:13px;}
+  table.duel-table th{text-align:left;font-size:11px;color:var(--text-muted);font-weight:700;padding:5px 6px;border-bottom:1px solid var(--border);}
+  table.duel-table td{padding:8px 6px;border-bottom:1px solid var(--border);}
+  table.duel-table tr.me{background:var(--bg-sunk);}
+  table.duel-table .num{text-align:center;}
+  .history-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .history-row:last-child{border-bottom:none;}
+  .history-main{flex:1;min-width:150px;font-size:13px;}
+  .history-main b{font-weight:700;}
+  .history-score{font-family:var(--font-head);font-size:20px;font-weight:600;margin:0 6px;}
+  .history-meta{font-size:11px;color:var(--text-muted);}
+  .proposal-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .proposal-row:last-child{border-bottom:none;}
+  .proposal-main{flex:1;min-width:170px;font-size:13.5px;}
+  .proposal-meta{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+  .tm-intro{font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.45;}
+  .tm-hint{font-size:11.5px;color:var(--text-muted);margin-top:4px;}
+  .tm-section{font-family:var(--font-head);font-size:17px;margin:14px 0 6px;}
+  .tm-error{color:#C0392B;font-size:13px;margin:8px 0;min-height:18px;}
+  .match-scoreboard{display:flex;align-items:center;justify-content:center;gap:16px;font-family:var(--font-head);margin:6px 0 2px;flex-wrap:wrap;}
+  .match-scoreboard .ms-name{font-size:20px;max-width:34%;overflow-wrap:anywhere;text-align:center;}
+  .match-scoreboard .ms-score{font-size:46px;font-weight:600;min-width:110px;text-align:center;}
+  .match-scoreboard .ms-score.flash{animation:scoreflash .9s ease;}
+  @keyframes scoreflash{0%{transform:scale(1);}30%{transform:scale(1.35);color:var(--accent);}100%{transform:scale(1);}}
+  .match-clock{text-align:center;font-size:13px;color:var(--text-muted);margin-bottom:8px;font-weight:700;}
+  .match-timeline{max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:8px;background:var(--bg);}
+  .ev{display:flex;gap:8px;padding:6px 9px;border-radius:8px;font-size:13px;margin-bottom:4px;background:var(--bg-sunk);animation:evin .3s ease;}
+  .ev .min{font-family:var(--font-head);color:var(--text-muted);min-width:30px;font-size:15px;}
+  .ev.goal{font-weight:700;background:var(--bg-elevated);box-shadow:inset 0 0 0 1px var(--accent);}
+  .ev.side-challenger{border-left:3px solid var(--accent);}
+  .ev.side-defender{border-left:3px solid #6C7A89;}
+  .ev.sys{background:transparent;color:var(--text-muted);font-size:12.5px;}
+  @keyframes evin{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:none;}}
+  .match-result{margin-top:12px;padding:12px;border-radius:10px;background:var(--bg-sunk);text-align:center;font-size:14px;line-height:1.5;}
+  .match-result .big{font-family:var(--font-head);font-size:24px;}
+  .lineups{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
+  @media (max-width:560px){.lineups{grid-template-columns:1fr;}}
+  .lineup{border:1px solid var(--border);border-radius:10px;padding:9px 11px;font-size:12.5px;}
+  .lineup h4{margin:0 0 6px;font-family:var(--font-head);font-size:16px;font-weight:600;}
+  .lineup .lu-sub{font-size:11px;color:var(--text-muted);margin-bottom:6px;}
+  .lineup .lu-row{display:flex;justify-content:space-between;gap:6px;padding:2px 0;}
+  .lineup .lu-flag{color:var(--accent);font-weight:700;}
+  .match-actions{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+
   .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:10px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .25s ease, transform .25s ease;z-index:50;max-width:90vw;text-align:center;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
 
@@ -332,40 +384,55 @@
     </section>
 
     <section id="tab-duels" class="tab-panel">
-      <div class="panel-box">
-        <h2>Mon équipe</h2>
-        <div class="form-row">
-          <label>Formation</label>
-          <select id="formationSelect">
-            <option value="4-4-2">4-4-2</option>
-            <option value="4-3-3">4-3-3</option>
-            <option value="3-4-3">3-4-3</option>
-            <option value="5-3-2">5-3-2</option>
-          </select>
+      <div class="duel-grid">
+        <div class="panel-box">
+          <h2>Profils & classement Elo</h2>
+          <div id="duelBoardEl"></div>
         </div>
-        <div class="form-row">
-          <label>Mise proposée aux autres (1 à 10 crédits)</label>
-          <input id="stakeInput" type="number" min="1" max="10" value="2">
+        <div class="panel-box">
+          <h2>Derniers matchs</h2>
+          <div id="duelHistoryEl"></div>
         </div>
-        <div id="teamSlotsEl"></div>
-        <button id="saveTeamBtn" class="btn-primary" style="margin-top:10px;">Enregistrer mon équipe</button>
-        <div id="teamStatusEl" style="margin-top:10px;font-size:13px;color:var(--text-muted);"></div>
-      </div>
-
-      <div class="panel-box">
-        <h2>Classement Elo</h2>
-        <div id="ladderEl"></div>
+        <div class="panel-box duel-proposals">
+          <div class="duel-proposals-head">
+            <h2>Défis</h2>
+            <button class="btn-primary" id="proposeMatchBtn">Proposer un match</button>
+          </div>
+          <p class="duel-hint">Un défi bloque ta mise le temps qu'il est ouvert. Le gagnant d'un match remporte les deux mises et un pack match aux chances boostées. Les tactiques restent secrètes jusqu'au coup d'envoi.</p>
+          <div id="duelProposalsEl"></div>
+        </div>
       </div>
     </section>
   </main>
 </div>
-<div class="modal-overlay" id="duelModal">
-  <div class="modal-box" style="text-align:center;">
-    <div id="duelVersus" style="font-family:var(--font-head);font-size:20px;margin-bottom:10px;"></div>
-    <div id="duelScoreboard" style="font-family:var(--font-head);font-size:52px;font-weight:600;margin:16px 0;">0 - 0</div>
-    <div id="duelResultText" style="font-size:16px;font-weight:700;margin-bottom:6px;"></div>
-    <div id="duelEloText" style="font-size:13px;color:var(--text-muted);margin-bottom:16px;"></div>
-    <button class="btn-primary" id="duelCloseBtn">Fermer</button>
+<div class="modal-overlay" id="teamModal">
+  <div class="modal-box">
+    <div class="modal-header"><h2 id="tmTitle">Mon équipe</h2><button class="modal-close" id="tmClose">✕</button></div>
+    <div class="tm-intro" id="tmIntro"></div>
+    <div class="form-row"><label>Disposition</label><select id="tmFormation"></select></div>
+    <div class="form-row"><label>Tactique (secrète jusqu'au coup d'envoi)</label><select id="tmTactic"></select><div class="tm-hint" id="tmTacticHint"></div></div>
+    <div class="form-row" id="tmStakeRow"><label>Mise (1 à 10 crédits)</label><input id="tmStake" type="number" min="1" max="10" value="2"></div>
+    <div class="tm-section">Les 5 joueurs</div>
+    <div id="tmSlots"></div>
+    <div class="form-row"><label id="tmCaptainLabel">Capitaine</label><select id="tmCaptain"></select></div>
+    <div class="form-row"><label>Fan (optionnel, apporte un bonus à toute l'équipe)</label><select id="tmFan"></select></div>
+    <div class="tm-error" id="tmError"></div>
+    <button class="btn-primary" id="tmSubmit" style="width:100%;">Valider</button>
+  </div>
+</div>
+<div class="modal-overlay" id="matchModal">
+  <div class="modal-box" style="max-width:700px;">
+    <div class="modal-header"><h2 id="msTitle">Match</h2><button class="modal-close" id="msClose">✕</button></div>
+    <div class="match-scoreboard"><span class="ms-name" id="msNameA"></span><span class="ms-score" id="msScore">0 - 0</span><span class="ms-name" id="msNameB"></span></div>
+    <div class="match-clock" id="msClock">0'</div>
+    <div class="match-timeline" id="msTimeline"></div>
+    <div id="msResult"></div>
+    <div class="lineups" id="msLineups"></div>
+    <div class="match-actions">
+      <button class="btn-secondary" id="msSkip">Passer l'animation</button>
+      <button class="btn-secondary" id="msReplay" style="display:none;">Rejouer l'animation</button>
+      <button class="btn-primary" id="msDone">Fermer</button>
+    </div>
   </div>
 </div>
 <div class="modal-overlay" id="userCollectionModal">
@@ -580,8 +647,8 @@
       document.getElementById('packStatus').textContent = statusMsg;
     } catch(e) { /* handled by api() for 401 */ }
   }
-  const PACK_ORDER = ['classique', 'rare', 'epique', 'legendaire'];
-  const PACK_LABELS = { classique: 'pack classique', rare: 'pack rare', epique: 'pack épique', legendaire: 'pack légendaire' };
+  const PACK_ORDER = ['classique', 'rare', 'epique', 'legendaire', 'match'];
+  const PACK_LABELS = { classique: 'pack classique', rare: 'pack rare', epique: 'pack épique', legendaire: 'pack légendaire', match: 'pack match' };
   // un bouton par type de pack bonus possédé (le compte test les a tous, sans limite)
   function renderBonusPacks(){
     const root = document.getElementById('bonusPacksEl');
@@ -941,156 +1008,332 @@
     } catch(e) { toast(e.message); }
   }
 
-  // ---------- Matchs 1v1 ----------
-  const FORMATIONS = {
-    "4-4-2": { GB: 1, DEF: 4, MC: 4, ATT: 2 },
-    "4-3-3": { GB: 1, DEF: 4, MC: 3, ATT: 3 },
-    "3-4-3": { GB: 1, DEF: 3, MC: 4, ATT: 3 },
-    "5-3-2": { GB: 1, DEF: 5, MC: 3, ATT: 2 },
-  };
-  const CATEGORY_FULL_LABEL = { GB: 'Gardien', DEF: 'Défenseur', MC: 'Milieu', ATT: 'Attaquant' };
+  // ---------- Matchs 1v1 (5 contre 5) ----------
+  let duelConfig = null;
+  const SLOT_ORDER = ['GB', 'DEF', 'MC', 'ATT'];
+  const SLOT_ICON = { GB: '🧤', DEF: '🛡️', MC: '🎯', ATT: '⚽' };
+  const byId = id => document.getElementById(id);
+  const duelSleep = ms => new Promise(r => setTimeout(r, ms));
+
+  async function loadDuelConfig(){
+    if (!duelConfig) duelConfig = await fetch(API_BASE + '/duel/config').then(r => r.json());
+    return duelConfig;
+  }
+  function formatDuelDate(iso){
+    const d = new Date(/(Z|[+-]\d\d:?\d\d)$/.test(iso) ? iso : iso + 'Z');
+    return d.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+  function signed(n){ return (n > 0 ? '+' : '') + n; }
 
   async function loadDuelsTab(){
-    await loadCollection();
-    let existing = null;
-    try { existing = await api('/team/me'); } catch(e) { /* pas d'équipe encore */ }
-    const formation = existing ? existing.formation : document.getElementById('formationSelect').value;
-    document.getElementById('formationSelect').value = formation;
-    document.getElementById('stakeInput').value = existing ? existing.stake : 2;
-    renderTeamSlots(formation, existing ? existing.slots : null);
-    if (existing && existing.fan_card_id) {
-      const fanSel = document.getElementById('fanSelect');
-      if (fanSel) fanSel.value = existing.fan_card_id;
-    }
-    document.getElementById('teamStatusEl').textContent = existing ? 'Équipe actuellement enregistrée ci-dessus.' : 'Aucune équipe enregistrée pour l\'instant.';
-    loadLadder();
+    try { await loadDuelConfig(); } catch(e) { toast('Impossible de charger les règles du 1v1'); return; }
+    await Promise.all([loadDuelBoard(), loadDuelHistory(), loadDuelProposals()]);
   }
 
-  document.getElementById('formationSelect').addEventListener('change', () => {
-    renderTeamSlots(document.getElementById('formationSelect').value, null);
-  });
-
-  function renderTeamSlots(formation, existingSlots){
-    const required = FORMATIONS[formation];
-    const owned = myCollection.filter(c => c.quantity > 0 && c.display_note); // exclut FAN (pas de note) et non-possédées
-    const root = document.getElementById('teamSlotsEl');
-    root.innerHTML = '';
-    const selects = [];
-    ['GB', 'DEF', 'MC', 'ATT'].forEach(cat => {
-      for (let i = 0; i < required[cat]; i++){
-        const row = document.createElement('div'); row.className = 'form-row';
-        const label = document.createElement('label'); label.textContent = CATEGORY_FULL_LABEL[cat] + ' #' + (i + 1);
-        const select = document.createElement('select'); select.dataset.category = cat;
-        select.innerHTML = '<option value="">— choisir une carte —</option>' +
-          owned.map(c => '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (⭐ ' + c.display_note.value + ', ' + tierLabel(c.tier) + ')</option>').join('');
-        row.appendChild(label); row.appendChild(select);
-        root.appendChild(row);
-        selects.push(select);
-      }
-    });
-    if (existingSlots){
-      existingSlots.forEach(s => {
-        const target = selects.find(sel => sel.dataset.category === s.slot_category && !sel.value);
-        if (target) target.value = s.card_id;
-      });
-    }
-
-    // Emplacement Fan optionnel (hors des 11), apporte un bonus % selon sa rareté
-    const fanOwned = myCollection.filter(c => c.quantity > 0 && isFan(c));
-    const fanRow = document.createElement('div'); fanRow.className = 'form-row';
-    fanRow.innerHTML = '<label>Fan (optionnel — apporte un bonus d\'équipe)</label>';
-    const fanSelect = document.createElement('select'); fanSelect.id = 'fanSelect';
-    fanSelect.innerHTML = '<option value="">— aucun —</option>' +
-      fanOwned.map(c => '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', +' + ({commune:5,rare:10,epique:12,legendaire:15}[c.tier]) + '%)</option>').join('');
-    fanRow.appendChild(fanSelect);
-    root.appendChild(fanRow);
-  }
-
-  document.getElementById('saveTeamBtn').addEventListener('click', async () => {
-    const formation = document.getElementById('formationSelect').value;
-    const stake = parseInt(document.getElementById('stakeInput').value, 10);
-    const selects = document.querySelectorAll('#teamSlotsEl select');
-    const slots = [];
-    for (const sel of selects){
-      if (!sel.value) { toast('Remplis tous les emplacements avant d\'enregistrer'); return; }
-      slots.push({ card_id: sel.value, slot_category: sel.dataset.category });
-    }
-    const fanSel = document.getElementById('fanSelect');
-    const fan_card_id = (fanSel && fanSel.value) ? fanSel.value : null;
+  // ---- cellule 1 : profils et classement Elo
+  async function loadDuelBoard(){
     try {
-      await api('/team', { method: 'POST', body: JSON.stringify({ formation, stake, slots, fan_card_id }) });
-      document.getElementById('teamStatusEl').textContent = 'Équipe enregistrée !';
-      toast('Équipe enregistrée');
-      loadLadder();
-    } catch(e) {
-      document.getElementById('teamStatusEl').textContent = e.message;
-      toast(e.message);
-    }
-  });
-
-  async function loadLadder(){
-    try {
-      const rows = await fetch(API_BASE + '/ladder').then(r => r.json());
-      const root = document.getElementById('ladderEl');
-      if (!rows.length){ root.innerHTML = '<div class="empty-state">Personne n\'a encore enregistré d\'équipe.</div>'; return; }
-      let html = '<table class="leaderboard"><thead><tr><th></th><th>Pseudo</th><th>Elo</th><th>Formation</th><th>Mise</th><th></th></tr></thead><tbody>';
+      const rows = await fetch(API_BASE + '/duel/board').then(r => r.json());
+      const root = byId('duelBoardEl');
+      if (!rows.length){ root.innerHTML = '<div class="empty-state">Personne n\'a encore joué. Propose le premier match !</div>'; return; }
+      let html = '<table class="duel-table"><thead><tr><th></th><th>Joueur</th><th class="num">Elo</th>' +
+        '<th class="num" title="Matchs joués">M</th><th class="num" title="Victoires">V</th><th class="num" title="Défaites">D</th><th class="num" title="Nuls">N</th></tr></thead><tbody>';
       rows.forEach((r, i) => {
         const mine = r.pseudo === myPseudo;
-        html += '<tr class="' + (mine ? 'me' : '') + '"><td><span class="rank-num">#' + (i + 1) + '</span></td>' +
-          '<td>' + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') + '</td><td>' + r.elo + '</td><td>' + r.formation + '</td><td>' + r.stake + ' cr.</td>' +
-          '<td>' + (mine ? '' : '<button class="btn-small" data-pseudo="' + escapeHtml(r.pseudo) + '">Défier</button>') + '</td></tr>';
+        html += '<tr class="' + (mine ? 'me' : '') + '"><td><span class="rank-num">#' + (i + 1) + '</span></td><td>' + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') +
+          '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.played + '</td><td class="num">' + r.wins + '</td><td class="num">' + r.losses + '</td><td class="num">' + r.draws + '</td></tr>';
       });
-      html += '</tbody></table>';
-      root.innerHTML = html;
-      root.querySelectorAll('button[data-pseudo]').forEach(btn => {
-        btn.addEventListener('click', () => challengePlayer(btn.dataset.pseudo, btn));
-      });
+      root.innerHTML = html + '</tbody></table>';
     } catch(e) { toast(e.message); }
   }
 
-  function animateScoreboard(scoreA, scoreB){
-    return new Promise(resolve => {
-      let a = 0, b = 0;
-      const interval = setInterval(() => {
-        if (a < scoreA) a++;
-        else if (b < scoreB) b++;
-        document.getElementById('duelScoreboard').textContent = a + ' - ' + b;
-        if (a >= scoreA && b >= scoreB) { clearInterval(interval); setTimeout(resolve, 400); }
-      }, 550);
-    });
+  // ---- cellule 2 : derniers matchs
+  async function loadDuelHistory(){
+    try {
+      const rows = await fetch(API_BASE + '/duel/history?limit=15').then(r => r.json());
+      const root = byId('duelHistoryEl');
+      if (!rows.length){ root.innerHTML = '<div class="empty-state">Aucun match joué pour l\'instant.</div>'; return; }
+      root.innerHTML = '';
+      rows.forEach(h => {
+        const row = document.createElement('div'); row.className = 'history-row';
+        const outcome = h.winner ? '🏆 ' + escapeHtml(h.winner) : '🤝 match nul';
+        row.innerHTML = '<div class="history-main"><b>' + escapeHtml(h.challenger) + '</b><span class="history-score">' + h.score_challenger + ' – ' + h.score_defender +
+          '</span><b>' + escapeHtml(h.defender) + '</b><div class="history-meta">' + formatDuelDate(h.date) + ' · mise ' + h.stake + ' cr. · ' + outcome + '</div></div>';
+        const btn = document.createElement('button'); btn.className = 'btn-small ghost'; btn.textContent = 'Voir le match';
+        btn.addEventListener('click', () => openHistoryMatch(h.id));
+        row.appendChild(btn); root.appendChild(row);
+      });
+    } catch(e) { toast(e.message); }
+  }
+  async function openHistoryMatch(id){
+    try {
+      const res = await fetch(API_BASE + '/duel/history/' + encodeURIComponent(id));
+      if (!res.ok) throw new Error('Match introuvable');
+      showMatch(await res.json(), { isNew: false, animate: false });
+    } catch(e) { toast(e.message); }
   }
 
-  document.getElementById('duelCloseBtn').addEventListener('click', () => {
-    document.getElementById('duelModal').style.display = 'none';
+  // ---- cellule 3 : défis ouverts
+  async function loadDuelProposals(){
+    try {
+      const rows = await fetch(API_BASE + '/duel/proposals').then(r => r.json());
+      const root = byId('duelProposalsEl');
+      if (!rows.length){ root.innerHTML = '<div class="empty-state">Aucun défi ouvert. Propose le premier match !</div>'; return; }
+      root.innerHTML = '';
+      rows.forEach(pr => {
+        const mine = pr.creator === myPseudo;
+        const row = document.createElement('div'); row.className = 'proposal-row';
+        const label = duelConfig && duelConfig.formation_labels[pr.formation] ? ' (' + duelConfig.formation_labels[pr.formation] + ')' : '';
+        row.innerHTML = '<div class="proposal-main"><b>' + escapeHtml(pr.creator) + '</b>' + (mine ? ' (toi)' : '') + ' · Elo ' + pr.creator_elo +
+          '<div class="proposal-meta">Disposition ' + escapeHtml(pr.formation) + label + (pr.has_fan ? ' · avec un Fan' : '') + ' · mise <b>' + pr.stake + ' crédits</b> · tactique secrète</div></div>';
+        const btn = document.createElement('button'); btn.className = 'btn-small' + (mine ? ' ghost' : '');
+        if (mine) { btn.textContent = 'Annuler'; btn.addEventListener('click', () => cancelProposal(pr.id, btn)); }
+        else { btn.textContent = 'Jouer le match'; btn.addEventListener('click', () => openTeamModal('play', pr)); }
+        row.appendChild(btn); root.appendChild(row);
+      });
+    } catch(e) { toast(e.message); }
+  }
+  async function cancelProposal(id, btn){
+    try {
+      btn.disabled = true;
+      await api('/duel/proposals/' + id, { method: 'DELETE' });
+      toast('Défi annulé, ta mise t\'est rendue');
+      await refreshMe(); loadDuelProposals(); loadDuelBoard();
+    } catch(e) { toast(e.message); btn.disabled = false; }
+  }
+  byId('proposeMatchBtn').addEventListener('click', () => openTeamModal('propose', null));
+
+  // ---- constructeur d'équipe (pour proposer un défi OU jouer celui d'un autre)
+  const tm = { mode: null, proposal: null, owned: [], byId: {} };
+  const tmSelects = () => [...document.querySelectorAll('#tmSlots select')];
+
+  async function openTeamModal(mode, proposal){
+    try { await loadDuelConfig(); await loadCollection(); } catch(e) { toast('Chargement impossible, réessaie'); return; }
+    const cfg = duelConfig;
+    tm.mode = mode; tm.proposal = proposal;
+    tm.byId = Object.fromEntries(myCollection.map(c => [c.id, c]));
+    tm.owned = myCollection.filter(c => c.quantity > 0 && !isFan(c) && c.display_note)
+      .sort((a, b) => b.display_note.value - a.display_note.value || a.player_name.localeCompare(b.player_name, 'fr'));
+
+    const rules = 'Une carte hors de son vrai poste perd ' + Math.round(cfg.out_of_position_malus * 100) + ' %. Le capitaine gagne ' + Math.round(cfg.captain_bonus * 100) + ' %. Tu ne peux pas mettre deux fois la même carte.';
+    if (mode === 'propose') {
+      byId('tmTitle').textContent = 'Proposer un match';
+      byId('tmIntro').textContent = 'Compose ton équipe : ta mise est bloquée tant que le défi est ouvert, puis rendue si tu l\'annules. ' + rules;
+      byId('tmSubmit').textContent = 'Publier mon défi';
+    } else {
+      byId('tmTitle').textContent = 'Jouer contre ' + proposal.creator;
+      byId('tmIntro').textContent = proposal.creator + ' (Elo ' + proposal.creator_elo + ') joue en ' + proposal.formation + '. Mise : ' + proposal.stake + ' crédits, prélevée au coup d\'envoi. Sa tactique est secrète : à toi de la deviner ! ' + rules;
+      byId('tmSubmit').textContent = 'Lancer le match (' + proposal.stake + ' crédits)';
+    }
+    byId('tmStakeRow').style.display = mode === 'propose' ? '' : 'none';
+    byId('tmStake').min = cfg.stake_min; byId('tmStake').max = cfg.stake_max;
+
+    byId('tmFormation').innerHTML = Object.keys(cfg.formations).map(f => '<option value="' + f + '">' + f + ' · ' + cfg.formation_labels[f] + '</option>').join('');
+    byId('tmFormation').value = '1-2-1';
+    byId('tmTactic').innerHTML = Object.entries(cfg.tactics).map(([k, t]) => '<option value="' + k + '">' + escapeHtml(t.label) + '</option>').join('');
+    byId('tmTacticHint').textContent = Object.values(cfg.tactics).map(t => t.label + ' bat ' + cfg.tactics[t.beats].label.toLowerCase()).join(' · ') +
+      ' (+' + Math.round(cfg.tactic_bonus * 100) + ' % pour toute l\'équipe).';
+    byId('tmCaptainLabel').textContent = 'Capitaine (+' + Math.round(cfg.captain_bonus * 100) + ' % sur sa note)';
+    byId('tmCaptain').dataset.touched = '';
+
+    const fans = myCollection.filter(c => c.quantity > 0 && isFan(c));
+    byId('tmFan').innerHTML = '<option value="">— aucun —</option>' + fans.map(c =>
+      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', +' + Math.round((cfg.fan_bonus[c.tier] || 0) * 100) + ' %)</option>').join('');
+
+    renderTmSlots('1-2-1', null);
+    const err = byId('tmError');
+    err.textContent = tm.owned.length < cfg.team_size ? 'Il te faut au moins ' + cfg.team_size + ' cartes de joueurs (hors supporters) pour jouer : ouvre des packs !' : '';
+    byId('tmSubmit').disabled = tm.owned.length < cfg.team_size;
+    byId('teamModal').style.display = 'flex';
+  }
+  function closeTeamModal(){ byId('teamModal').style.display = 'none'; }
+  byId('tmClose').addEventListener('click', closeTeamModal);
+  byId('teamModal').addEventListener('click', e => { if (e.target.id === 'teamModal') closeTeamModal(); });
+
+  function slotOptionsHTML(cat){
+    const cfg = duelConfig;
+    return '<option value="">— choisir une carte —</option>' + tm.owned.map(c => {
+      const natural = cfg.poste_category[(c.poste || '').toUpperCase()] || null;
+      const off = natural && natural !== cat;
+      return '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' · ⭐' + c.display_note.value + ' · ' + escapeHtml(c.poste) + ' · ' + tierLabel(c.tier) +
+        (off ? ' · ⚠ −' + Math.round(cfg.out_of_position_malus * 100) + ' %' : '') + '</option>';
+    }).join('');
+  }
+  function renderTmSlots(formation, previous){
+    const cfg = duelConfig, req = cfg.formations[formation], root = byId('tmSlots');
+    root.innerHTML = '';
+    SLOT_ORDER.forEach(cat => {
+      for (let i = 0; i < req[cat]; i++) {
+        const row = document.createElement('div'); row.className = 'form-row';
+        const label = document.createElement('label'); label.textContent = SLOT_ICON[cat] + ' ' + cfg.slot_labels[cat] + (req[cat] > 1 ? ' ' + (i + 1) : '');
+        const sel = document.createElement('select'); sel.dataset.category = cat; sel.innerHTML = slotOptionsHTML(cat);
+        const wanted = previous && previous[cat] && previous[cat][i];
+        if (wanted && [...sel.options].some(o => o.value === wanted)) sel.value = wanted;
+        sel.addEventListener('change', onTmChange);
+        row.appendChild(label); row.appendChild(sel); root.appendChild(row);
+      }
+    });
+    onTmChange();
+  }
+  byId('tmFormation').addEventListener('change', () => {
+    const prev = {};
+    tmSelects().forEach(s => { if (s.value) (prev[s.dataset.category] = prev[s.dataset.category] || []).push(s.value); });
+    renderTmSlots(byId('tmFormation').value, prev);
+  });
+  function onTmChange(){
+    const sels = tmSelects();
+    const used = new Set(sels.map(s => s.value).filter(Boolean));
+    sels.forEach(sel => [...sel.options].forEach(o => { o.disabled = !!o.value && used.has(o.value) && o.value !== sel.value; }));
+    refreshCaptain(sels);
+  }
+  byId('tmCaptain').addEventListener('change', () => { byId('tmCaptain').dataset.touched = '1'; });
+  function refreshCaptain(sels){
+    const sel = byId('tmCaptain'), prev = sel.value;
+    const chosen = sels.filter(s => s.value).map(s => ({ id: s.value, cat: s.dataset.category, card: tm.byId[s.value] }));
+    sel.innerHTML = '<option value="">Pas de capitaine</option>' + chosen.map(c =>
+      '<option value="' + c.id + '">' + escapeHtml(c.card.player_name) + ' (' + duelConfig.slot_labels[c.cat].toLowerCase() + ')</option>').join('');
+    if (chosen.some(c => c.id === prev)) sel.value = prev;
+    else if (sel.dataset.touched === '1') sel.value = '';
+    else if (chosen.length) sel.value = chosen.slice().sort((a, b) => b.card.display_note.value - a.card.display_note.value)[0].id;
+  }
+
+  byId('tmSubmit').addEventListener('click', async () => {
+    const cfg = duelConfig, err = byId('tmError'), btn = byId('tmSubmit');
+    err.textContent = '';
+    const sels = tmSelects();
+    if (sels.some(s => !s.value)) { err.textContent = 'Choisis une carte pour chaque poste.'; return; }
+    const body = {
+      formation: byId('tmFormation').value, tactic: byId('tmTactic').value,
+      slots: sels.map(s => ({ card_id: s.value, slot_category: s.dataset.category })),
+      captain_card_id: byId('tmCaptain').value || null, fan_card_id: byId('tmFan').value || null,
+    };
+    btn.disabled = true;
+    try {
+      if (tm.mode === 'propose') {
+        const stake = parseInt(byId('tmStake').value, 10);
+        if (!(stake >= cfg.stake_min && stake <= cfg.stake_max)) { err.textContent = 'La mise doit être comprise entre ' + cfg.stake_min + ' et ' + cfg.stake_max + ' crédits.'; return; }
+        await api('/duel/proposals', { method: 'POST', body: JSON.stringify({ ...body, stake }) });
+        closeTeamModal();
+        toast('Défi publié : ta mise est bloquée jusqu\'à ce qu\'il soit joué');
+        await refreshMe(); loadDuelProposals(); loadDuelBoard();
+      } else {
+        const result = await api('/duel/proposals/' + tm.proposal.id + '/play', { method: 'POST', body: JSON.stringify(body) });
+        closeTeamModal();
+        await refreshMe();
+        showMatch(result, { isNew: true, animate: true });
+        loadDuelBoard(); loadDuelHistory(); loadDuelProposals();
+      }
+    } catch(e) {
+      if (e.message !== 'unauthorized') err.textContent = e.message;
+      if (tm.mode === 'play') loadDuelProposals();   // le défi a pu être annulé ou joué entre-temps
+    } finally { btn.disabled = tm.owned.length < cfg.team_size; }
   });
 
-  async function challengePlayer(pseudo, btn){
-    if (btn) btn.disabled = true;
-    try {
-      const result = await api('/duel/challenge', { method: 'POST', body: JSON.stringify({ defender_pseudo: pseudo }) });
-      document.getElementById('duelVersus').textContent = myPseudo + '  🆚  ' + pseudo;
-      document.getElementById('duelScoreboard').textContent = '0 - 0';
-      document.getElementById('duelResultText').textContent = '';
-      document.getElementById('duelEloText').textContent = '';
-      document.getElementById('duelModal').style.display = 'flex';
-      await animateScoreboard(result.score_challenger, result.score_defender);
-      const resultLabel = result.result === 'victoire' ? '🏆 Victoire ! +' + result.stake + ' crédits'
-        : (result.result === 'défaite' ? '😔 Défaite · -' + result.stake + ' crédits' : '🤝 Match nul');
-      document.getElementById('duelResultText').textContent = resultLabel;
-      let eloLine = 'Elo : ' + result.elo_challenger_before + ' → ' + result.elo_challenger_after;
-      const fanBits = [];
-      if (result.challenger_fan_bonus_pct) fanBits.push('Toi +' + result.challenger_fan_bonus_pct + '% (Fan)');
-      if (result.defender_fan_bonus_pct) fanBits.push(pseudo + ' +' + result.defender_fan_bonus_pct + '% (Fan)');
-      if (fanBits.length) eloLine += ' · ' + fanBits.join(', ');
-      document.getElementById('duelEloText').textContent = eloLine;
-      refreshMe();
-      loadLadder();
-    } catch(e) {
-      toast(e.message);
-    } finally {
-      if (btn) btn.disabled = false;
-    }
+  // ---- match raconté (animation minute par minute)
+  const matchState = { token: 0, recap: null, isNew: false };
+  function closeMatchModal(){ matchState.token++; byId('matchModal').style.display = 'none'; }
+  byId('msClose').addEventListener('click', closeMatchModal);
+  byId('msDone').addEventListener('click', closeMatchModal);
+  byId('matchModal').addEventListener('click', e => { if (e.target.id === 'matchModal') closeMatchModal(); });
+
+  function setMatchScore(a, b, flash){
+    const el = byId('msScore'); el.textContent = a + ' - ' + b;
+    if (flash) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
   }
+  function appendMatchEvent(ev){
+    const tl = byId('msTimeline');
+    const row = document.createElement('div');
+    const sys = ['kickoff', 'tactic', 'half', 'full'].includes(ev.kind);
+    row.className = 'ev' + (ev.kind === 'goal' ? ' goal' : '') + (ev.side ? ' side-' + ev.side : '') + (sys ? ' sys' : '');
+    const min = document.createElement('span'); min.className = 'min'; min.textContent = ev.minute + "'";
+    const text = document.createElement('span'); text.textContent = ev.text;
+    row.appendChild(min); row.appendChild(text); tl.appendChild(row);
+    tl.scrollTop = tl.scrollHeight;
+  }
+  const eventDelay = ev => ({ kickoff: 900, tactic: 2000, goal: 1800, chance: 1100, half: 1400, full: 300 })[ev.kind] || 1000;
+
+  function renderLineups(lineups){
+    const root = byId('msLineups'); root.innerHTML = '';
+    if (!lineups) return;
+    const cfg = duelConfig;
+    ['challenger', 'defender'].forEach(side => {
+      const t = lineups[side];
+      const players = t.players.slice().sort((a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot));
+      const tacticLabel = cfg && cfg.tactics[t.tactic] ? cfg.tactics[t.tactic].label : t.tactic;
+      const box = document.createElement('div'); box.className = 'lineup';
+      let html = '<h4>' + escapeHtml(t.pseudo) + '</h4><div class="lu-sub">' + escapeHtml(t.formation) + ' · ' + escapeHtml(tacticLabel || '') +
+        (t.fan ? ' · Fan ' + escapeHtml(t.fan.player) + ' (+' + t.fan.bonus_pct + ' %)' : '') + '</div>';
+      players.forEach(p => {
+        html += '<div class="lu-row"><span>' + SLOT_ICON[p.slot] + ' ' + escapeHtml(p.player) + (p.captain ? ' <span class="lu-flag" title="Capitaine">©</span>' : '') +
+          (p.out_of_position ? ' <span class="lu-flag" title="Hors de son poste">⚠</span>' : '') + '</span><span>' + Math.round(p.effective_note) + '</span></div>';
+      });
+      box.innerHTML = html; root.appendChild(box);
+    });
+  }
+  function renderMatchResult(recap, isNew){
+    const root = byId('msResult');
+    const sa = recap.score_challenger, sb = recap.score_defender;
+    let html;
+    if (isNew) {
+      const head = recap.result === 'victoire' ? '🏆 Victoire !' : (recap.result === 'défaite' ? '😔 Défaite' : '🤝 Match nul');
+      const money = recap.result === 'victoire' ? signed(recap.stake) + ' crédits' : (recap.result === 'défaite' ? signed(-recap.stake) + ' crédits' : 'mises rendues');
+      html = '<div class="big">' + head + '</div>' + escapeHtml(money) + ' · Elo ' + recap.elo_challenger_before + ' → ' + recap.elo_challenger_after +
+        ' (' + signed(recap.elo_challenger_after - recap.elo_challenger_before) + ')';
+      if (recap.pack_match_won) html += '<br>🎁 Tu gagnes un <b>pack match</b> (chances boostées) !<br><button class="btn-small" id="msGoPacks" style="margin-top:6px;">Aller l\'ouvrir</button>';
+      else if (recap.result === 'défaite') html += '<br>🎁 Le pack match revient à ' + escapeHtml(recap.defender) + '.';
+    } else {
+      const winner = sa > sb ? recap.challenger : (sb > sa ? recap.defender : null);
+      html = '<div class="big">' + (winner ? '🏆 ' + escapeHtml(winner) : '🤝 Match nul') + '</div>mise ' + recap.stake + ' crédits · Elo ' +
+        escapeHtml(recap.challenger) + ' ' + recap.elo_challenger_before + ' → ' + recap.elo_challenger_after + ' · ' +
+        escapeHtml(recap.defender) + ' ' + recap.elo_defender_before + ' → ' + recap.elo_defender_after;
+    }
+    root.innerHTML = '<div class="match-result">' + html + '</div>';
+    const go = byId('msGoPacks');
+    if (go) go.addEventListener('click', () => { closeMatchModal(); document.querySelector('.tab[data-tab="pack"]').click(); });
+  }
+  function finishMatch(){
+    byId('msSkip').style.display = 'none';
+    byId('msReplay').style.display = '';
+    renderMatchResult(matchState.recap, matchState.isNew);
+    renderLineups(matchState.recap.lineups);
+  }
+  function showMatchInstantly(){
+    const recap = matchState.recap;
+    byId('msTimeline').innerHTML = '';
+    recap.events.forEach(appendMatchEvent);
+    setMatchScore(recap.score_challenger, recap.score_defender, false);
+    byId('msClock').textContent = "40'";
+    finishMatch();
+  }
+  async function showMatch(recap, opts){
+    matchState.recap = recap; matchState.isNew = !!opts.isNew;
+    const token = ++matchState.token;
+    byId('msTitle').textContent = opts.isNew ? 'Match en direct' : 'Récap du match';
+    byId('msNameA').textContent = recap.challenger; byId('msNameB').textContent = recap.defender;
+    byId('msTimeline').innerHTML = ''; byId('msResult').innerHTML = ''; byId('msLineups').innerHTML = '';
+    setMatchScore(0, 0, false); byId('msClock').textContent = "0'";
+    byId('msReplay').style.display = 'none';
+    byId('msSkip').style.display = opts.animate ? '' : 'none';
+    byId('matchModal').style.display = 'flex';
+    if (!recap.events || !recap.events.length) {
+      byId('msTimeline').innerHTML = '<div class="ev sys">Ce match a été joué avec l\'ancien système : pas de récit disponible.</div>';
+      setMatchScore(recap.score_challenger, recap.score_defender, false);
+      byId('msSkip').style.display = 'none';
+      renderMatchResult(recap, false);
+      return;
+    }
+    if (!opts.animate) { showMatchInstantly(); return; }
+    for (const ev of recap.events) {
+      if (token !== matchState.token) return;           // fermé, passé ou relancé entre-temps
+      appendMatchEvent(ev);
+      byId('msClock').textContent = ev.minute + "'";
+      if (ev.kind === 'goal') setMatchScore(ev.score[0], ev.score[1], true);
+      await duelSleep(eventDelay(ev));
+    }
+    if (token === matchState.token) finishMatch();
+  }
+  byId('msSkip').addEventListener('click', () => { matchState.token++; showMatchInstantly(); });
+  byId('msReplay').addEventListener('click', () => showMatch(matchState.recap, { isNew: matchState.isNew, animate: true }));
 
   // ---------- Boot ----------
   async function startApp(){
