@@ -35,18 +35,19 @@ class BuyShopItemRequest(BaseModel):
 
 class TeamSlotEntry(BaseModel):
     card_id: str
-    slot_category: str  # GB / DEF / MIL / ATT
+    slot_category: str  # GB / DEF / MC / ATT
 
 
-class SaveTeamRequest(BaseModel):
-    formation: str  # "4-4-2" | "4-3-3" | "3-4-3" | "5-3-2"
-    stake: int = Field(ge=1, le=10)
-    slots: List[TeamSlotEntry]
+class TeamPayload(BaseModel):
+    formation: str                      # "2-1-1" | "1-2-1" | "1-1-2"
+    tactic: str                         # "pressing" | "possession" | "contre"
+    slots: List[TeamSlotEntry]          # 5 cartes, chacune avec son emplacement
+    captain_card_id: Optional[str] = None
     fan_card_id: Optional[str] = None
 
 
-class ChallengeRequest(BaseModel):
-    defender_pseudo: str
+class CreateProposalRequest(TeamPayload):
+    stake: int = Field(ge=1, le=10)
 
 
 # ----------------------------------------------------------- Admin -----
