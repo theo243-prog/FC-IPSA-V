@@ -161,6 +161,7 @@ class Team(Base):
     user_id = Column(String, ForeignKey("users.id"), primary_key=True)
     formation = Column(String, nullable=False)   # "4-4-2" / "4-3-3" / "3-4-3" / "5-3-2"
     stake = Column(Integer, nullable=False, default=2)  # mise proposée (1 à 10 crédits)
+    fan_card_id = Column(String, ForeignKey("cards.id"), nullable=True)  # carte Fan optionnelle (bonus %)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     slots = relationship("TeamSlot", cascade="all, delete-orphan")
