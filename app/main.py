@@ -5,6 +5,7 @@ Lancer en local :
     uvicorn app.main:app --reload
 Puis ouvrir http://127.0.0.1:8000/docs pour tester chaque route.
 """
+import json
 import os
 from datetime import datetime
 
@@ -16,7 +17,7 @@ from .database import Base, engine, get_db
 from . import game_logic, duel_engine, schemas
 from sqlalchemy import or_
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
-                     Team, TeamSlot, Duel, MatchProposal)
+                     Team, TeamSlot, Duel, MatchProposal, UpcomingMatch)
 from .security import hash_password, verify_password, generate_token, get_current_user
 
 # Clé secrète pour les routes /admin/*. À définir dans Railway (Variables -> ADMIN_KEY).
@@ -212,6 +213,27 @@ def list_matches(db: Session = Depends(get_db)):
     ]
 
 
+@app.get("/matches/upcoming")
+def list_upcoming_matches(db: Session = Depends(get_db)):
+    rows = db.query(UpcomingMatch).order_by(UpcomingMatch.date.asc()).all()
+    return [{
+        "id": u.id, "date": u.date.date().isoformat(),
+        "time": u.date.strftime("%H:%M") if (u.date.hour or u.date.minute) else None,
+        "opponent": u.opponent, "location": u.location,
+    } for u in rows]
+
+
+@app.get("/players/stats")
+def players_stats(db: Session = Depends(get_db)):
+    """Statistiques RÉELLES de saison des joueurs (hors supporters), classées par buts."""
+    players = [p for p in db.query(Player).all() if not (p.poste or "").upper().startswith("FAN")]
+    players.sort(key=lambda p: (-p.buts, -p.passes_decisives, -p.homme_du_match_count, -p.matches_joues, p.name))
+    return [{
+        "name": p.name, "poste": p.poste, "matches_joues": p.matches_joues, "buts": p.buts,
+        "passes_decisives": p.passes_decisives, "homme_du_match_count": p.homme_du_match_count,
+    } for p in players]
+
+
 @app.get("/users/{pseudo}/collection")
 def get_user_collection(pseudo: str, db: Session = Depends(get_db)):
     """Collection PUBLIQUE d'un autre joueur (lecture seule), pour le classement."""
@@ -315,6 +337,28 @@ def duel_history(limit: int = 15, db: Session = Depends(get_db)):
 @app.get("/duel/history/{duel_id}")
 def duel_recap(duel_id: str, db: Session = Depends(get_db)):
     return duel_call(duel_engine.duel_recap, db, duel_id)
+
+
+@app.get("/duel/card-stats")
+def duel_card_stats(limit: int = 3, db: Session = Depends(get_db)):
+    """Les cartes les plus utilisées / les plus décisives (buts, passes) dans les matchs 1v1."""
+    limit = max(1, min(limit, 10))
+    used, goals, assists = duel_engine.duel_card_stats(db)
+
+    def top(counter):
+        out = []
+        for (name, tier), n in sorted(counter.items(), key=lambda kv: (-kv[1], kv[0][0], kv[0][1])):
+            try:
+                card = db.query(Card).join(Player).filter(Player.name == name, Card.tier == Tier(tier)).first()
+            except ValueError:
+                card = None
+            if card:   # une carte supprimée depuis (ex. épique retirée) n'apparaît plus
+                out.append({"card": card_out(card), "count": n})
+            if len(out) >= limit:
+                break
+        return out
+
+    return {"most_used": top(used), "top_scorers": top(goals), "top_assisters": top(assists)}
 
 
 @app.get("/duel/proposals")
@@ -551,6 +595,9 @@ def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = D
     )
     db.add(match)
     db.flush()
+    match.lineup_json = json.dumps(payload.lineup, ensure_ascii=False)
+    match.yellow_json = json.dumps(payload.cartons_jaunes, ensure_ascii=False)
+    match.red_json = json.dumps(payload.cartons_rouges, ensure_ascii=False)
 
     for name in payload.lineup:
         find_player(name).matches_joues += 1
@@ -582,9 +629,127 @@ def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = D
     if motm_player:
         motm_player.homme_du_match_count += 1
 
+    match.epics_json = json.dumps(epics_created, ensure_ascii=False)
+
+    # ce match n'est plus "à venir" : on retire l'annonce correspondante (même jour, même adversaire)
+    removed_upcoming = 0
+    for upcoming in db.query(UpcomingMatch).all():
+        if upcoming.date.date() == match_date.date() and upcoming.opponent.strip().lower() == payload.opponent.strip().lower():
+            db.delete(upcoming)
+            removed_upcoming += 1
+
     db.commit()
     return {"status": "ok", "match_id": match.id, "epic_cards_created": epics_created,
-            "epic_notes": scorers_notes}  # note actuelle de la carte épique de chaque buteur
+            "epic_notes": scorers_notes,  # note actuelle de la carte épique de chaque buteur
+            "upcoming_removed": removed_upcoming}
+
+
+def _find_by_day_and_opponent(rows, date_str, opponent):
+    day = None
+    if date_str:
+        try:
+            day = datetime.fromisoformat(date_str).date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="date doit être au format AAAA-MM-JJ")
+    found = [r for r in rows
+             if (day is None or r.date.date() == day)
+             and (not opponent or r.opponent.strip().lower() == opponent.strip().lower())]
+    return found
+
+
+@app.post("/admin/delete-match", dependencies=[Depends(require_admin)])
+def admin_delete_match(payload: schemas.AdminDeleteMatchRequest, db: Session = Depends(get_db)):
+    """Annule un match réel enregistré : retire le match et remet les stats des joueurs comme avant
+    (buts, passes, homme du match, matchs joués, cartons). La carte épique d'un buteur de ce match
+    est supprimée si le joueur n'a plus aucun but."""
+    if payload.match_id:
+        match = db.get(Match, payload.match_id)
+        found = [match] if match else []
+    elif payload.date or payload.opponent:
+        found = _find_by_day_and_opponent(db.query(Match).all(), payload.date, payload.opponent)
+    else:
+        raise HTTPException(status_code=400, detail="Indique match_id, ou la date et l'adversaire")
+    if not found:
+        raise HTTPException(status_code=404, detail="Match introuvable")
+    if len(found) > 1:
+        raise HTTPException(status_code=400, detail="Plusieurs matchs correspondent : précise la date et l'adversaire, ou utilise match_id")
+    match = found[0]
+    label = match.opponent + " (" + match.date.date().isoformat() + ")"
+
+    reverted = {"buts": {}, "passes_decisives": {}, "matches_joues": [], "cartons_jaunes": [], "cartons_rouges": []}
+    for goal in match.goals:
+        goal.player.buts = max(0, goal.player.buts - goal.count)
+        reverted["buts"][goal.player.name] = goal.count
+    for assist in match.assists:
+        assist.player.passes_decisives = max(0, assist.player.passes_decisives - assist.count)
+        reverted["passes_decisives"][assist.player.name] = assist.count
+    if match.motm_player:
+        match.motm_player.homme_du_match_count = max(0, match.motm_player.homme_du_match_count - 1)
+        reverted["homme_du_match"] = match.motm_player.name
+
+    warnings = []
+    if match.lineup_json is None:
+        warnings.append("Ce match avait été enregistré avant la mise à jour : les « matchs joués » et les cartons "
+                        "n'ont pas pu être remis à zéro (buts, passes et homme du match l'ont été).")
+    else:
+        for field, attr, key in (("lineup_json", "matches_joues", "matches_joues"),
+                                 ("yellow_json", "cartons_jaunes", "cartons_jaunes"),
+                                 ("red_json", "cartons_rouges", "cartons_rouges")):
+            for name in json.loads(getattr(match, field) or "[]"):
+                player = db.query(Player).filter_by(name=name).first()
+                if player:
+                    setattr(player, attr, max(0, getattr(player, attr) - 1))
+                    reverted[key].append(name)
+
+    # Règle du jeu : seul un joueur qui a marqué cette saison possède une carte épique. Les buteurs de ce
+    # match qui retombent à zéro but perdent donc la leur (quel que soit le match qui l'avait créée).
+    candidates = [goal.player.name for goal in match.goals]
+    candidates += [n for n in json.loads(match.epics_json or "[]") if n not in candidates]
+    epic_deleted = []
+    for name in candidates:
+        player = db.query(Player).filter_by(name=name).first()
+        epic = db.query(Card).filter_by(player_id=player.id, tier=Tier.epique).first() if player else None
+        if epic and player.buts == 0:
+            purge_card_rows(db, [epic.id])
+            db.flush()
+            db.delete(epic)
+            epic_deleted.append(name)
+
+    db.delete(match)     # supprime aussi ses lignes de buteurs et de passeurs
+    db.commit()
+    return {"status": "ok", "deleted_match": label, "reverted": reverted,
+            "epic_cards_deleted": epic_deleted, "warnings": warnings}
+
+
+@app.post("/admin/add-upcoming-match", dependencies=[Depends(require_admin)])
+def admin_add_upcoming_match(payload: schemas.AdminAddUpcomingMatchRequest, db: Session = Depends(get_db)):
+    try:
+        date = datetime.fromisoformat(payload.date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="date doit être au format AAAA-MM-JJ (ou AAAA-MM-JJ HH:MM)")
+    upcoming = UpcomingMatch(date=date, opponent=payload.opponent, location=payload.location)
+    db.add(upcoming)
+    db.commit()
+    return {"status": "ok", "id": upcoming.id}
+
+
+@app.post("/admin/delete-upcoming-match", dependencies=[Depends(require_admin)])
+def admin_delete_upcoming_match(payload: schemas.AdminDeleteUpcomingMatchRequest, db: Session = Depends(get_db)):
+    if payload.upcoming_id:
+        row = db.get(UpcomingMatch, payload.upcoming_id)
+        found = [row] if row else []
+    elif payload.date or payload.opponent:
+        found = _find_by_day_and_opponent(db.query(UpcomingMatch).all(), payload.date, payload.opponent)
+    else:
+        raise HTTPException(status_code=400, detail="Indique upcoming_id, ou la date et l'adversaire")
+    if not found:
+        raise HTTPException(status_code=404, detail="Match à venir introuvable")
+    if len(found) > 1:
+        raise HTTPException(status_code=400, detail="Plusieurs matchs correspondent : précise la date et l'adversaire")
+    label = found[0].opponent + " (" + found[0].date.date().isoformat() + ")"
+    db.delete(found[0])
+    db.commit()
+    return {"status": "ok", "deleted": label}
 
 
 @app.post("/admin/set-test-account", dependencies=[Depends(require_admin)])
