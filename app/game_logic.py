@@ -6,6 +6,7 @@ import math
 import random
 from datetime import datetime, timedelta
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .models import User, Card, OwnedCard, Tier, Team, TeamSlot, Duel, Player
@@ -14,9 +15,31 @@ PACK_REGEN_SECONDS = 8 * 3600          # 8h pour régénérer un pack gratuit
 MAX_STORED_PACKS = 3                   # jamais plus de 3 packs gratuits en stock
 
 CREDIT_WEIGHTS = {1: 40, 2: 25, 3: 18, 4: 12, 5: 5}         # plus le nombre est grand, plus c'est rare
-TIER_WEIGHTS = {"commune": 80, "rare": 18, "legendaire": 2}  # probas par carte tirée dans un pack
+TIER_WEIGHTS = {"commune": 72, "rare": 20, "epique": 6, "legendaire": 2}  # probas par carte tirée dans un pack
+# (une rareté dont aucune carte n'existe encore est ignorée au tirage, les autres se rééquilibrent)
 
-DUPLICATE_SELL_VALUE = {"commune": 1, "rare": 3, "legendaire": 5}
+# Nombre de cartes à partir duquel une rareté atteint sa probabilité "pleine".
+# En dessous, sa probabilité est réduite proportionnellement : avec peu de cartes
+# épiques/légendaires, chacune ne tombe jamais plus souvent qu'avec le nombre de référence.
+TIER_REF_COUNT = {"epique": 6, "legendaire": 4}
+
+DUPLICATE_SELL_VALUE = {"commune": 1, "rare": 3, "epique": 4, "legendaire": 5}
+
+# Types de packs. "guaranteed" = raretés garanties ; les autres cartes (jusqu'à 3) suivent les probas classiques.
+PACK_TYPES = {
+    "classique": {"label": "Pack classique", "price": 10, "guaranteed": [],
+                  "token_field": "shop_pack_tokens",
+                  "description": "3 cartes aux probabilités classiques"},
+    "rare": {"label": "Pack rare", "price": 20, "guaranteed": ["rare", "rare"],
+             "token_field": "rare_pack_tokens",
+             "description": "2 cartes rares garanties + 1 carte aux probabilités classiques"},
+    "epique": {"label": "Pack épique", "price": 50, "guaranteed": ["epique"],
+               "token_field": "epic_pack_tokens",
+               "description": "1 carte épique garantie + 2 cartes aux probabilités classiques"},
+    "legendaire": {"label": "Pack légendaire", "price": 100, "guaranteed": ["legendaire"],
+                   "token_field": "legendary_pack_tokens",
+                   "description": "1 carte légendaire garantie + 2 cartes aux probabilités classiques"},
+}
 
 CRAFT_THRESHOLD = 10   # nombre de DOUBLONS (en plus du premier) nécessaires pour le craft
 LEGENDARY_BONUS = 12   # points de stats ajoutés par rapport à la carte rare, pour une légendaire auto-créée
@@ -129,88 +152,123 @@ def apply_crafts(db: Session, user: User) -> list[dict]:
     return crafted
 
 
-def open_pack_for_user(db: Session, user: User, use_shop_token: bool = False) -> dict:
+def tier_card_counts(db: Session) -> dict:
+    """Nombre de cartes existantes par rareté, ex. {"commune": 24, "rare": 24, "epique": 1}."""
+    rows = db.query(Card.tier, func.count(Card.id)).group_by(Card.tier).all()
+    return {tier.value: n for tier, n in rows}
+
+
+def classic_tier_weights(counts: dict) -> dict:
+    """Probabilités de tirage classiques : une rareté sans carte est ignorée, et les raretés
+    récentes (épique, légendaire) sont réduites tant qu'elles ont peu de cartes."""
+    weights = {}
+    for name, weight in TIER_WEIGHTS.items():
+        n = counts.get(name, 0)
+        if n == 0:
+            continue
+        ref = TIER_REF_COUNT.get(name)
+        if ref:
+            weight = weight * min(1.0, n / ref)
+        weights[name] = weight
+    return weights
+
+
+def pack_available(counts: dict, pack_type: str) -> bool:
+    """Un pack à carte garantie n'est disponible que si la rareté garantie existe déjà."""
+    return all(counts.get(t, 0) > 0 for t in set(PACK_TYPES[pack_type]["guaranteed"]))
+
+
+def open_pack_for_user(db: Session, user: User, pack_type: str = "free") -> dict:
     """
-    Ouvre un pack : consomme un pack gratuit (ou un jeton de shop si demandé et
-    disponible), tire les crédits puis les 3 cartes, applique les crafts.
-    Lève ValueError("no_pack_available") si le joueur n'a rien à ouvrir.
+    Ouvre un pack. pack_type : "free" (pack gratuit qui se régénère) ou un type de PACK_TYPES
+    (consomme un jeton de ce type). Tire les crédits, puis 3 cartes (dont les cartes garanties
+    du type de pack), applique les crafts.
+    Lève ValueError("no_pack_available") / ValueError("tier_unavailable") / ValueError("unknown_pack").
     """
+    effective = "classique" if pack_type == "free" else pack_type
+    if effective not in PACK_TYPES:
+        raise ValueError("unknown_pack")
+    spec = PACK_TYPES[effective]
+
     regen_user_packs(db, user)
     ps = user.pack_state
+    counts = tier_card_counts(db)
+
+    # on vérifie AVANT de consommer quoi que ce soit que le pack peut tenir sa promesse
+    if not pack_available(counts, effective):
+        raise ValueError("tier_unavailable")
 
     if getattr(user, "is_test", False):
-        # compte de test : aucune limite, rien n'est décompté
-        source = "test"
-    elif use_shop_token:
-        if ps.shop_pack_tokens <= 0:
-            raise ValueError("no_pack_available")
-        ps.shop_pack_tokens -= 1
-        source = "shop"
-    else:
+        source = "test"                      # compte de test : aucune limite, rien n'est décompté
+    elif pack_type == "free":
         if ps.stored_packs <= 0:
             raise ValueError("no_pack_available")
         ps.stored_packs -= 1
         source = "free"
+    else:
+        field = spec["token_field"]
+        if getattr(ps, field) <= 0:
+            raise ValueError("no_pack_available")
+        setattr(ps, field, getattr(ps, field) - 1)
+        source = "shop"
 
     credits_won = int(_roll_weighted(CREDIT_WEIGHTS))
     user.credits += credits_won
 
-    available_tiers = dict(TIER_WEIGHTS)
-    if db.query(Card).filter_by(tier=Tier.legendaire).count() == 0:
-        available_tiers.pop("legendaire", None)  # aucune légendaire n'existe encore cette saison
+    weights = classic_tier_weights(counts)
+    tiers_to_draw = list(spec["guaranteed"])
+    while len(tiers_to_draw) < 3:
+        tiers_to_draw.append(_roll_weighted(weights))
+    random.shuffle(tiers_to_draw)
 
     cards_won = []
-    for _ in range(3):
-        tier = Tier(_roll_weighted(available_tiers))
-        pool = db.query(Card).filter_by(tier=tier).all()
+    new_flags = []
+    for tier_name in tiers_to_draw:
+        pool = db.query(Card).filter_by(tier=Tier(tier_name)).all()
         card = random.choice(pool)
         owned = get_or_create_owned(db, user, card)
+        new_flags.append(owned.quantity == 0)   # première fois qu'on possède cette carte => NEW
         owned.quantity += 1
         cards_won.append(card)
 
     db.commit()
     crafted = apply_crafts(db, user)
 
-    return {"credits_won": credits_won, "cards_won": cards_won, "crafted": crafted, "source": source}
+    return {"credits_won": credits_won, "cards_won": cards_won, "new_flags": new_flags,
+            "crafted": crafted, "source": source, "pack_type": effective}
 
 
 # ---------------------------------------------------------------------
-# Notes affichées sur les cartes (déplacé ici depuis main.py pour être
-# réutilisable par le moteur de duel sans import circulaire)
+# Notes des cartes : UNE seule note par carte, déterminée par sa rareté
+# (plus de notes par poste). Réutilisée par le moteur de duel.
 # ---------------------------------------------------------------------
 
-POSTE_CATEGORY = {
-    "GB": "gardien",
-    "DEF": "defenseur", "DD": "defenseur", "DC": "defenseur", "DG": "defenseur",
-    "MC": "milieu", "MDC": "milieu", "MOC": "milieu",
-    "ATT": "attaquant", "AD": "attaquant", "BU": "attaquant",
-}
-CATEGORY_LABEL = {"attaquant": "ATT", "milieu": "MIL", "defenseur": "DEF", "gardien": "GB"}
-TIER_NOTE_BONUS = {"commune": 0, "rare": 10, "legendaire": 20}
-TIER_FAN_BONUS = {"commune": 0.05, "rare": 0.10, "legendaire": 0.15}  # bonus % apporté par le Fan, selon sa rareté
-SLOT_CATEGORY_TO_NOTE = {"GB": "gardien", "DEF": "defenseur", "MC": "milieu", "ATT": "attaquant"}
+CARD_NOTE = {"commune": 75, "rare": 85, "legendaire": 95}
+TIER_FAN_BONUS = {"commune": 0.05, "rare": 0.10, "epique": 0.12, "legendaire": 0.15}  # bonus % apporté par le Fan
+
+# Carte épique (buteurs) : 85 au premier but de la saison, puis +5 par but supplémentaire.
+EPIC_BASE_NOTE = 85
+EPIC_NOTE_PER_EXTRA_GOAL = 5
 
 
-def get_slot_note(player: Player, tier: str, slot_category: str):
-    """La note utilisée pour les calculs de duel dépend de L'EMPLACEMENT où la
-    carte est placée dans la compo, pas du poste naturel du joueur — placer
-    un attaquant en défense utilise sa note de défenseur (souvent plus faible),
-    d'où l'intérêt de jouer les joueurs à leur vrai poste."""
-    cat = SLOT_CATEGORY_TO_NOTE.get(slot_category)
-    if cat is None:
-        return None
-    return getattr(player, "note_" + cat) + TIER_NOTE_BONUS.get(tier, 0)
+def card_note(player: Player, tier: str) -> int:
+    """La note d'une carte : fixe selon la rareté, sauf l'épique qui grimpe avec les buts du joueur."""
+    if tier == "epique":
+        return EPIC_BASE_NOTE + EPIC_NOTE_PER_EXTRA_GOAL * max(0, (player.buts or 0) - 1)
+    return CARD_NOTE.get(tier, 75)
 
 
 def get_display_note(player: Player, tier: str = "commune"):
-    poste = player.poste or ""
-    bonus = TIER_NOTE_BONUS.get(tier, 0)
-    if poste in POSTE_CATEGORY:
-        cat = POSTE_CATEGORY[poste]
-        return {"label": CATEGORY_LABEL[cat], "value": getattr(player, "note_" + cat) + bonus}
-    if poste == "X":
-        return {"label": "NOTE", "value": player.note_milieu + bonus}
-    return None  # FAN & co : pas de note affichée
+    """Note affichée sur la carte. Les cartes Fan n'ont pas de note (elles donnent un bonus)."""
+    if (player.poste or "").upper().startswith("FAN"):
+        return None
+    return {"label": "NOTE", "value": card_note(player, tier)}
+
+
+def get_slot_note(player: Player, tier: str, slot_category: str):
+    """Note utilisée dans un duel. Pour l'instant identique à la note de la carte,
+    quel que soit l'emplacement (le système de duel est en cours de refonte)."""
+    return card_note(player, tier)
 
 
 # ---------------------------------------------------------------------
