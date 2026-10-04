@@ -19,7 +19,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
-    Column, String, Integer, Float, Boolean, ForeignKey, DateTime, Enum, UniqueConstraint
+    Column, String, Integer, Float, Boolean, Text, ForeignKey, DateTime, Enum, UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 
@@ -115,6 +115,7 @@ class PackState(Base):
     rare_pack_tokens = Column(Integer, nullable=False, default=0)       # jetons de pack rare
     epic_pack_tokens = Column(Integer, nullable=False, default=0)       # jetons de pack épique
     legendary_pack_tokens = Column(Integer, nullable=False, default=0)  # jetons de pack légendaire
+    match_pack_tokens = Column(Integer, nullable=False, default=0)      # jetons de pack match (récompense des victoires 1v1)
 
     user = relationship("User", back_populates="pack_state")
 
@@ -158,8 +159,8 @@ class MatchAssist(Base):
 
 
 class Team(Base):
-    """L'équipe de 11 enregistrée par un joueur, utilisée aussi bien pour
-    défier que pour être défié (toujours la même, une par compte)."""
+    """LEGACY (ancien 1v1 à 11 joueurs) : n'est plus utilisé. La table est conservée pour ne
+    perdre aucune donnée et ne pas casser les clés étrangères existantes."""
     __tablename__ = "teams"
 
     user_id = Column(String, ForeignKey("users.id"), primary_key=True)
@@ -172,7 +173,7 @@ class Team(Base):
 
 
 class TeamSlot(Base):
-    """Une carte placée dans un emplacement (GB/DEF/MIL/ATT) de l'équipe d'un joueur."""
+    """LEGACY (ancien 1v1 à 11 joueurs) : n'est plus utilisé."""
     __tablename__ = "team_slots"
 
     id = Column(String, primary_key=True, default=gen_id)
@@ -200,9 +201,43 @@ class Duel(Base):
     elo_challenger_after = Column(Integer, nullable=False)
     elo_defender_after = Column(Integer, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    # ajoutés avec le 1v1 à 5 joueurs (NULL pour les anciens matchs)
+    tactic_challenger = Column(String, nullable=True)
+    tactic_defender = Column(String, nullable=True)
+    events_json = Column(Text, nullable=True)    # chronologie racontée du match
+    lineups_json = Column(Text, nullable=True)   # compositions des deux équipes au moment du match
 
     challenger = relationship("User", foreign_keys=[challenger_id])
     defender = relationship("User", foreign_keys=[defender_id])
+
+
+class MatchProposal(Base):
+    """Un défi 1v1 en attente : l'équipe, la tactique (secrète) et la mise d'un joueur.
+    La mise est retirée de ses crédits à la création (séquestre) et rendue s'il annule."""
+    __tablename__ = "match_proposals"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    creator_id = Column(String, ForeignKey("users.id"), nullable=False)
+    stake = Column(Integer, nullable=False)
+    formation = Column(String, nullable=False)
+    tactic = Column(String, nullable=False)
+    captain_card_id = Column(String, ForeignKey("cards.id"), nullable=True)
+    fan_card_id = Column(String, ForeignKey("cards.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    creator = relationship("User")
+    slots = relationship("ProposalSlot", cascade="all, delete-orphan")
+
+
+class ProposalSlot(Base):
+    __tablename__ = "proposal_slots"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    proposal_id = Column(String, ForeignKey("match_proposals.id"), nullable=False)
+    card_id = Column(String, ForeignKey("cards.id"), nullable=False)
+    slot_category = Column(String, nullable=False)  # GB / DEF / MC / ATT
+
+    card = relationship("Card")
 
 
 class Listing(Base):
