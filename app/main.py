@@ -86,17 +86,24 @@ def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
     return {"token": user.token, "pseudo": user.pseudo}
 
 
+def pack_tokens_out(user: User) -> dict:
+    ps = user.pack_state
+    return {t: getattr(ps, spec["token_field"]) for t, spec in game_logic.PACK_TYPES.items()}
+
+
 @app.get("/me")
 def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     game_logic.regen_user_packs(db, user)
     db.refresh(user.pack_state)
+    tokens = pack_tokens_out(user)
     if user.is_test:
         # affichage clair pour un compte de test : pas de cap, pas d'attente
         return {
             "pseudo": user.pseudo,
             "credits": user.credits,
             "stored_packs": 99,
-            "shop_pack_tokens": user.pack_state.shop_pack_tokens,
+            "shop_pack_tokens": tokens["classique"],
+            "pack_tokens": tokens,
             "seconds_until_next_pack": None,
             "is_test": True,
         }
@@ -104,7 +111,8 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         "pseudo": user.pseudo,
         "credits": user.credits,
         "stored_packs": user.pack_state.stored_packs,
-        "shop_pack_tokens": user.pack_state.shop_pack_tokens,
+        "shop_pack_tokens": tokens["classique"],
+        "pack_tokens": tokens,
         "seconds_until_next_pack": game_logic.seconds_until_next_pack(user),
         "is_test": False,
     }
@@ -118,16 +126,22 @@ def open_pack(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    pack_type = payload.pack_type or ("classique" if payload.use_shop_token else "free")
     try:
-        result = game_logic.open_pack_for_user(db, user, use_shop_token=payload.use_shop_token)
-    except ValueError:
+        result = game_logic.open_pack_for_user(db, user, pack_type=pack_type)
+    except ValueError as e:
+        if str(e) == "tier_unavailable":
+            raise HTTPException(status_code=400, detail="Ce pack n'est pas encore disponible : aucune carte de cette rareté n'existe cette saison")
+        if str(e) == "unknown_pack":
+            raise HTTPException(status_code=400, detail="Type de pack inconnu")
         raise HTTPException(status_code=400, detail="Aucun pack disponible pour le moment")
 
     return {
         "credits_won": result["credits_won"],
-        "cards_won": [card_out(c) for c in result["cards_won"]],
+        "cards_won": [{**card_out(c), "is_new": flag} for c, flag in zip(result["cards_won"], result["new_flags"])],
         "crafted": result["crafted"],
         "source": result["source"],
+        "pack_type": result["pack_type"],
     }
 
 
@@ -157,7 +171,9 @@ def sell_duplicate(
 
 
 @app.get("/players/{player_name}/detail")
-def player_detail(player_name: str, db: Session = Depends(get_db)):
+def player_detail(player_name: str, tier: str = "commune", db: Session = Depends(get_db)):
+    """Fiche d'un joueur. `tier` = rareté de la carte sur laquelle on a cliqué
+    (détermine l'unique note affichée)."""
     player = db.query(Player).filter_by(name=player_name).first()
     if not player:
         raise HTTPException(status_code=404, detail="Joueur introuvable")
@@ -171,11 +187,8 @@ def player_detail(player_name: str, db: Session = Depends(get_db)):
         "cartons_jaunes": player.cartons_jaunes,
         "cartons_rouges": player.cartons_rouges,
         "homme_du_match_count": player.homme_du_match_count,
-        "note_attaquant": player.note_attaquant,
-        "note_milieu": player.note_milieu,
-        "note_defenseur": player.note_defenseur,
-        "note_gardien": player.note_gardien,
-        "display_note": game_logic.get_display_note(player, "commune"),
+        "tier": tier,
+        "display_note": game_logic.get_display_note(player, tier),
     }
 
 
@@ -347,27 +360,42 @@ def challenge(payload: schemas.ChallengeRequest, user: User = Depends(get_curren
 
 # --------------------------------------------------------------- Shop -----
 
-SHOP_ITEMS = {
-    "pack_supplementaire": {"label": "Pack supplémentaire", "price": 40},
-}
-
-
 @app.get("/shop/items")
-def shop_items():
-    return [{"item": key, **value} for key, value in SHOP_ITEMS.items()]
+def shop_items(db: Session = Depends(get_db)):
+    counts = game_logic.tier_card_counts(db)
+    return [
+        {
+            "item": "pack_" + key,
+            "pack_type": key,
+            "label": spec["label"],
+            "price": spec["price"],
+            "description": spec["description"],
+            "available": game_logic.pack_available(counts, key),
+        }
+        for key, spec in game_logic.PACK_TYPES.items()
+    ]
 
 
 @app.post("/shop/buy")
 def shop_buy(payload: schemas.BuyShopItemRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    item = SHOP_ITEMS.get(payload.item)
-    if not item:
+    pack_type = payload.item[len("pack_"):] if payload.item.startswith("pack_") else None
+    spec = game_logic.PACK_TYPES.get(pack_type)
+    if not spec:
         raise HTTPException(status_code=404, detail="Article inconnu")
-    if user.credits < item["price"]:
+    if not game_logic.pack_available(game_logic.tier_card_counts(db), pack_type):
+        raise HTTPException(status_code=400, detail="Ce pack n'est pas encore disponible cette saison")
+    if user.credits < spec["price"]:
         raise HTTPException(status_code=400, detail="Pas assez de crédits")
-    user.credits -= item["price"]
-    user.pack_state.shop_pack_tokens += 1
+    user.credits -= spec["price"]
+    field = spec["token_field"]
+    setattr(user.pack_state, field, getattr(user.pack_state, field) + 1)
     db.commit()
-    return {"credits_total": user.credits, "shop_pack_tokens": user.pack_state.shop_pack_tokens}
+    return {
+        "credits_total": user.credits,
+        "pack_type": pack_type,
+        "pack_tokens": pack_tokens_out(user),
+        "shop_pack_tokens": user.pack_state.shop_pack_tokens,
+    }
 
 
 # --------------------------------------------------------- Classement -----
@@ -518,10 +546,18 @@ def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = D
     for name in payload.lineup:
         find_player(name).matches_joues += 1
 
+    epics_created = []
+    scorers_notes = {}
     for entry in payload.buteurs:
         p = find_player(entry.player_name)
         p.buts += entry.count
         db.add(MatchGoal(match_id=match.id, player_id=p.id, count=entry.count))
+        # un buteur débloque sa carte épique (créée une seule fois, ensuite tirable dans les packs)
+        has_epic = db.query(Card).filter_by(player_id=p.id, tier=Tier.epique).first()
+        if not has_epic:
+            db.add(Card(player_id=p.id, tier=Tier.epique, vitesse=0, tir=0))
+            epics_created.append(p.name)
+        scorers_notes[p.name] = game_logic.EPIC_BASE_NOTE + game_logic.EPIC_NOTE_PER_EXTRA_GOAL * max(0, p.buts - 1)
 
     for entry in payload.passeurs:
         p = find_player(entry.player_name)
@@ -538,7 +574,8 @@ def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = D
         motm_player.homme_du_match_count += 1
 
     db.commit()
-    return {"status": "ok", "match_id": match.id}
+    return {"status": "ok", "match_id": match.id, "epic_cards_created": epics_created,
+            "epic_notes": scorers_notes}  # note actuelle de la carte épique de chaque buteur
 
 
 @app.post("/admin/set-test-account", dependencies=[Depends(require_admin)])
@@ -553,6 +590,35 @@ def admin_set_test_account(payload: schemas.AdminSetTestAccountRequest, db: Sess
     return {"status": "ok", "pseudo": user.pseudo, "is_test": user.is_test}
 
 
+@app.post("/admin/create-card", dependencies=[Depends(require_admin)])
+def admin_create_card(payload: schemas.AdminCreateCardRequest, db: Session = Depends(get_db)):
+    """Crée la carte d'une rareté donnée pour un joueur (si elle n'existe pas déjà),
+    et peut en offrir directement un exemplaire à un compte."""
+    try:
+        tier = Tier(payload.tier)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="tier doit être commune, rare, epique ou legendaire")
+    player = db.query(Player).filter_by(name=payload.player_name).first()
+    if not player:
+        raise HTTPException(status_code=404, detail="Joueur introuvable")
+    card = db.query(Card).filter_by(player_id=player.id, tier=tier).first()
+    created = False
+    if not card:
+        card = Card(player_id=player.id, tier=tier, vitesse=0, tir=0)
+        db.add(card)
+        db.flush()
+        created = True
+    granted_to = None
+    if payload.grant_to_pseudo:
+        user = db.query(User).filter_by(pseudo=payload.grant_to_pseudo).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="Utilisateur introuvable pour grant_to_pseudo")
+        game_logic.get_or_create_owned(db, user, card).quantity += 1
+        granted_to = user.pseudo
+    db.commit()
+    return {"status": "ok", "created": created, "card_id": card.id, "granted_to": granted_to}
+
+
 @app.post("/admin/delete-card", dependencies=[Depends(require_admin)])
 def admin_delete_card(payload: schemas.AdminDeleteCardRequest, db: Session = Depends(get_db)):
     """Supprime UNE carte précise (un tier d'un joueur), sans toucher au reste
@@ -560,7 +626,7 @@ def admin_delete_card(payload: schemas.AdminDeleteCardRequest, db: Session = Dep
     try:
         tier = Tier(payload.tier)
     except ValueError:
-        raise HTTPException(status_code=400, detail="tier doit être commune, rare ou legendaire")
+        raise HTTPException(status_code=400, detail="tier doit être commune, rare, epique ou legendaire")
     card = (
         db.query(Card).join(Player)
         .filter(Player.name == payload.player_name, Card.tier == tier)
@@ -582,7 +648,7 @@ def admin_update_card_stats(payload: schemas.AdminUpdateCardStatsRequest, db: Se
     try:
         tier = Tier(payload.tier)
     except ValueError:
-        raise HTTPException(status_code=400, detail="tier doit être commune, rare ou legendaire")
+        raise HTTPException(status_code=400, detail="tier doit être commune, rare, epique ou legendaire")
     card = (
         db.query(Card)
         .join(Player)
@@ -639,12 +705,17 @@ def admin_grant_credits(payload: schemas.AdminGrantCreditsRequest, db: Session =
 def admin_grant_packs(payload: schemas.AdminGrantPacksRequest, db: Session = Depends(get_db)):
     """
     Ajoute des packs à un joueur SANS toucher au cap de 3 packs gratuits —
-    ils atterrissent dans ses jetons shop (illimités), utilisables à tout moment.
+    ils atterrissent dans ses jetons (illimités), utilisables à tout moment.
+    pack_type : classique (défaut), rare, epique ou legendaire.
     Idéal pour offrir des packs aux supporters présents un jour de match.
     """
+    spec = game_logic.PACK_TYPES.get(payload.pack_type)
+    if not spec:
+        raise HTTPException(status_code=400, detail="pack_type doit être classique, rare, epique ou legendaire")
     user = db.query(User).filter_by(pseudo=payload.pseudo).first()
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
-    user.pack_state.shop_pack_tokens += payload.count
+    field = spec["token_field"]
+    setattr(user.pack_state, field, getattr(user.pack_state, field) + payload.count)
     db.commit()
-    return {"status": "ok", "pseudo": user.pseudo, "shop_pack_tokens": user.pack_state.shop_pack_tokens}
+    return {"status": "ok", "pseudo": user.pseudo, "pack_type": payload.pack_type, "pack_tokens": pack_tokens_out(user)}
