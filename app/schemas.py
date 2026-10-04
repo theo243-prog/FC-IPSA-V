@@ -14,7 +14,8 @@ class LoginRequest(BaseModel):
 
 
 class OpenPackRequest(BaseModel):
-    use_shop_token: bool = False
+    use_shop_token: bool = False          # ancien paramètre : équivaut à pack_type="classique"
+    pack_type: Optional[str] = None       # None = pack gratuit ; sinon classique / rare / epique / legendaire
 
 
 class SellDuplicateRequest(BaseModel):
@@ -58,9 +59,15 @@ class AdminDeletePlayerRequest(BaseModel):
     player_name: str
 
 
+class AdminCreateCardRequest(BaseModel):
+    player_name: str
+    tier: str  # "commune" | "rare" | "epique" | "legendaire"
+    grant_to_pseudo: Optional[str] = None
+
+
 class AdminDeleteCardRequest(BaseModel):
     player_name: str
-    tier: str  # "commune" | "rare" | "legendaire"
+    tier: str  # "commune" | "rare" | "epique" | "legendaire"
 
 
 class AdminSetPlayerPhotoRequest(BaseModel):
@@ -132,15 +139,15 @@ class AdminRecordMatchRequest(BaseModel):
 
 class AdminUpdateCardStatsRequest(BaseModel):
     player_name: str
-    tier: str  # "commune" | "rare" | "legendaire"
+    tier: str  # "commune" | "rare" | "epique" | "legendaire"
     vitesse: int = Field(ge=0, le=99)
     tir: int = Field(ge=0, le=99)
 
 
 class AdminGrantLegendaryRequest(BaseModel):
     player_name: str
-    vitesse: int = Field(ge=0, le=99)
-    tir: int = Field(ge=0, le=99)
+    vitesse: int = Field(default=0, ge=0, le=99)  # n'est plus utilisé (note unique par rareté)
+    tir: int = Field(default=0, ge=0, le=99)      # n'est plus utilisé (note unique par rareté)
     grant_to_pseudo: Optional[str] = None  # si fourni, donne aussi 1 exemplaire à ce joueur
 
 
@@ -151,4 +158,5 @@ class AdminGrantCreditsRequest(BaseModel):
 
 class AdminGrantPacksRequest(BaseModel):
     pseudo: str
-    count: int = Field(gt=0)  # ajoutés aux jetons shop, hors cap des 3 packs gratuits
+    count: int = Field(gt=0)  # ajoutés aux jetons, hors cap des 3 packs gratuits
+    pack_type: str = "classique"  # classique / rare / epique / legendaire
