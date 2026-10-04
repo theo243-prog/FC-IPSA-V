@@ -933,6 +933,10 @@
     document.getElementById('formationSelect').value = formation;
     document.getElementById('stakeInput').value = existing ? existing.stake : 2;
     renderTeamSlots(formation, existing ? existing.slots : null);
+    if (existing && existing.fan_card_id) {
+      const fanSel = document.getElementById('fanSelect');
+      if (fanSel) fanSel.value = existing.fan_card_id;
+    }
     document.getElementById('teamStatusEl').textContent = existing ? 'Équipe actuellement enregistrée ci-dessus.' : 'Aucune équipe enregistrée pour l\'instant.';
     loadLadder();
   }
@@ -965,6 +969,16 @@
         if (target) target.value = s.card_id;
       });
     }
+
+    // Emplacement Fan optionnel (hors des 11), apporte un bonus % selon sa rareté
+    const fanOwned = myCollection.filter(c => c.quantity > 0 && isFan(c));
+    const fanRow = document.createElement('div'); fanRow.className = 'form-row';
+    fanRow.innerHTML = '<label>Fan (optionnel — apporte un bonus d\'équipe)</label>';
+    const fanSelect = document.createElement('select'); fanSelect.id = 'fanSelect';
+    fanSelect.innerHTML = '<option value="">— aucun —</option>' +
+      fanOwned.map(c => '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', +' + ({commune:5,rare:10,legendaire:15}[c.tier]) + '%)</option>').join('');
+    fanRow.appendChild(fanSelect);
+    root.appendChild(fanRow);
   }
 
   document.getElementById('saveTeamBtn').addEventListener('click', async () => {
@@ -976,8 +990,10 @@
       if (!sel.value) { toast('Remplis tous les emplacements avant d\'enregistrer'); return; }
       slots.push({ card_id: sel.value, slot_category: sel.dataset.category });
     }
+    const fanSel = document.getElementById('fanSelect');
+    const fan_card_id = (fanSel && fanSel.value) ? fanSel.value : null;
     try {
-      await api('/team', { method: 'POST', body: JSON.stringify({ formation, stake, slots }) });
+      await api('/team', { method: 'POST', body: JSON.stringify({ formation, stake, slots, fan_card_id }) });
       document.getElementById('teamStatusEl').textContent = 'Équipe enregistrée !';
       toast('Équipe enregistrée');
       loadLadder();
@@ -1036,7 +1052,12 @@
       const resultLabel = result.result === 'victoire' ? '🏆 Victoire ! +' + result.stake + ' crédits'
         : (result.result === 'défaite' ? '😔 Défaite · -' + result.stake + ' crédits' : '🤝 Match nul');
       document.getElementById('duelResultText').textContent = resultLabel;
-      document.getElementById('duelEloText').textContent = 'Elo : ' + result.elo_challenger_before + ' → ' + result.elo_challenger_after;
+      let eloLine = 'Elo : ' + result.elo_challenger_before + ' → ' + result.elo_challenger_after;
+      const fanBits = [];
+      if (result.challenger_fan_bonus_pct) fanBits.push('Toi +' + result.challenger_fan_bonus_pct + '% (Fan)');
+      if (result.defender_fan_bonus_pct) fanBits.push(pseudo + ' +' + result.defender_fan_bonus_pct + '% (Fan)');
+      if (fanBits.length) eloLine += ' · ' + fanBits.join(', ');
+      document.getElementById('duelEloText').textContent = eloLine;
       refreshMe();
       loadLadder();
     } catch(e) {
