@@ -33,6 +33,7 @@ def gen_id():
 class Tier(str, enum.Enum):
     commune = "commune"
     rare = "rare"
+    epique = "epique"
     legendaire = "legendaire"
 
 
@@ -110,7 +111,10 @@ class PackState(Base):
     user_id = Column(String, ForeignKey("users.id"), primary_key=True)
     stored_packs = Column(Integer, nullable=False, default=3)   # packs gratuits en stock (0 à 3)
     last_regen_at = Column(DateTime, default=datetime.utcnow)   # dernier calcul de régénération
-    shop_pack_tokens = Column(Integer, nullable=False, default=0)  # jetons achetés au shop
+    shop_pack_tokens = Column(Integer, nullable=False, default=0)  # jetons de pack CLASSIQUE (achetés au shop / offerts)
+    rare_pack_tokens = Column(Integer, nullable=False, default=0)       # jetons de pack rare
+    epic_pack_tokens = Column(Integer, nullable=False, default=0)       # jetons de pack épique
+    legendary_pack_tokens = Column(Integer, nullable=False, default=0)  # jetons de pack légendaire
 
     user = relationship("User", back_populates="pack_state")
 
