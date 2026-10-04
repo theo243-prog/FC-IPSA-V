@@ -13,8 +13,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db
-from . import game_logic, schemas
-from .models import User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist, Team, TeamSlot, Duel
+from . import game_logic, duel_engine, schemas
+from sqlalchemy import or_
+from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
+                     Team, TeamSlot, Duel, MatchProposal)
 from .security import hash_password, verify_password, generate_token, get_current_user
 
 # Clé secrète pour les routes /admin/*. À définir dans Railway (Variables -> ADMIN_KEY).
@@ -285,77 +287,66 @@ def cancel_listing(listing_id: str, user: User = Depends(get_current_user), db: 
     return {"status": "ok"}
 
 
-# ----------------------------------------------------- Équipes & duels -----
+# ---------------------------------------------------- Matchs 1v1 (5 joueurs) -----
 
-@app.get("/formations")
-def list_formations():
-    return game_logic.FORMATIONS
-
-
-@app.get("/team/me")
-def get_my_team(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    team = db.query(Team).filter_by(user_id=user.id).first()
-    if not team:
-        return None
-    return {
-        "formation": team.formation,
-        "stake": team.stake,
-        "fan_card_id": team.fan_card_id,
-        "fan_card": card_out(db.get(Card, team.fan_card_id)) if team.fan_card_id else None,
-        "slots": [
-            {"card_id": s.card_id, "slot_category": s.slot_category, "card": card_out(s.card)}
-            for s in team.slots
-        ],
-    }
-
-
-@app.post("/team")
-def save_team(payload: schemas.SaveTeamRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    slots_data = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in payload.slots]
+def duel_call(fn, *args, **kwargs):
+    """Exécute une fonction du moteur de duel en transformant ses erreurs en réponses HTTP."""
     try:
-        game_logic.validate_team_slots(db, user, payload.formation, slots_data)
-        game_logic.validate_fan_card(db, user, payload.fan_card_id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        return fn(*args, **kwargs)
+    except duel_engine.DuelError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message)
 
-    team = db.query(Team).filter_by(user_id=user.id).first()
-    if not team:
-        team = Team(user_id=user.id, formation=payload.formation, stake=payload.stake, fan_card_id=payload.fan_card_id)
-        db.add(team)
-    else:
-        team.formation = payload.formation
-        team.stake = payload.stake
-        team.fan_card_id = payload.fan_card_id
-        team.updated_at = datetime.utcnow()
-        db.query(TeamSlot).filter_by(user_id=user.id).delete()
-    db.flush()
 
-    for entry in payload.slots:
-        db.add(TeamSlot(user_id=user.id, card_id=entry.card_id, slot_category=entry.slot_category))
+@app.get("/duel/config")
+def duel_config():
+    return duel_engine.get_config()
 
+
+@app.get("/duel/board")
+def duel_board(db: Session = Depends(get_db)):
+    return duel_engine.duel_board(db)
+
+
+@app.get("/duel/history")
+def duel_history(limit: int = 15, db: Session = Depends(get_db)):
+    return duel_engine.duel_history(db, max(1, min(limit, 50)))
+
+
+@app.get("/duel/history/{duel_id}")
+def duel_recap(duel_id: str, db: Session = Depends(get_db)):
+    return duel_call(duel_engine.duel_recap, db, duel_id)
+
+
+@app.get("/duel/proposals")
+def duel_proposals(db: Session = Depends(get_db)):
+    return duel_engine.list_proposals(db)
+
+
+@app.post("/duel/proposals")
+def create_duel_proposal(payload: schemas.CreateProposalRequest, user: User = Depends(get_current_user),
+                         db: Session = Depends(get_db)):
+    slots = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in payload.slots]
+    proposal = duel_call(duel_engine.create_proposal, db, user, payload.formation, payload.tactic, payload.stake,
+                         slots, payload.captain_card_id, payload.fan_card_id)
+    return {"id": proposal.id, "credits": user.credits}
+
+
+@app.delete("/duel/proposals/{proposal_id}")
+def cancel_duel_proposal(proposal_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    proposal = db.query(MatchProposal).filter_by(id=proposal_id).first()
+    if not proposal or proposal.creator_id != user.id:
+        raise HTTPException(status_code=404, detail="Défi introuvable")
+    duel_engine.cancel_proposal(db, proposal)
     db.commit()
-    return {"status": "ok"}
+    return {"status": "ok", "credits": user.credits}
 
 
-@app.get("/ladder")
-def get_ladder(db: Session = Depends(get_db)):
-    rows = db.query(Team, User).join(User, Team.user_id == User.id).order_by(User.elo.desc()).all()
-    return [
-        {"pseudo": u.pseudo, "elo": u.elo, "formation": t.formation, "stake": t.stake}
-        for t, u in rows
-    ]
-
-
-@app.post("/duel/challenge")
-def challenge(payload: schemas.ChallengeRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    defender = db.query(User).filter_by(pseudo=payload.defender_pseudo).first()
-    if not defender:
-        raise HTTPException(status_code=404, detail="Adversaire introuvable")
-    try:
-        result = game_logic.resolve_duel(db, user, defender)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    return result
+@app.post("/duel/proposals/{proposal_id}/play")
+def play_duel_proposal(proposal_id: str, payload: schemas.TeamPayload, user: User = Depends(get_current_user),
+                       db: Session = Depends(get_db)):
+    slots = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in payload.slots]
+    return duel_call(duel_engine.play_proposal, db, user, proposal_id, payload.formation, payload.tactic, slots,
+                     payload.captain_card_id, payload.fan_card_id)
 
 
 # --------------------------------------------------------------- Shop -----
@@ -373,6 +364,7 @@ def shop_items(db: Session = Depends(get_db)):
             "available": game_logic.pack_available(counts, key),
         }
         for key, spec in game_logic.PACK_TYPES.items()
+        if spec["price"] is not None      # le pack match se gagne en 1v1, il ne s'achète pas
     ]
 
 
@@ -380,7 +372,7 @@ def shop_items(db: Session = Depends(get_db)):
 def shop_buy(payload: schemas.BuyShopItemRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     pack_type = payload.item[len("pack_"):] if payload.item.startswith("pack_") else None
     spec = game_logic.PACK_TYPES.get(pack_type)
-    if not spec:
+    if not spec or spec["price"] is None:
         raise HTTPException(status_code=404, detail="Article inconnu")
     if not game_logic.pack_available(game_logic.tier_card_counts(db), pack_type):
         raise HTTPException(status_code=400, detail="Ce pack n'est pas encore disponible cette saison")
@@ -422,12 +414,30 @@ def leaderboard(db: Session = Depends(get_db)):
 # (définie dans Railway -> Variables -> ADMIN_KEY). Rien de tout ça n'est
 # accessible depuis le site normal, uniquement par toi via /docs ou un appel direct.
 
+def purge_card_rows(db: Session, card_ids: list):
+    """Retire toute trace de ces cartes avant de les supprimer : défis 1v1 (annulés et remboursés),
+    annonces du marché, exemplaires possédés, et anciennes équipes de l'ancien 1v1."""
+    if not card_ids:
+        return
+    duel_engine.purge_card_references(db, card_ids)
+    db.query(Listing).filter(Listing.card_id.in_(card_ids)).delete(synchronize_session=False)
+    db.query(OwnedCard).filter(OwnedCard.card_id.in_(card_ids)).delete(synchronize_session=False)
+    db.query(TeamSlot).filter(TeamSlot.card_id.in_(card_ids)).delete(synchronize_session=False)      # ancien 1v1
+    db.query(Team).filter(Team.fan_card_id.in_(card_ids)).update({"fan_card_id": None}, synchronize_session=False)
+
+
 @app.post("/admin/delete-user", dependencies=[Depends(require_admin)])
 def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter_by(pseudo=payload.pseudo).first()
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
     db.query(Listing).filter_by(seller_id=user.id).delete()
+    for proposal in db.query(MatchProposal).filter_by(creator_id=user.id).all():
+        db.delete(proposal)          # ses défis ouverts (le compte est supprimé, pas de remboursement utile)
+    db.flush()
+    db.query(Duel).filter(or_(Duel.challenger_id == user.id, Duel.defender_id == user.id)).delete(synchronize_session=False)
+    db.query(TeamSlot).filter_by(user_id=user.id).delete()      # ancien 1v1
+    db.query(Team).filter_by(user_id=user.id).delete()          # ancien 1v1
     db.delete(user)  # supprime en cascade ses cartes possédées et son pack_state
     db.commit()
     return {"status": "ok", "deleted": payload.pseudo}
@@ -441,9 +451,8 @@ def admin_delete_player(payload: schemas.AdminDeletePlayerRequest, db: Session =
     if not player:
         raise HTTPException(status_code=404, detail="Joueur introuvable")
     card_ids = [c.id for c in player.cards]
-    if card_ids:
-        db.query(Listing).filter(Listing.card_id.in_(card_ids)).delete(synchronize_session=False)
-        db.query(OwnedCard).filter(OwnedCard.card_id.in_(card_ids)).delete(synchronize_session=False)
+    purge_card_rows(db, card_ids)
+    db.flush()
     db.delete(player)  # cascade : supprime aussi ses Card (commune/rare/légendaire)
     db.commit()
     return {"status": "ok", "deleted_player": payload.player_name, "cards_removed": len(card_ids)}
@@ -634,10 +643,8 @@ def admin_delete_card(payload: schemas.AdminDeleteCardRequest, db: Session = Dep
     )
     if not card:
         raise HTTPException(status_code=404, detail="Carte introuvable pour ce joueur/tier")
-    db.query(Listing).filter_by(card_id=card.id).delete(synchronize_session=False)
-    db.query(OwnedCard).filter_by(card_id=card.id).delete(synchronize_session=False)
-    db.query(TeamSlot).filter_by(card_id=card.id).delete(synchronize_session=False)
-    db.query(Team).filter_by(fan_card_id=card.id).update({"fan_card_id": None}, synchronize_session=False)
+    purge_card_rows(db, [card.id])
+    db.flush()
     db.delete(card)
     db.commit()
     return {"status": "ok", "deleted": payload.player_name + " (" + payload.tier + ")"}
@@ -711,7 +718,7 @@ def admin_grant_packs(payload: schemas.AdminGrantPacksRequest, db: Session = Dep
     """
     spec = game_logic.PACK_TYPES.get(payload.pack_type)
     if not spec:
-        raise HTTPException(status_code=400, detail="pack_type doit être classique, rare, epique ou legendaire")
+        raise HTTPException(status_code=400, detail="pack_type doit être classique, rare, epique, legendaire ou match")
     user = db.query(User).filter_by(pseudo=payload.pseudo).first()
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
