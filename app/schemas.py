@@ -41,6 +41,7 @@ class SaveTeamRequest(BaseModel):
     formation: str  # "4-4-2" | "4-3-3" | "3-4-3" | "5-3-2"
     stake: int = Field(ge=1, le=10)
     slots: List[TeamSlotEntry]
+    fan_card_id: Optional[str] = None
 
 
 class ChallengeRequest(BaseModel):
@@ -55,6 +56,11 @@ class AdminDeleteUserRequest(BaseModel):
 
 class AdminDeletePlayerRequest(BaseModel):
     player_name: str
+
+
+class AdminDeleteCardRequest(BaseModel):
+    player_name: str
+    tier: str  # "commune" | "rare" | "legendaire"
 
 
 class AdminSetPlayerPhotoRequest(BaseModel):
