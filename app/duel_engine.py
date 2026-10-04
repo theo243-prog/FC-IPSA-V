@@ -16,6 +16,7 @@ Ce que comptent les calculs :
 """
 import json
 import random
+from collections import Counter
 from datetime import datetime, timedelta
 
 from sqlalchemy import or_
@@ -328,7 +329,9 @@ def build_events(side_a, side_b, score_a, score_b, xg_a, xg_b, tactic_winner):
                 text += " Passe décisive de %s." % label(assist, team)
             text += " (%d-%d)" % (score[0], score[1])
             events.append({"minute": minute, "kind": "goal", "side": side_name, "score": list(score), "text": text,
-                           "scorer": scorer["player"], "assist": assist["player"] if assist else None})
+                           "scorer": scorer["player"], "scorer_tier": scorer["tier"],
+                           "assist": assist["player"] if assist else None,
+                           "assist_tier": assist["tier"] if assist else None})
         else:
             shooter = _pick(team["members"], SCORER_WEIGHT)
             keeper = next((m for m in opp["members"] if m["slot"] == "GB"), opp["members"][0])
@@ -586,6 +589,41 @@ def duel_recap(db: Session, duel_id: str) -> dict:
         "events": json.loads(d.events_json) if d.events_json else [],
         "lineups": json.loads(d.lineups_json) if d.lineups_json else None,
     }
+
+
+def duel_card_stats(db: Session):
+    """Compte, sur tous les matchs 1v1 joués, les utilisations, buts et passes décisives par carte
+    (un joueur + une rareté). Retourne trois Counter indexés par (nom du joueur, rareté)."""
+    used, goals, assists = Counter(), Counter(), Counter()
+    for d in db.query(Duel).filter(Duel.lineups_json.isnot(None)).all():
+        try:
+            lineups = json.loads(d.lineups_json)
+            events = json.loads(d.events_json or "[]")
+        except ValueError:
+            continue
+        for side in ("challenger", "defender"):
+            for p in lineups.get(side, {}).get("players", []):
+                used[(p["player"], p["tier"])] += 1
+
+        def tier_of(side, name, hint):
+            if hint:                       # matchs récents : la rareté est dans l'événement
+                return hint
+            for p in lineups.get(side, {}).get("players", []):   # anciens matchs : on la retrouve via la composition
+                if p["player"] == name:
+                    return p["tier"]
+            return None
+
+        for ev in events:
+            if ev.get("kind") != "goal":
+                continue
+            tier = tier_of(ev["side"], ev["scorer"], ev.get("scorer_tier"))
+            if tier:
+                goals[(ev["scorer"], tier)] += 1
+            if ev.get("assist"):
+                tier = tier_of(ev["side"], ev["assist"], ev.get("assist_tier"))
+                if tier:
+                    assists[(ev["assist"], tier)] += 1
+    return used, goals, assists
 
 
 def list_proposals(db: Session) -> list:
