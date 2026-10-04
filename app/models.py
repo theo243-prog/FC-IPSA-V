@@ -130,10 +130,26 @@ class Match(Base):
     score_them = Column(Integer, nullable=False)
     motm_player_id = Column(String, ForeignKey("players.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    # de quoi pouvoir annuler proprement ce match plus tard (NULL pour les matchs enregistrés avant)
+    lineup_json = Column(Text, nullable=True)    # joueurs présents (matchs joués +1)
+    yellow_json = Column(Text, nullable=True)    # cartons jaunes
+    red_json = Column(Text, nullable=True)       # cartons rouges
+    epics_json = Column(Text, nullable=True)     # joueurs dont la carte épique a été créée PAR ce match
 
     motm_player = relationship("Player")
     goals = relationship("MatchGoal", cascade="all, delete-orphan")
     assists = relationship("MatchAssist", cascade="all, delete-orphan")
+
+
+class UpcomingMatch(Base):
+    """Un match réel à venir de l'équipe (affiché dans l'onglet Actualité)."""
+    __tablename__ = "upcoming_matches"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    date = Column(DateTime, nullable=False)
+    opponent = Column(String, nullable=False)
+    location = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 class MatchGoal(Base):
