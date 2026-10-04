@@ -187,6 +187,19 @@ POSTE_CATEGORY = {
 }
 CATEGORY_LABEL = {"attaquant": "ATT", "milieu": "MIL", "defenseur": "DEF", "gardien": "GB"}
 TIER_NOTE_BONUS = {"commune": 0, "rare": 10, "legendaire": 20}
+TIER_FAN_BONUS = {"commune": 0.05, "rare": 0.10, "legendaire": 0.15}  # bonus % apporté par le Fan, selon sa rareté
+SLOT_CATEGORY_TO_NOTE = {"GB": "gardien", "DEF": "defenseur", "MC": "milieu", "ATT": "attaquant"}
+
+
+def get_slot_note(player: Player, tier: str, slot_category: str):
+    """La note utilisée pour les calculs de duel dépend de L'EMPLACEMENT où la
+    carte est placée dans la compo, pas du poste naturel du joueur — placer
+    un attaquant en défense utilise sa note de défenseur (souvent plus faible),
+    d'où l'intérêt de jouer les joueurs à leur vrai poste."""
+    cat = SLOT_CATEGORY_TO_NOTE.get(slot_category)
+    if cat is None:
+        return None
+    return getattr(player, "note_" + cat) + TIER_NOTE_BONUS.get(tier, 0)
 
 
 def get_display_note(player: Player, tier: str = "commune"):
@@ -219,8 +232,8 @@ def validate_team_slots(db: Session, user: User, formation: str, slots: list) ->
     Vérifie qu'une composition d'équipe est valide :
     - formation reconnue, bon nombre de cartes par emplacement
     - 11 cartes, toutes possédées (quantity > 0), toutes des joueurs distincts,
-      aucune carte FAN (pas de note)
-    Retourne la liste des Card correspondantes (même ordre) si tout est bon,
+      aucune carte Fan (réservée à l'emplacement Fan dédié)
+    Retourne la liste [(Card, slot_category), ...] si tout est bon,
     lève ValueError(message) sinon.
     """
     if formation not in FORMATIONS:
@@ -241,8 +254,8 @@ def validate_team_slots(db: Session, user: User, formation: str, slots: list) ->
         if not owned or owned.quantity < 1:
             raise ValueError("Tu ne possèdes pas une des cartes sélectionnées")
         card = owned.card
-        if get_display_note(card.player, card.tier.value) is None:
-            raise ValueError(card.player.name + " est une carte supporter, sans note : elle ne peut pas jouer")
+        if (card.player.poste or "").upper().startswith("FAN"):
+            raise ValueError(card.player.name + " est une carte supporter : utilisable uniquement comme Fan, pas sur le terrain")
         if card.player_id in seen_players:
             raise ValueError("Deux cartes du même joueur (" + card.player.name + ") dans la même équipe")
         seen_players.add(card.player_id)
@@ -256,19 +269,38 @@ def validate_team_slots(db: Session, user: User, formation: str, slots: list) ->
     return cards
 
 
-def team_strengths(cards_with_slots: list) -> dict:
-    """cards_with_slots: liste de (Card, slot_category). Renvoie force d'attaque et de défense."""
+def validate_fan_card(db: Session, user: User, fan_card_id):
+    """Vérifie la carte Fan optionnelle (en dehors des 11). Renvoie la Card ou None."""
+    if not fan_card_id:
+        return None
+    owned = db.query(OwnedCard).filter_by(user_id=user.id, card_id=fan_card_id).first()
+    if not owned or owned.quantity < 1:
+        raise ValueError("Tu ne possèdes pas la carte Fan sélectionnée")
+    card = owned.card
+    if not (card.player.poste or "").upper().startswith("FAN"):
+        raise ValueError(card.player.name + " n'est pas une carte supporter")
+    return card
+
+
+def team_strengths(cards_with_slots: list, fan_card=None) -> dict:
+    """cards_with_slots: liste de (Card, slot_category). Renvoie force d'attaque et de défense,
+    avec le bonus % du Fan appliqué aux deux si une carte Fan est alignée."""
     att_values = []
     def_values = []
     for card, category in cards_with_slots:
-        note = get_display_note(card.player, card.tier.value)["value"]
+        note = get_slot_note(card.player, card.tier.value, category)
         if category in ("ATT", "MC"):
             att_values.append(note)
         if category in ("DEF", "GB"):
             def_values.append(note)
     attack = sum(att_values) / len(att_values) if att_values else 50
     defense = sum(def_values) / len(def_values) if def_values else 50
-    return {"attack": attack, "defense": defense}
+    fan_bonus_pct = 0.0
+    if fan_card:
+        fan_bonus_pct = TIER_FAN_BONUS.get(fan_card.tier.value, 0.0)
+        attack *= (1 + fan_bonus_pct)
+        defense *= (1 + fan_bonus_pct)
+    return {"attack": attack, "defense": defense, "fan_bonus_pct": fan_bonus_pct}
 
 
 def poisson_random(lam: float) -> int:
@@ -336,15 +368,17 @@ def resolve_duel(db: Session, challenger: User, defender: User) -> dict:
     defender_slots = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in defender_team.slots]
     try:
         challenger_cards = validate_team_slots(db, challenger, challenger_team.formation, challenger_slots)
+        challenger_fan = validate_fan_card(db, challenger, challenger_team.fan_card_id)
     except ValueError:
         raise ValueError("Ta propre équipe n'est plus valide (carte vendue/échangée ?) — mets-la à jour")
     try:
         defender_cards = validate_team_slots(db, defender, defender_team.formation, defender_slots)
+        defender_fan = validate_fan_card(db, defender, defender_team.fan_card_id)
     except ValueError:
         raise ValueError("L'équipe de l'adversaire n'est plus valide (carte vendue/échangée) — défi impossible")
 
-    s_challenger = team_strengths(challenger_cards)
-    s_defender = team_strengths(defender_cards)
+    s_challenger = team_strengths(challenger_cards, challenger_fan)
+    s_defender = team_strengths(defender_cards, defender_fan)
 
     xg_challenger = expected_goals(s_challenger["attack"], s_defender["defense"])
     xg_defender = expected_goals(s_defender["attack"], s_challenger["defense"])
@@ -389,6 +423,8 @@ def resolve_duel(db: Session, challenger: User, defender: User) -> dict:
         "elo_challenger_before": elo_before_challenger, "elo_challenger_after": new_elo_challenger,
         "elo_defender_before": elo_before_defender, "elo_defender_after": new_elo_defender,
         "defender_pseudo": defender.pseudo,
+        "challenger_fan_bonus_pct": round(s_challenger["fan_bonus_pct"] * 100),
+        "defender_fan_bonus_pct": round(s_defender["fan_bonus_pct"] * 100),
     }
 
 
