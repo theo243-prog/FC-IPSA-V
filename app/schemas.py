@@ -161,3 +161,22 @@ class AdminGrantPacksRequest(BaseModel):
     pseudo: str
     count: int = Field(gt=0)  # ajoutés aux jetons, hors cap des 3 packs gratuits
     pack_type: str = "classique"  # classique / rare / epique / legendaire
+
+
+class AdminDeleteMatchRequest(BaseModel):
+    """Identifie le match réel à annuler : soit son id, soit sa date + son adversaire."""
+    match_id: Optional[str] = None
+    date: Optional[str] = None       # "2026-10-12"
+    opponent: Optional[str] = None
+
+
+class AdminAddUpcomingMatchRequest(BaseModel):
+    date: str                        # "2026-10-12" ou "2026-10-12 14:30"
+    opponent: str
+    location: Optional[str] = None
+
+
+class AdminDeleteUpcomingMatchRequest(BaseModel):
+    upcoming_id: Optional[str] = None
+    date: Optional[str] = None
+    opponent: Optional[str] = None
