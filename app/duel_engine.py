@@ -9,8 +9,9 @@ remporte les deux mises + un "pack match" aux probabilités boostées.
 Ce que comptent les calculs :
 - la note de chaque carte (75 commune, 85 rare, 85+ épique, 95 légendaire) ;
 - -10 % si la carte joue HORS de son vrai poste (les postes "X" ne sont jamais pénalisés) ;
-- +15 % pour la carte capitaine ;
-- le Fan optionnel : +5 % / +10 % / +15 % à toute l'équipe selon sa rareté ;
+- +10 % pour la carte capitaine ;
+- le Fan optionnel : +5 % / +10 % / +12 % / +15 % à toute l'équipe selon sa rareté ;
+- jusqu'à 3 cartes Équipement : +1 % / +2 % / +3 % / +5 % chacune à toute l'équipe (s'ajoute au Fan) ;
 - la tactique (pierre-feuille-ciseaux) : +6 % à toute l'équipe pour celle qui l'emporte ;
 - la disposition (2-1-1, 1-2-1, 1-1-2) qui répartit la force entre attaque et défense.
 """
@@ -22,8 +23,9 @@ from datetime import datetime, timedelta
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from .game_logic import card_note, TIER_FAN_BONUS
-from .models import User, Card, OwnedCard, MatchProposal, ProposalSlot, Duel
+from .game_logic import (card_note, TIER_FAN_BONUS, TIER_EQUIPMENT_BONUS, MAX_EQUIPMENT,
+                         card_kind, is_fan, is_equipment)
+from .models import User, Card, OwnedCard, MatchProposal, ProposalSlot, ProposalEquipment, Duel
 
 # ----------------------------------------------------------------- Règles ----
 
@@ -54,7 +56,7 @@ POSTE_CATEGORY = {
 }
 
 OUT_OF_POSITION_MALUS = 0.10
-CAPTAIN_BONUS = 0.15
+CAPTAIN_BONUS = 0.10
 TACTIC_BONUS = 0.06
 
 STAKE_MIN, STAKE_MAX = 1, 10
@@ -86,10 +88,6 @@ class DuelError(Exception):
 
 # ------------------------------------------------------------- Utilitaires ----
 
-def is_fan(player) -> bool:
-    return (player.poste or "").upper().startswith("FAN")
-
-
 def poste_category(poste):
     """Emplacement naturel d'un poste, ou None si le poste n'est pas défini (X) : pas de malus."""
     return POSTE_CATEGORY.get((poste or "").upper())
@@ -111,6 +109,8 @@ def get_config() -> dict:
         "max_open_proposals": MAX_OPEN_PROPOSALS,
         "cooldown_minutes": DUEL_COOLDOWN_SECONDS // 60,
         "fan_bonus": TIER_FAN_BONUS,
+        "equipment_bonus": TIER_EQUIPMENT_BONUS,
+        "max_equipment": MAX_EQUIPMENT,
     }
 
 
@@ -137,12 +137,13 @@ def elo_update(elo_a: int, elo_b: int, result_a: float, k: int = ELO_K):
 # ------------------------------------------------------------ Validation ----
 
 def validate_team(db: Session, user: User, formation: str, tactic: str, slots: list,
-                  captain_card_id=None, fan_card_id=None):
+                  captain_card_id=None, fan_card_id=None, equipment_card_ids=None):
     """
     Vérifie une équipe. Règles : disposition connue, 5 cartes, bon nombre par emplacement, cartes
     toutes possédées, JAMAIS deux fois la même carte (même si on l'a en plusieurs exemplaires ;
-    en revanche deux raretés du même joueur sont possibles), pas de carte Fan sur le terrain.
-    Retourne (cartes [(Card, emplacement)], capitaine Card|None, fan Card|None).
+    en revanche deux raretés du même joueur sont possibles), seuls de vrais joueurs sur le terrain
+    (ni Fan, ni équipement, ni stade), jusqu'à MAX_EQUIPMENT cartes Équipement toutes différentes.
+    Retourne (cartes [(Card, emplacement)], capitaine Card|None, fan Card|None, équipements [Card]).
     """
     if formation not in FORMATIONS:
         raise DuelError("Disposition inconnue : " + str(formation))
@@ -166,8 +167,13 @@ def validate_team(db: Session, user: User, formation: str, tactic: str, slots: l
         if not owned or owned.quantity < 1:
             raise DuelError("Tu ne possèdes pas une des cartes sélectionnées")
         card = owned.card
-        if is_fan(card.player):
+        kind = card_kind(card.player)
+        if kind == "fan":
             raise DuelError(card.player.name + " est une carte supporter : elle ne peut jouer que comme Fan")
+        if kind == "equipement":
+            raise DuelError(card.player.name + " est un équipement : place-le dans un emplacement Équipement")
+        if kind == "stade":
+            raise DuelError(card.player.name + " est un stade : il ne peut pas jouer sur le terrain")
         counts[cat] += 1
         cards.append((card, cat))
 
@@ -191,7 +197,21 @@ def validate_team(db: Session, user: User, formation: str, tactic: str, slots: l
             raise DuelError(owned.card.player.name + " n'est pas une carte supporter")
         fan = owned.card
 
-    return cards, captain, fan
+    equipment = []
+    equipment_ids = list(equipment_card_ids or [])
+    if len(equipment_ids) > MAX_EQUIPMENT:
+        raise DuelError("Tu peux équiper %d cartes Équipement au maximum" % MAX_EQUIPMENT)
+    if len(set(equipment_ids)) != len(equipment_ids):
+        raise DuelError("Tu ne peux pas équiper deux fois la même carte Équipement")
+    for equipment_id in equipment_ids:
+        owned = db.query(OwnedCard).filter_by(user_id=user.id, card_id=equipment_id).first()
+        if not owned or owned.quantity < 1:
+            raise DuelError("Tu ne possèdes pas une des cartes Équipement sélectionnées")
+        if not is_equipment(owned.card.player):
+            raise DuelError(owned.card.player.name + " n'est pas une carte Équipement")
+        equipment.append(owned.card)
+
+    return cards, captain, fan, equipment
 
 
 # ---------------------------------------------------------------- Calculs ----
@@ -215,15 +235,20 @@ def build_members(cards_with_slots, captain_card_id):
     return members
 
 
-def team_powers(members, fan_card, tactic_multiplier=1.0):
+def equipment_bonus_total(equipment_cards) -> float:
+    return sum(TIER_EQUIPMENT_BONUS.get(c.tier.value, 0.0) for c in (equipment_cards or []))
+
+
+def team_powers(members, fan_card, tactic_multiplier=1.0, equipment_cards=()):
     units_att = sum(ATTACK_WEIGHT[m["slot"]] for m in members)
     units_def = sum(DEFENSE_WEIGHT[m["slot"]] for m in members)
     attack_avg = sum(ATTACK_WEIGHT[m["slot"]] * m["effective"] for m in members) / units_att
     defense_avg = sum(DEFENSE_WEIGHT[m["slot"]] * m["effective"] for m in members) / units_def
     style = (units_att / units_def) ** (FORMATION_SKEW / 2)      # <1 prudente, >1 offensive
     fan_bonus = TIER_FAN_BONUS.get(fan_card.tier.value, 0.0) if fan_card else 0.0
-    mult = (1 + fan_bonus) * tactic_multiplier
-    return attack_avg * style * mult, defense_avg / style * mult, fan_bonus
+    equipment_bonus = equipment_bonus_total(equipment_cards)
+    mult = (1 + fan_bonus + equipment_bonus) * tactic_multiplier      # Fan et équipements s'additionnent
+    return attack_avg * style * mult, defense_avg / style * mult, fan_bonus, equipment_bonus
 
 
 def tactic_advantage(tactic_a: str, tactic_b: str):
@@ -354,7 +379,7 @@ def build_events(side_a, side_b, score_a, score_b, xg_a, xg_b, tactic_winner):
     return events
 
 
-def _lineup_snapshot(side, fan_card):
+def _lineup_snapshot(side, fan_card, equipment_cards=()):
     return {
         "pseudo": side["pseudo"], "formation": side["formation"], "tactic": side["tactic"],
         "players": [{
@@ -364,6 +389,8 @@ def _lineup_snapshot(side, fan_card):
         } for m in side["members"]],
         "fan": ({"player": fan_card.player.name, "tier": fan_card.tier.value,
                  "bonus_pct": round(TIER_FAN_BONUS.get(fan_card.tier.value, 0) * 100)} if fan_card else None),
+        "equipment": [{"player": c.player.name, "tier": c.tier.value,
+                       "bonus_pct": round(TIER_EQUIPMENT_BONUS.get(c.tier.value, 0) * 100)} for c in (equipment_cards or [])],
     }
 
 
@@ -383,7 +410,8 @@ def purge_card_references(db: Session, card_ids: list):
     proposals = (
         db.query(MatchProposal)
         .outerjoin(ProposalSlot, ProposalSlot.proposal_id == MatchProposal.id)
-        .filter(or_(ProposalSlot.card_id.in_(card_ids),
+        .outerjoin(ProposalEquipment, ProposalEquipment.proposal_id == MatchProposal.id)
+        .filter(or_(ProposalSlot.card_id.in_(card_ids), ProposalEquipment.card_id.in_(card_ids),
                     MatchProposal.captain_card_id.in_(card_ids),
                     MatchProposal.fan_card_id.in_(card_ids)))
         .distinct().all()
@@ -393,7 +421,8 @@ def purge_card_references(db: Session, card_ids: list):
     db.flush()   # les défis (et leurs emplacements) doivent disparaître avant la carte elle-même
 
 
-def create_proposal(db: Session, user: User, formation, tactic, stake, slots, captain_card_id, fan_card_id):
+def create_proposal(db: Session, user: User, formation, tactic, stake, slots, captain_card_id, fan_card_id,
+                    equipment_card_ids=None):
     if not (STAKE_MIN <= stake <= STAKE_MAX):
         raise DuelError("La mise doit être comprise entre %d et %d crédits" % (STAKE_MIN, STAKE_MAX))
     open_count = db.query(MatchProposal).filter_by(creator_id=user.id).count()
@@ -401,7 +430,7 @@ def create_proposal(db: Session, user: User, formation, tactic, stake, slots, ca
         raise DuelError("Tu as déjà %d défis ouverts : annule-en un ou attends qu'il soit joué" % MAX_OPEN_PROPOSALS)
     if user.credits < stake:
         raise DuelError("Pas assez de crédits pour miser %d" % stake)
-    validate_team(db, user, formation, tactic, slots, captain_card_id, fan_card_id)
+    validate_team(db, user, formation, tactic, slots, captain_card_id, fan_card_id, equipment_card_ids)
 
     user.credits -= stake   # séquestre : rendu si le défi est annulé, joué ensuite
     proposal = MatchProposal(creator_id=user.id, stake=stake, formation=formation, tactic=tactic,
@@ -410,12 +439,14 @@ def create_proposal(db: Session, user: User, formation, tactic, stake, slots, ca
     db.flush()
     for entry in slots:
         db.add(ProposalSlot(proposal_id=proposal.id, card_id=entry["card_id"], slot_category=entry["slot_category"]))
+    for equipment_id in (equipment_card_ids or []):
+        db.add(ProposalEquipment(proposal_id=proposal.id, card_id=equipment_id))
     db.commit()
     return proposal
 
 
 def play_proposal(db: Session, challenger: User, proposal_id: str, formation, tactic, slots,
-                  captain_card_id, fan_card_id) -> dict:
+                  captain_card_id, fan_card_id, equipment_card_ids=None) -> dict:
     # verrou : si deux joueurs cliquent en même temps, un seul passe, l'autre voit "n'existe plus"
     proposal = db.query(MatchProposal).filter_by(id=proposal_id).with_for_update().first()
     if not proposal:
@@ -440,12 +471,14 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     if challenger.credits < stake:
         raise DuelError("Pas assez de crédits pour cette mise (%d)" % stake)
 
-    cards_c, captain_c, fan_c = validate_team(db, challenger, formation, tactic, slots, captain_card_id, fan_card_id)
+    cards_c, captain_c, fan_c, equip_c = validate_team(db, challenger, formation, tactic, slots, captain_card_id,
+                                                       fan_card_id, equipment_card_ids)
 
     proposal_slots = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in proposal.slots]
     try:
-        cards_d, captain_d, fan_d = validate_team(db, creator, proposal.formation, proposal.tactic, proposal_slots,
-                                                  proposal.captain_card_id, proposal.fan_card_id)
+        cards_d, captain_d, fan_d, equip_d = validate_team(db, creator, proposal.formation, proposal.tactic, proposal_slots,
+                                                           proposal.captain_card_id, proposal.fan_card_id,
+                                                           [e.card_id for e in proposal.equipment])
     except DuelError:
         cancel_proposal(db, proposal)
         db.commit()
@@ -460,8 +493,8 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     winner_tactic = tactic_advantage(tactic, proposal.tactic)          # 'a' = challenger, 'b' = créateur
     mult_c = 1 + TACTIC_BONUS if winner_tactic == "a" else 1.0
     mult_d = 1 + TACTIC_BONUS if winner_tactic == "b" else 1.0
-    att_c, def_c, fan_bonus_c = team_powers(side_c["members"], fan_c, mult_c)
-    att_d, def_d, fan_bonus_d = team_powers(side_d["members"], fan_d, mult_d)
+    att_c, def_c, _, _ = team_powers(side_c["members"], fan_c, mult_c, equip_c)
+    att_d, def_d, _, _ = team_powers(side_d["members"], fan_d, mult_d, equip_d)
 
     xg_c = expected_goals(att_c, def_d)
     xg_d = expected_goals(att_d, def_c)
@@ -493,7 +526,7 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     if pack_winner is not None:
         pack_winner.pack_state.match_pack_tokens += 1
 
-    lineups = {"challenger": _lineup_snapshot(side_c, fan_c), "defender": _lineup_snapshot(side_d, fan_d)}
+    lineups = {"challenger": _lineup_snapshot(side_c, fan_c, equip_c), "defender": _lineup_snapshot(side_d, fan_d, equip_d)}
     duel = Duel(
         challenger_id=challenger.id, defender_id=creator.id, stake=stake,
         formation_challenger=formation, formation_defender=proposal.formation,
@@ -631,5 +664,5 @@ def list_proposals(db: Session) -> list:
     return [{
         "id": p.id, "creator": p.creator.pseudo, "creator_elo": p.creator.elo,
         "formation": p.formation, "stake": p.stake, "created_at": p.created_at.isoformat(),
-        "has_fan": bool(p.fan_card_id),
+        "has_fan": bool(p.fan_card_id), "equipment_count": len(p.equipment),
     } for p in rows]
