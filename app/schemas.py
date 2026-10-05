@@ -64,7 +64,7 @@ class AdminDeletePlayerRequest(BaseModel):
 
 class AdminCreateCardRequest(BaseModel):
     player_name: str
-    tier: str  # "commune" | "rare" | "epique" | "legendaire"
+    tier: str  # "commune" | "rare" | "gold" | "secrete" | "speciale" | "epique" | "legendaire"
     grant_to_pseudo: Optional[str] = None
 
 
@@ -241,3 +241,12 @@ class AdminPushBroadcastRequest(BaseModel):
     body: str = Field(min_length=1, max_length=250)
     url: str = "/"
     pseudo: Optional[str] = None       # vide : tous les appareils abonnés
+
+
+class AdminCreatePlayerRequest(BaseModel):
+    name: str
+    poste: str = "X"                       # ATT, MC, DEF, GB, X (pas encore défini) ou FAN (FAN/Rôle possible)
+    photo_url: Optional[str] = None        # ex. "/photos/mathis.jpg"
+    with_rare: Optional[bool] = None       # carte rare ? par défaut : oui pour un joueur, non pour un fan
+    grant_to_pseudo: Optional[str] = None  # offre 1 exemplaire de chaque carte créée à ce compte
+    force: bool = False                    # True : crée même si un nom très proche existe (Léo / Leo)
