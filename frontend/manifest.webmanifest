@@ -1,0 +1,16 @@
+{
+  "name": "FC IPSA V — Cartes du club",
+  "short_name": "FC IPSA V",
+  "description": "Le jeu de cartes à collectionner du FC IPSA V.",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FCC2E2",
+  "theme_color": "#3C1951",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
