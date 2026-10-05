@@ -44,6 +44,7 @@ class TeamPayload(BaseModel):
     slots: List[TeamSlotEntry]          # 5 cartes, chacune avec son emplacement
     captain_card_id: Optional[str] = None
     fan_card_id: Optional[str] = None
+    equipment_card_ids: List[str] = []   # jusqu'à 3 cartes Équipement (bonus d'équipe)
 
 
 class CreateProposalRequest(TeamPayload):
@@ -136,6 +137,7 @@ class AdminRecordMatchRequest(BaseModel):
     lineup: List[str] = []          # joueurs ayant joué ce match (pour matches_joues)
     cartons_jaunes: List[str] = []
     cartons_rouges: List[str] = []
+    stade: Optional[str] = None     # nom du stade ; sa carte (commune) est créée s'il n'existe pas encore
 
 
 class AdminUpdateCardStatsRequest(BaseModel):
@@ -185,3 +187,13 @@ class AdminDeleteUpcomingMatchRequest(BaseModel):
 class AdminCreateMascotRequest(BaseModel):
     name: str = "Le Loup"                       # nom affiché sur les cartes
     grant_to_pseudo: Optional[str] = None       # si fourni : offre 1 exemplaire de chaque rareté à ce compte
+
+
+class EquipmentItem(BaseModel):
+    name: str
+    tier: str = "commune"           # commune | rare | epique | legendaire
+
+
+class AdminCreateEquipmentRequest(BaseModel):
+    items: Optional[List[EquipmentItem]] = None     # vide : crée la liste officielle du club
+    grant_to_pseudo: Optional[str] = None           # offre 1 exemplaire de chaque carte traitée à ce compte
