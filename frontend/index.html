@@ -93,6 +93,8 @@
   .stat-pill .lab{color:rgba(252,194,226,.78);font-weight:600;}
   .logout-btn{background:none;border:none;color:rgba(252,194,226,.8);font-size:12px;text-decoration:underline;cursor:pointer;padding:4px;font-family:var(--font-body);}
   .logout-btn:hover{color:var(--rose);}
+  .sound-btn{background:rgba(252,194,226,.14);border:1.5px solid rgba(252,194,226,.42);color:var(--rose);border-radius:6px;padding:5px 9px;font-size:14px;line-height:1;cursor:pointer;}
+  .sound-btn:hover{background:rgba(252,194,226,.26);}
   @media (max-width:760px){
     .titles h1{font-size:34px;}
     .stats-chip{margin-left:0;flex-wrap:wrap;width:100%;}
@@ -422,6 +424,7 @@
         <span class="stat-pill">💰 <span id="chipCredits">0</span></span>
         <span class="stat-pill"><span class="lab">Packs</span> <span id="chipPacks">0/3</span></span>
         <span class="stat-pill" id="chipPseudo">…</span>
+        <button class="sound-btn" id="soundBtn" type="button" aria-pressed="true" aria-label="Couper le son" title="Couper le son">🔊</button>
         <button class="logout-btn" id="logoutBtn">déconnexion</button>
       </div>
     </div>
@@ -771,6 +774,99 @@
       document.getElementById('packStatus').textContent = statusMsg;
     } catch(e) { /* handled by api() for 401 */ }
   }
+  // ---------- Son : le hurlement du loup à l'ouverture d'un pack ----------
+  // Si le fichier "sounds/loup.mp3" existe à côté de index.html, c'est lui qui est joué.
+  // Sinon, le navigateur fabrique lui-même un hurlement (Web Audio), sans aucun fichier.
+  const SOUND_KEY = 'fca5_sound';
+  let soundOn = (function(){ try { return localStorage.getItem(SOUND_KEY) !== '0'; } catch(e) { return true; } })();
+  let audioCtx = null, howlFile = null, howlFileOk = false;
+
+  function refreshSoundBtn(){
+    const b = document.getElementById('soundBtn');
+    b.textContent = soundOn ? '🔊' : '🔇';
+    b.setAttribute('aria-pressed', String(soundOn));
+    const label = soundOn ? 'Couper le son' : 'Activer le son';
+    b.title = label;
+    b.setAttribute('aria-label', label);
+  }
+  document.getElementById('soundBtn').addEventListener('click', () => {
+    soundOn = !soundOn;
+    try { localStorage.setItem(SOUND_KEY, soundOn ? '1' : '0'); } catch(e) {}
+    refreshSoundBtn();
+    if (soundOn) playHowl();          // petit aperçu quand on réactive le son
+  });
+  refreshSoundBtn();
+
+  try {                                // on tente de précharger un vrai fichier ; sinon on se rabat sur le son fabriqué
+    howlFile = new Audio();
+    howlFile.preload = 'auto';
+    howlFile.addEventListener('canplaythrough', () => { howlFileOk = true; }, { once: true });
+    howlFile.addEventListener('error', () => { howlFileOk = false; });
+    howlFile.src = 'sounds/loup.mp3';
+  } catch(e) { howlFile = null; }
+
+  function synthHowl(ctx){
+    const t0 = ctx.currentTime + 0.02, dur = 2.6;
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(0.0001, t0);
+    master.gain.exponentialRampToValueAtTime(0.30, t0 + 0.3);
+    master.gain.setValueAtTime(0.30, t0 + 1.5);
+    master.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    const tone = ctx.createBiquadFilter(); tone.type = 'lowpass'; tone.frequency.value = 2400;
+    tone.connect(master); master.connect(ctx.destination);
+
+    // la voix : la hauteur monte, tient, puis retombe ; un vibrato s'installe au milieu
+    const pitch = (osc, k) => {
+      const f = osc.frequency;
+      f.setValueAtTime(250 * k, t0);
+      f.exponentialRampToValueAtTime(640 * k, t0 + 0.9);
+      f.exponentialRampToValueAtTime(600 * k, t0 + 1.6);
+      f.exponentialRampToValueAtTime(320 * k, t0 + dur);
+    };
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 5.5;
+    const voices = [['triangle', 1, 1], ['sine', 2, 0.35]].map(([type, k, level]) => {
+      const osc = ctx.createOscillator(); osc.type = type; pitch(osc, k);
+      const g = ctx.createGain(); g.gain.value = level;
+      const vib = ctx.createGain();
+      vib.gain.setValueAtTime(0, t0); vib.gain.linearRampToValueAtTime(11 * k, t0 + 1.1);
+      lfo.connect(vib); vib.connect(osc.frequency);
+      osc.connect(g); g.connect(tone);
+      return osc;
+    });
+    // le souffle : un peu de bruit filtré
+    const len = Math.floor(ctx.sampleRate * dur), buf = ctx.createBuffer(1, len, ctx.sampleRate), data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource(); noise.buffer = buf;
+    const band = ctx.createBiquadFilter(); band.type = 'bandpass'; band.frequency.value = 1100; band.Q.value = 0.8;
+    const ng = ctx.createGain(); ng.gain.value = 0.05;
+    noise.connect(band); band.connect(ng); ng.connect(tone);
+
+    [...voices, lfo, noise].forEach(n => n.start(t0));
+    [...voices, lfo, noise].forEach(n => n.stop(t0 + dur + 0.1));
+  }
+
+  function playHowl(){
+    if (!soundOn) return;
+    try {
+      if (howlFile && howlFileOk) {
+        howlFile.currentTime = 0;
+        const pr = howlFile.play();
+        if (pr && pr.catch) pr.catch(() => playSynth());
+        return;
+      }
+      playSynth();
+    } catch(e) { /* le son ne doit jamais empêcher d'ouvrir un pack */ }
+  }
+  function playSynth(){
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!audioCtx) audioCtx = new AC();                 // créé pendant un clic : autorisé par les navigateurs
+      if (audioCtx.state === 'suspended' && audioCtx.resume) audioCtx.resume();
+      synthHowl(audioCtx);
+    } catch(e) { /* pas de son possible : tant pis */ }
+  }
+
   const PACK_ORDER = ['classique', 'rare', 'epique', 'legendaire', 'match'];
   const PACK_LABELS = { classique: 'pack classique', rare: 'pack rare', epique: 'pack épique', legendaire: 'pack légendaire', match: 'pack match' };
   // un bouton par type de pack bonus possédé (le compte test les a tous, sans limite)
@@ -903,6 +999,7 @@
   async function openPack(packType){
     if (opening) return;
     opening = true;
+    playHowl();            // dans le clic, pour que le navigateur autorise le son
     // annule tout minuteur laissé par une ouverture précédente interrompue,
     // pour ne jamais avoir deux séquences d'animation qui se marchent dessus
     pendingTimers.forEach(clearTimeout);
