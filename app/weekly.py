@@ -113,6 +113,9 @@ def run_weekly_specials(db: Session, start: datetime, end: datetime, dry_run: bo
         report["awards"].append(entry)
     if not dry_run:
         db.commit()
+        if report["awards"]:
+            from . import push            # (import ici pour éviter une dépendance circulaire)
+            push.safe(db, push.notify_weekly_specials, report["awards"])
     return report
 
 
