@@ -260,6 +260,12 @@ def list_upcoming_matches(db: Session = Depends(get_db)):
     } for u in rows]
 
 
+@app.get("/game/rules")
+def game_rules(db: Session = Depends(get_db)):
+    """Chances de tirage des packs (calculées en direct), valeurs de revente, règle de fusion : alimente les pages d'aide."""
+    return game_logic.pack_odds(db)
+
+
 @app.get("/players/stats")
 def players_stats(db: Session = Depends(get_db)):
     """Statistiques RÉELLES de saison des joueurs (hors supporters), classées par buts."""
@@ -377,7 +383,7 @@ def duel_recap(duel_id: str, db: Session = Depends(get_db)):
 
 
 @app.get("/duel/card-stats")
-def duel_card_stats(limit: int = 3, db: Session = Depends(get_db)):
+def duel_card_stats(limit: int = 5, db: Session = Depends(get_db)):
     """Les cartes les plus utilisées / les plus décisives (buts, passes) dans les matchs 1v1."""
     limit = max(1, min(limit, 10))
     used, goals, assists = duel_engine.duel_card_stats(db)
