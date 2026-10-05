@@ -255,9 +255,9 @@ EQUIPMENT_CATALOG = [
     ("Pack de bière", "epique"),
 ]
 
-# Carte épique (buteurs) : 85 au premier but de la saison, puis +5 par but supplémentaire.
+# Carte épique (buteurs) : 85 au premier but de la saison, puis +2 par but supplémentaire (un but = +2 sur la carte).
 EPIC_BASE_NOTE = 85
-EPIC_NOTE_PER_EXTRA_GOAL = 5
+EPIC_NOTE_PER_EXTRA_GOAL = 2
 
 
 def card_note(player: Player, tier: str, card=None) -> int:
