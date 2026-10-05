@@ -136,3 +136,53 @@ def check_and_run(db: Session, now: datetime = None):
     job.last_slot, job.last_run_at, job.last_report = slot, now, json.dumps(report, ensure_ascii=False)
     db.commit()
     return report
+
+
+# ----------------------------------------------- classement des cartes stars de la semaine ----
+
+def next_slot(slot_utc: datetime) -> datetime:
+    """Le vendredi 17h (Paris) suivant un créneau donné (le changement d'heure est géré)."""
+    return from_paris(to_paris(slot_utc) + timedelta(days=7))
+
+
+def window_tiers(db: Session, start: datetime, end: datetime) -> Counter:
+    """Utilisations par carte (joueur, rareté) sur la fenêtre : sert à choisir quelle carte afficher pour un joueur."""
+    tiers = Counter()
+    for d in db.query(Duel).filter(Duel.lineups_json.isnot(None), Duel.created_at > start, Duel.created_at <= end).all():
+        try:
+            lineups = json.loads(d.lineups_json)
+        except ValueError:
+            continue
+        for side in ("challenger", "defender"):
+            for p in lineups.get(side, {}).get("players", []):
+                tiers[(p["player"], p["tier"])] += 1
+    return tiers
+
+
+def week_board(db: Session, now: datetime = None, limit: int = 5) -> dict:
+    """Les stars de la semaine en cours : depuis le dernier vendredi 17h, remis à zéro au prochain.
+    Compté PAR JOUEUR (toutes raretés confondues), exactement comme l'attribution des cartes spéciales :
+    le n°1 de chaque catégorie est celui qui recevra sa carte spéciale vendredi. Pour chaque joueur on
+    indique la rareté qu'il a le plus utilisée cette semaine (c'est la carte qu'on affiche)."""
+    now = now or datetime.utcnow()
+    start = last_slot(now)
+    used, goals, assists, _n = window_stats(db, start, now)
+    tiers = window_tiers(db, start, now)
+    rank = {t: i for i, t in enumerate(game_logic.TIER_ORDER)}
+
+    def display_tier(name):
+        mine = [(n, rank.get(t, 0), t) for (nm, t), n in tiers.items() if nm == name]
+        return max(mine)[2] if mine else "commune"            # le plus utilisé ; à égalité, la plus rare
+
+    def top(counter):
+        out = []
+        for name, n in sorted(counter.items(), key=lambda kv: (-kv[1], kv[0])):
+            player = db.query(Player).filter_by(name=name).first()
+            if player is not None and game_logic.card_kind(player) == "joueur":
+                out.append((name, display_tier(name), n))
+            if len(out) >= limit:
+                break
+        return out
+
+    return {"since": start, "resets_at": next_slot(start),
+            "most_used": top(used), "top_scorers": top(goals), "top_assisters": top(assists)}
