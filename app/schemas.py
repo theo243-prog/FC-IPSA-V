@@ -180,3 +180,8 @@ class AdminDeleteUpcomingMatchRequest(BaseModel):
     upcoming_id: Optional[str] = None
     date: Optional[str] = None
     opponent: Optional[str] = None
+
+
+class AdminCreateMascotRequest(BaseModel):
+    name: str = "Le Loup"                       # nom affiché sur les cartes
+    grant_to_pseudo: Optional[str] = None       # si fourni : offre 1 exemplaire de chaque rareté à ce compte
