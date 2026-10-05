@@ -251,6 +251,43 @@ def open_pack_for_user(db: Session, user: User, pack_type: str = "free") -> dict
 CARD_NOTE = {"commune": 75, "rare": 85, "legendaire": 95}
 TIER_FAN_BONUS = {"commune": 0.05, "rare": 0.10, "epique": 0.12, "legendaire": 0.15}  # bonus % apporté par le Fan
 
+# Cartes Équipement : un bonus d'équipe en 1v1, qui s'ajoute à celui du Fan. Jusqu'à MAX_EQUIPMENT par équipe.
+TIER_EQUIPMENT_BONUS = {"commune": 0.01, "rare": 0.02, "epique": 0.03, "legendaire": 0.05}
+MAX_EQUIPMENT = 3
+
+# Les cartes "qui ne sont pas des joueurs" sont repérées par leur poste (comme les Fans) :
+#   FAN... -> supporter / mascotte ; EQUIPEMENT -> équipement ; STADE -> stade ; autre -> joueur.
+def card_kind(player) -> str:
+    poste = (player.poste or "").upper()
+    if poste.startswith("FAN"):
+        return "fan"
+    if poste == "EQUIPEMENT":
+        return "equipement"
+    if poste == "STADE":
+        return "stade"
+    return "joueur"
+
+
+def is_fan(player) -> bool:
+    return card_kind(player) == "fan"
+
+
+def is_equipment(player) -> bool:
+    return card_kind(player) == "equipement"
+
+
+def is_stadium(player) -> bool:
+    return card_kind(player) == "stade"
+
+
+# Équipements créés par la commande admin /admin/create-equipment (nom, rareté).
+EQUIPMENT_CATALOG = [
+    ("Gourde", "commune"), ("Ballon du match", "commune"), ("Protège-tibias", "commune"),
+    ("Chasuble", "commune"), ("Chaussettes trouées", "commune"), ("Banc de touche", "commune"),
+    ("Galette-saucisse", "rare"), ("Enceinte JBL", "rare"), ("Trousse à pharmacie", "rare"), ("Tableau tactique", "rare"),
+    ("Pack de bière", "epique"),
+]
+
 # Carte épique (buteurs) : 85 au premier but de la saison, puis +5 par but supplémentaire.
 EPIC_BASE_NOTE = 85
 EPIC_NOTE_PER_EXTRA_GOAL = 5
@@ -264,8 +301,9 @@ def card_note(player: Player, tier: str) -> int:
 
 
 def get_display_note(player: Player, tier: str = "commune"):
-    """Note affichée sur la carte. Les cartes Fan n'ont pas de note (elles donnent un bonus)."""
-    if (player.poste or "").upper().startswith("FAN"):
+    """Note affichée sur la carte. Seuls les joueurs ont une note : Fans et équipements donnent un bonus,
+    les stades n'ont ni note ni bonus."""
+    if card_kind(player) != "joueur":
         return None
     return {"label": "NOTE", "value": card_note(player, tier)}
 
