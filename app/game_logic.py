@@ -51,7 +51,7 @@ PACK_TYPES = {
               "description": "3 cartes avec des chances boostées, et le seul pack où sortent les cartes spéciales"},
 }
 
-CRAFT_THRESHOLD = 10   # nombre de DOUBLONS (en plus du premier) nécessaires pour le craft commune -> rare
+# Plus aucun craft automatique : les doublons ne servent qu'à être revendus ou à remplir la jauge de la carte secrète.
 
 # Fusion vers la carte SECRÈTE d'un joueur / fan / mascotte : 100 « points » de doublons.
 # Un doublon commune vaut 1 point, un doublon rare en vaut 5.
@@ -107,34 +107,6 @@ def get_or_create_owned(db: Session, user: User, card: Card) -> OwnedCard:
         db.add(owned)
         db.flush()
     return owned
-
-
-def apply_crafts(db: Session, user: User) -> list[dict]:
-    """
-    Craft automatique : 10 doublons d'une carte commune débloquent (en consommant 10 exemplaires) la
-    carte rare du même joueur, une seule fois. (L'ancien craft rare -> légendaire a été retiré.)
-    Retourne la liste des crafts effectués, pour affichage côté frontend.
-    """
-    crafted = []
-    commune_dupes = (
-        db.query(OwnedCard)
-        .join(Card)
-        .filter(OwnedCard.user_id == user.id, Card.tier == Tier.commune, OwnedCard.quantity >= CRAFT_THRESHOLD + 1)
-        .all()
-    )
-    for owned in commune_dupes:
-        rare_card = db.query(Card).filter_by(player_id=owned.card.player_id, tier=Tier.rare).first()
-        if not rare_card:
-            continue
-        rare_owned = get_or_create_owned(db, user, rare_card)
-        while owned.quantity >= CRAFT_THRESHOLD + 1 and rare_owned.quantity == 0:
-            owned.quantity -= CRAFT_THRESHOLD
-            rare_owned.quantity += 1
-            crafted.append({"type": "rare_debloquee", "player": owned.card.player.name})
-            break  # une seule fois : au-delà, le joueur garde ses doublons restants normalement
-    if crafted:
-        db.commit()
-    return crafted
 
 
 def tier_card_counts(db: Session) -> dict:
@@ -218,10 +190,9 @@ def open_pack_for_user(db: Session, user: User, pack_type: str = "free") -> dict
         cards_won.append(card)
 
     db.commit()
-    crafted = apply_crafts(db, user)
 
     return {"credits_won": credits_won, "cards_won": cards_won, "new_flags": new_flags,
-            "crafted": crafted, "source": source, "pack_type": effective}
+            "crafted": [], "source": source, "pack_type": effective}
 
 
 # ---------------------------------------------------------------------
@@ -383,3 +354,29 @@ def unlock_secret(db: Session, user: User, card_id: str) -> dict:
     owned_secret.quantity = 1
     db.commit()
     return {"card_id": card.id, "player": card.player.name, "used": used}
+
+
+# ---------------------------------------------------------------------
+# Règles exposées au site (page d'aide) : les % de tirage sont calculés EN DIRECT, avec les cartes qui existent.
+# ---------------------------------------------------------------------
+
+def _percent(weights: dict) -> dict:
+    total = sum(weights.values())
+    return {k: round(100 * w / total, 1) for k, w in weights.items()} if total else {}
+
+
+def pack_odds(db: Session) -> dict:
+    """Pour chaque type de pack : les cartes garanties et la chance de chaque rareté pour les autres cartes."""
+    counts = tier_card_counts(db)
+    packs = {}
+    for key, spec in PACK_TYPES.items():
+        base = spec.get("weights") or TIER_WEIGHTS
+        packs[key] = {
+            "label": spec["label"], "price": spec["price"], "description": spec["description"],
+            "guaranteed": list(spec["guaranteed"]), "available": pack_available(counts, key),
+            "odds": _percent(classic_tier_weights(counts, base)),          # réel (rareté sans carte ignorée, rareté récente réduite)
+            "nominal": _percent(base),                                      # théorique, avec toutes les raretés présentes
+        }
+    return {"counts": counts, "packs": packs, "never_in_packs": ["secrete"],
+            "sell_values": DUPLICATE_SELL_VALUE, "secret_fusion": {"cost": SECRET_FUSION_COST, "rare_value": RARE_FUSION_VALUE},
+            "tier_order": TIER_ORDER, "free_packs_max": MAX_STORED_PACKS, "free_pack_hours": PACK_REGEN_SECONDS // 3600}
