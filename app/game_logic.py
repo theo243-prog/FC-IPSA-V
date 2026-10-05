@@ -14,15 +14,21 @@ PACK_REGEN_SECONDS = 8 * 3600          # 8h pour régénérer un pack gratuit
 MAX_STORED_PACKS = 3                   # jamais plus de 3 packs gratuits en stock
 
 CREDIT_WEIGHTS = {1: 40, 2: 25, 3: 18, 4: 12, 5: 5}         # plus le nombre est grand, plus c'est rare
-TIER_WEIGHTS = {"commune": 72, "rare": 20, "epique": 6, "legendaire": 2}  # probas par carte tirée dans un pack
+# Probas par carte tirée dans un pack classique. Les cartes secrètes n'y sont JAMAIS (fusion uniquement) et les
+# spéciales n'existent que dans les packs match.
+TIER_WEIGHTS = {"commune": 68, "rare": 19, "gold": 6, "epique": 5, "legendaire": 2}
 # (une rareté dont aucune carte n'existe encore est ignorée au tirage, les autres se rééquilibrent)
 
 # Nombre de cartes à partir duquel une rareté atteint sa probabilité "pleine".
 # En dessous, sa probabilité est réduite proportionnellement : avec peu de cartes
 # épiques/légendaires, chacune ne tombe jamais plus souvent qu'avec le nombre de référence.
-TIER_REF_COUNT = {"epique": 6, "legendaire": 4}
+TIER_REF_COUNT = {"gold": 6, "speciale": 3, "epique": 6, "legendaire": 4}
 
-DUPLICATE_SELL_VALUE = {"commune": 1, "rare": 3, "epique": 4, "legendaire": 5}
+# Les spéciales ont les mêmes valeurs que les épiques.
+DUPLICATE_SELL_VALUE = {"commune": 1, "rare": 3, "gold": 4, "secrete": 5, "speciale": 4, "epique": 4, "legendaire": 5}
+
+# Ordre de rareté, de la plus commune à la plus rare.
+TIER_ORDER = ["commune", "rare", "gold", "secrete", "speciale", "epique", "legendaire"]
 
 # Types de packs. "guaranteed" = raretés garanties ; les autres cartes (jusqu'à 3) suivent les probas classiques.
 PACK_TYPES = {
@@ -41,12 +47,16 @@ PACK_TYPES = {
     # Récompense des victoires en 1v1 : pas en vente (price None), probabilités boostées.
     "match": {"label": "Pack match", "price": None, "guaranteed": [],
               "token_field": "match_pack_tokens",
-              "weights": {"commune": 45, "rare": 35, "epique": 14, "legendaire": 6},
-              "description": "3 cartes avec des chances boostées d'obtenir des rares, épiques et légendaires"},
+              "weights": {"commune": 30, "rare": 30, "gold": 8, "speciale": 14, "epique": 12, "legendaire": 6},
+              "description": "3 cartes avec des chances boostées, et le seul pack où sortent les cartes spéciales"},
 }
 
-CRAFT_THRESHOLD = 10   # nombre de DOUBLONS (en plus du premier) nécessaires pour le craft
-LEGENDARY_BONUS = 12   # points de stats ajoutés par rapport à la carte rare, pour une légendaire auto-créée
+CRAFT_THRESHOLD = 10   # nombre de DOUBLONS (en plus du premier) nécessaires pour le craft commune -> rare
+
+# Fusion vers la carte SECRÈTE d'un joueur / fan / mascotte : 100 « points » de doublons.
+# Un doublon commune vaut 1 point, un doublon rare en vaut 5.
+SECRET_FUSION_COST = 100
+RARE_FUSION_VALUE = 5
 
 
 def _roll_weighted(weights: dict) -> str:
@@ -101,15 +111,11 @@ def get_or_create_owned(db: Session, user: User, card: Card) -> OwnedCard:
 
 def apply_crafts(db: Session, user: User) -> list[dict]:
     """
-    Vérifie tous les doublons du joueur et applique les crafts automatiques :
-    - 10 doublons d'une carte commune -> débloque (consomme 10) la carte rare du même joueur
-    - 10 doublons d'une carte rare    -> débloque (consomme 10) la carte légendaire du même joueur
-      (créée à la volée si elle n'existe pas encore)
+    Craft automatique : 10 doublons d'une carte commune débloquent (en consommant 10 exemplaires) la
+    carte rare du même joueur, une seule fois. (L'ancien craft rare -> légendaire a été retiré.)
     Retourne la liste des crafts effectués, pour affichage côté frontend.
     """
     crafted = []
-
-    # Commune -> Rare
     commune_dupes = (
         db.query(OwnedCard)
         .join(Card)
@@ -126,31 +132,6 @@ def apply_crafts(db: Session, user: User) -> list[dict]:
             rare_owned.quantity += 1
             crafted.append({"type": "rare_debloquee", "player": owned.card.player.name})
             break  # une seule fois : au-delà, le joueur garde ses doublons restants normalement
-
-    # Rare -> Légendaire
-    rare_dupes = (
-        db.query(OwnedCard)
-        .join(Card)
-        .filter(OwnedCard.user_id == user.id, Card.tier == Tier.rare, OwnedCard.quantity >= CRAFT_THRESHOLD + 1)
-        .all()
-    )
-    for owned in rare_dupes:
-        legend_card = db.query(Card).filter_by(player_id=owned.card.player_id, tier=Tier.legendaire).first()
-        if not legend_card:
-            legend_card = Card(
-                player_id=owned.card.player_id,
-                tier=Tier.legendaire,
-                vitesse=min(99, owned.card.vitesse + LEGENDARY_BONUS),
-                tir=min(99, owned.card.tir + LEGENDARY_BONUS),
-            )
-            db.add(legend_card)
-            db.flush()
-        legend_owned = get_or_create_owned(db, user, legend_card)
-        if owned.quantity >= CRAFT_THRESHOLD + 1:
-            owned.quantity -= CRAFT_THRESHOLD
-            legend_owned.quantity += 1
-            crafted.append({"type": "legendaire_debloquee", "player": owned.card.player.name})
-
     if crafted:
         db.commit()
     return crafted
@@ -248,28 +229,43 @@ def open_pack_for_user(db: Session, user: User, pack_type: str = "free") -> dict
 # (plus de notes par poste). Réutilisée par le moteur de duel.
 # ---------------------------------------------------------------------
 
-CARD_NOTE = {"commune": 75, "rare": 85, "legendaire": 95}
-TIER_FAN_BONUS = {"commune": 0.05, "rare": 0.10, "epique": 0.12, "legendaire": 0.15}  # bonus % apporté par le Fan
+CARD_NOTE = {"commune": 75, "rare": 85, "secrete": 90, "legendaire": 95}
+SPECIAL_BASE_NOTE = 80      # note d'une carte spéciale à sa création ; +1 à chaque nouvelle récompense
+TIER_FAN_BONUS = {"commune": 0.05, "rare": 0.10, "epique": 0.12, "secrete": 0.13, "legendaire": 0.15}  # bonus % apporté par le Fan
+TIER_MASCOT_BONUS = dict(TIER_FAN_BONUS)       # la mascotte (Le Loup) a son propre emplacement, mêmes bonus que le Fan
 
-# Cartes Équipement : un bonus d'équipe en 1v1, qui s'ajoute à celui du Fan. Jusqu'à MAX_EQUIPMENT par équipe.
+# Cartes Équipement : un bonus d'équipe en 1v1, qui s'ajoute à ceux du Fan et du Loup. Un seul équipement par équipe.
 TIER_EQUIPMENT_BONUS = {"commune": 0.01, "rare": 0.02, "epique": 0.03, "legendaire": 0.05}
-MAX_EQUIPMENT = 3
+MAX_EQUIPMENT = 1
 
 # Les cartes "qui ne sont pas des joueurs" sont repérées par leur poste (comme les Fans) :
 #   FAN... -> supporter / mascotte ; EQUIPEMENT -> équipement ; STADE -> stade ; autre -> joueur.
 def card_kind(player) -> str:
     poste = (player.poste or "").upper()
+    if poste == "MASCOTTE" or poste.startswith("FAN/MASCOTTE"):     # (l'ancien format FAN/Mascotte est reconnu aussi)
+        return "mascotte"
     if poste.startswith("FAN"):
         return "fan"
     if poste == "EQUIPEMENT":
         return "equipement"
     if poste == "STADE":
         return "stade"
+    if poste == "MOMENT":
+        return "moment"
     return "joueur"
 
 
 def is_fan(player) -> bool:
     return card_kind(player) == "fan"
+
+
+def is_mascot(player) -> bool:
+    return card_kind(player) == "mascotte"
+
+
+def has_secret_card(player) -> bool:
+    """Chaque joueur, fan et la mascotte ont leur carte secrète (pas les équipements, stades ni moments gold)."""
+    return card_kind(player) in ("joueur", "fan", "mascotte")
 
 
 def is_equipment(player) -> bool:
@@ -293,19 +289,22 @@ EPIC_BASE_NOTE = 85
 EPIC_NOTE_PER_EXTRA_GOAL = 5
 
 
-def card_note(player: Player, tier: str) -> int:
-    """La note d'une carte : fixe selon la rareté, sauf l'épique qui grimpe avec les buts du joueur."""
+def card_note(player: Player, tier: str, card=None) -> int:
+    """La note d'une carte : fixe selon la rareté ; l'épique grimpe avec les buts du joueur ;
+    la spéciale vaut 80 au départ puis +1 à chaque nouvelle récompense (valeur stockée sur la carte)."""
     if tier == "epique":
         return EPIC_BASE_NOTE + EPIC_NOTE_PER_EXTRA_GOAL * max(0, (player.buts or 0) - 1)
+    if tier == "speciale":
+        return (card.note if card is not None and card.note else SPECIAL_BASE_NOTE)
     return CARD_NOTE.get(tier, 75)
 
 
-def get_display_note(player: Player, tier: str = "commune"):
+def get_display_note(player: Player, tier: str = "commune", card=None):
     """Note affichée sur la carte. Seuls les joueurs ont une note : Fans et équipements donnent un bonus,
     les stades n'ont ni note ni bonus."""
     if card_kind(player) != "joueur":
         return None
-    return {"label": "NOTE", "value": card_note(player, tier)}
+    return {"label": "NOTE", "value": card_note(player, tier, card)}
 
 
 def sell_duplicate(db: Session, user: User, card_id: str) -> int:
@@ -318,3 +317,69 @@ def sell_duplicate(db: Session, user: User, card_id: str) -> int:
     user.credits += value
     db.commit()
     return value
+
+
+# ---------------------------------------------------------------------
+# Cartes SECRÈTES : une par joueur / fan / mascotte, jamais dans les packs.
+# Elles se débloquent en fusionnant des doublons de communes (1 point) et de rares (5 points) du même joueur.
+# ---------------------------------------------------------------------
+
+def ensure_secret_cards(db: Session) -> int:
+    """Crée la carte secrète manquante de chaque joueur / fan / mascotte. Retourne le nombre créé."""
+    created = 0
+    for player in db.query(Player).all():
+        if not has_secret_card(player):
+            continue
+        if db.query(Card).filter_by(player_id=player.id, tier=Tier.secrete).first() is None:
+            db.add(Card(player_id=player.id, tier=Tier.secrete, vitesse=0, tir=0))
+            created += 1
+    if created:
+        db.commit()
+    return created
+
+
+def fusion_points(commune_qty: int, rare_qty: int) -> int:
+    """Points de fusion : seuls les DOUBLONS comptent (le premier exemplaire de chaque carte reste au joueur)."""
+    return max(0, commune_qty - 1) + RARE_FUSION_VALUE * max(0, rare_qty - 1)
+
+
+def fusion_state(db: Session, user: User, card: Card) -> dict:
+    """Progression d'un joueur vers la carte secrète `card`."""
+    qty = {}
+    for tier in (Tier.commune, Tier.rare):
+        c = db.query(Card).filter_by(player_id=card.player_id, tier=tier).first()
+        o = db.query(OwnedCard).filter_by(user_id=user.id, card_id=c.id).first() if c else None
+        qty[tier.value] = o.quantity if o else 0
+    points = fusion_points(qty["commune"], qty["rare"])
+    return {"points": points, "needed": SECRET_FUSION_COST, "ready": points >= SECRET_FUSION_COST,
+            "commune_dupes": max(0, qty["commune"] - 1), "rare_dupes": max(0, qty["rare"] - 1)}
+
+
+def unlock_secret(db: Session, user: User, card_id: str) -> dict:
+    """Débloque une carte secrète en consommant des doublons : d'abord les communes, puis les rares
+    (5 points chacune) pour compléter. Lève ValueError("not_secret" | "already_owned" | "not_enough")."""
+    card = db.get(Card, card_id)
+    if card is None or card.tier != Tier.secrete:
+        raise ValueError("not_secret")
+    owned_secret = get_or_create_owned(db, user, card)
+    if owned_secret.quantity > 0:
+        raise ValueError("already_owned")
+    state = fusion_state(db, user, card)
+    if not state["ready"]:
+        raise ValueError("not_enough")
+    need = SECRET_FUSION_COST
+    used = {"commune": 0, "rare": 0}
+    commune_card = db.query(Card).filter_by(player_id=card.player_id, tier=Tier.commune).first()
+    rare_card = db.query(Card).filter_by(player_id=card.player_id, tier=Tier.rare).first()
+    if commune_card:
+        o = db.query(OwnedCard).filter_by(user_id=user.id, card_id=commune_card.id).first()
+        take = min(need, max(0, (o.quantity if o else 0) - 1))
+        if take:
+            o.quantity -= take; used["commune"] = take; need -= take
+    if need > 0 and rare_card:
+        o = db.query(OwnedCard).filter_by(user_id=user.id, card_id=rare_card.id).first()
+        take = -(-need // RARE_FUSION_VALUE)                       # on arrondit au-dessus
+        o.quantity -= take; used["rare"] = take; need = 0
+    owned_secret.quantity = 1
+    db.commit()
+    return {"card_id": card.id, "player": card.player.name, "used": used}
