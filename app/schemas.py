@@ -44,7 +44,8 @@ class TeamPayload(BaseModel):
     slots: List[TeamSlotEntry]          # 5 cartes, chacune avec son emplacement
     captain_card_id: Optional[str] = None
     fan_card_id: Optional[str] = None
-    equipment_card_ids: List[str] = []   # jusqu'à 3 cartes Équipement (bonus d'équipe)
+    equipment_card_ids: List[str] = []   # 1 carte Équipement au maximum (bonus d'équipe)
+    mascot_card_id: Optional[str] = None  # carte Loup (la mascotte) : emplacement distinct du Fan
 
 
 class CreateProposalRequest(TeamPayload):
@@ -126,6 +127,11 @@ class AssistEntry(BaseModel):
     count: int = Field(default=1, ge=1)
 
 
+class MomentEntry(BaseModel):
+    player_name: str         # le joueur qui a fait l'action
+    action: str              # "Petit pont", "Dribble", "Sauvetage", "Fausse touche"...
+
+
 class AdminRecordMatchRequest(BaseModel):
     date: str  # "2026-10-12"
     opponent: str
@@ -138,6 +144,7 @@ class AdminRecordMatchRequest(BaseModel):
     cartons_jaunes: List[str] = []
     cartons_rouges: List[str] = []
     stade: Optional[str] = None     # nom du stade ; sa carte (commune) est créée s'il n'existe pas encore
+    moments: List["MomentEntry"] = []   # moments mémorables : chacun crée une carte GOLD
 
 
 class AdminUpdateCardStatsRequest(BaseModel):
@@ -197,3 +204,12 @@ class EquipmentItem(BaseModel):
 class AdminCreateEquipmentRequest(BaseModel):
     items: Optional[List[EquipmentItem]] = None     # vide : crée la liste officielle du club
     grant_to_pseudo: Optional[str] = None           # offre 1 exemplaire de chaque carte traitée à ce compte
+
+
+class UnlockSecretRequest(BaseModel):
+    card_id: str
+
+
+class AdminRunWeeklyRequest(BaseModel):
+    days: int = Field(default=7, ge=1, le=60)       # fenêtre de matchs 1v1 examinée (les N derniers jours)
+    dry_run: bool = False                           # True : montre qui gagnerait, sans rien créer
