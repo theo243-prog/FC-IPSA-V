@@ -5,19 +5,20 @@ Lancer en local :
     uvicorn app.main:app --reload
 Puis ouvrir http://127.0.0.1:8000/docs pour tester chaque route.
 """
+import asyncio
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import FastAPI, Depends, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from .database import Base, engine, get_db
-from . import game_logic, duel_engine, schemas
+from .database import Base, engine, get_db, SessionLocal
+from . import game_logic, duel_engine, schemas, weekly
 from sqlalchemy import or_
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
-                     Team, TeamSlot, Duel, MatchProposal, UpcomingMatch)
+                     Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun)
 from .security import hash_password, verify_password, generate_token, get_current_user
 
 # Clé secrète pour les routes /admin/*. À définir dans Railway (Variables -> ADMIN_KEY).
@@ -47,7 +48,7 @@ def card_out(card: Card) -> dict:
         "player_name": card.player.name,
         "poste": card.player.poste,
         "player_photo_url": card.player.photo_url,
-        "display_note": game_logic.get_display_note(card.player, card.tier.value),
+        "display_note": game_logic.get_display_note(card.player, card.tier.value, card),
         "tier": card.tier.value,
         "vitesse": card.vitesse,
         "tir": card.tir,
@@ -154,10 +155,32 @@ def open_pack(
 def get_collection(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     all_cards = db.query(Card).all()
     owned_rows = {o.card_id: o.quantity for o in db.query(OwnedCard).filter_by(user_id=user.id).all()}
-    return [
-        {**card_out(c), "quantity": owned_rows.get(c.id, 0)}
-        for c in all_cards
-    ]
+    qty_by_player = {}                      # joueur -> quantités possédées en commune / rare (pour la jauge de fusion)
+    for c in all_cards:
+        if c.tier in (Tier.commune, Tier.rare):
+            qty_by_player.setdefault(c.player_id, {})[c.tier.value] = owned_rows.get(c.id, 0)
+    out = []
+    for c in all_cards:
+        row = {**card_out(c), "quantity": owned_rows.get(c.id, 0)}
+        if c.tier == Tier.secrete:
+            q = qty_by_player.get(c.player_id, {})
+            points = game_logic.fusion_points(q.get("commune", 0), q.get("rare", 0))
+            row["fusion"] = {"points": points, "needed": game_logic.SECRET_FUSION_COST,
+                             "ready": points >= game_logic.SECRET_FUSION_COST and row["quantity"] == 0}
+        out.append(row)
+    return out
+
+
+@app.post("/collection/unlock-secret")
+def unlock_secret(payload: schemas.UnlockSecretRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Débloque une carte secrète en fusionnant des doublons (100 points : commune = 1, rare = 5)."""
+    try:
+        result = game_logic.unlock_secret(db, user, payload.card_id)
+    except ValueError as e:
+        messages = {"not_secret": "Cette carte n'est pas une carte secrète", "already_owned": "Tu as déjà cette carte secrète",
+                    "not_enough": "Pas assez de doublons : il faut %d points (commune = 1, rare = 5)" % game_logic.SECRET_FUSION_COST}
+        raise HTTPException(status_code=400, detail=messages.get(str(e), "Fusion impossible"))
+    return {"status": "ok", **result}
 
 
 @app.post("/collection/sell-duplicate")
@@ -180,8 +203,20 @@ def player_detail(player_name: str, tier: str = "commune", db: Session = Depends
     player = db.query(Player).filter_by(name=player_name).first()
     if not player:
         raise HTTPException(status_code=404, detail="Joueur introuvable")
+    try:
+        card = db.query(Card).filter_by(player_id=player.id, tier=Tier(tier)).first()
+    except ValueError:
+        card = None
+    moment = None
+    if game_logic.card_kind(player) == "moment":          # carte gold : l'action, le joueur, le match
+        mm = db.query(MatchMoment).filter_by(moment_player_id=player.id).first()
+        if mm:
+            m = db.get(Match, mm.match_id)
+            moment = {"player": mm.real_player_name, "action": mm.action,
+                      "opponent": m.opponent if m else None, "date": m.date.date().isoformat() if m else None}
     return {
         "name": player.name,
+        "moment": moment,
         "poste": player.poste,
         "photo_url": player.photo_url,
         "matches_joues": player.matches_joues,
@@ -191,7 +226,7 @@ def player_detail(player_name: str, tier: str = "commune", db: Session = Depends
         "cartons_rouges": player.cartons_rouges,
         "homme_du_match_count": player.homme_du_match_count,
         "tier": tier,
-        "display_note": game_logic.get_display_note(player, tier),
+        "display_note": game_logic.get_display_note(player, tier, card),
     }
 
 
@@ -204,6 +239,7 @@ def list_matches(db: Session = Depends(get_db)):
             "date": m.date.date().isoformat(),
             "opponent": m.opponent,
             "stade": m.stade,
+            "moments": [{"player": mm.real_player_name, "action": mm.action} for mm in m.moments],
             "score_us": m.score_us,
             "score_them": m.score_them,
             "homme_du_match": m.motm_player.name if m.motm_player else None,
@@ -372,7 +408,7 @@ def create_duel_proposal(payload: schemas.CreateProposalRequest, user: User = De
                          db: Session = Depends(get_db)):
     slots = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in payload.slots]
     proposal = duel_call(duel_engine.create_proposal, db, user, payload.formation, payload.tactic, payload.stake,
-                         slots, payload.captain_card_id, payload.fan_card_id, payload.equipment_card_ids)
+                         slots, payload.captain_card_id, payload.fan_card_id, payload.equipment_card_ids, payload.mascot_card_id)
     return {"id": proposal.id, "credits": user.credits}
 
 
@@ -391,7 +427,7 @@ def play_duel_proposal(proposal_id: str, payload: schemas.TeamPayload, user: Use
                        db: Session = Depends(get_db)):
     slots = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in payload.slots]
     return duel_call(duel_engine.play_proposal, db, user, proposal_id, payload.formation, payload.tactic, slots,
-                     payload.captain_card_id, payload.fan_card_id, payload.equipment_card_ids)
+                     payload.captain_card_id, payload.fan_card_id, payload.equipment_card_ids, payload.mascot_card_id)
 
 
 # --------------------------------------------------------------- Shop -----
@@ -497,6 +533,7 @@ def admin_delete_player(payload: schemas.AdminDeletePlayerRequest, db: Session =
         raise HTTPException(status_code=404, detail="Joueur introuvable")
     card_ids = [c.id for c in player.cards]
     purge_card_rows(db, card_ids)
+    db.query(MatchMoment).filter(MatchMoment.moment_player_id == player.id).delete(synchronize_session=False)
     db.flush()
     db.delete(player)  # cascade : supprime aussi ses Card (commune/rare/légendaire)
     db.commit()
@@ -623,6 +660,27 @@ def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = D
     for name in payload.lineup:
         find_player(name).matches_joues += 1
 
+    # Moments mémorables : chacun donne naissance à une carte GOLD (une 'fiche' de poste MOMENT, avec sa carte).
+    moment_cards = []
+    for entry in payload.moments:
+        actor = find_player(entry.player_name)
+        if game_logic.card_kind(actor) != "joueur":
+            raise HTTPException(status_code=400, detail=entry.player_name + " n'est pas un joueur de l'effectif")
+        action = " ".join(entry.action.split())
+        if not action:
+            raise HTTPException(status_code=400, detail="Un moment mémorable doit avoir une action (ex. « Petit pont »)")
+        name = action + " — " + actor.name
+        if db.query(Player).filter_by(name=name).first():                    # même action, même joueur : on distingue par la date
+            name = name + " (" + match_date.strftime("%d/%m") + ")"
+        while db.query(Player).filter_by(name=name).first():
+            name += "+"
+        moment_player = Player(name=name, poste="MOMENT", photo_url=actor.photo_url)
+        db.add(moment_player)
+        db.flush()
+        db.add(Card(player_id=moment_player.id, tier=Tier.gold, vitesse=0, tir=0))
+        db.add(MatchMoment(match_id=match.id, moment_player_id=moment_player.id, real_player_name=actor.name, action=action))
+        moment_cards.append(name)
+
     epics_created = []
     scorers_notes = {}
     for entry in payload.buteurs:
@@ -663,7 +721,8 @@ def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = D
     return {"status": "ok", "match_id": match.id, "epic_cards_created": epics_created,
             "epic_notes": scorers_notes,  # note actuelle de la carte épique de chaque buteur
             "upcoming_removed": removed_upcoming,
-            "stade": stade_player.name if stade_player else None, "stade_card_created": stade_created}
+            "stade": stade_player.name if stade_player else None, "stade_card_created": stade_created,
+            "gold_cards_created": moment_cards}
 
 
 def _find_by_day_and_opponent(rows, date_str, opponent):
@@ -755,10 +814,23 @@ def admin_delete_match(payload: schemas.AdminDeleteMatchRequest, db: Session = D
                 if match.stade_created and others:
                     others[0].stade_created = True     # un autre match garde la « paternité » de la carte du stade
 
+    # Les cartes gold (moments mémorables) créées par ce match disparaissent avec lui.
+    gold_deleted = []
+    for mm in list(match.moments):
+        moment_player = mm.moment_player
+        db.delete(mm)
+        db.flush()
+        if moment_player is not None:
+            purge_card_rows(db, [c.id for c in moment_player.cards])
+            db.flush()
+            gold_deleted.append(moment_player.name)
+            db.delete(moment_player)
+
     db.delete(match)     # supprime aussi ses lignes de buteurs et de passeurs
     db.commit()
     return {"status": "ok", "deleted_match": label, "reverted": reverted,
-            "epic_cards_deleted": epic_deleted, "stade_card_deleted": stade_deleted, "warnings": warnings}
+            "epic_cards_deleted": epic_deleted, "stade_card_deleted": stade_deleted,
+            "gold_cards_deleted": gold_deleted, "warnings": warnings}
 
 
 @app.post("/admin/add-upcoming-match", dependencies=[Depends(require_admin)])
@@ -811,14 +883,15 @@ def admin_create_card(payload: schemas.AdminCreateCardRequest, db: Session = Dep
     try:
         tier = Tier(payload.tier)
     except ValueError:
-        raise HTTPException(status_code=400, detail="tier doit être commune, rare, epique ou legendaire")
+        raise HTTPException(status_code=400, detail="tier doit être commune, rare, gold, secrete, speciale, epique ou legendaire")
     player = db.query(Player).filter_by(name=payload.player_name).first()
     if not player:
         raise HTTPException(status_code=404, detail="Joueur introuvable")
     card = db.query(Card).filter_by(player_id=player.id, tier=tier).first()
     created = False
     if not card:
-        card = Card(player_id=player.id, tier=tier, vitesse=0, tir=0)
+        card = Card(player_id=player.id, tier=tier, vitesse=0, tir=0,
+                    note=game_logic.SPECIAL_BASE_NOTE if tier == Tier.speciale else None)
         db.add(card)
         db.flush()
         created = True
@@ -835,18 +908,21 @@ def admin_create_card(payload: schemas.AdminCreateCardRequest, db: Session = Dep
 
 @app.post("/admin/create-mascot", dependencies=[Depends(require_admin)])
 def admin_create_mascot(payload: schemas.AdminCreateMascotRequest, db: Session = Depends(get_db)):
-    """Crée la mascotte du club : une carte « Fan / Mascotte » dans les 4 raretés (commune, rare, épique,
-    légendaire). Comme tout Fan, elle apporte un bonus d'équipe en 1v1 (+5 / +10 / +12 / +15 %).
-    Peut être relancée sans risque : elle ne crée que ce qui manque."""
+    """Crée la mascotte du club : une carte « Mascotte » dans les 4 raretés de packs (commune, rare, épique,
+    légendaire), plus sa carte secrète. Elle a son propre emplacement « Loup » en 1v1 (+5 / +10 / +12 / +13 / +15 %),
+    distinct de l'emplacement Fan. Peut être relancée sans risque : elle ne crée que ce qui manque, et passe
+    une ancienne mascotte « FAN/Mascotte » au nouveau format."""
     player = db.query(Player).filter_by(name=payload.name).first()
     created_player = False
     if player is None:
-        player = Player(name=payload.name, poste="FAN/Mascotte")
+        player = Player(name=payload.name, poste="MASCOTTE")
         db.add(player)
         db.flush()
         created_player = True
-    elif not (player.poste or "").upper().startswith("FAN"):
+    elif game_logic.card_kind(player) != "mascotte":
         raise HTTPException(status_code=400, detail="Ce nom est déjà celui d'un joueur de l'effectif : choisis un autre nom pour la mascotte")
+    else:
+        player.poste = "MASCOTTE"        # ancien format « FAN/Mascotte » -> nouveau
 
     created, cards = [], []
     for tier in (Tier.commune, Tier.rare, Tier.epique, Tier.legendaire):
@@ -868,6 +944,7 @@ def admin_create_mascot(payload: schemas.AdminCreateMascotRequest, db: Session =
         granted_to = user.pseudo
 
     db.commit()
+    game_logic.ensure_secret_cards(db)         # sa carte secrète (fusion) est créée aussi
     return {"status": "ok", "mascot": player.name, "player_created": created_player,
             "cards_created": created, "granted_to": granted_to}
 
@@ -884,7 +961,7 @@ def admin_create_equipment(payload: schemas.AdminCreateEquipmentRequest, db: Ses
         try:
             Tier(tier)
         except ValueError:
-            raise HTTPException(status_code=400, detail="Rareté inconnue pour « %s » : %s (commune, rare, epique, legendaire)" % (name, tier))
+            raise HTTPException(status_code=400, detail="Rareté inconnue pour « %s » : %s (commune, rare, gold, secrete, speciale, epique, legendaire)" % (name, tier))
     user = None
     if payload.grant_to_pseudo:
         user = db.query(User).filter_by(pseudo=payload.grant_to_pseudo).first()
@@ -915,6 +992,14 @@ def admin_create_equipment(payload: schemas.AdminCreateEquipmentRequest, db: Ses
             "granted_to": user.pseudo if user else None}
 
 
+@app.post("/admin/run-weekly-specials", dependencies=[Depends(require_admin)])
+def admin_run_weekly_specials(payload: schemas.AdminRunWeeklyRequest, db: Session = Depends(get_db)):
+    """Lance À LA MAIN la tâche du vendredi 17h sur les N derniers jours de matchs 1v1 (essai ou rattrapage).
+    Avec dry_run=true : montre qui gagnerait, sans rien créer. Ne décale pas le vrai créneau du vendredi."""
+    now = datetime.utcnow()
+    return weekly.run_weekly_specials(db, now - timedelta(days=payload.days), now, dry_run=payload.dry_run)
+
+
 @app.post("/admin/delete-card", dependencies=[Depends(require_admin)])
 def admin_delete_card(payload: schemas.AdminDeleteCardRequest, db: Session = Depends(get_db)):
     """Supprime UNE carte précise (un tier d'un joueur), sans toucher au reste
@@ -922,7 +1007,7 @@ def admin_delete_card(payload: schemas.AdminDeleteCardRequest, db: Session = Dep
     try:
         tier = Tier(payload.tier)
     except ValueError:
-        raise HTTPException(status_code=400, detail="tier doit être commune, rare, epique ou legendaire")
+        raise HTTPException(status_code=400, detail="tier doit être commune, rare, gold, secrete, speciale, epique ou legendaire")
     card = (
         db.query(Card).join(Player)
         .filter(Player.name == payload.player_name, Card.tier == tier)
@@ -942,7 +1027,7 @@ def admin_update_card_stats(payload: schemas.AdminUpdateCardStatsRequest, db: Se
     try:
         tier = Tier(payload.tier)
     except ValueError:
-        raise HTTPException(status_code=400, detail="tier doit être commune, rare, epique ou legendaire")
+        raise HTTPException(status_code=400, detail="tier doit être commune, rare, gold, secrete, speciale, epique ou legendaire")
     card = (
         db.query(Card)
         .join(Player)
@@ -1013,3 +1098,36 @@ def admin_grant_packs(payload: schemas.AdminGrantPacksRequest, db: Session = Dep
     setattr(user.pack_state, field, getattr(user.pack_state, field) + payload.count)
     db.commit()
     return {"status": "ok", "pseudo": user.pseudo, "pack_type": payload.pack_type, "pack_tokens": pack_tokens_out(user)}
+
+# ------------------------------------------------- Démarrage + tâches planifiées ----
+
+def _weekly_tick():
+    db = SessionLocal()
+    try:
+        weekly.check_and_run(db)
+    finally:
+        db.close()
+
+
+async def _weekly_loop():
+    """Toutes les minutes : exécute les cartes spéciales du vendredi 17h si leur créneau est passé."""
+    while True:
+        try:
+            await asyncio.get_running_loop().run_in_executor(None, _weekly_tick)
+        except Exception as exc:            # une erreur ici ne doit jamais faire tomber le site
+            print("Tâche hebdomadaire : erreur ignorée :", exc)
+        await asyncio.sleep(60)
+
+
+@app.on_event("startup")
+async def _startup():
+    db = SessionLocal()
+    try:
+        created = game_logic.ensure_secret_cards(db)      # chaque joueur / fan / mascotte a sa carte secrète
+        if created:
+            print("Cartes secrètes créées :", created)
+    except Exception as exc:
+        print("Cartes secrètes : erreur ignorée au démarrage :", exc)
+    finally:
+        db.close()
+    asyncio.create_task(_weekly_loop())
