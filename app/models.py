@@ -31,8 +31,12 @@ def gen_id():
 
 
 class Tier(str, enum.Enum):
+    # ordre de rareté : commune < rare < gold < secrete < speciale < epique < legendaire
     commune = "commune"
     rare = "rare"
+    gold = "gold"            # moment mémorable d'un match IRL (créée par l'admin)
+    secrete = "secrete"      # jamais dans les packs : se débloque par fusion de doublons
+    speciale = "speciale"    # créée chaque vendredi 17h pour les stars du 1v1 ; packs gagnés en 1v1 uniquement
     epique = "epique"
     legendaire = "legendaire"
 
@@ -72,6 +76,7 @@ class Card(Base):
     tier = Column(Enum(Tier), nullable=False)
     vitesse = Column(Integer, nullable=False)
     tir = Column(Integer, nullable=False)
+    note = Column(Integer, nullable=True)     # note fixe de la carte (cartes spéciales : 80, +1 à chaque nouvelle récompense)
 
     player = relationship("Player", back_populates="cards")
 
@@ -139,8 +144,32 @@ class Match(Base):
     stade_created = Column(Boolean, default=False)   # True si la carte du stade a été créée PAR ce match
 
     motm_player = relationship("Player")
+    moments = relationship("MatchMoment", cascade="all, delete-orphan")
     goals = relationship("MatchGoal", cascade="all, delete-orphan")
     assists = relationship("MatchAssist", cascade="all, delete-orphan")
+
+
+class MatchMoment(Base):
+    """Un moment mémorable d'un match IRL : il donne naissance à une carte gold (un 'joueur' de poste MOMENT)."""
+    __tablename__ = "match_moments"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    match_id = Column(String, ForeignKey("matches.id"), nullable=False)
+    moment_player_id = Column(String, ForeignKey("players.id"), nullable=False)   # la 'fiche' qui porte la carte gold
+    real_player_name = Column(String, nullable=False)                              # le joueur qui a fait l'action
+    action = Column(String, nullable=False)                                        # "Petit pont", "Sauvetage"...
+
+    moment_player = relationship("Player")
+
+
+class JobRun(Base):
+    """Mémorise la dernière exécution d'une tâche planifiée (ex. cartes spéciales du vendredi 17h)."""
+    __tablename__ = "job_runs"
+
+    name = Column(String, primary_key=True)
+    last_slot = Column(DateTime, nullable=True)      # le créneau (vendredi 17h, en UTC) déjà traité
+    last_run_at = Column(DateTime, nullable=True)
+    last_report = Column(Text, nullable=True)
 
 
 class UpcomingMatch(Base):
@@ -241,6 +270,7 @@ class MatchProposal(Base):
     tactic = Column(String, nullable=False)
     captain_card_id = Column(String, ForeignKey("cards.id"), nullable=True)
     fan_card_id = Column(String, ForeignKey("cards.id"), nullable=True)
+    mascot_card_id = Column(String, ForeignKey("cards.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     creator = relationship("User")
