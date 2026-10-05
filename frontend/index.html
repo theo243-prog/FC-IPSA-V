@@ -278,6 +278,24 @@
   }
   @keyframes holoWolf{from{background-position:0% 20%;}to{background-position:100% 80%;}}
 
+  /* ---- Cartes Équipement et Stades : une pastille avec l'objet (ou sa photo, quand elle sera ajoutée) ---- */
+  .item-medal{
+    width:68%;aspect-ratio:1/1;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,.42);box-shadow:inset 0 0 0 3px rgba(255,255,255,.6),0 3px 8px rgba(0,0,0,.16);
+  }
+  .item-icon{font-size:38px;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.28));}
+  .tier-rare .item-medal{background:rgba(255,255,255,.62);box-shadow:inset 0 0 0 3px #fff,0 3px 8px rgba(60,80,95,.25);}
+  .tier-epique .item-medal{background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.6),rgba(255,255,255,.14) 70%);box-shadow:inset 0 0 0 3px #E4CFFF,0 0 14px 2px rgba(160,100,240,.75);}
+  .tier-legendaire .item-medal{background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.75),rgba(255,230,150,.22) 70%);box-shadow:inset 0 0 0 3px #FFE79A,0 0 18px 3px rgba(255,205,90,.8);}
+  .item-medal.is-stade{                           /* un stade : une petite pelouse rayée */
+    width:80%;aspect-ratio:4/3;border-radius:14px;
+    background:repeating-linear-gradient(90deg,#3A9A44 0,#3A9A44 13px,#318A3B 13px,#318A3B 26px);
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.9),0 3px 8px rgba(0,0,0,.25);
+  }
+  .item-medal.is-stade .item-icon{font-size:34px;}
+  .tm-equip{display:flex;gap:8px;flex-wrap:wrap;}
+  .tm-equip select{flex:1 1 100%;min-width:0;}
+
   .collection-intro{color:var(--text-muted);font-size:14px;margin-bottom:18px;}
   .tier-group{margin-bottom:26px;}
   .tier-group h3{font-family:var(--font-head);font-weight:600;font-size:20px;margin:0 0 12px;letter-spacing:.3px;}
@@ -606,6 +624,7 @@
     <div id="tmSlots"></div>
     <div class="form-row"><label id="tmCaptainLabel">Capitaine</label><select id="tmCaptain"></select></div>
     <div class="form-row"><label>Fan (optionnel, apporte un bonus à toute l'équipe)</label><select id="tmFan"></select></div>
+    <div class="form-row" id="tmEquipRow"><label id="tmEquipLabel">Équipement (optionnel)</label><div class="tm-equip" id="tmEquip"></div><div class="tm-hint" id="tmEquipHint"></div></div>
     <div class="tm-error" id="tmError"></div>
     <button class="btn-primary" id="tmSubmit" style="width:100%;">Valider</button>
   </div>
@@ -771,6 +790,36 @@
   }
   function isFan(card){ return (card.poste || '').toUpperCase().startsWith('FAN'); }
 
+  // Types de cartes, reconnus à leur poste : joueur | fan (supporters, mascotte) | equipement | stade
+  function cardKind(card){
+    const poste = (card.poste || '').toUpperCase();
+    if (poste.startsWith('FAN')) return 'fan';
+    if (poste === 'EQUIPEMENT') return 'equipement';
+    if (poste === 'STADE') return 'stade';
+    return 'joueur';
+  }
+  const EQUIP_BONUS_PCT = { commune: 1, rare: 2, epique: 3, legendaire: 5 };
+  const ITEM_ICONS = {
+    'gourde': '💧', 'ballon du match': '⚽', 'protege-tibias': '🦵', 'chasuble': '🦺', 'chaussettes trouees': '🧦',
+    'banc de touche': '🪑', 'galette-saucisse': '🌭', 'enceinte jbl': '🔊', 'trousse a pharmacie': '🩹',
+    'tableau tactique': '📋', 'pack de biere': '🍺',
+  };
+  function itemIcon(card){
+    const key = (card.player_name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return ITEM_ICONS[key] || (cardKind(card) === 'stade' ? '🏟️' : '🎒');
+  }
+  function itemMedalHTML(card){
+    const stade = cardKind(card) === 'stade';
+    return '<div class="item-medal' + (stade ? ' is-stade' : '') + '"><span class="item-icon" aria-hidden="true">' + itemIcon(card) + '</span></div>';
+  }
+  // les noms longs (« Chaussettes trouées ») rétrécissent pour tenir sur la carte
+  function setCardName(root, name){
+    const el = root.querySelector('.card-name');
+    el.textContent = name;
+    const n = name.length;
+    el.style.fontSize = n >= 18 ? '12.5px' : n >= 15 ? '14px' : n >= 12 ? '16px' : '';
+  }
+
   // bonus d'équipe (en %) apporté par une carte Fan en match 1v1, selon sa rareté
   const FAN_BONUS_PCT = { commune: 5, rare: 10, epique: 12, legendaire: 15 };
   function isMascot(card){ return (card.poste || '').toLowerCase().includes('mascotte'); }
@@ -780,16 +829,26 @@
   }
 
   function cardFrontHTML(card){
-    const mascot = isMascot(card);
-    const statsRow = card.display_note
-      ? '<div class="card-stats"><span>⭐ '+card.display_note.value+'</span></div>'
-      : (mascot ? '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🐺 +'+(FAN_BONUS_PCT[card.tier] || 0)+' %</span></div>'
-                : '<div class="card-stats"><span>🎉 SUPPORTER</span></div>');
-    const posteLabel = mascot ? '🐺' : (isFan(card) ? '🎉' : escapeHtml(card.poste));
-    const midHTML = mascot ? mascotMedalHTML(card.tier)
-      : (card.player_photo_url
-        ? '<img class="card-photo" src="'+escapeHtml(card.player_photo_url)+'" alt="">'
-        : '<span class="ball-fallback">⚽</span>');
+    const mascot = isMascot(card), kind = cardKind(card);
+    let statsRow, posteLabel, midHTML;
+    if (kind === 'equipement') {
+      statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🎒 +' + (EQUIP_BONUS_PCT[card.tier] || 0) + ' %</span></div>';
+      posteLabel = '🎒';
+    } else if (kind === 'stade') {
+      statsRow = '<div class="card-stats"><span>🏟️ STADE</span></div>';
+      posteLabel = '🏟️';
+    } else if (kind === 'fan') {
+      statsRow = mascot ? '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🐺 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span></div>'
+                        : '<div class="card-stats"><span>🎉 SUPPORTER</span></div>';
+      posteLabel = mascot ? '🐺' : '🎉';
+    } else {
+      statsRow = '<div class="card-stats"><span>⭐ ' + (card.display_note ? card.display_note.value : '') + '</span></div>';
+      posteLabel = escapeHtml(card.poste);
+    }
+    const photo = card.player_photo_url ? '<img class="card-photo" src="' + escapeHtml(card.player_photo_url) + '" alt="">' : '';
+    if (mascot) midHTML = mascotMedalHTML(card.tier);
+    else if (kind === 'equipement' || kind === 'stade') midHTML = photo || itemMedalHTML(card);
+    else midHTML = photo || '<span class="ball-fallback">⚽</span>';
     return '<div class="card-top"><span class="card-tier-label">'+tierLabel(card.tier)+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
       '<div class="card-mid">'+midHTML+'</div>'+
       '<div><div class="card-name"></div>'+statsRow+'</div>'+
@@ -797,10 +856,16 @@
   }
 
   // si l'image ne charge pas (lien cassé, photo pas encore ajoutée), on retombe sur le ballon
-  function attachPhotoFallback(container){
+  function attachPhotoFallback(container, card){
     const img = container.querySelector('.card-photo');
     if (!img) return;
     img.addEventListener('error', () => {
+      const kind = card ? cardKind(card) : 'joueur';
+      if (kind === 'equipement' || kind === 'stade') {
+        const holder = document.createElement('div'); holder.innerHTML = itemMedalHTML(card);
+        img.replaceWith(holder.firstChild);
+        return;
+      }
       const span = document.createElement('span');
       span.className = 'ball-fallback';
       span.textContent = '⚽';
@@ -817,8 +882,8 @@
     el.className = 'card tier-' + card.tier + (locked ? ' locked' : '');
     el.style.background = locked ? '' : 'linear-gradient(160deg, var(--' + (card.tier === 'legendaire' ? 'legend-2' : card.tier + '-2') + '), var(--' + (card.tier === 'legendaire' ? 'legend-1' : card.tier + '-1') + '))';
     el.innerHTML = cardFrontHTML(card);
-    el.querySelector('.card-name').textContent = card.player_name;
-    attachPhotoFallback(el);
+    setCardName(el, card.player_name);
+    attachPhotoFallback(el, card);
     if (!locked) {
       if (!hideCount) {
         const badge = document.createElement('div');
@@ -845,12 +910,16 @@
       const photoHTML = p.photo_url
         ? '<img class="player-detail-photo" src="' + escapeHtml(p.photo_url) + '" alt="" onerror="this.style.display=\'none\'">'
         : '';
-      const fan = (p.poste || '').toUpperCase().startsWith('FAN');
-      const role = fan ? (p.poste.split('/')[1] || '').trim() : '';
-      const posteText = fan ? (role || 'Supporter') : p.poste;
+      const kind = cardKind({ poste: p.poste });
+      const role = kind === 'fan' ? (p.poste.split('/')[1] || '').trim() : '';
+      const posteText = kind === 'fan' ? (role || 'Supporter') : kind === 'equipement' ? 'Équipement' : kind === 'stade' ? 'Stade' : p.poste;
       let inner;
-      if (fan) {          // une carte Fan n'a ni stats ni note : elle apporte un bonus d'équipe en 1v1
+      if (kind === 'fan') {          // une carte Fan n'a ni stats ni note : elle apporte un bonus d'équipe en 1v1
         inner = '<div class="player-note">+' + (FAN_BONUS_PCT[p.tier] || 0) + ' %<small>Bonus d\'équipe en match 1v1, sur l\'emplacement Fan</small></div>';
+      } else if (kind === 'equipement') {
+        inner = '<div class="player-note">+' + (EQUIP_BONUS_PCT[p.tier] || 0) + ' %<small>Bonus d\'équipe en match 1v1. Jusqu\'à ' + ((duelConfig && duelConfig.max_equipment) || 3) + ' équipements par équipe, ils s\'ajoutent au Fan.</small></div>';
+      } else if (kind === 'stade') {
+        inner = '<div class="player-note">' + p.matches_joues + '<small>' + (p.matches_joues > 1 ? 'matchs joués' : 'match joué') + ' dans ce stade</small></div>';
       } else {
         inner = (p.display_note ? '<div class="player-note">⭐ ' + p.display_note.value + '<small>Note de la carte</small></div>' : '') +
           '<div class="stat-grid">' +
@@ -1141,9 +1210,9 @@
         const flip = document.createElement('div'); flip.className = 'card-flip';
         const back = document.createElement('div'); back.className = 'card-face card-back'; back.innerHTML = crestIco();
         const front = document.createElement('div'); front.className = 'card-face card-front tier-' + card.tier; front.innerHTML = cardFrontHTML(card);
-        front.querySelector('.card-name').textContent = card.player_name;
+        setCardName(front, card.player_name);
         if (card.is_new) front.insertAdjacentHTML('beforeend', '<span class="new-ribbon">NEW</span>');  // carte débloquée
-        attachPhotoFallback(front);
+        attachPhotoFallback(front, card);
         flip.appendChild(back); flip.appendChild(front); slot.appendChild(flip); area.appendChild(slot);
         return { slot, flip, card };
       });
@@ -1367,6 +1436,7 @@
       if (!matches.length){ root.innerHTML = '<div class="empty-state">Aucun match enregistré pour l\'instant.</div>'; return; }
       root.innerHTML = matches.map(m => {
         const dateStr = localDay(m.date).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
+        const stadeHTML = m.stade ? '<div class="match-row">📍 <b>Stade :</b> ' + escapeHtml(m.stade) + '</div>' : '';
         const scorersHTML = m.buteurs.length
           ? '<div class="match-row">⚽ <b>Buteurs :</b> ' + m.buteurs.map(b => escapeHtml(b.player_name) + (b.count > 1 ? ' (×' + b.count + ')' : '')).join(', ') + '</div>'
           : '';
@@ -1376,7 +1446,7 @@
         const motmHTML = m.homme_du_match ? '<div class="match-motm">🏅 Homme du match : ' + escapeHtml(m.homme_du_match) + '</div>' : '';
         return '<div class="match-card">' +
           '<div class="match-header"><div><div class="match-score">FC IPSA V ' + m.score_us + ' — ' + m.score_them + ' ' + escapeHtml(m.opponent) + '</div></div><div class="match-date">' + dateStr + '</div></div>' +
-          scorersHTML + assistsHTML + motmHTML +
+          stadeHTML + scorersHTML + assistsHTML + motmHTML +
         '</div>';
       }).join('');
     } catch(e) { toast(e.message); }
@@ -1489,7 +1559,7 @@
         const row = document.createElement('div'); row.className = 'proposal-row';
         const label = duelConfig && duelConfig.formation_labels[pr.formation] ? ' (' + duelConfig.formation_labels[pr.formation] + ')' : '';
         row.innerHTML = '<div class="proposal-main"><b>' + escapeHtml(pr.creator) + '</b>' + (mine ? ' (toi)' : '') + ' · Elo ' + pr.creator_elo +
-          '<div class="proposal-meta">Disposition ' + escapeHtml(pr.formation) + label + (pr.has_fan ? ' · avec un Fan' : '') + ' · mise <b>' + pr.stake + ' crédits</b> · tactique secrète</div></div>';
+          '<div class="proposal-meta">Disposition ' + escapeHtml(pr.formation) + label + (pr.has_fan ? ' · avec un Fan' : '') + (pr.equipment_count ? ' · ' + pr.equipment_count + ' équipement' + (pr.equipment_count > 1 ? 's' : '') : '') + ' · mise <b>' + pr.stake + ' crédits</b> · tactique secrète</div></div>';
         const btn = document.createElement('button'); btn.className = 'btn-small' + (mine ? ' ghost' : '');
         if (mine) { btn.textContent = 'Annuler'; btn.addEventListener('click', () => cancelProposal(pr.id, btn)); }
         else { btn.textContent = 'Jouer le match'; btn.addEventListener('click', () => openTeamModal('play', pr)); }
@@ -1516,7 +1586,7 @@
     const cfg = duelConfig;
     tm.mode = mode; tm.proposal = proposal;
     tm.byId = Object.fromEntries(myCollection.map(c => [c.id, c]));
-    tm.owned = myCollection.filter(c => c.quantity > 0 && !isFan(c) && c.display_note)
+    tm.owned = myCollection.filter(c => c.quantity > 0 && cardKind(c) === 'joueur' && c.display_note)
       .sort((a, b) => b.display_note.value - a.display_note.value || a.player_name.localeCompare(b.player_name, 'fr'));
 
     const rules = 'Une carte hors de son vrai poste perd ' + Math.round(cfg.out_of_position_malus * 100) + ' %. Le capitaine gagne ' + Math.round(cfg.captain_bonus * 100) + ' %. Tu ne peux pas mettre deux fois la même carte.';
@@ -1544,12 +1614,37 @@
     byId('tmFan').innerHTML = '<option value="">— aucun —</option>' + fans.map(c =>
       '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', +' + Math.round((cfg.fan_bonus[c.tier] || 0) * 100) + ' %)</option>').join('');
 
+    // équipements : jusqu'à cfg.max_equipment, tous différents, leur bonus s'ajoute à celui du Fan
+    tm.equip = myCollection.filter(c => c.quantity > 0 && cardKind(c) === 'equipement')
+      .sort((a, b) => (cfg.equipment_bonus[b.tier] || 0) - (cfg.equipment_bonus[a.tier] || 0) || a.player_name.localeCompare(b.player_name, 'fr'));
+    byId('tmEquipLabel').textContent = 'Équipement (optionnel, ' + cfg.max_equipment + ' au maximum)';
+    const equipOptions = '<option value="">— aucun —</option>' + tm.equip.map(c =>
+      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', +' + Math.round((cfg.equipment_bonus[c.tier] || 0) * 100) + ' %)</option>').join('');
+    byId('tmEquip').innerHTML = tm.equip.length ? Array.from({ length: cfg.max_equipment }, () => '<select>' + equipOptions + '</select>').join('') : '';
+    refreshTeamBonus();
+
     renderTmSlots('1-2-1', null);
     const err = byId('tmError');
     err.textContent = tm.owned.length < cfg.team_size ? 'Il te faut au moins ' + cfg.team_size + ' cartes de joueurs (hors supporters) pour jouer : ouvre des packs !' : '';
     byId('tmSubmit').disabled = tm.owned.length < cfg.team_size;
     byId('teamModal').style.display = 'flex';
   }
+  // total du bonus d'équipe (Fan + équipements) et équipements déjà choisis grisés dans les autres listes
+  function refreshTeamBonus(){
+    const cfg = duelConfig, sels = [...document.querySelectorAll('#tmEquip select')];
+    const used = new Set(sels.map(s => s.value).filter(Boolean));
+    sels.forEach(sel => [...sel.options].forEach(o => { o.disabled = !!o.value && used.has(o.value) && o.value !== sel.value; }));
+    const fan = tm.byId[byId('tmFan').value], fanPct = fan ? Math.round((cfg.fan_bonus[fan.tier] || 0) * 100) : 0;
+    const eqPct = sels.reduce((sum, s) => { const c = tm.byId[s.value]; return sum + (c ? Math.round((cfg.equipment_bonus[c.tier] || 0) * 100) : 0); }, 0);
+    const parts = [];
+    if (fan) parts.push('Fan +' + fanPct + ' %');
+    if (eqPct) parts.push('Équipement +' + eqPct + ' %');
+    byId('tmEquipHint').textContent = !tm.equip.length
+      ? 'Tu n\'as pas encore d\'équipement : ils sortent dans les packs.'
+      : (parts.length ? 'Bonus d\'équipe : ' + parts.join(' · ') + (parts.length > 1 ? ' = +' + (fanPct + eqPct) + ' %' : '') : 'Aucun bonus d\'équipe pour l\'instant.');
+  }
+  byId('tmEquip').addEventListener('change', refreshTeamBonus);
+  byId('tmFan').addEventListener('change', refreshTeamBonus);
   function closeTeamModal(){ byId('teamModal').style.display = 'none'; }
   byId('tmClose').addEventListener('click', closeTeamModal);
   byId('teamModal').addEventListener('click', e => { if (e.target.id === 'teamModal') closeTeamModal(); });
@@ -1610,6 +1705,7 @@
       formation: byId('tmFormation').value, tactic: byId('tmTactic').value,
       slots: sels.map(s => ({ card_id: s.value, slot_category: s.dataset.category })),
       captain_card_id: byId('tmCaptain').value || null, fan_card_id: byId('tmFan').value || null,
+      equipment_card_ids: [...document.querySelectorAll('#tmEquip select')].map(s => s.value).filter(Boolean),
     };
     btn.disabled = true;
     try {
@@ -1666,7 +1762,8 @@
       const tacticLabel = cfg && cfg.tactics[t.tactic] ? cfg.tactics[t.tactic].label : t.tactic;
       const box = document.createElement('div'); box.className = 'lineup';
       let html = '<h4>' + escapeHtml(t.pseudo) + '</h4><div class="lu-sub">' + escapeHtml(t.formation) + ' · ' + escapeHtml(tacticLabel || '') +
-        (t.fan ? ' · Fan ' + escapeHtml(t.fan.player) + ' (+' + t.fan.bonus_pct + ' %)' : '') + '</div>';
+        (t.fan ? ' · Fan ' + escapeHtml(t.fan.player) + ' (+' + t.fan.bonus_pct + ' %)' : '') +
+        (t.equipment && t.equipment.length ? ' · Équipement ' + t.equipment.map(e => escapeHtml(e.player)).join(', ') + ' (+' + t.equipment.reduce((n, e) => n + e.bonus_pct, 0) + ' %)' : '') + '</div>';
       players.forEach(p => {
         html += '<div class="lu-row"><span>' + SLOT_ICON[p.slot] + ' ' + escapeHtml(p.player) + (p.captain ? ' <span class="lu-flag" title="Capitaine">©</span>' : '') +
           (p.out_of_position ? ' <span class="lu-flag" title="Hors de son poste">⚠</span>' : '') + '</span><span>' + Math.round(p.effective_note) + '</span></div>';
