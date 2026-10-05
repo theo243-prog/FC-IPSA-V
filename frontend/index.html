@@ -687,8 +687,14 @@
           <p class="duel-hint">Un défi bloque ta mise le temps qu'il est ouvert. Le gagnant d'un match remporte les deux mises et un pack match aux chances boostées. Les tactiques restent secrètes jusqu'au coup d'envoi.</p>
           <div id="duelProposalsEl"></div>
         </div>
+        <div class="panel-box duel-stars" id="duelWeekBox">
+          <h2>Cartes stars de la semaine</h2>
+          <p class="duel-hint" id="duelWeekHint" style="margin-bottom:12px;"></p>
+          <div id="duelWeekEl"></div>
+        </div>
         <div class="panel-box duel-stars">
-          <h2>Cartes stars du 1v1</h2>
+          <h2>Cartes stars de tous les temps</h2>
+          <p class="duel-hint" style="margin-bottom:12px;">L'historique complet des matchs 1v1, depuis le début.</p>
           <div id="duelStarsEl"></div>
         </div>
       </div>
@@ -1338,7 +1344,7 @@
         '<li><span class="help-tier" style="background:' + TIER_COLORS.gold + '"></span><b>Gold</b> : un moment mémorable d\'un vrai match (petit pont, sauvetage…).</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.secrete + '"></span><b>Secrète</b> : une par joueur, fan et mascotte. Elle ne sort jamais d\'un pack (voir plus bas).</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.speciale + '"></span><b>Spéciale</b> : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine. Elle ne sort que des packs match.</li>' +
-        '<li><span class="help-tier" style="background:' + TIER_COLORS.epique + '"></span><b>Épique</b> : le joueur qui marque dans un vrai match. Sa note monte avec ses buts.</li>' +
+        '<li><span class="help-tier" style="background:' + TIER_COLORS.epique + '"></span><b>Épique</b> : le joueur qui marque dans un vrai match. Sa note vaut 85 au premier but, puis +2 par but.</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.legendaire + '"></span><b>Légendaire</b> : la plus rare, holographique et animée.</li></ul>' +
         '<h3>Les doublons</h3><ul><li><b>Les revendre</b> avec « Vendre doublon » : commune ' + sv.commune + ' crédit, rare ' + sv.rare + ', gold ' + sv.gold + ', spéciale ' + sv.speciale + ', épique ' + sv.epique + ', légendaire ' + sv.legendaire + '.</li>' +
         '<li><b>Débloquer une carte secrète</b> : la carte secrète d\'un joueur affiche une jauge. Chaque doublon <b>commune</b> de ce joueur vaut <b>1 point</b>, chaque doublon <b>rare</b> vaut <b>' + r.secret_fusion.rare_value + ' points</b>. À <b>' + r.secret_fusion.cost + ' points</b>, le bouton « Débloquer » apparaît : les doublons nécessaires sont consommés (tu gardes toujours ton premier exemplaire de chaque carte).</li></ul>' +
@@ -1368,7 +1374,7 @@
         '<li><b>Stats des joueurs</b> : les vraies statistiques de la saison. M = matchs joués, ⚽ = buts, PD = passes décisives, 🏅 = homme du match. Clique sur un joueur pour sa fiche.</li>' +
         '<li><b>Résultats</b> : le score, le stade, les buteurs, les passeurs et les moments mémorables de chaque match.</li></ul>' +
         '<h3>Ce que chaque match fait gagner au jeu</h3><ul>' +
-        '<li>Un joueur qui marque reçoit sa carte <b>épique</b> (note 85, puis +5 par but supplémentaire).</li>' +
+        '<li>Un joueur qui marque reçoit sa carte <b>épique</b> (note 85 au premier but, puis +2 par but supplémentaire).</li>' +
         '<li>Un moment mémorable crée une carte <b>gold</b>.</li>' +
         '<li>Un nouveau stade crée sa carte commune.</li></ul>';
     } },
@@ -1390,7 +1396,10 @@
         '<li><b>Mise</b> de ' + cfg.stake_min + ' à ' + cfg.stake_max + ' crédits, bloquée tant que le défi est ouvert. Le gagnant prend les deux mises <b>et un pack match</b>. En cas de nul, chacun récupère sa mise.</li>' +
         '<li>Tu peux avoir ' + cfg.max_open_proposals + ' défis ouverts au maximum, et deux mêmes joueurs ne s\'affrontent qu\'une fois par ' + (cfg.cooldown_minutes >= 60 ? Math.round(cfg.cooldown_minutes / 60) + ' heure' : cfg.cooldown_minutes + ' minutes') + '.</li>' +
         '<li><b>Classement</b> : par Elo. M = matchs, V = victoires, D = défaites, N = nuls, <b>Diff</b> = buts marqués moins buts encaissés.</li></ul>' +
-        '<h3>Les cartes stars</h3><p>Les 5 cartes les plus utilisées, et les 5 plus décisives en buts et en passes, sur tous les matchs 1v1. Chaque <b>vendredi à 17h</b>, la carte de joueur la plus utilisée, le meilleur buteur et le meilleur passeur de la semaine reçoivent une <b>carte spéciale</b> (note 80, puis +1 chaque fois qu\'ils la regagnent). Elle ne sort que des packs match :</p>' +
+        '<h3>Les cartes stars</h3><p>Deux classements, avec les 5 cartes les plus utilisées et les 5 plus décisives en buts et en passes :</p><ul>' +
+        '<li><b>De la semaine</b> : remis à zéro chaque <b>vendredi à 17h</b>. À ce moment, le n°1 de chaque catégorie (✨) reçoit une <b>carte spéciale</b> (note 80, puis +1 chaque fois qu\'il la regagne). Le classement de la semaine compte par joueur, toutes raretés confondues.</li>' +
+        '<li><b>De tous les temps</b> : l\'historique complet, depuis le premier match.</li></ul>' +
+        '<p>Les cartes spéciales ne sortent que des packs gagnés en 1v1 :</p>' +
         oddsTableHTML(r, ['match']);
     } },
   };
@@ -1754,32 +1763,53 @@
   }
 
   // ---- cellule : cartes stars (les plus utilisées, les plus décisives)
+  // Affiche un classement de cartes stars (les plus utilisées, les plus décisives en buts et en passes).
+  // weekly = true : classement de la semaine, où le n°1 de chaque catégorie recevra une carte spéciale vendredi.
+  function renderStars(root, data, weekly){
+    const medals = ['🥇', '🥈', '🥉', '4e', '5e'];
+    const plural = (n, one, many) => n + ' ' + (n > 1 ? many : one);
+    if (!data.most_used.length) {
+      root.innerHTML = '<div class="empty-state">' + (weekly ? 'Aucun match 1v1 cette semaine : joue pour entrer au classement !' : 'Pas encore de statistiques : jouez des matchs !') + '</div>';
+      return;
+    }
+    const blocks = [
+      ['Les plus utilisées', data.most_used, n => plural(n, 'match', 'matchs')],
+      ['Les plus décisives en buts', data.top_scorers, n => plural(n, 'but', 'buts')],
+      ['Les plus décisives en passes', data.top_assisters, n => plural(n, 'passe décisive', 'passes décisives')],
+    ];
+    root.innerHTML = '';
+    blocks.forEach(([title, list, caption]) => {
+      const block = document.createElement('div'); block.className = 'stars-block';
+      const h = document.createElement('h3'); h.textContent = title; block.appendChild(h);
+      const row = document.createElement('div'); row.className = 'stars-row';
+      if (!list.length) { row.innerHTML = '<span class="duel-hint" style="margin:0;">Aucune pour l\'instant.</span>'; }
+      list.forEach((entry, i) => {
+        const item = document.createElement('div'); item.className = 'star-item';
+        item.appendChild(makeMiniCard(entry.card, { hideCount: true }));
+        const cap = document.createElement('div'); cap.className = 'star-caption';
+        cap.textContent = medals[i] + ' ' + caption(entry.count) + (weekly && i === 0 ? ' ✨' : '');
+        if (weekly && i === 0) cap.title = 'Recevra sa carte spéciale vendredi à 17h';
+        item.appendChild(cap); row.appendChild(item);
+      });
+      block.appendChild(row); root.appendChild(block);
+    });
+  }
+  // « dans 3 j 4 h », « dans 5 h 12 min »...
+  function untilText(isoUtc){
+    const ms = new Date(isoUtc + 'Z').getTime() - Date.now();
+    if (ms <= 60000) return 'dans moins d\'une minute';
+    const min = Math.floor(ms / 60000), d = Math.floor(min / 1440), h = Math.floor((min % 1440) / 60), m = min % 60;
+    return 'dans ' + (d ? d + ' j ' + h + ' h' : h ? h + ' h ' + m + ' min' : m + ' min');
+  }
   async function loadDuelStars(){
     try {
-      const data = await fetch(API_BASE + '/duel/card-stats?limit=5').then(r => r.json());
-      const root = byId('duelStarsEl');
-      if (!data.most_used.length){ root.innerHTML = '<div class="empty-state">Pas encore de statistiques : jouez des matchs !</div>'; return; }
-      const medals = ['🥇', '🥈', '🥉', '4e', '5e'];
-      const plural = (n, one, many) => n + ' ' + (n > 1 ? many : one);
-      const blocks = [
-        ['Les plus utilisées', data.most_used, n => plural(n, 'match', 'matchs')],
-        ['Les plus décisives en buts', data.top_scorers, n => plural(n, 'but', 'buts')],
-        ['Les plus décisives en passes', data.top_assisters, n => plural(n, 'passe décisive', 'passes décisives')],
-      ];
-      root.innerHTML = '';
-      blocks.forEach(([title, list, caption]) => {
-        const block = document.createElement('div'); block.className = 'stars-block';
-        const h = document.createElement('h3'); h.textContent = title; block.appendChild(h);
-        const row = document.createElement('div'); row.className = 'stars-row';
-        if (!list.length) { row.innerHTML = '<span class="duel-hint" style="margin:0;">Aucune pour l\'instant.</span>'; }
-        list.forEach((entry, i) => {
-          const item = document.createElement('div'); item.className = 'star-item';
-          item.appendChild(makeMiniCard(entry.card, { hideCount: true }));
-          const cap = document.createElement('div'); cap.className = 'star-caption'; cap.textContent = medals[i] + ' ' + caption(entry.count);
-          item.appendChild(cap); row.appendChild(item);
-        });
-        block.appendChild(row); root.appendChild(block);
-      });
+      const [all, week] = await Promise.all([
+        fetch(API_BASE + '/duel/card-stats?limit=5').then(r => r.json()),
+        fetch(API_BASE + '/duel/card-stats?limit=5&scope=week').then(r => r.json()),
+      ]);
+      renderStars(byId('duelStarsEl'), all, false);
+      renderStars(byId('duelWeekEl'), week, true);
+      byId('duelWeekHint').innerHTML = 'Remis à zéro <b>vendredi à 17h</b> (' + untilText(week.resets_at) + '). À ce moment, le n°1 de chaque catégorie ✨ reçoit sa <b>carte spéciale</b>.';
     } catch(e) { toast(e.message); }
   }
 
