@@ -111,6 +111,27 @@
   .tab.active{color:var(--text);}
   .tab.active::after{content:"";position:absolute;left:10px;right:10px;bottom:3px;height:9px;background:linear-gradient(to bottom,var(--stripe) 0,var(--stripe) 3px,transparent 3px,transparent 5px,var(--stripe) 5px,var(--stripe) 9px);}
   .tab-panel{display:none;}
+  .diff-pos{color:#1B7F3B;} .diff-neg{color:#B3261E;}
+  :root[data-theme="dark"] .diff-pos,:root:not([data-theme="light"]) .diff-pos{color:inherit;}
+  /* ---- bouton d'aide de chaque onglet + fenêtre ---- */
+  .help-row{display:flex;justify-content:flex-end;margin:-8px 0 14px;}
+  .help-btn{display:inline-flex;align-items:center;gap:7px;background:transparent;color:var(--accent);border:1.5px solid var(--accent);border-radius:999px;padding:3px 14px 3px 4px;cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:16px;letter-spacing:.3px;}
+  .help-btn:hover{background:var(--bg-sunk);}
+  .help-q{width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-text);display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1;}
+  .help-box{max-width:640px;}
+  .help-body{font-size:14px;line-height:1.55;}
+  .help-body h3{font-family:var(--font-head);font-weight:800;font-size:21px;margin:18px 0 4px;}
+  .help-body h3:first-child{margin-top:0;}
+  .help-body p{margin:6px 0;}
+  .help-body ul{margin:6px 0 6px 18px;padding:0;}
+  .help-body li{margin:3px 0;}
+  .help-body table.odds{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0;}
+  .help-body table.odds th{text-align:right;font-size:11.5px;color:var(--text-muted);padding:5px 6px;border-bottom:1.5px solid var(--border);}
+  .help-body table.odds th:first-child,.help-body table.odds td:first-child{text-align:left;}
+  .help-body table.odds td{padding:6px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;}
+  .help-body .odds-dash{color:var(--text-muted);}
+  .help-body .help-note{font-size:12.5px;color:var(--text-muted);}
+  .help-tier{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px;}
   .tab-panel.active{display:block;animation:fadein .25s ease;}
   @keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
 
@@ -574,6 +595,7 @@
 
   <main>
     <section id="tab-pack" class="tab-panel active">
+      <div class="help-row"><button class="help-btn" type="button" data-help="pack"><span class="help-q">?</span> Aide</button></div>
       <div class="pitch-hero">
         <div class="pack" id="packEl">
           <svg class="crest-ico pack-wolf" viewBox="0 0 723 833" aria-hidden="true" focusable="false"><use href="#wolf-crest" width="723" height="833"/></svg>
@@ -590,11 +612,13 @@
     </section>
 
     <section id="tab-collection" class="tab-panel">
-      <p class="collection-intro">Chaque pack ouvert ajoute des cartes ici. Un doublon peut être revendu contre des crédits.</p>
+      <div class="help-row"><button class="help-btn" type="button" data-help="collection"><span class="help-q">?</span> Aide</button></div>
+      <p class="collection-intro">Chaque pack ouvert ajoute des cartes ici. Un doublon peut être revendu contre des crédits, ou servir à remplir la jauge d'une carte secrète.</p>
       <div id="collectionByTier"></div>
     </section>
 
     <section id="tab-marche" class="tab-panel">
+      <div class="help-row"><button class="help-btn" type="button" data-help="marche"><span class="help-q">?</span> Aide</button></div>
       <div class="panel-box">
         <h2>Proposer un échange</h2>
         <div class="form-row"><label>Ta carte à vendre</label><select id="offerSelect"></select></div>
@@ -605,14 +629,17 @@
     </section>
 
     <section id="tab-shop" class="tab-panel">
+      <div class="help-row"><button class="help-btn" type="button" data-help="shop"><span class="help-q">?</span> Aide</button></div>
       <div id="shopItemsEl"></div>
     </section>
 
     <section id="tab-classement" class="tab-panel">
+      <div class="help-row"><button class="help-btn" type="button" data-help="classement"><span class="help-q">?</span> Aide</button></div>
       <div id="leaderboardEl"></div>
     </section>
 
     <section id="tab-actualite" class="tab-panel">
+      <div class="help-row"><button class="help-btn" type="button" data-help="actualite"><span class="help-q">?</span> Aide</button></div>
       <div class="news-grid">
         <div class="panel-box">
           <h2>Prochains matchs</h2>
@@ -629,6 +656,7 @@
     </section>
 
     <section id="tab-duels" class="tab-panel">
+      <div class="help-row"><button class="help-btn" type="button" data-help="duels"><span class="help-q">?</span> Aide</button></div>
       <div class="duel-grid">
         <div class="panel-box">
           <h2>Profils & classement Elo</h2>
@@ -685,6 +713,15 @@
       <button class="btn-secondary" id="msReplay" style="display:none;">Rejouer l'animation</button>
       <button class="btn-primary" id="msDone">Fermer</button>
     </div>
+  </div>
+</div>
+<div class="modal-overlay" id="helpModal">
+  <div class="modal-box help-box" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="modal-header">
+      <h2 id="helpTitle">Aide</h2>
+      <button class="modal-close" id="helpClose" type="button" aria-label="Fermer l'aide">✕</button>
+    </div>
+    <div id="helpBody" class="help-body"></div>
   </div>
 </div>
 <div class="modal-overlay" id="userCollectionModal">
@@ -1235,6 +1272,122 @@
     } catch(e) { toast(e.message); }
   }
 
+  // ---------- Aide : un bouton « ? Aide » par onglet ----------
+  // Les pourcentages de tirage et les chiffres du 1v1 viennent du serveur : l'aide ne peut pas être en retard sur les règles.
+  const TIER_COLORS = { commune: '#C9965F', rare: '#B8C2C8', gold: '#E0A21B', secrete: '#4B3FA0', speciale: '#2FA45E', epique: '#7A3FC9', legendaire: '#F0C84B' };
+  const TIER_NAMES_PL = { commune: 'Commune', rare: 'Rare', gold: 'Gold', secrete: 'Secrète', speciale: 'Spéciale', epique: 'Épique', legendaire: 'Légendaire' };
+  let gameRules = null;
+  async function getGameRules(){
+    if (!gameRules) gameRules = await fetch(API_BASE + '/game/rules').then(r => r.json());
+    return gameRules;
+  }
+  const pct = (x, digits) => (Math.round(x * 100 * (digits === 0 ? 1 : 10)) / (digits === 0 ? 1 : 10)).toString().replace('.', ',') + ' %';
+
+  // tableau « chance de chaque rareté » pour les packs demandés, avec les cartes qui existent aujourd'hui
+  function oddsTableHTML(rules, packKeys){
+    const tiers = rules.tier_order.filter(t => packKeys.some(k => (rules.packs[k].odds[t] || 0) > 0));
+    let html = '<table class="odds"><thead><tr><th>Rareté (cartes existantes)</th>' + packKeys.map(k => '<th>' + escapeHtml(rules.packs[k].label) + '</th>').join('') + '</tr></thead><tbody>';
+    tiers.forEach(t => {
+      html += '<tr><td><span class="help-tier" style="background:' + TIER_COLORS[t] + '"></span>' + TIER_NAMES_PL[t] + ' <span class="odds-dash">(' + (rules.counts[t] || 0) + ')</span></td>' +
+        packKeys.map(k => { const v = rules.packs[k].odds[t]; return '<td>' + (v ? String(v).replace('.', ',') + ' %' : '<span class="odds-dash">—</span>') + '</td>'; }).join('') + '</tr>';
+    });
+    return html + '</tbody></table>' +
+      '<p class="help-note">Ces chances s\'appliquent à chaque carte tirée. Elles sont calculées en direct avec les cartes qui existent aujourd\'hui : une rareté sans carte ne sort pas, et une rareté récente (gold, spéciale, épique, légendaire) est réduite tant qu\'elle compte peu de cartes. Les cartes <b>secrètes</b> ne sortent jamais d\'un pack, et les <b>spéciales</b> ne sortent que des packs match.</p>';
+  }
+  function guaranteedPacksHTML(rules){
+    return '<ul>' + ['rare', 'epique', 'legendaire'].map(k => '<li><b>' + escapeHtml(rules.packs[k].label) + '</b> (' + rules.packs[k].price + ' crédits) : ' + escapeHtml(rules.packs[k].description) + (rules.packs[k].available ? '' : ' <i>(pas encore disponible : aucune carte de cette rareté n\'existe)</i>') + '</li>').join('') + '</ul>';
+  }
+  const HELP = {
+    pack: { title: 'Les packs', async html(){
+      const r = await getGameRules();
+      return '<h3>Ouvrir un pack</h3><p>Chaque pack contient <b>3 cartes</b> et te rapporte quelques crédits.</p>' +
+        '<ul><li><b>Packs gratuits</b> : tu peux en stocker ' + r.free_packs_max + ' au maximum, et un nouveau arrive toutes les ' + r.free_pack_hours + ' heures.</li>' +
+        '<li><b>Packs bonus</b> (achetés au shop, offerts ou gagnés) : ils se stockent sans limite et s\'affichent sous les boutons.</li>' +
+        '<li><b>Pack match</b> : il se gagne en remportant un match 1v1. C\'est le seul où sortent les cartes <b>spéciales</b>, avec de meilleures chances.</li></ul>' +
+        '<h3>Tes chances de tirage</h3>' + oddsTableHTML(r, ['classique', 'match']) +
+        '<h3>Et les doublons ?</h3><p>Rien n\'est perdu : tu peux les revendre, ou les garder pour remplir la jauge de la carte secrète du même joueur (voir l\'aide de la Collection).</p>';
+    } },
+    collection: { title: 'Ta collection', async html(){
+      const r = await getGameRules(), sv = r.sell_values;
+      return '<h3>Tes cartes</h3><p>Les cartes sont rangées de la plus rare à la plus commune. Une carte grisée avec un « ? » n\'est pas encore à toi. Clique sur une carte pour voir sa fiche.</p>' +
+        '<h3>Les raretés, de la plus commune à la plus rare</h3><ul>' +
+        '<li><span class="help-tier" style="background:' + TIER_COLORS.commune + '"></span><b>Commune</b> et <span class="help-tier" style="background:' + TIER_COLORS.rare + '"></span><b>Rare</b> : les cartes de base de chaque joueur.</li>' +
+        '<li><span class="help-tier" style="background:' + TIER_COLORS.gold + '"></span><b>Gold</b> : un moment mémorable d\'un vrai match (petit pont, sauvetage…).</li>' +
+        '<li><span class="help-tier" style="background:' + TIER_COLORS.secrete + '"></span><b>Secrète</b> : une par joueur, fan et mascotte. Elle ne sort jamais d\'un pack (voir plus bas).</li>' +
+        '<li><span class="help-tier" style="background:' + TIER_COLORS.speciale + '"></span><b>Spéciale</b> : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine. Elle ne sort que des packs match.</li>' +
+        '<li><span class="help-tier" style="background:' + TIER_COLORS.epique + '"></span><b>Épique</b> : le joueur qui marque dans un vrai match. Sa note monte avec ses buts.</li>' +
+        '<li><span class="help-tier" style="background:' + TIER_COLORS.legendaire + '"></span><b>Légendaire</b> : la plus rare, holographique et animée.</li></ul>' +
+        '<h3>Les doublons</h3><ul><li><b>Les revendre</b> avec « Vendre doublon » : commune ' + sv.commune + ' crédit, rare ' + sv.rare + ', gold ' + sv.gold + ', spéciale ' + sv.speciale + ', épique ' + sv.epique + ', légendaire ' + sv.legendaire + '.</li>' +
+        '<li><b>Débloquer une carte secrète</b> : la carte secrète d\'un joueur affiche une jauge. Chaque doublon <b>commune</b> de ce joueur vaut <b>1 point</b>, chaque doublon <b>rare</b> vaut <b>' + r.secret_fusion.rare_value + ' points</b>. À <b>' + r.secret_fusion.cost + ' points</b>, le bouton « Débloquer » apparaît : les doublons nécessaires sont consommés (tu gardes toujours ton premier exemplaire de chaque carte).</li></ul>' +
+        '<h3>Les autres types de cartes</h3><ul><li><b>Fans</b>, <b>Le Loup</b> (la mascotte) et <b>équipements</b> : pas de note, ils donnent un bonus d\'équipe en 1v1.</li><li><b>Stades</b> et <b>moments gold</b> : des cartes de collection.</li></ul>';
+    } },
+    marche: { title: 'Le marché', html(){
+      return '<h3>Acheter et vendre entre joueurs</h3><ul>' +
+        '<li><b>Vendre</b> : choisis une carte que tu possèdes et fixe ton prix en crédits. Elle quitte ta collection tant que l\'annonce est ouverte.</li>' +
+        '<li><b>Annuler</b> une de tes annonces te rend la carte.</li>' +
+        '<li><b>Acheter</b> : le prix est débité de tes crédits et versé au vendeur. Tu ne peux pas acheter tes propres annonces.</li></ul>' +
+        '<p class="help-note">Pour garder une carte précieuse, vends plutôt tes doublons.</p>';
+    } },
+    shop: { title: 'Le shop', async html(){
+      const r = await getGameRules();
+      return '<h3>Acheter des packs avec tes crédits</h3><p>Tu gagnes des crédits en ouvrant des packs, en revendant des doublons et en gagnant des matchs 1v1. Un pack acheté arrive dans tes packs bonus (onglet Packs), sans limite de stock.</p>' +
+        '<ul><li><b>' + escapeHtml(r.packs.classique.label) + '</b> (' + r.packs.classique.price + ' crédits) : ' + escapeHtml(r.packs.classique.description) + '.</li></ul>' + guaranteedPacksHTML(r) +
+        '<p class="help-note">Un pack à carte garantie n\'est en vente que si au moins une carte de cette rareté existe. Le pack match ne s\'achète pas : il se gagne en 1v1.</p>' +
+        '<h3>Tes chances de tirage</h3>' + oddsTableHTML(r, ['classique']) + '<p>Pour les packs à carte garantie, les cartes qui ne sont pas garanties suivent ces mêmes chances.</p>';
+    } },
+    classement: { title: 'Le classement', html(){
+      return '<h3>Qui a la plus belle collection ?</h3><p>Les joueurs sont classés par <b>pourcentage de collection</b> : le nombre de cartes différentes que tu possèdes divisé par le nombre de cartes qui existent (cartes secrètes comprises). En cas d\'égalité, c\'est le nombre de crédits qui départage.</p>' +
+        '<ul><li>Clique sur un joueur pour voir sa collection.</li><li>Les comptes de test ne sont pas classés.</li></ul>';
+    } },
+    actualite: { title: 'L\'actualité du club', html(){
+      return '<h3>Ce que tu vois ici</h3><ul>' +
+        '<li><b>Prochains matchs</b> : les rencontres à venir du club. Un match passé dont le résultat n\'est pas encore saisi est signalé « Résultat à venir ».</li>' +
+        '<li><b>Stats des joueurs</b> : les vraies statistiques de la saison. M = matchs joués, ⚽ = buts, PD = passes décisives, 🏅 = homme du match. Clique sur un joueur pour sa fiche.</li>' +
+        '<li><b>Résultats</b> : le score, le stade, les buteurs, les passeurs et les moments mémorables de chaque match.</li></ul>' +
+        '<h3>Ce que chaque match fait gagner au jeu</h3><ul>' +
+        '<li>Un joueur qui marque reçoit sa carte <b>épique</b> (note 85, puis +5 par but supplémentaire).</li>' +
+        '<li>Un moment mémorable crée une carte <b>gold</b>.</li>' +
+        '<li>Un nouveau stade crée sa carte commune.</li></ul>';
+    } },
+    duels: { title: 'Les matchs 1v1', async html(){
+      const [r, cfg] = [await getGameRules(), await loadDuelConfig()];
+      const p = x => Math.round(x * 100) + ' %', range = (tab, tiers) => tiers.map(t => TIER_NAMES_PL[t].toLowerCase() + ' +' + Math.round(tab[t] * 100)).join(', ');
+      return '<h3>Le principe</h3><p>Tu composes une équipe de <b>5 cartes</b> (1 gardien + 4 joueurs de champ) et tu défies les autres joueurs. Le match est simulé tout de suite, minute par minute.</p>' +
+        '<h3>Composer ton équipe</h3><ul>' +
+        '<li><b>Disposition</b> : 2-1-1 (prudente), 1-2-1 (équilibrée) ou 1-1-2 (offensive).</li>' +
+        '<li><b>Tactique secrète</b> : Pressing bat Possession, qui bat Contre-attaque, qui bat Pressing. La tactique gagnante donne <b>+' + p(cfg.tactic_bonus) + '</b> à toute l\'équipe.</li>' +
+        '<li><b>Poste</b> : un joueur placé hors de son poste perd <b>' + p(cfg.out_of_position_malus) + '</b> (les postes « X » ne sont jamais pénalisés).</li>' +
+        '<li><b>Capitaine</b> : <b>+' + p(cfg.captain_bonus) + '</b> sur sa note.</li>' +
+        '<li>Tu ne peux pas jouer deux fois la même carte (mais la commune et la rare d\'un joueur, oui).</li></ul>' +
+        '<h3>Les bonus d\'équipe</h3><p>Trois emplacements facultatifs, dont les bonus <b>s\'additionnent</b> :</p><ul>' +
+        '<li><b>1 Fan</b> : ' + range(cfg.fan_bonus, ['commune', 'rare', 'epique', 'secrete', 'legendaire']) + ' %.</li>' +
+        '<li><b>1 Loup</b> (la mascotte) : mêmes bonus que le Fan.</li>' +
+        '<li><b>' + cfg.max_equipment + ' Équipement</b> : ' + range(cfg.equipment_bonus, ['commune', 'rare', 'epique', 'legendaire']) + ' %.</li></ul>' +
+        '<h3>Mises, packs et classement</h3><ul>' +
+        '<li><b>Mise</b> de ' + cfg.stake_min + ' à ' + cfg.stake_max + ' crédits, bloquée tant que le défi est ouvert. Le gagnant prend les deux mises <b>et un pack match</b>. En cas de nul, chacun récupère sa mise.</li>' +
+        '<li>Tu peux avoir ' + cfg.max_open_proposals + ' défis ouverts au maximum, et deux mêmes joueurs ne s\'affrontent qu\'une fois par ' + (cfg.cooldown_minutes >= 60 ? Math.round(cfg.cooldown_minutes / 60) + ' heure' : cfg.cooldown_minutes + ' minutes') + '.</li>' +
+        '<li><b>Classement</b> : par Elo. M = matchs, V = victoires, D = défaites, N = nuls, <b>Diff</b> = buts marqués moins buts encaissés.</li></ul>' +
+        '<h3>Les cartes stars</h3><p>Les 5 cartes les plus utilisées, et les 5 plus décisives en buts et en passes, sur tous les matchs 1v1. Chaque <b>vendredi à 17h</b>, la carte de joueur la plus utilisée, le meilleur buteur et le meilleur passeur de la semaine reçoivent une <b>carte spéciale</b> (note 80, puis +1 chaque fois qu\'ils la regagnent). Elle ne sort que des packs match :</p>' +
+        oddsTableHTML(r, ['match']);
+    } },
+  };
+  let helpOpener = null;
+  async function openHelp(key, opener){
+    const h = HELP[key]; if (!h) return;
+    helpOpener = opener || null;
+    document.getElementById('helpTitle').textContent = h.title;
+    document.getElementById('helpBody').innerHTML = '<p class="help-note">Chargement…</p>';
+    document.getElementById('helpModal').style.display = 'flex';
+    document.getElementById('helpClose').focus();
+    try { document.getElementById('helpBody').innerHTML = await h.html(); }
+    catch(e) { document.getElementById('helpBody').innerHTML = '<p>Impossible de charger l\'aide pour le moment.</p>'; }
+  }
+  function closeHelp(){ document.getElementById('helpModal').style.display = 'none'; if (helpOpener) { helpOpener.focus(); helpOpener = null; } }
+  document.querySelectorAll('.help-btn').forEach(b => b.addEventListener('click', () => openHelp(b.dataset.help, b)));
+  document.getElementById('helpClose').addEventListener('click', closeHelp);
+  document.getElementById('helpModal').addEventListener('click', e => { if (e.target.id === 'helpModal') closeHelp(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('helpModal').style.display === 'flex') closeHelp(); });
+
   // ---------- Packs ----------
   document.getElementById('openFreePackBtn').addEventListener('click', () => openPack('free'));
   document.getElementById('packEl').addEventListener('click', () => {
@@ -1324,12 +1477,6 @@
       const totalTime = slots.length * STAGGER_DELAY + 900;
       trackTimeout(() => {
         document.getElementById('revealSummary').innerHTML = 'Tu as gagné <b>+' + result.credits_won + ' crédits</b>.';
-        if (result.crafted && result.crafted.length) {
-          const banner = document.createElement('div');
-          banner.className = 'craft-banner';
-          banner.textContent = result.crafted.map(c => (c.type === 'rare_debloquee' ? 'Carte rare débloquée : ' : 'Carte légendaire débloquée : ') + c.player).join(' · ');
-          document.getElementById('revealSummary').appendChild(banner);
-        }
         refreshMe();
         loadCollection();
         packEl.classList.remove('disabled');
@@ -1572,11 +1719,12 @@
       const root = byId('duelBoardEl');
       if (!rows.length){ root.innerHTML = '<div class="empty-state">Personne n\'a encore joué. Propose le premier match !</div>'; return; }
       let html = '<table class="duel-table"><thead><tr><th></th><th>Joueur</th><th class="num">Elo</th>' +
-        '<th class="num" title="Matchs joués">M</th><th class="num" title="Victoires">V</th><th class="num" title="Défaites">D</th><th class="num" title="Nuls">N</th></tr></thead><tbody>';
+        '<th class="num" title="Matchs joués">M</th><th class="num" title="Victoires">V</th><th class="num" title="Défaites">D</th><th class="num" title="Nuls">N</th><th class="num" title="Différence de buts : buts marqués moins buts encaissés">Diff</th></tr></thead><tbody>';
       rows.forEach((r, i) => {
         const mine = r.pseudo === myPseudo;
         html += '<tr class="' + (mine ? 'me' : '') + '"><td><span class="rank-num">#' + (i + 1) + '</span></td><td>' + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') +
-          '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.played + '</td><td class="num">' + r.wins + '</td><td class="num">' + r.losses + '</td><td class="num">' + r.draws + '</td></tr>';
+          '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.played + '</td><td class="num">' + r.wins + '</td><td class="num">' + r.losses + '</td><td class="num">' + r.draws + '</td>' +
+          '<td class="num"><b class="' + (r.goal_diff > 0 ? 'diff-pos' : r.goal_diff < 0 ? 'diff-neg' : '') + '">' + (r.goal_diff > 0 ? '+' + r.goal_diff : r.goal_diff < 0 ? '−' + Math.abs(r.goal_diff) : '0') + '</b></td></tr>';
       });
       root.innerHTML = html + '</tbody></table>';
     } catch(e) { toast(e.message); }
@@ -1585,10 +1733,10 @@
   // ---- cellule : cartes stars (les plus utilisées, les plus décisives)
   async function loadDuelStars(){
     try {
-      const data = await fetch(API_BASE + '/duel/card-stats?limit=3').then(r => r.json());
+      const data = await fetch(API_BASE + '/duel/card-stats?limit=5').then(r => r.json());
       const root = byId('duelStarsEl');
       if (!data.most_used.length){ root.innerHTML = '<div class="empty-state">Pas encore de statistiques : jouez des matchs !</div>'; return; }
-      const medals = ['🥇', '🥈', '🥉'];
+      const medals = ['🥇', '🥈', '🥉', '4e', '5e'];
       const plural = (n, one, many) => n + ' ' + (n > 1 ? many : one);
       const blocks = [
         ['Les plus utilisées', data.most_used, n => plural(n, 'match', 'matchs')],
