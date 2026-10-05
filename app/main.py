@@ -203,6 +203,7 @@ def list_matches(db: Session = Depends(get_db)):
             "id": m.id,
             "date": m.date.date().isoformat(),
             "opponent": m.opponent,
+            "stade": m.stade,
             "score_us": m.score_us,
             "score_them": m.score_them,
             "homme_du_match": m.motm_player.name if m.motm_player else None,
@@ -226,7 +227,7 @@ def list_upcoming_matches(db: Session = Depends(get_db)):
 @app.get("/players/stats")
 def players_stats(db: Session = Depends(get_db)):
     """Statistiques RÉELLES de saison des joueurs (hors supporters), classées par buts."""
-    players = [p for p in db.query(Player).all() if not (p.poste or "").upper().startswith("FAN")]
+    players = [p for p in db.query(Player).all() if game_logic.card_kind(p) == "joueur"]
     players.sort(key=lambda p: (-p.buts, -p.passes_decisives, -p.homme_du_match_count, -p.matches_joues, p.name))
     return [{
         "name": p.name, "poste": p.poste, "matches_joues": p.matches_joues, "buts": p.buts,
@@ -371,7 +372,7 @@ def create_duel_proposal(payload: schemas.CreateProposalRequest, user: User = De
                          db: Session = Depends(get_db)):
     slots = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in payload.slots]
     proposal = duel_call(duel_engine.create_proposal, db, user, payload.formation, payload.tactic, payload.stake,
-                         slots, payload.captain_card_id, payload.fan_card_id)
+                         slots, payload.captain_card_id, payload.fan_card_id, payload.equipment_card_ids)
     return {"id": proposal.id, "credits": user.credits}
 
 
@@ -390,7 +391,7 @@ def play_duel_proposal(proposal_id: str, payload: schemas.TeamPayload, user: Use
                        db: Session = Depends(get_db)):
     slots = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in payload.slots]
     return duel_call(duel_engine.play_proposal, db, user, proposal_id, payload.formation, payload.tactic, slots,
-                     payload.captain_card_id, payload.fan_card_id)
+                     payload.captain_card_id, payload.fan_card_id, payload.equipment_card_ids)
 
 
 # --------------------------------------------------------------- Shop -----
@@ -588,13 +589,33 @@ def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = D
 
     motm_player = find_player(payload.homme_du_match) if payload.homme_du_match else None
 
+    # Le stade : même nom (sans tenir compte des majuscules ni des espaces en trop) = même stade.
+    # Un nouveau stade reçoit sa carte commune ; un stade déjà connu ne crée rien.
+    stade_player, stade_created = None, False
+    stade_name = " ".join((payload.stade or "").split())
+    if stade_name:
+        wanted = stade_name.lower()
+        stade_player = next((p for p in db.query(Player).filter(Player.poste == "STADE").all()
+                             if " ".join(p.name.split()).lower() == wanted), None)
+        if stade_player is None:
+            if db.query(Player).filter_by(name=stade_name).first():
+                raise HTTPException(status_code=400, detail="Ce nom est déjà celui d'un joueur ou d'une carte : choisis un autre nom de stade")
+            stade_player = Player(name=stade_name, poste="STADE")
+            db.add(stade_player)
+            db.flush()
+            db.add(Card(player_id=stade_player.id, tier=Tier.commune, vitesse=0, tir=0))
+            stade_created = True
+
     match = Match(
         date=match_date, opponent=payload.opponent,
         score_us=payload.score_us, score_them=payload.score_them,
         motm_player_id=motm_player.id if motm_player else None,
+        stade=stade_player.name if stade_player else None, stade_created=stade_created,
     )
     db.add(match)
     db.flush()
+    if stade_player:
+        stade_player.matches_joues += 1       # nombre de matchs joués dans ce stade
     match.lineup_json = json.dumps(payload.lineup, ensure_ascii=False)
     match.yellow_json = json.dumps(payload.cartons_jaunes, ensure_ascii=False)
     match.red_json = json.dumps(payload.cartons_rouges, ensure_ascii=False)
@@ -641,7 +662,8 @@ def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = D
     db.commit()
     return {"status": "ok", "match_id": match.id, "epic_cards_created": epics_created,
             "epic_notes": scorers_notes,  # note actuelle de la carte épique de chaque buteur
-            "upcoming_removed": removed_upcoming}
+            "upcoming_removed": removed_upcoming,
+            "stade": stade_player.name if stade_player else None, "stade_card_created": stade_created}
 
 
 def _find_by_day_and_opponent(rows, date_str, opponent):
@@ -715,10 +737,28 @@ def admin_delete_match(payload: schemas.AdminDeleteMatchRequest, db: Session = D
             db.delete(epic)
             epic_deleted.append(name)
 
+    # Le stade : un match de moins joué ici. Si CE match avait créé la carte du stade et qu'aucun autre
+    # match n'y a eu lieu, la carte du stade disparaît aussi.
+    stade_deleted = None
+    if match.stade:
+        stade_player = db.query(Player).filter_by(name=match.stade, poste="STADE").first()
+        if stade_player:
+            others = (db.query(Match).filter(Match.id != match.id, Match.stade == match.stade)
+                      .order_by(Match.date, Match.created_at).all())
+            if match.stade_created and not others:
+                purge_card_rows(db, [c.id for c in stade_player.cards])
+                db.flush()
+                db.delete(stade_player)
+                stade_deleted = match.stade
+            else:
+                stade_player.matches_joues = max(0, stade_player.matches_joues - 1)
+                if match.stade_created and others:
+                    others[0].stade_created = True     # un autre match garde la « paternité » de la carte du stade
+
     db.delete(match)     # supprime aussi ses lignes de buteurs et de passeurs
     db.commit()
     return {"status": "ok", "deleted_match": label, "reverted": reverted,
-            "epic_cards_deleted": epic_deleted, "warnings": warnings}
+            "epic_cards_deleted": epic_deleted, "stade_card_deleted": stade_deleted, "warnings": warnings}
 
 
 @app.post("/admin/add-upcoming-match", dependencies=[Depends(require_admin)])
@@ -830,6 +870,49 @@ def admin_create_mascot(payload: schemas.AdminCreateMascotRequest, db: Session =
     db.commit()
     return {"status": "ok", "mascot": player.name, "player_created": created_player,
             "cards_created": created, "granted_to": granted_to}
+
+
+@app.post("/admin/create-equipment", dependencies=[Depends(require_admin)])
+def admin_create_equipment(payload: schemas.AdminCreateEquipmentRequest, db: Session = Depends(get_db)):
+    """Crée les cartes Équipement (bonus d'équipe en 1v1 : +1 % commune, +2 % rare, +3 % épique, +5 % légendaire).
+    Sans `items`, crée la liste officielle du club. Relançable sans risque : ne crée que ce qui manque.
+    Avec `items` : [{name, tier}] pour en ajouter d'autres plus tard."""
+    items = [(i.name.strip(), i.tier) for i in payload.items] if payload.items else list(game_logic.EQUIPMENT_CATALOG)
+    for name, tier in items:
+        if not name:
+            raise HTTPException(status_code=400, detail="Un équipement n'a pas de nom")
+        try:
+            Tier(tier)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Rareté inconnue pour « %s » : %s (commune, rare, epique, legendaire)" % (name, tier))
+    user = None
+    if payload.grant_to_pseudo:
+        user = db.query(User).filter_by(pseudo=payload.grant_to_pseudo).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="Utilisateur introuvable pour grant_to_pseudo")
+
+    created, cards = [], []
+    for name, tier in items:
+        player = db.query(Player).filter_by(name=name).first()
+        if player is None:
+            player = Player(name=name, poste="EQUIPEMENT")
+            db.add(player)
+            db.flush()
+        elif not game_logic.is_equipment(player):
+            raise HTTPException(status_code=400, detail="« %s » est déjà le nom d'un joueur ou d'une autre carte : choisis un autre nom" % name)
+        card = db.query(Card).filter_by(player_id=player.id, tier=Tier(tier)).first()
+        if card is None:
+            card = Card(player_id=player.id, tier=Tier(tier), vitesse=0, tir=0)
+            db.add(card)
+            db.flush()
+            created.append("%s (%s)" % (name, tier))
+        cards.append(card)
+    if user:
+        for card in cards:
+            game_logic.get_or_create_owned(db, user, card).quantity += 1
+    db.commit()
+    return {"status": "ok", "cards_created": created, "already_existing": len(cards) - len(created),
+            "granted_to": user.pseudo if user else None}
 
 
 @app.post("/admin/delete-card", dependencies=[Depends(require_admin)])
