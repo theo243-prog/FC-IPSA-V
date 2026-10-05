@@ -25,6 +25,9 @@
     --rare-1:#9AA6AC; --rare-2:#E9EEF0; --rare-text:#1F2A31;
     --epique-1:#6A2FB8; --epique-2:#C7A2F5; --epique-text:#1E0B3A;
     --legend-1:#DFA82E; --legend-2:#FFE79A; --legend-text:#4A3400;
+    --gold-1:#B87A00; --gold-2:#FFD45C; --gold-text:#3A2500;
+    --speciale-1:#1E8A4B; --speciale-2:#9CE9B4; --speciale-text:#053018;
+    --secrete-1:#16112B; --secrete-2:#5646AB; --secrete-text:#ECE8FF;
     --font-head:'Saira Condensed','Arial Narrow',sans-serif; --font-body:'Manrope',sans-serif;
   }
   @media (prefers-color-scheme: dark){
@@ -160,6 +163,10 @@
   .card-slot.glow-rare .card-front{animation:glowRareBox 1.3s ease-in-out infinite;}
   .card-slot.glow-epique .card-front{animation:glowEpiqueBox 1.3s ease-in-out infinite;}
   .card-slot.glow-legendaire .card-front{animation:glowLegendBox 1.3s ease-in-out infinite;}
+  .card-slot.glow-gold .card-front{animation:glowGoldBox 1.3s ease-in-out infinite;}
+  .card-slot.glow-speciale .card-front{animation:glowSpecialeBox 1.3s ease-in-out infinite;}
+  @keyframes glowGoldBox{0%,100%{box-shadow:var(--shadow), 0 0 4px rgba(255,190,40,.5);}50%{box-shadow:var(--shadow), 0 0 24px 4px rgba(255,190,40,.95);}}
+  @keyframes glowSpecialeBox{0%,100%{box-shadow:var(--shadow), 0 0 4px rgba(60,200,110,.5);}50%{box-shadow:var(--shadow), 0 0 24px 4px rgba(60,200,110,.95);}}
   @keyframes glowEpiqueBox{
     0%,100%{box-shadow:var(--shadow), 0 0 4px rgba(150,90,230,.5);}
     50%{box-shadow:var(--shadow), 0 0 26px 5px rgba(150,90,230,.95);}
@@ -184,6 +191,9 @@
   .card-front.tier-rare{background:linear-gradient(160deg,var(--rare-2),var(--rare-1));color:var(--rare-text);}
   .card-front.tier-epique{background:linear-gradient(160deg,var(--epique-2),var(--epique-1));color:var(--epique-text);}
   .card-front.tier-legendaire{background:linear-gradient(160deg,var(--legend-2),var(--legend-1));color:var(--legend-text);}
+  .card-front.tier-gold{background:linear-gradient(160deg,var(--gold-2),var(--gold-1));color:var(--gold-text);}
+  .card-front.tier-speciale{background:linear-gradient(160deg,var(--speciale-2),var(--speciale-1));color:var(--speciale-text);}
+  .card-front.tier-secrete{background:linear-gradient(160deg,var(--secrete-2),var(--secrete-1));color:var(--secrete-text);}
   /* ---- Cartes légendaires : feuille holographique animée ----
      arc-en-ciel qui dérive, reflet blanc qui balaie la carte, paillettes ; le reflet suit la souris.
      Tout est placé SOUS le texte, la photo et le médaillon (z-index 1) : le nom reste net et lisible. ---- */
@@ -238,6 +248,9 @@
   .card.tier-rare:not(.locked){color:var(--rare-text);}
   .card.tier-epique:not(.locked){color:var(--epique-text);}
   .card.tier-legendaire:not(.locked){color:var(--legend-text);}
+  .card.tier-gold:not(.locked){color:var(--gold-text);}
+  .card.tier-speciale:not(.locked){color:var(--speciale-text);}
+  .card.tier-secrete:not(.locked){color:var(--secrete-text);}
   .card{width:122px;aspect-ratio:2/3;border-radius:13px;padding:9px;display:flex;flex-direction:column;justify-content:space-between;position:relative;box-shadow:var(--shadow);overflow:hidden;transition:transform .15s ease, box-shadow .15s ease;}
   .card:not(.locked):hover{transform:translateY(-3px);box-shadow:0 16px 30px rgba(0,0,0,0.18);}
   .card.tier-legendaire:not(.locked){
@@ -277,6 +290,32 @@
     animation:holoWolf 4.5s ease-in-out infinite alternate;
   }
   @keyframes holoWolf{from{background-position:0% 20%;}to{background-position:100% 80%;}}
+
+  /* ---- Gold (moment mémorable), spéciale (verte), secrète (nuit étoilée) ---- */
+  .card-front.tier-gold::after,.card.tier-gold:not(.locked)::after{            /* reflet métallique fixe */
+    content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
+    background:linear-gradient(115deg,rgba(255,255,255,0) 28%,rgba(255,255,255,.5) 46%,rgba(255,255,255,0) 62%);
+  }
+  .card-front.tier-gold,.card.tier-gold:not(.locked){box-shadow:var(--shadow),inset 0 0 0 2px rgba(255,238,170,.9);}
+  .card-front.tier-speciale,.card.tier-speciale:not(.locked){box-shadow:var(--shadow),inset 0 0 0 2px rgba(220,255,230,.75);}
+  .card-front.tier-secrete::before,.card.tier-secrete:not(.locked)::before{    /* étoiles */
+    background:
+      radial-gradient(circle at 16% 22%,rgba(255,255,255,.9) 0,rgba(255,255,255,.9) 1px,rgba(255,255,255,0) 2px),
+      radial-gradient(circle at 80% 18%,rgba(220,210,255,.9) 0,rgba(220,210,255,.9) 1.2px,rgba(255,255,255,0) 2.4px),
+      radial-gradient(circle at 88% 56%,rgba(255,255,255,.8) 0,rgba(255,255,255,.8) 1px,rgba(255,255,255,0) 2px),
+      radial-gradient(circle at 22% 68%,rgba(220,210,255,.85) 0,rgba(220,210,255,.85) 1px,rgba(255,255,255,0) 2px),
+      radial-gradient(circle at 58% 84%,rgba(255,255,255,.85) 0,rgba(255,255,255,.85) 1.2px,rgba(255,255,255,0) 2.4px),
+      linear-gradient(165deg,rgba(255,255,255,.18),rgba(255,255,255,0) 45%);
+  }
+  .card-front.tier-secrete,.card.tier-secrete:not(.locked){box-shadow:var(--shadow),inset 0 0 0 2px rgba(190,176,255,.7);}
+  .tier-secrete .mascot-medal{background:radial-gradient(circle at 34% 28%,#3B2F7A,#0C0919 75%);box-shadow:0 0 0 3px #B7A9FF,0 0 16px 3px rgba(150,130,255,.8);}
+  .tier-secrete .mascot-medal .mascot-wolf{color:#E6E0FF;filter:drop-shadow(0 0 5px rgba(170,150,255,.95));}
+  .tier-gold .item-medal{background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.7),rgba(255,214,90,.25) 70%);box-shadow:inset 0 0 0 3px #FFF0A8,0 0 16px 3px rgba(255,200,60,.85);}
+  /* jauge de fusion sur une carte secrète pas encore débloquée */
+  .card-stats .fusion-gauge{position:relative;flex:1 1 auto;min-width:0;height:18px;border-radius:9px;background:rgba(70,55,140,.2);box-shadow:inset 0 0 0 1.5px rgba(124,108,224,.55);overflow:hidden;}
+  .fusion-bar{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#6A59D6,#A99BFF);border-radius:9px;}
+  .card-stats .fusion-gauge span{position:relative;z-index:1;display:block;text-align:center;font-size:10.5px;font-weight:800;line-height:18px;color:var(--text);background:none;padding:0;border-radius:0;text-shadow:0 0 3px var(--bg-elevated),0 0 3px var(--bg-elevated);}
+  .card.locked.tier-secrete{border-style:solid;border-color:rgba(124,108,224,.55);}
 
   /* ---- Cartes Équipement et Stades : une pastille avec l'objet (ou sa photo, quand elle sera ajoutée) ---- */
   .item-medal{
@@ -322,6 +361,9 @@
   .mini-badge.tier-rare{background:linear-gradient(160deg,var(--rare-2),var(--rare-1));color:var(--rare-text);}
   .mini-badge.tier-epique{background:linear-gradient(160deg,var(--epique-2),var(--epique-1));color:var(--epique-text);}
   .mini-badge.tier-legendaire{background:linear-gradient(160deg,var(--legend-2),var(--legend-1));color:var(--legend-text);}
+  .mini-badge.tier-gold{background:linear-gradient(160deg,var(--gold-2),var(--gold-1));color:var(--gold-text);}
+  .mini-badge.tier-speciale{background:linear-gradient(160deg,var(--speciale-2),var(--speciale-1));color:var(--speciale-text);}
+  .mini-badge.tier-secrete{background:linear-gradient(160deg,var(--secrete-2),var(--secrete-1));color:var(--secrete-text);}
   .listing-text{font-size:13px;flex:1;min-width:170px;}
   .listing-text b{font-weight:700;}
   .listing-meta{font-size:11px;color:var(--text-muted);}
@@ -624,6 +666,7 @@
     <div id="tmSlots"></div>
     <div class="form-row"><label id="tmCaptainLabel">Capitaine</label><select id="tmCaptain"></select></div>
     <div class="form-row"><label>Fan (optionnel, apporte un bonus à toute l'équipe)</label><select id="tmFan"></select></div>
+    <div class="form-row"><label>Loup (optionnel, la mascotte apporte un bonus à toute l'équipe)</label><select id="tmMascot"></select></div>
     <div class="form-row" id="tmEquipRow"><label id="tmEquipLabel">Équipement (optionnel)</label><div class="tm-equip" id="tmEquip"></div><div class="tm-hint" id="tmEquipHint"></div></div>
     <div class="tm-error" id="tmError"></div>
     <button class="btn-primary" id="tmSubmit" style="width:100%;">Valider</button>
@@ -793,11 +836,20 @@
   // Types de cartes, reconnus à leur poste : joueur | fan (supporters, mascotte) | equipement | stade
   function cardKind(card){
     const poste = (card.poste || '').toUpperCase();
+    if (poste === 'MASCOTTE' || poste.startsWith('FAN/MASCOTTE')) return 'mascotte';
     if (poste.startsWith('FAN')) return 'fan';
     if (poste === 'EQUIPEMENT') return 'equipement';
     if (poste === 'STADE') return 'stade';
+    if (poste === 'MOMENT') return 'moment';
     return 'joueur';
   }
+  // une carte gold s'appelle « Petit pont — Mathis » : l'action en titre, le joueur en dessous
+  function momentParts(name){
+    const i = name.indexOf(' — ');
+    if (i < 0) return { action: name, who: '' };
+    return { action: name.slice(0, i), who: name.slice(i + 3).replace(/ \(\d\d\/\d\d\)\+*$/, '').replace(/\++$/, '') };
+  }
+  function cardDisplayName(card){ return cardKind(card) === 'moment' ? momentParts(card.player_name).action : card.player_name; }
   const EQUIP_BONUS_PCT = { commune: 1, rare: 2, epique: 3, legendaire: 5 };
   const ITEM_ICONS = {
     'gourde': '💧', 'ballon du match': '⚽', 'protege-tibias': '🦵', 'chasuble': '🦺', 'chaussettes trouees': '🧦',
@@ -806,7 +858,7 @@
   };
   function itemIcon(card){
     const key = (card.player_name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return ITEM_ICONS[key] || (cardKind(card) === 'stade' ? '🏟️' : '🎒');
+    return ITEM_ICONS[key] || (cardKind(card) === 'stade' ? '🏟️' : cardKind(card) === 'moment' ? '🌟' : '🎒');
   }
   function itemMedalHTML(card){
     const stade = cardKind(card) === 'stade';
@@ -821,15 +873,15 @@
   }
 
   // bonus d'équipe (en %) apporté par une carte Fan en match 1v1, selon sa rareté
-  const FAN_BONUS_PCT = { commune: 5, rare: 10, epique: 12, legendaire: 15 };
-  function isMascot(card){ return (card.poste || '').toLowerCase().includes('mascotte'); }
+  const FAN_BONUS_PCT = { commune: 5, rare: 10, epique: 12, secrete: 13, legendaire: 15 };
+  function isMascot(card){ return cardKind(card) === 'mascotte'; }
   // le médaillon de la mascotte : le blason du loup (ou, en légendaire, un loup holographique animé)
   function mascotMedalHTML(tier){
     return '<div class="mascot-medal">' + (tier === 'legendaire' ? '<span class="mascot-holo" aria-hidden="true"></span>' : crestIco('mascot-wolf')) + '</div>';
   }
 
   function cardFrontHTML(card){
-    const mascot = isMascot(card), kind = cardKind(card);
+    const kind = cardKind(card);
     let statsRow, posteLabel, midHTML;
     if (kind === 'equipement') {
       statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🎒 +' + (EQUIP_BONUS_PCT[card.tier] || 0) + ' %</span></div>';
@@ -837,17 +889,22 @@
     } else if (kind === 'stade') {
       statsRow = '<div class="card-stats"><span>🏟️ STADE</span></div>';
       posteLabel = '🏟️';
+    } else if (kind === 'moment') {
+      statsRow = '<div class="card-stats" title="Moment mémorable d\'un match"><span>🌟 ' + escapeHtml(momentParts(card.player_name).who) + '</span></div>';
+      posteLabel = '🌟';
+    } else if (kind === 'mascotte') {
+      statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🐺 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span></div>';
+      posteLabel = '🐺';
     } else if (kind === 'fan') {
-      statsRow = mascot ? '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🐺 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span></div>'
-                        : '<div class="card-stats"><span>🎉 SUPPORTER</span></div>';
-      posteLabel = mascot ? '🐺' : '🎉';
+      statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🎉 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span></div>';
+      posteLabel = '🎉';
     } else {
       statsRow = '<div class="card-stats"><span>⭐ ' + (card.display_note ? card.display_note.value : '') + '</span></div>';
       posteLabel = escapeHtml(card.poste);
     }
     const photo = card.player_photo_url ? '<img class="card-photo" src="' + escapeHtml(card.player_photo_url) + '" alt="">' : '';
-    if (mascot) midHTML = mascotMedalHTML(card.tier);
-    else if (kind === 'equipement' || kind === 'stade') midHTML = photo || itemMedalHTML(card);
+    if (kind === 'mascotte') midHTML = mascotMedalHTML(card.tier);
+    else if (kind === 'equipement' || kind === 'stade' || kind === 'moment') midHTML = photo || itemMedalHTML(card);
     else midHTML = photo || '<span class="ball-fallback">⚽</span>';
     return '<div class="card-top"><span class="card-tier-label">'+tierLabel(card.tier)+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
       '<div class="card-mid">'+midHTML+'</div>'+
@@ -872,7 +929,7 @@
       img.replaceWith(span);
     }, { once: true });
   }
-  function tierLabel(t){ return ({legendaire:'Légendaire', epique:'Épique', rare:'Rare', commune:'Commune'})[t] || t; }
+  function tierLabel(t){ return ({legendaire:'Légendaire', epique:'Épique', speciale:'Spéciale', secrete:'Secrète', gold:'Gold', rare:'Rare', commune:'Commune'})[t] || t; }
   function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
   function makeMiniCard(card, opts){
@@ -882,8 +939,12 @@
     el.className = 'card tier-' + card.tier + (locked ? ' locked' : '');
     el.style.background = locked ? '' : 'linear-gradient(160deg, var(--' + (card.tier === 'legendaire' ? 'legend-2' : card.tier + '-2') + '), var(--' + (card.tier === 'legendaire' ? 'legend-1' : card.tier + '-1') + '))';
     el.innerHTML = cardFrontHTML(card);
-    setCardName(el, card.player_name);
+    setCardName(el, cardDisplayName(card));
     attachPhotoFallback(el, card);
+    if (locked && card.tier === 'secrete' && card.fusion) {          // carte secrète pas encore débloquée : la jauge de fusion
+      const pct = Math.max(0, Math.min(100, Math.floor(100 * card.fusion.points / card.fusion.needed)));
+      el.querySelector('.card-stats').innerHTML = '<div class="fusion-gauge" title="' + card.fusion.points + ' / ' + card.fusion.needed + ' points de doublons"><div class="fusion-bar" style="width:' + pct + '%"></div><span>' + pct + ' %</span></div>';
+    }
     if (!locked) {
       if (!hideCount) {
         const badge = document.createElement('div');
@@ -912,14 +973,22 @@
         : '';
       const kind = cardKind({ poste: p.poste });
       const role = kind === 'fan' ? (p.poste.split('/')[1] || '').trim() : '';
-      const posteText = kind === 'fan' ? (role || 'Supporter') : kind === 'equipement' ? 'Équipement' : kind === 'stade' ? 'Stade' : p.poste;
+      const posteText = kind === 'fan' ? (role || 'Supporter') : kind === 'mascotte' ? 'Mascotte' : kind === 'equipement' ? 'Équipement'
+        : kind === 'stade' ? 'Stade' : kind === 'moment' ? 'Moment mémorable' : p.poste;
+      const maxEq = (duelConfig && duelConfig.max_equipment) || 1;
       let inner;
       if (kind === 'fan') {          // une carte Fan n'a ni stats ni note : elle apporte un bonus d'équipe en 1v1
         inner = '<div class="player-note">+' + (FAN_BONUS_PCT[p.tier] || 0) + ' %<small>Bonus d\'équipe en match 1v1, sur l\'emplacement Fan</small></div>';
+      } else if (kind === 'mascotte') {
+        inner = '<div class="player-note">+' + (FAN_BONUS_PCT[p.tier] || 0) + ' %<small>Bonus d\'équipe en match 1v1, sur l\'emplacement Loup (en plus du Fan)</small></div>';
       } else if (kind === 'equipement') {
-        inner = '<div class="player-note">+' + (EQUIP_BONUS_PCT[p.tier] || 0) + ' %<small>Bonus d\'équipe en match 1v1. Jusqu\'à ' + ((duelConfig && duelConfig.max_equipment) || 3) + ' équipements par équipe, ils s\'ajoutent au Fan.</small></div>';
+        inner = '<div class="player-note">+' + (EQUIP_BONUS_PCT[p.tier] || 0) + ' %<small>Bonus d\'équipe en match 1v1. ' + (maxEq > 1 ? 'Jusqu\'à ' + maxEq + ' équipements par équipe' : 'Un seul équipement par équipe') + ', en plus du Fan et du Loup.</small></div>';
       } else if (kind === 'stade') {
         inner = '<div class="player-note">' + p.matches_joues + '<small>' + (p.matches_joues > 1 ? 'matchs joués' : 'match joué') + ' dans ce stade</small></div>';
+      } else if (kind === 'moment') {
+        const m = p.moment, parts = momentParts(p.name);
+        inner = '<div class="player-note">🌟<small>' + escapeHtml(m ? m.action : parts.action) + ' — ' + escapeHtml(m ? m.player : parts.who) +
+          (m && m.opponent ? '<br>Match contre ' + escapeHtml(m.opponent) + (m.date ? ', le ' + escapeHtml(m.date.split('-').reverse().join('/')) : '') : '') + '</small></div>';
       } else {
         inner = (p.display_note ? '<div class="player-note">⭐ ' + p.display_note.value + '<small>Note de la carte</small></div>' : '') +
           '<div class="stat-grid">' +
@@ -930,6 +999,8 @@
             statBox(p.cartons_jaunes, 'Cartons jaunes') +
             statBox(p.cartons_rouges, 'Cartons rouges') +
           '</div>';
+        if (p.tier === 'speciale') inner += '<p class="tm-hint" style="text-align:center;">Carte spéciale : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine. Elle ne sort que des packs gagnés en 1v1.</p>';
+        if (p.tier === 'secrete') inner += '<p class="tm-hint" style="text-align:center;">Carte secrète : elle ne sort jamais des packs. On la débloque en fusionnant 100 points de doublons (commune = 1, rare = 5).</p>';
       }
       body.innerHTML = photoHTML + '<div class="player-detail-poste">' + escapeHtml(posteText) + ' · ' + tierLabel(p.tier) + '</div>' + inner;
       document.getElementById('userCollectionModal').style.display = 'flex';
@@ -1086,7 +1157,7 @@
   // withSell=true ajoute le bouton "Vendre doublon" (uniquement pertinent pour SA PROPRE collection)
   function buildTierGroups(cards, withSell){
     const frag = document.createDocumentFragment();
-    ['legendaire','epique','rare','commune'].forEach(tier => {
+    ['legendaire','epique','speciale','secrete','gold','rare','commune'].forEach(tier => {
       const cardsOfTier = cards.filter(c => c.tier === tier)
         .sort((a, b) => a.player_name.localeCompare(b.player_name, 'fr'));
       if (!cardsOfTier.length) return;
@@ -1103,6 +1174,13 @@
           sellBtn.textContent = 'Vendre doublon';
           sellBtn.addEventListener('click', () => sellDuplicate(card.id));
           wrap.appendChild(sellBtn);
+        }
+        if (withSell && card.tier === 'secrete' && card.fusion && card.fusion.ready) {    // assez de doublons : on peut fusionner
+          const unlockBtn = document.createElement('button');
+          unlockBtn.className = 'btn-small';
+          unlockBtn.textContent = 'Débloquer';
+          unlockBtn.addEventListener('click', () => unlockSecret(card.id, unlockBtn));
+          wrap.appendChild(unlockBtn);
         }
         grid.appendChild(wrap);
       });
@@ -1139,6 +1217,15 @@
     } catch(e) { toast(e.message); }
   }
 
+  async function unlockSecret(cardId, btn){
+    btn.disabled = true;
+    try {
+      const res = await api('/collection/unlock-secret', { method: 'POST', body: JSON.stringify({ card_id: cardId }) });
+      toast('Carte secrète débloquée : ' + res.player + ' !');
+      await loadCollection();
+      await refreshMe();
+    } catch(e) { toast(e.message); btn.disabled = false; }
+  }
   async function sellDuplicate(cardId){
     try {
       const res = await api('/collection/sell-duplicate', { method: 'POST', body: JSON.stringify({ card_id: cardId }) });
@@ -1210,7 +1297,7 @@
         const flip = document.createElement('div'); flip.className = 'card-flip';
         const back = document.createElement('div'); back.className = 'card-face card-back'; back.innerHTML = crestIco();
         const front = document.createElement('div'); front.className = 'card-face card-front tier-' + card.tier; front.innerHTML = cardFrontHTML(card);
-        setCardName(front, card.player_name);
+        setCardName(front, cardDisplayName(card));
         if (card.is_new) front.insertAdjacentHTML('beforeend', '<span class="new-ribbon">NEW</span>');  // carte débloquée
         attachPhotoFallback(front, card);
         flip.appendChild(back); flip.appendChild(front); slot.appendChild(flip); area.appendChild(slot);
@@ -1224,6 +1311,8 @@
             s.flip.classList.add('revealed');              // puis elle se retourne
             if (s.card.tier === 'rare') s.slot.classList.add('glow-rare');
             if (s.card.tier === 'epique') s.slot.classList.add('glow-epique');
+            if (s.card.tier === 'gold') s.slot.classList.add('glow-gold');
+            if (s.card.tier === 'speciale') s.slot.classList.add('glow-speciale');
             if (s.card.tier === 'legendaire') {
               s.slot.classList.add('glow-legendaire');
               spawnSparks(s.slot);
@@ -1437,6 +1526,8 @@
       root.innerHTML = matches.map(m => {
         const dateStr = localDay(m.date).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
         const stadeHTML = m.stade ? '<div class="match-row">📍 <b>Stade :</b> ' + escapeHtml(m.stade) + '</div>' : '';
+        const momentsHTML = (m.moments && m.moments.length)
+          ? '<div class="match-row">🌟 <b>Moments mémorables :</b> ' + m.moments.map(x => escapeHtml(x.action) + ' (' + escapeHtml(x.player) + ')').join(', ') + '</div>' : '';
         const scorersHTML = m.buteurs.length
           ? '<div class="match-row">⚽ <b>Buteurs :</b> ' + m.buteurs.map(b => escapeHtml(b.player_name) + (b.count > 1 ? ' (×' + b.count + ')' : '')).join(', ') + '</div>'
           : '';
@@ -1446,7 +1537,7 @@
         const motmHTML = m.homme_du_match ? '<div class="match-motm">🏅 Homme du match : ' + escapeHtml(m.homme_du_match) + '</div>' : '';
         return '<div class="match-card">' +
           '<div class="match-header"><div><div class="match-score">FC IPSA V ' + m.score_us + ' — ' + m.score_them + ' ' + escapeHtml(m.opponent) + '</div></div><div class="match-date">' + dateStr + '</div></div>' +
-          stadeHTML + scorersHTML + assistsHTML + motmHTML +
+          stadeHTML + scorersHTML + assistsHTML + momentsHTML + motmHTML +
         '</div>';
       }).join('');
     } catch(e) { toast(e.message); }
@@ -1559,7 +1650,7 @@
         const row = document.createElement('div'); row.className = 'proposal-row';
         const label = duelConfig && duelConfig.formation_labels[pr.formation] ? ' (' + duelConfig.formation_labels[pr.formation] + ')' : '';
         row.innerHTML = '<div class="proposal-main"><b>' + escapeHtml(pr.creator) + '</b>' + (mine ? ' (toi)' : '') + ' · Elo ' + pr.creator_elo +
-          '<div class="proposal-meta">Disposition ' + escapeHtml(pr.formation) + label + (pr.has_fan ? ' · avec un Fan' : '') + (pr.equipment_count ? ' · ' + pr.equipment_count + ' équipement' + (pr.equipment_count > 1 ? 's' : '') : '') + ' · mise <b>' + pr.stake + ' crédits</b> · tactique secrète</div></div>';
+          '<div class="proposal-meta">Disposition ' + escapeHtml(pr.formation) + label + (pr.has_fan ? ' · avec un Fan' : '') + (pr.has_mascot ? ' · avec le Loup' : '') + (pr.equipment_count ? ' · ' + pr.equipment_count + ' équipement' + (pr.equipment_count > 1 ? 's' : '') : '') + ' · mise <b>' + pr.stake + ' crédits</b> · tactique secrète</div></div>';
         const btn = document.createElement('button'); btn.className = 'btn-small' + (mine ? ' ghost' : '');
         if (mine) { btn.textContent = 'Annuler'; btn.addEventListener('click', () => cancelProposal(pr.id, btn)); }
         else { btn.textContent = 'Jouer le match'; btn.addEventListener('click', () => openTeamModal('play', pr)); }
@@ -1610,14 +1701,17 @@
     byId('tmCaptainLabel').textContent = 'Capitaine (+' + Math.round(cfg.captain_bonus * 100) + ' % sur sa note)';
     byId('tmCaptain').dataset.touched = '';
 
-    const fans = myCollection.filter(c => c.quantity > 0 && isFan(c));
+    const fans = myCollection.filter(c => c.quantity > 0 && cardKind(c) === 'fan');
     byId('tmFan').innerHTML = '<option value="">— aucun —</option>' + fans.map(c =>
       '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', +' + Math.round((cfg.fan_bonus[c.tier] || 0) * 100) + ' %)</option>').join('');
 
     // équipements : jusqu'à cfg.max_equipment, tous différents, leur bonus s'ajoute à celui du Fan
     tm.equip = myCollection.filter(c => c.quantity > 0 && cardKind(c) === 'equipement')
       .sort((a, b) => (cfg.equipment_bonus[b.tier] || 0) - (cfg.equipment_bonus[a.tier] || 0) || a.player_name.localeCompare(b.player_name, 'fr'));
-    byId('tmEquipLabel').textContent = 'Équipement (optionnel, ' + cfg.max_equipment + ' au maximum)';
+    byId('tmEquipLabel').textContent = cfg.max_equipment > 1 ? 'Équipement (optionnel, ' + cfg.max_equipment + ' au maximum)' : 'Équipement (optionnel, un seul)';
+    const mascots = myCollection.filter(c => c.quantity > 0 && cardKind(c) === 'mascotte');
+    byId('tmMascot').innerHTML = '<option value="">— aucun —</option>' + mascots.map(c =>
+      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', +' + Math.round((cfg.mascot_bonus[c.tier] || 0) * 100) + ' %)</option>').join('');
     const equipOptions = '<option value="">— aucun —</option>' + tm.equip.map(c =>
       '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', +' + Math.round((cfg.equipment_bonus[c.tier] || 0) * 100) + ' %)</option>').join('');
     byId('tmEquip').innerHTML = tm.equip.length ? Array.from({ length: cfg.max_equipment }, () => '<select>' + equipOptions + '</select>').join('') : '';
@@ -1635,16 +1729,19 @@
     const used = new Set(sels.map(s => s.value).filter(Boolean));
     sels.forEach(sel => [...sel.options].forEach(o => { o.disabled = !!o.value && used.has(o.value) && o.value !== sel.value; }));
     const fan = tm.byId[byId('tmFan').value], fanPct = fan ? Math.round((cfg.fan_bonus[fan.tier] || 0) * 100) : 0;
+    const mascot = tm.byId[byId('tmMascot').value], mascotPct = mascot ? Math.round((cfg.mascot_bonus[mascot.tier] || 0) * 100) : 0;
     const eqPct = sels.reduce((sum, s) => { const c = tm.byId[s.value]; return sum + (c ? Math.round((cfg.equipment_bonus[c.tier] || 0) * 100) : 0); }, 0);
     const parts = [];
     if (fan) parts.push('Fan +' + fanPct + ' %');
+    if (mascot) parts.push('Loup +' + mascotPct + ' %');
     if (eqPct) parts.push('Équipement +' + eqPct + ' %');
-    byId('tmEquipHint').textContent = !tm.equip.length
+    byId('tmEquipHint').textContent = !tm.equip.length && !parts.length
       ? 'Tu n\'as pas encore d\'équipement : ils sortent dans les packs.'
-      : (parts.length ? 'Bonus d\'équipe : ' + parts.join(' · ') + (parts.length > 1 ? ' = +' + (fanPct + eqPct) + ' %' : '') : 'Aucun bonus d\'équipe pour l\'instant.');
+      : (parts.length ? 'Bonus d\'équipe : ' + parts.join(' · ') + (parts.length > 1 ? ' = +' + (fanPct + mascotPct + eqPct) + ' %' : '') : 'Aucun bonus d\'équipe pour l\'instant.');
   }
   byId('tmEquip').addEventListener('change', refreshTeamBonus);
   byId('tmFan').addEventListener('change', refreshTeamBonus);
+  byId('tmMascot').addEventListener('change', refreshTeamBonus);
   function closeTeamModal(){ byId('teamModal').style.display = 'none'; }
   byId('tmClose').addEventListener('click', closeTeamModal);
   byId('teamModal').addEventListener('click', e => { if (e.target.id === 'teamModal') closeTeamModal(); });
@@ -1706,6 +1803,7 @@
       slots: sels.map(s => ({ card_id: s.value, slot_category: s.dataset.category })),
       captain_card_id: byId('tmCaptain').value || null, fan_card_id: byId('tmFan').value || null,
       equipment_card_ids: [...document.querySelectorAll('#tmEquip select')].map(s => s.value).filter(Boolean),
+      mascot_card_id: byId('tmMascot').value || null,
     };
     btn.disabled = true;
     try {
@@ -1763,6 +1861,7 @@
       const box = document.createElement('div'); box.className = 'lineup';
       let html = '<h4>' + escapeHtml(t.pseudo) + '</h4><div class="lu-sub">' + escapeHtml(t.formation) + ' · ' + escapeHtml(tacticLabel || '') +
         (t.fan ? ' · Fan ' + escapeHtml(t.fan.player) + ' (+' + t.fan.bonus_pct + ' %)' : '') +
+        (t.mascot ? ' · Loup ' + escapeHtml(t.mascot.player) + ' (+' + t.mascot.bonus_pct + ' %)' : '') +
         (t.equipment && t.equipment.length ? ' · Équipement ' + t.equipment.map(e => escapeHtml(e.player)).join(', ') + ' (+' + t.equipment.reduce((n, e) => n + e.bonus_pct, 0) + ' %)' : '') + '</div>';
       players.forEach(p => {
         html += '<div class="lu-row"><span>' + SLOT_ICON[p.slot] + ' ' + escapeHtml(p.player) + (p.captain ? ' <span class="lu-flag" title="Capitaine">©</span>' : '') +
