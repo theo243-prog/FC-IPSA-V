@@ -459,9 +459,34 @@ def duel_recap(duel_id: str, db: Session = Depends(get_db)):
 
 
 @app.get("/duel/card-stats")
-def duel_card_stats(limit: int = 5, db: Session = Depends(get_db)):
-    """Les cartes les plus utilisées / les plus décisives (buts, passes) dans les matchs 1v1."""
+def duel_card_stats(limit: int = 5, scope: str = "all", db: Session = Depends(get_db)):
+    """Les cartes les plus utilisées / les plus décisives (buts, passes) dans les matchs 1v1.
+    scope=all (défaut) : depuis le début, par carte. scope=week : la semaine en cours (remise à zéro chaque
+    vendredi 17h), par joueur comme pour les cartes spéciales."""
     limit = max(1, min(limit, 10))
+    if scope == "week":
+        board = weekly.week_board(db, datetime.utcnow(), limit)
+        rank = {t: i for i, t in enumerate(game_logic.TIER_ORDER)}
+
+        def week_cards(entries):
+            out = []
+            for name, tier, n in entries:
+                card = None
+                try:
+                    card = db.query(Card).join(Player).filter(Player.name == name, Card.tier == Tier(tier)).first()
+                except ValueError:
+                    pass
+                if card is None:      # la carte utilisée n'existe plus : on affiche une autre carte du même joueur
+                    player = db.query(Player).filter_by(name=name).first()
+                    others = sorted(player.cards, key=lambda c: rank.get(c.tier.value, 99)) if player else []
+                    card = others[0] if others else None
+                if card:
+                    out.append({"card": card_out(card), "count": n})
+            return out
+
+        return {"scope": "week", "since": board["since"].isoformat(), "resets_at": board["resets_at"].isoformat(),
+                "most_used": week_cards(board["most_used"]), "top_scorers": week_cards(board["top_scorers"]),
+                "top_assisters": week_cards(board["top_assisters"])}
     used, goals, assists = duel_engine.duel_card_stats(db)
 
     def top(counter):
@@ -477,7 +502,7 @@ def duel_card_stats(limit: int = 5, db: Session = Depends(get_db)):
                 break
         return out
 
-    return {"most_used": top(used), "top_scorers": top(goals), "top_assisters": top(assists)}
+    return {"scope": "all", "most_used": top(used), "top_scorers": top(goals), "top_assisters": top(assists)}
 
 
 @app.get("/duel/proposals")
