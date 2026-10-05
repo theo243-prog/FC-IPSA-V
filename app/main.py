@@ -793,6 +793,45 @@ def admin_create_card(payload: schemas.AdminCreateCardRequest, db: Session = Dep
     return {"status": "ok", "created": created, "card_id": card.id, "granted_to": granted_to}
 
 
+@app.post("/admin/create-mascot", dependencies=[Depends(require_admin)])
+def admin_create_mascot(payload: schemas.AdminCreateMascotRequest, db: Session = Depends(get_db)):
+    """Crée la mascotte du club : une carte « Fan / Mascotte » dans les 4 raretés (commune, rare, épique,
+    légendaire). Comme tout Fan, elle apporte un bonus d'équipe en 1v1 (+5 / +10 / +12 / +15 %).
+    Peut être relancée sans risque : elle ne crée que ce qui manque."""
+    player = db.query(Player).filter_by(name=payload.name).first()
+    created_player = False
+    if player is None:
+        player = Player(name=payload.name, poste="FAN/Mascotte")
+        db.add(player)
+        db.flush()
+        created_player = True
+    elif not (player.poste or "").upper().startswith("FAN"):
+        raise HTTPException(status_code=400, detail="Ce nom est déjà celui d'un joueur de l'effectif : choisis un autre nom pour la mascotte")
+
+    created, cards = [], []
+    for tier in (Tier.commune, Tier.rare, Tier.epique, Tier.legendaire):
+        card = db.query(Card).filter_by(player_id=player.id, tier=tier).first()
+        if card is None:
+            card = Card(player_id=player.id, tier=tier, vitesse=0, tir=0)
+            db.add(card)
+            db.flush()
+            created.append(tier.value)
+        cards.append(card)
+
+    granted_to = None
+    if payload.grant_to_pseudo:
+        user = db.query(User).filter_by(pseudo=payload.grant_to_pseudo).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="Utilisateur introuvable pour grant_to_pseudo")
+        for card in cards:
+            game_logic.get_or_create_owned(db, user, card).quantity += 1
+        granted_to = user.pseudo
+
+    db.commit()
+    return {"status": "ok", "mascot": player.name, "player_created": created_player,
+            "cards_created": created, "granted_to": granted_to}
+
+
 @app.post("/admin/delete-card", dependencies=[Depends(require_admin)])
 def admin_delete_card(payload: schemas.AdminDeleteCardRequest, db: Session = Depends(get_db)):
     """Supprime UNE carte précise (un tier d'un joueur), sans toucher au reste
