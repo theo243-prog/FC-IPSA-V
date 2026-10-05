@@ -135,6 +135,8 @@ class Match(Base):
     yellow_json = Column(Text, nullable=True)    # cartons jaunes
     red_json = Column(Text, nullable=True)       # cartons rouges
     epics_json = Column(Text, nullable=True)     # joueurs dont la carte épique a été créée PAR ce match
+    stade = Column(String, nullable=True)        # nom du stade où le match a été joué
+    stade_created = Column(Boolean, default=False)   # True si la carte du stade a été créée PAR ce match
 
     motm_player = relationship("Player")
     goals = relationship("MatchGoal", cascade="all, delete-orphan")
@@ -243,6 +245,18 @@ class MatchProposal(Base):
 
     creator = relationship("User")
     slots = relationship("ProposalSlot", cascade="all, delete-orphan")
+    equipment = relationship("ProposalEquipment", cascade="all, delete-orphan")
+
+
+class ProposalEquipment(Base):
+    """Une carte Équipement jointe à un défi 1v1 (jusqu'à MAX_EQUIPMENT par équipe)."""
+    __tablename__ = "proposal_equipment"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    proposal_id = Column(String, ForeignKey("match_proposals.id"), nullable=False)
+    card_id = Column(String, ForeignKey("cards.id"), nullable=False)
+
+    card = relationship("Card")
 
 
 class ProposalSlot(Base):
