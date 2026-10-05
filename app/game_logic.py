@@ -380,3 +380,27 @@ def pack_odds(db: Session) -> dict:
     return {"counts": counts, "packs": packs, "never_in_packs": ["secrete"],
             "sell_values": DUPLICATE_SELL_VALUE, "secret_fusion": {"cost": SECRET_FUSION_COST, "rare_value": RARE_FUSION_VALUE},
             "tier_order": TIER_ORDER, "free_packs_max": MAX_STORED_PACKS, "free_pack_hours": PACK_REGEN_SECONDS // 3600}
+
+
+# ---------------------------------------------------------------------
+# Postes : une faute de frappe ne doit pas casser une carte.
+# ---------------------------------------------------------------------
+VALID_POSTES = ("ATT", "MC", "DEF", "GB", "X", "FAN")
+RESERVED_POSTES = ("MASCOTTE", "EQUIPEMENT", "STADE", "MOMENT")
+
+
+def normalize_poste(raw: str) -> str:
+    """Met un poste au bon format (majuscules, sans espaces en trop) ou lève ValueError avec un message clair.
+    Accepte ATT, MC, DEF, GB, X, FAN, et FAN/<rôle> (ex. « FAN/Responsable com »)."""
+    text = " ".join((raw or "").split())
+    head, _, role = text.partition("/")
+    head = head.strip().upper()
+    if head in RESERVED_POSTES:
+        raise ValueError("« %s » est réservé : les mascottes, équipements et stades se créent avec leur propre commande" % head)
+    if head not in VALID_POSTES:
+        raise ValueError("Poste « %s » invalide : choisis parmi ATT, MC, DEF, GB, X (pas encore défini) ou FAN" % (raw or "").strip())
+    if role.strip():
+        if head != "FAN":
+            raise ValueError("Seul FAN accepte un rôle (ex. FAN/Responsable com)")
+        return "FAN/" + role.strip()
+    return head
