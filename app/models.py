@@ -162,6 +162,67 @@ class MatchMoment(Base):
     moment_player = relationship("Player")
 
 
+class PushSubscription(Base):
+    """Un appareil (téléphone, ordinateur) qui a accepté les notifications. Un joueur peut en avoir plusieurs."""
+    __tablename__ = "push_subscriptions"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    endpoint = Column(String, nullable=False, unique=True)     # adresse fournie par Google / Apple / Mozilla
+    p256dh = Column(String, nullable=False)
+    auth = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_ok_at = Column(DateTime, nullable=True)
+    failures = Column(Integer, nullable=False, default=0)
+
+
+class NotifPref(Base):
+    """Quels types de notifications un joueur veut recevoir (tout est activé par défaut)."""
+    __tablename__ = "notif_prefs"
+
+    user_id = Column(String, ForeignKey("users.id"), primary_key=True)
+    packs = Column(Boolean, nullable=False, default=True)
+    cards = Column(Boolean, nullable=False, default=True)
+    duels = Column(Boolean, nullable=False, default=True)
+    market = Column(Boolean, nullable=False, default=True)
+
+
+class NotifState(Base):
+    """Où en est le joueur côté packs gratuits (0 = aucun, 1 = au moins un, 3 = tous pleins) pour ne prévenir qu'une fois."""
+    __tablename__ = "notif_state"
+
+    user_id = Column(String, ForeignKey("users.id"), primary_key=True)
+    pack_level = Column(Integer, nullable=False, default=0)
+
+
+class PushOutbox(Base):
+    """File d'attente des notifications : les actions du jeu y déposent un message, une tâche de fond l'envoie."""
+    __tablename__ = "push_outbox"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    kind = Column(String, nullable=False)                      # packs | cards | duels | market | admin
+    title = Column(String, nullable=False)
+    body = Column(String, nullable=False)
+    url = Column(String, nullable=False, default="/")
+    tag = Column(String, nullable=True)
+    meta = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    send_after = Column(DateTime, nullable=False)
+    sent_at = Column(DateTime, nullable=True)
+    skipped = Column(String, nullable=True)                    # raison si elle n'a pas été envoyée
+    attempts = Column(Integer, nullable=False, default=0)
+    force = Column(Boolean, nullable=False, default=False)     # message de l'admin : ignore la nuit et le plafond
+
+
+class AppSetting(Base):
+    """Petits réglages gardés en base (ex. les clés VAPID, générées une seule fois)."""
+    __tablename__ = "app_settings"
+
+    key = Column(String, primary_key=True)
+    value = Column(Text, nullable=False)
+
+
 class JobRun(Base):
     """Mémorise la dernière exécution d'une tâche planifiée (ex. cartes spéciales du vendredi 17h)."""
     __tablename__ = "job_runs"
