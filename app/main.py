@@ -612,6 +612,90 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     return {"status": "ok", "deleted": payload.pseudo}
 
 
+def _plain(text: str) -> str:
+    """Nom sans accents ni majuscules ni espaces en trop, pour repérer les quasi-doublons (Léo / Leo / léo)."""
+    import unicodedata
+    return " ".join("".join(c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn").lower().split())
+
+
+@app.post("/admin/create-player", dependencies=[Depends(require_admin)])
+def admin_create_player(payload: schemas.AdminCreatePlayerRequest, db: Session = Depends(get_db)):
+    """Ajoute un joueur ou un fan à l'effectif : ses cartes (commune, rare si demandé, et sa carte secrète) apparaissent
+    chez tout le monde, et les joueurs abonnés sont prévenus par notification."""
+    name = " ".join((payload.name or "").split())
+    if not name or len(name) > 40:
+        raise HTTPException(status_code=400, detail="Le nom doit faire entre 1 et 40 caractères")
+    if "—" in name:
+        raise HTTPException(status_code=400, detail="Le nom ne peut pas contenir le caractère « — » (réservé aux cartes gold)")
+    try:
+        poste = game_logic.normalize_poste(payload.poste)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if db.query(Player).filter_by(name=name).first():
+        raise HTTPException(status_code=400, detail="« %s » existe déjà" % name)
+    if not payload.force:
+        close = [p.name for p in db.query(Player).all() if _plain(p.name) == _plain(name)]
+        if close:
+            raise HTTPException(status_code=400, detail="Un nom très proche existe déjà : %s. Si c'est bien une autre personne, relance avec force: true" % ", ".join(close))
+    user = None
+    if payload.grant_to_pseudo:
+        user = db.query(User).filter_by(pseudo=payload.grant_to_pseudo).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="Utilisateur introuvable pour grant_to_pseudo")
+
+    is_fan = poste.startswith("FAN")
+    with_rare = payload.with_rare if payload.with_rare is not None else (not is_fan)
+    player = Player(name=name, poste=poste, photo_url=(payload.photo_url or None))
+    db.add(player)
+    db.flush()
+    tiers = [Tier.commune] + ([Tier.rare] if with_rare else [])
+    cards = []
+    for tier in tiers:
+        card = Card(player_id=player.id, tier=tier, vitesse=0, tir=0)
+        db.add(card)
+        db.flush()
+        cards.append(card)
+    if user:
+        for card in cards:
+            game_logic.get_or_create_owned(db, user, card).quantity += 1
+    db.commit()
+    game_logic.ensure_secret_cards(db)                       # sa carte secrète (fusion)
+    push.safe(db, push.notify_all, "cards", "Nouveau %s au club ⚽" % ("fan" if is_fan else "joueur"),
+              "%s rejoint les cartes à collectionner." % name, url="/#collection", tag="cards")
+    return {"status": "ok", "player": player.name, "poste": player.poste, "type": "fan" if is_fan else "joueur",
+            "cards_created": [t.value for t in tiers] + ["secrete"], "photo_url": player.photo_url,
+            "granted_to": user.pseudo if user else None}
+
+
+@app.get("/admin/players", dependencies=[Depends(require_admin)])
+def admin_list_players(kind: str = None, db: Session = Depends(get_db)):
+    """Liste de TOUTES les cartes-personnages avec leur nom exact, poste, photo et raretés existantes.
+    Filtre facultatif : ?kind=joueur | fan | mascotte | equipement | stade | moment."""
+    order = {t: i for i, t in enumerate(game_logic.TIER_ORDER)}
+    rows = []
+    for p in db.query(Player).all():
+        k = game_logic.card_kind(p)
+        if kind and k != kind:
+            continue
+        rows.append({"name": p.name, "type": k, "poste": p.poste, "photo": p.photo_url,
+                     "raretes": ", ".join(sorted((c.tier.value for c in p.cards), key=lambda t: order.get(t, 99))),
+                     "buts": p.buts, "passes": p.passes_decisives, "matchs": p.matches_joues})
+    rows.sort(key=lambda r: (r["type"], r["name"].lower()))
+    return rows
+
+
+@app.get("/admin/users", dependencies=[Depends(require_admin)])
+def admin_list_users(db: Session = Depends(get_db)):
+    """Liste des comptes : pseudo exact (pour les commandes), crédits, Elo, packs en stock, cartes possédées."""
+    rows = []
+    for u in db.query(User).order_by(User.pseudo).all():
+        owned = db.query(OwnedCard).filter(OwnedCard.user_id == u.id, OwnedCard.quantity > 0).count()
+        rows.append({"pseudo": u.pseudo, "credits": u.credits, "elo": u.elo, "test": bool(u.is_test),
+                     "packs_gratuits": u.pack_state.stored_packs, "packs_bonus": pack_tokens_out(u),
+                     "cartes_differentes": owned, "appareils_notifs": push.device_count(db, u.id)})
+    return rows
+
+
 @app.post("/admin/delete-player", dependencies=[Depends(require_admin)])
 def admin_delete_player(payload: schemas.AdminDeletePlayerRequest, db: Session = Depends(get_db)):
     """Retire un joueur de l'effectif (ses cartes, les exemplaires possédés par
@@ -619,6 +703,15 @@ def admin_delete_player(payload: schemas.AdminDeletePlayerRequest, db: Session =
     player = db.query(Player).filter_by(name=payload.player_name).first()
     if not player:
         raise HTTPException(status_code=404, detail="Joueur introuvable")
+    # Un joueur qui apparaît dans un match enregistré (buts, passes, homme du match) ne peut pas disparaître :
+    # il faut d'abord annuler ces matchs, sinon leur historique serait cassé.
+    in_matches = {g.match_id for g in db.query(MatchGoal).filter_by(player_id=player.id).all()}
+    in_matches |= {a.match_id for a in db.query(MatchAssist).filter_by(player_id=player.id).all()}
+    in_matches |= {m.id for m in db.query(Match).filter_by(motm_player_id=player.id).all()}
+    if in_matches:
+        raise HTTPException(status_code=400, detail="%s apparaît dans %d match%s enregistré%s (buts, passes ou homme du match) : annule d'abord %s (commande 4.2 du guide), puis supprime-le"
+                            % (player.name, len(in_matches), "s" if len(in_matches) > 1 else "", "s" if len(in_matches) > 1 else "",
+                               "ces matchs" if len(in_matches) > 1 else "ce match"))
     card_ids = [c.id for c in player.cards]
     purge_card_rows(db, card_ids)
     db.query(MatchMoment).filter(MatchMoment.moment_player_id == player.id).delete(synchronize_session=False)
@@ -638,12 +731,24 @@ def admin_set_player_photo(payload: schemas.AdminSetPlayerPhotoRequest, db: Sess
     return {"status": "ok", "player": player.name, "photo_url": player.photo_url}
 
 
+def _checked_poste(player: Player, raw: str, label: str = None) -> str:
+    """Poste normalisé, ou erreur 400 claire (rien n'est enregistré). Les mascottes, équipements, stades et
+    moments gold ne sont pas des joueurs : leur poste ne se change pas ici."""
+    prefix = (label + " : ") if label else ""
+    if game_logic.card_kind(player) not in ("joueur", "fan"):
+        raise HTTPException(status_code=400, detail=prefix + player.name + " n'est pas un joueur ni un fan : son poste ne se change pas")
+    try:
+        return game_logic.normalize_poste(raw)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=prefix + str(e))
+
+
 @app.post("/admin/set-player-poste", dependencies=[Depends(require_admin)])
 def admin_set_player_poste(payload: schemas.AdminSetPlayerPosteRequest, db: Session = Depends(get_db)):
     player = db.query(Player).filter_by(name=payload.player_name).first()
     if not player:
         raise HTTPException(status_code=404, detail="Joueur introuvable")
-    player.poste = payload.poste
+    player.poste = _checked_poste(player, payload.poste)
     db.commit()
     return {"status": "ok", "player": player.name, "poste": player.poste}
 
@@ -674,7 +779,7 @@ def admin_set_postes_bulk(payload: schemas.AdminSetPostesBulkRequest, db: Sessio
         player = db.query(Player).filter_by(name=entry.player_name).first()
         if not player:
             raise HTTPException(status_code=404, detail=f"Joueur introuvable : {entry.player_name}")
-        player.poste = entry.poste
+        player.poste = _checked_poste(player, entry.poste, entry.player_name)
         updated.append({"player": player.name, "poste": player.poste})
     db.commit()
     return {"status": "ok", "updated": updated}
