@@ -250,3 +250,9 @@ class AdminCreatePlayerRequest(BaseModel):
     with_rare: Optional[bool] = None       # carte rare ? par défaut : oui pour un joueur, non pour un fan
     grant_to_pseudo: Optional[str] = None  # offre 1 exemplaire de chaque carte créée à ce compte
     force: bool = False                    # True : crée même si un nom très proche existe (Léo / Leo)
+
+
+class AdminReset1v1Request(BaseModel):
+    scope: str = "test"            # "test" : les matchs où un compte de test a joué ; "all" : tous les matchs ; "none" : aucun (recalcule seulement l'Elo)
+    recompute_elo: bool = True     # recalcule l'Elo de tout le monde à partir des matchs qui restent
+    dry_run: bool = True           # True (par défaut) : montre ce qui serait fait, sans rien modifier
