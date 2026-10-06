@@ -687,3 +687,51 @@ def list_proposals(db: Session) -> list:
         "formation": p.formation, "stake": p.stake, "created_at": p.created_at.isoformat(),
         "has_fan": bool(p.fan_card_id), "has_mascot": bool(p.mascot_card_id), "equipment_count": len(p.equipment),
     } for p in rows]
+
+
+# ------------------------------------------------------------ Ménage : effacer des matchs 1v1 ----
+
+ELO_START = 1000
+
+
+def _replay_elo(user_ids, duels):
+    """Rejoue les matchs dans l'ordre à partir de 1000 : retourne (elo final par joueur, [(avant, après) par match])."""
+    elos = {uid: ELO_START for uid in user_ids}
+    steps = []
+    for d in duels:
+        a, b = elos.get(d.challenger_id, ELO_START), elos.get(d.defender_id, ELO_START)
+        result = 1.0 if d.score_challenger > d.score_defender else (0.0 if d.score_challenger < d.score_defender else 0.5)
+        na, nb = elo_update(a, b, result)
+        steps.append((a, b, na, nb))
+        elos[d.challenger_id], elos[d.defender_id] = na, nb
+    return elos, steps
+
+
+def reset_duels(db: Session, scope: str, recompute_elo: bool, dry_run: bool) -> dict:
+    """Efface des matchs 1v1 puis recalcule l'Elo de tout le monde à partir des matchs qui restent.
+    scope : "test" (les matchs où au moins un compte de test a joué), "all" (tous), "none" (rien : Elo seulement)."""
+    users = {u.id: u for u in db.query(User).all()}
+    duels = db.query(Duel).order_by(Duel.created_at, Duel.id).all()
+
+    def involves_test(d):
+        return any(users[i].is_test for i in (d.challenger_id, d.defender_id) if i in users)
+    doomed = duels if scope == "all" else ([d for d in duels if involves_test(d)] if scope == "test" else [])
+    doomed_ids = {d.id for d in doomed}
+    kept = [d for d in duels if d.id not in doomed_ids]
+
+    elos, steps = _replay_elo(list(users), kept) if recompute_elo else ({uid: u.elo for uid, u in users.items()}, [])
+    changes = [{"pseudo": u.pseudo, "test": bool(u.is_test), "elo_avant": u.elo, "elo_apres": elos[uid]}
+               for uid, u in sorted(users.items(), key=lambda kv: kv[1].pseudo) if elos[uid] != u.elo]
+    report = {"dry_run": dry_run, "scope": scope, "matchs_1v1_total": len(duels), "matchs_supprimes": len(doomed),
+              "matchs_conserves": len(kept), "elo_modifies": changes}
+    if dry_run:
+        return report
+    for d in doomed:
+        db.delete(d)
+    if recompute_elo:
+        for uid, u in users.items():
+            u.elo = elos[uid]
+        for d, (ba, bb, na, nb) in zip(kept, steps):
+            d.elo_challenger_before, d.elo_defender_before, d.elo_challenger_after, d.elo_defender_after = ba, bb, na, nb
+    db.commit()
+    return report
