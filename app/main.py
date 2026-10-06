@@ -1220,6 +1220,17 @@ def admin_create_equipment(payload: schemas.AdminCreateEquipmentRequest, db: Ses
             "granted_to": user.pseudo if user else None}
 
 
+@app.post("/admin/reset-1v1", dependencies=[Depends(require_admin)])
+def admin_reset_1v1(payload: schemas.AdminReset1v1Request, db: Session = Depends(get_db)):
+    """Efface des matchs 1v1 (ceux des comptes de test, ou tous) et recalcule l'Elo à partir des matchs restants.
+    Par défaut en ESSAI À BLANC (dry_run: true) : la réponse montre ce qui serait supprimé, sans rien changer.
+    Les classements « cartes stars » et les prochaines cartes spéciales se recalculent d'eux-mêmes (ils lisent ces matchs).
+    Les crédits et les packs gagnés pendant ces matchs ne sont PAS repris (voir grant-credits)."""
+    if payload.scope not in ("test", "all", "none"):
+        raise HTTPException(status_code=400, detail="scope doit être « test », « all » ou « none »")
+    return duel_engine.reset_duels(db, payload.scope, payload.recompute_elo, payload.dry_run)
+
+
 @app.post("/admin/run-weekly-specials", dependencies=[Depends(require_admin)])
 def admin_run_weekly_specials(payload: schemas.AdminRunWeeklyRequest, db: Session = Depends(get_db)):
     """Lance À LA MAIN la tâche du vendredi 17h sur les N derniers jours de matchs 1v1 (essai ou rattrapage).
