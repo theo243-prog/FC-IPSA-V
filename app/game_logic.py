@@ -16,7 +16,9 @@ MAX_STORED_PACKS = 3                   # jamais plus de 3 packs gratuits en stoc
 CREDIT_WEIGHTS = {1: 40, 2: 25, 3: 18, 4: 12, 5: 5}         # plus le nombre est grand, plus c'est rare
 # Probas par carte tirée dans un pack classique. Les cartes secrètes n'y sont JAMAIS (fusion uniquement) et les
 # spéciales n'existent que dans les packs match.
-TIER_WEIGHTS = {"commune": 68, "rare": 19, "gold": 6, "epique": 5, "legendaire": 2}
+# Épiques et légendaires doivent avoir de la VALEUR : elles sont rares. Par pack de 3 cartes : une épique tombe environ
+# 1 fois sur 17 (6 %), une légendaire environ 1 fois sur 67 (1,5 %).
+TIER_WEIGHTS = {"commune": 76, "rare": 18, "gold": 3.5, "epique": 2, "legendaire": 0.5}
 # (une rareté dont aucune carte n'existe encore est ignorée au tirage, les autres se rééquilibrent)
 
 # Nombre de cartes à partir duquel une rareté atteint sa probabilité "pleine".
@@ -44,11 +46,11 @@ PACK_TYPES = {
     "legendaire": {"label": "Pack légendaire", "price": 100, "guaranteed": ["legendaire"],
                    "token_field": "legendary_pack_tokens",
                    "description": "1 carte légendaire garantie + 2 cartes aux probabilités classiques"},
-    # Récompense des victoires en 1v1 : pas en vente (price None). Un peu mieux que le pack classique pour CHAQUE rareté
-    # (rare 27 contre 19, gold 7 contre 6, épique 6 contre 5, légendaire 3 contre 2), et le seul où sortent les spéciales.
+    # Récompense des matchs 1v1 : pas en vente (price None). Un peu mieux que le pack classique pour CHAQUE rareté
+    # (rare 26 contre 18, gold 5 contre 3,5, épique 3 contre 2, légendaire 1 contre 0,5), et le seul où sortent les spéciales.
     "match": {"label": "Pack match", "price": None, "guaranteed": [],
               "token_field": "match_pack_tokens",
-              "weights": {"commune": 52, "rare": 27, "gold": 7, "speciale": 5, "epique": 6, "legendaire": 3},
+              "weights": {"commune": 62, "rare": 26, "gold": 5, "speciale": 3, "epique": 3, "legendaire": 1},
               "description": "3 cartes avec un peu plus de chances de rares que le pack classique, et le seul pack où sortent les cartes spéciales"},
 }
 
