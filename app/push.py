@@ -316,9 +316,9 @@ def notify_duel_played(db: Session, result: dict):
     if result["result"] == "défaite":       # le challenger a perdu : le créateur gagne
         title, body = "%s a joué ton défi : victoire %d–%d ! 🏆" % (who, mine, theirs), "Tu gagnes %d crédits et un pack match." % stake
     elif result["result"] == "victoire":
-        title, body = "%s a joué ton défi : défaite %d–%d" % (who, mine, theirs), "Tu perds ta mise de %d crédits. Une revanche ?" % stake
+        title, body = "%s a joué ton défi : défaite %d–%d" % (who, mine, theirs), "Tu perds ta mise de %d crédits mais tu reçois un pack classique. Une revanche ?" % stake
     else:
-        title, body = "%s a joué ton défi : match nul %d–%d" % (who, mine, theirs), "Ta mise de %d crédits t'est rendue." % stake
+        title, body = "%s a joué ton défi : match nul %d–%d" % (who, mine, theirs), "Ta mise de %d crédits t'est rendue et tu reçois un pack classique." % stake
     enqueue(db, creator.id, "duels", title, body, url="/#duels", tag="duels")
 
 
