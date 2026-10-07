@@ -44,11 +44,12 @@ PACK_TYPES = {
     "legendaire": {"label": "Pack légendaire", "price": 100, "guaranteed": ["legendaire"],
                    "token_field": "legendary_pack_tokens",
                    "description": "1 carte légendaire garantie + 2 cartes aux probabilités classiques"},
-    # Récompense des victoires en 1v1 : pas en vente (price None), probabilités boostées.
+    # Récompense des victoires en 1v1 : pas en vente (price None). Un peu mieux que le pack classique pour CHAQUE rareté
+    # (rare 27 contre 19, gold 7 contre 6, épique 6 contre 5, légendaire 3 contre 2), et le seul où sortent les spéciales.
     "match": {"label": "Pack match", "price": None, "guaranteed": [],
               "token_field": "match_pack_tokens",
-              "weights": {"commune": 30, "rare": 30, "gold": 8, "speciale": 14, "epique": 12, "legendaire": 6},
-              "description": "3 cartes avec des chances boostées, et le seul pack où sortent les cartes spéciales"},
+              "weights": {"commune": 52, "rare": 27, "gold": 7, "speciale": 5, "epique": 6, "legendaire": 3},
+              "description": "3 cartes avec un peu plus de chances de rares que le pack classique, et le seul pack où sortent les cartes spéciales"},
 }
 
 # Plus aucun craft automatique : les doublons ne servent qu'à être revendus ou à remplir la jauge de la carte secrète.
