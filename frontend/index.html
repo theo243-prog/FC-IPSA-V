@@ -695,7 +695,7 @@
             <h2>Défis</h2>
             <button class="btn-primary" id="proposeMatchBtn">Proposer un match</button>
           </div>
-          <p class="duel-hint">Un défi bloque ta mise le temps qu'il est ouvert. Le gagnant d'un match remporte les deux mises et un pack match aux chances boostées. Les tactiques restent secrètes jusqu'au coup d'envoi.</p>
+          <p class="duel-hint">Un défi bloque ta mise le temps qu'il est ouvert. Le gagnant d'un match remporte les deux mises et un pack match (un peu meilleur que le classique) ; le perdant reçoit un pack classique, et en cas de nul chacun reçoit le sien. Pas de limite de packs : joue autant que tu veux. Les tactiques restent secrètes jusqu'au coup d'envoi.</p>
           <div id="duelProposalsEl"></div>
         </div>
         <div class="panel-box duel-stars" id="duelWeekBox">
@@ -1360,7 +1360,7 @@
       return '<h3>Ouvrir un pack</h3><p>Chaque pack contient <b>3 cartes</b> et te rapporte quelques crédits.</p>' +
         '<ul><li><b>Packs gratuits</b> : tu peux en stocker ' + r.free_packs_max + ' au maximum, et un nouveau arrive toutes les ' + r.free_pack_hours + ' heures.</li>' +
         '<li><b>Packs bonus</b> (achetés au shop, offerts ou gagnés) : ils se stockent sans limite et s\'affichent sous les boutons.</li>' +
-        '<li><b>Pack match</b> : il se gagne en remportant un match 1v1. C\'est le seul où sortent les cartes <b>spéciales</b>, avec de meilleures chances.</li></ul>' +
+        '<li><b>Pack match</b> : il se gagne en remportant un match 1v1. C\'est le seul où sortent les cartes <b>spéciales</b>, avec de meilleures chances. Celui qui perd, ou qui fait match nul, reçoit un <b>pack classique</b>.</li></ul>' +
         '<h3>Tes chances de tirage</h3>' + oddsTableHTML(r, ['classique', 'match']) +
         '<h3>Être prévenu</h3><p>Touche 🔔 en haut de la page pour recevoir une notification quand ton pack est prêt, quand une nouvelle carte arrive, quand ton défi 1v1 est joué ou quand ta carte est vendue.</p>' +
         '<h3>Et les doublons ?</h3><p>Rien n\'est perdu : tu peux les revendre, ou les garder pour remplir la jauge de la carte secrète du même joueur (voir l\'aide de la Collection).</p>';
@@ -1390,7 +1390,7 @@
       const r = await getGameRules();
       return '<h3>Acheter des packs avec tes crédits</h3><p>Tu gagnes des crédits en ouvrant des packs, en revendant des doublons et en gagnant des matchs 1v1. Un pack acheté arrive dans tes packs bonus (onglet Packs), sans limite de stock.</p>' +
         '<ul><li><b>' + escapeHtml(r.packs.classique.label) + '</b> (' + r.packs.classique.price + ' crédits) : ' + escapeHtml(r.packs.classique.description) + '.</li></ul>' + guaranteedPacksHTML(r) +
-        '<p class="help-note">Un pack à carte garantie n\'est en vente que si au moins une carte de cette rareté existe. Le pack match ne s\'achète pas : il se gagne en 1v1.</p>' +
+        '<p class="help-note">Un pack à carte garantie n\'est en vente que si au moins une carte de cette rareté existe. Le pack match ne s\'achète pas : il se gagne en 1v1 (et le perdant, ou chacun des deux en cas de nul, reçoit un pack classique).</p>' +
         '<h3>Tes chances de tirage</h3>' + oddsTableHTML(r, ['classique']) + '<p>Pour les packs à carte garantie, les cartes qui ne sont pas garanties suivent ces mêmes chances.</p>';
     } },
     classement: { title: 'Le classement', html(){
@@ -1422,8 +1422,8 @@
         '<li><b>1 Loup</b> (la mascotte) : mêmes bonus que le Fan.</li>' +
         '<li><b>' + cfg.max_equipment + ' Équipement</b> : ' + range(cfg.equipment_bonus, ['commune', 'rare', 'epique', 'legendaire']) + ' %.</li></ul>' +
         '<h3>Mises, packs et classement</h3><ul>' +
-        '<li><b>Mise</b> de ' + cfg.stake_min + ' à ' + cfg.stake_max + ' crédits, bloquée tant que le défi est ouvert. Le gagnant prend les deux mises <b>et un pack match</b>. En cas de nul, chacun récupère sa mise.</li>' +
-        '<li>Tu peux avoir ' + cfg.max_open_proposals + ' défis ouverts au maximum, et deux mêmes joueurs ne s\'affrontent qu\'une fois par ' + (cfg.cooldown_minutes >= 60 ? Math.round(cfg.cooldown_minutes / 60) + ' heure' : cfg.cooldown_minutes + ' minutes') + '.</li>' +
+        '<li><b>Mise</b> de ' + cfg.stake_min + ' à ' + cfg.stake_max + ' crédits, bloquée tant que le défi est ouvert. Le gagnant prend les deux mises <b>et un pack match</b> ; le perdant reçoit <b>un pack classique</b>. En cas de <b>nul</b>, chacun récupère sa mise <b>et reçoit un pack classique</b>. Il n\'y a aucune limite de packs gagnés par jour.</li>' +
+        '<li>Tu peux avoir ' + cfg.max_open_proposals + ' défis ouverts au maximum. Aucun délai : tu peux rejouer tout de suite contre le même adversaire.</li>' +
         '<li><b>Classement</b> : par Elo. M = matchs, V = victoires, D = défaites, N = nuls, <b>Diff</b> = buts marqués moins buts encaissés.</li></ul>' +
         '<h3>Les cartes stars</h3><p>Deux classements, avec les 5 cartes les plus utilisées et les 5 plus décisives en buts et en passes :</p><ul>' +
         '<li><b>De la semaine</b> : remis à zéro chaque <b>vendredi à 17h</b>. À ce moment, le n°1 de chaque catégorie (✨) reçoit une <b>carte spéciale</b> (note 80, puis +1 chaque fois qu\'il la regagne). Le classement de la semaine compte par joueur, toutes raretés confondues.</li>' +
@@ -1977,14 +1977,24 @@
   byId('tmClose').addEventListener('click', closeTeamModal);
   byId('teamModal').addEventListener('click', e => { if (e.target.id === 'teamModal') closeTeamModal(); });
 
+  // Liste des cartes proposées pour une case (ex. « Milieu ») : triée par POSTE puis par NOTE.
+  //   1. les cartes du poste de la case, de la meilleure note à la moins bonne ;
+  //   2. les cartes sans poste défini (« X ») : jamais pénalisées ;
+  //   3. les autres postes (hors poste = pénalité), un groupe par poste, chacun de la meilleure note à la moins bonne.
+  const POSTE_GROUPES = { GB: 'Gardiens', DEF: 'Défenseurs', MC: 'Milieux', ATT: 'Attaquants' };
   function slotOptionsHTML(cat){
-    const cfg = duelConfig;
-    return '<option value="">— choisir une carte —</option>' + tm.owned.map(c => {
-      const natural = cfg.poste_category[(c.poste || '').toUpperCase()] || null;
-      const off = natural && natural !== cat;
-      return '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' · ⭐' + c.display_note.value + ' · ' + escapeHtml(c.poste) + ' · ' + tierLabel(c.tier) +
-        (off ? ' · ⚠ −' + Math.round(cfg.out_of_position_malus * 100) + ' %' : '') + '</option>';
-    }).join('');
+    const cfg = duelConfig, malus = Math.round(cfg.out_of_position_malus * 100);
+    const naturalOf = c => cfg.poste_category[(c.poste || '').toUpperCase()] || null;
+    const byNote = (a, b) => b.display_note.value - a.display_note.value || a.player_name.localeCompare(b.player_name, 'fr') || a.tier.localeCompare(b.tier);
+    const option = c => {
+      const off = naturalOf(c) && naturalOf(c) !== cat;
+      return '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' · ⭐' + c.display_note.value + ' · ' + escapeHtml(c.poste) + ' · ' + tierLabel(c.tier) + (off ? ' · ⚠ −' + malus + ' %' : '') + '</option>';
+    };
+    const groups = [];
+    groups.push([POSTE_GROUPES[cat] || cat, tm.owned.filter(c => naturalOf(c) === cat).sort(byNote)]);
+    groups.push(['Poste non défini (jamais pénalisés)', tm.owned.filter(c => !naturalOf(c)).sort(byNote)]);
+    SLOT_ORDER.filter(p => p !== cat).forEach(p => groups.push([POSTE_GROUPES[p] + ' (hors poste, −' + malus + ' %)', tm.owned.filter(c => naturalOf(c) === p).sort(byNote)]));
+    return '<option value="">— choisir une carte —</option>' + groups.filter(g => g[1].length).map(g => '<optgroup label="' + escapeHtml(g[0]) + '">' + g[1].map(option).join('') + '</optgroup>').join('');
   }
   function renderTmSlots(formation, previous){
     const cfg = duelConfig, req = cfg.formations[formation], root = byId('tmSlots');
@@ -2110,8 +2120,9 @@
       const money = recap.result === 'victoire' ? signed(recap.stake) + ' crédits' : (recap.result === 'défaite' ? signed(-recap.stake) + ' crédits' : 'mises rendues');
       html = '<div class="big">' + head + '</div>' + escapeHtml(money) + ' · Elo ' + recap.elo_challenger_before + ' → ' + recap.elo_challenger_after +
         ' (' + signed(recap.elo_challenger_after - recap.elo_challenger_before) + ')';
-      if (recap.pack_match_won) html += '<br>🎁 Tu gagnes un <b>pack match</b> (chances boostées) !<br><button class="btn-small" id="msGoPacks" style="margin-top:6px;">Aller l\'ouvrir</button>';
+      if (recap.pack_match_won) html += '<br>🎁 Tu gagnes un <b>pack match</b> !<br><button class="btn-small" id="msGoPacks" style="margin-top:6px;">Aller l\'ouvrir</button>';
       else if (recap.result === 'défaite') html += '<br>🎁 Le pack match revient à ' + escapeHtml(recap.defender) + '.';
+      if (recap.pack_classique_won) html += '<br>🎁 Tu reçois un <b>pack classique</b> ' + (recap.result === 'nul' ? '(match nul : chacun en reçoit un) !' : 'en consolation !') + '<br><button class="btn-small" id="msGoPacks" style="margin-top:6px;">Aller l\'ouvrir</button>';
     } else {
       const winner = sa > sb ? recap.challenger : (sb > sa ? recap.defender : null);
       html = '<div class="big">' + (winner ? '🏆 ' + escapeHtml(winner) : '🤝 Match nul') + '</div>mise ' + recap.stake + ' crédits · Elo ' +
