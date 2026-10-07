@@ -265,6 +265,16 @@
     content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
     background:linear-gradient(165deg, rgba(255,255,255,0.4), rgba(255,255,255,0) 45%);
   }
+  /* ---- Photo plein cadre : l'image remplit le haut de la carte (plus de rond) et se fond dans la couleur de la
+     rareté sous le nom. Elle passe sous les textes, le reflet et les paillettes. ---- */
+  .card-bgphoto{
+    position:absolute;left:0;top:0;width:100%;height:86%;object-fit:cover;object-position:center 18%;
+    z-index:0;pointer-events:none;display:block;
+    -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 52%,rgba(0,0,0,.65) 72%,rgba(0,0,0,.22) 88%,rgba(0,0,0,0) 100%);
+    mask-image:linear-gradient(to bottom,#000 0,#000 52%,rgba(0,0,0,.65) 72%,rgba(0,0,0,.22) 88%,rgba(0,0,0,0) 100%);
+  }
+  .has-photo::before{z-index:1;}
+  .has-photo .card-name{text-shadow:0 0 5px rgba(255,255,255,.7),0 0 12px rgba(255,255,255,.45);}
   .card-top{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;font-family:var(--font-head);gap:4px;}
   .card-tier-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;background:rgba(255,255,255,0.4);padding:2px 6px;border-radius:5px;}
   .card-poste{font-size:11px;font-weight:700;background:rgba(0,0,0,0.15);padding:2px 7px;border-radius:6px;white-space:nowrap;}
@@ -945,6 +955,11 @@
     return '<div class="mascot-medal">' + (tier === 'legendaire' ? '<span class="mascot-holo" aria-hidden="true"></span>' : crestIco('mascot-wolf')) + '</div>';
   }
 
+  // La photo d'une carte (joueur, fan, équipement, stade, moment gold) devient le fond de la carte.
+  // La mascotte garde son médaillon : le loup est son illustration.
+  function usesBgPhoto(card){ return !!card.player_photo_url && cardKind(card) !== 'mascotte'; }
+  function markPhotoCard(el, card){ if (usesBgPhoto(card) && el.querySelector('.card-bgphoto')) el.classList.add('has-photo'); }
+
   function cardFrontHTML(card){
     const kind = cardKind(card);
     let statsRow, posteLabel, midHTML;
@@ -967,11 +982,12 @@
       statsRow = '<div class="card-stats"><span>⭐ ' + (card.display_note ? card.display_note.value : '') + '</span></div>';
       posteLabel = escapeHtml(card.poste);
     }
-    const photo = card.player_photo_url ? '<img class="card-photo" src="' + escapeHtml(card.player_photo_url) + '" alt="">' : '';
+    const bgPhoto = usesBgPhoto(card) ? '<img class="card-bgphoto" src="' + escapeHtml(card.player_photo_url) + '" alt="">' : '';
     if (kind === 'mascotte') midHTML = mascotMedalHTML(card.tier);
-    else if (kind === 'equipement' || kind === 'stade' || kind === 'moment') midHTML = photo || itemMedalHTML(card);
-    else midHTML = photo || '<span class="ball-fallback">⚽</span>';
-    return '<div class="card-top"><span class="card-tier-label">'+tierLabel(card.tier)+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
+    else if (bgPhoto) midHTML = '';
+    else if (kind === 'equipement' || kind === 'stade' || kind === 'moment') midHTML = itemMedalHTML(card);
+    else midHTML = '<span class="ball-fallback">⚽</span>';
+    return bgPhoto + '<div class="card-top"><span class="card-tier-label">'+tierLabel(card.tier)+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
       '<div class="card-mid">'+midHTML+'</div>'+
       '<div><div class="card-name"></div>'+statsRow+'</div>'+
       crestIco('card-watermark');
@@ -979,6 +995,16 @@
 
   // si l'image ne charge pas (lien cassé, photo pas encore ajoutée), on retombe sur le ballon
   function attachPhotoFallback(container, card){
+    const bg = container.querySelector('.card-bgphoto');
+    if (bg) {
+      bg.addEventListener('error', () => {                          // photo introuvable : on retombe sur le ballon ou l'icône
+        const kind = card ? cardKind(card) : 'joueur';
+        bg.remove();
+        container.classList.remove('has-photo');
+        const mid = container.querySelector('.card-mid');
+        if (mid) mid.innerHTML = (kind === 'equipement' || kind === 'stade' || kind === 'moment') ? itemMedalHTML(card) : '<span class="ball-fallback">⚽</span>';
+      }, { once: true });
+    }
     const img = container.querySelector('.card-photo');
     if (!img) return;
     img.addEventListener('error', () => {
@@ -1004,6 +1030,8 @@
     el.className = 'card tier-' + card.tier + (locked ? ' locked' : '');
     el.style.background = locked ? '' : 'linear-gradient(160deg, var(--' + (card.tier === 'legendaire' ? 'legend-2' : card.tier + '-2') + '), var(--' + (card.tier === 'legendaire' ? 'legend-1' : card.tier + '-1') + '))';
     el.innerHTML = cardFrontHTML(card);
+    if (locked) { const hidden = el.querySelector('.card-bgphoto'); if (hidden) hidden.remove(); }      // carte pas encore possédée : la photo reste secrète
+    else markPhotoCard(el, card);
     setCardName(el, cardDisplayName(card));
     attachPhotoFallback(el, card);
     if (locked && card.tier === 'secrete' && card.fusion) {          // carte secrète pas encore débloquée : la jauge de fusion
@@ -1482,6 +1510,7 @@
         const flip = document.createElement('div'); flip.className = 'card-flip';
         const back = document.createElement('div'); back.className = 'card-face card-back'; back.innerHTML = crestIco();
         const front = document.createElement('div'); front.className = 'card-face card-front tier-' + card.tier; front.innerHTML = cardFrontHTML(card);
+        markPhotoCard(front, card);
         setCardName(front, cardDisplayName(card));
         if (card.is_new) front.insertAdjacentHTML('beforeend', '<span class="new-ribbon">NEW</span>');  // carte débloquée
         attachPhotoFallback(front, card);
