@@ -47,7 +47,8 @@ class Player(Base):
     id = Column(String, primary_key=True, default=gen_id)
     name = Column(String, nullable=False, unique=True)
     poste = Column(String, nullable=False)  # GB / DEF / MIL / ATT
-    photo_url = Column(String, nullable=True)  # ex: /photos/mathis.jpg
+    photo_url = Column(String, nullable=True)  # ex: /photos/mathis.jpg  (photo par défaut de toutes ses cartes)
+    tier_photos = Column(Text, nullable=True)  # JSON {"rare": "/photos/mathis-rare.webp", ...} : photo propre à une rareté (prioritaire)
 
     # Statistiques de saison (vraie personne, pas liées à une carte précise)
     matches_joues = Column(Integer, nullable=False, default=0)
