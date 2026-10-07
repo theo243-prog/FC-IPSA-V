@@ -75,7 +75,8 @@ class AdminDeleteCardRequest(BaseModel):
 
 class AdminSetPlayerPhotoRequest(BaseModel):
     player_name: str
-    photo_url: str  # ex: "/photos/mathis.jpg" ou une URL complète
+    photo_url: str  # ex: "/photos/mathis.jpg" ou une URL complète ; "" pour retirer
+    tier: Optional[str] = None  # sans tier : photo par défaut du joueur ; avec tier ("commune", "rare", "speciale"...) : photo de cette rareté seulement
 
 
 class AdminSetTestAccountRequest(BaseModel):
