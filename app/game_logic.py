@@ -404,3 +404,33 @@ def normalize_poste(raw: str) -> str:
             raise ValueError("Seul FAN accepte un rôle (ex. FAN/Responsable com)")
         return "FAN/" + role.strip()
     return head
+
+
+# ---------------------------------------------------------------------
+# Photos : une photo par défaut pour le joueur, et au besoin une photo différente pour une rareté donnée.
+# La photo d'une rareté peut être enregistrée AVANT que la carte existe (ex. la carte spéciale du vendredi).
+# ---------------------------------------------------------------------
+
+def tier_photos(player) -> dict:
+    import json
+    try:
+        data = json.loads(player.tier_photos) if player.tier_photos else {}
+    except ValueError:
+        data = {}
+    return data if isinstance(data, dict) else {}
+
+
+def photo_for(player, tier: str):
+    """La photo à afficher sur la carte (joueur, rareté) : celle de la rareté si elle existe, sinon celle du joueur."""
+    return tier_photos(player).get(tier) or player.photo_url or None
+
+
+def set_tier_photo(player, tier: str, url: str) -> None:
+    """Enregistre (url non vide) ou retire (url vide) la photo propre à une rareté."""
+    import json
+    data = tier_photos(player)
+    if url:
+        data[tier] = url
+    else:
+        data.pop(tier, None)
+    player.tier_photos = json.dumps(data, ensure_ascii=False) if data else None
