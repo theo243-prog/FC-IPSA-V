@@ -4,7 +4,9 @@ Moteur des matchs 1v1 à 5 joueurs (1 gardien + 4 joueurs de champ).
 Principe : un joueur PROPOSE un match (son équipe, sa tactique secrète, une mise de 1 à 10
 crédits, retirée de ses crédits tant que le défi est ouvert). Un autre joueur le JOUE avec sa
 propre équipe : le match est résolu tout de suite, raconté minute par minute, et le gagnant
-remporte les deux mises + un "pack match" aux probabilités boostées.
+remporte les deux mises + un "pack match" (un peu meilleur que le classique) ; le perdant reçoit un pack classique,
+et en cas de match nul chacun récupère sa mise ET reçoit un pack classique. Aucune limite de packs par jour.
+Aucun délai n'est imposé entre deux matchs des mêmes joueurs : on peut rejouer tout de suite.
 
 Ce que comptent les calculs :
 - la note de chaque carte (75 commune, 85 rare, 85+ épique, 95 légendaire) ;
@@ -62,7 +64,6 @@ TACTIC_BONUS = 0.06
 
 STAKE_MIN, STAKE_MAX = 1, 10
 MAX_OPEN_PROPOSALS = 3
-DUEL_COOLDOWN_SECONDS = 3600     # 1 match par heure entre deux mêmes joueurs
 ELO_K = 32
 
 MATCH_MINUTES = 40               # 2 mi-temps de 20 minutes
@@ -108,7 +109,6 @@ def get_config() -> dict:
         "stake_min": STAKE_MIN,
         "stake_max": STAKE_MAX,
         "max_open_proposals": MAX_OPEN_PROPOSALS,
-        "cooldown_minutes": DUEL_COOLDOWN_SECONDS // 60,
         "fan_bonus": TIER_FAN_BONUS,
         "mascot_bonus": TIER_MASCOT_BONUS,
         "equipment_bonus": TIER_EQUIPMENT_BONUS,
@@ -473,17 +473,7 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     if creator.id == challenger.id:
         raise DuelError("Tu ne peux pas jouer ton propre défi")
 
-    cutoff = datetime.utcnow() - timedelta(seconds=DUEL_COOLDOWN_SECONDS)
-    recent = (
-        db.query(Duel)
-        .filter(Duel.created_at >= cutoff,
-                or_((Duel.challenger_id == challenger.id) & (Duel.defender_id == creator.id),
-                    (Duel.challenger_id == creator.id) & (Duel.defender_id == challenger.id)))
-        .order_by(Duel.created_at.desc()).first()
-    )
-    if recent:
-        wait = int(DUEL_COOLDOWN_SECONDS - (datetime.utcnow() - recent.created_at).total_seconds())
-        raise DuelError("Vous vous êtes déjà affrontés il y a peu : réessaie dans %d min" % max(1, wait // 60 + (1 if wait % 60 else 0)))
+    # (aucun délai entre deux matchs des mêmes joueurs : on peut rejouer tout de suite)
 
     stake = proposal.stake
     if challenger.credits < stake:
@@ -535,15 +525,19 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     if outcome == "victoire":
         challenger.credits += pot
         pack_winner = challenger
+        classic_to = [creator]                                # le perdant
     elif outcome == "défaite":
         creator.credits += pot
         pack_winner = creator
+        classic_to = [challenger]                             # le perdant
     else:   # nul : chacun récupère sa mise
         challenger.credits += stake
         creator.credits += stake
+        classic_to = [challenger, creator]                    # les deux joueurs
     if pack_winner is not None:
-        pack_winner.pack_state.match_pack_tokens += 1
-
+        pack_winner.pack_state.match_pack_tokens += 1         # le gagnant : un pack match
+    for player in classic_to:
+        player.pack_state.shop_pack_tokens += 1               # perdant ou nul : un pack classique (aucune limite par jour)
     lineups = {"challenger": _lineup_snapshot(side_c, fan_c, equip_c, mascot_c), "defender": _lineup_snapshot(side_d, fan_d, equip_d, mascot_d)}
     duel = Duel(
         challenger_id=challenger.id, defender_id=creator.id, stake=stake,
@@ -567,7 +561,10 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
         "credits_delta": {"victoire": stake, "défaite": -stake, "nul": 0}[outcome],
         "elo_challenger_before": elo_c_before, "elo_challenger_after": challenger.elo,
         "elo_defender_before": elo_d_before, "elo_defender_after": creator.elo,
-        "pack_match_won": outcome == "victoire",
+        "pack_match_won": outcome == "victoire",                       # le challenger gagne un pack match
+        "pack_classique_won": challenger in classic_to,                # le challenger a perdu ou fait match nul : pack classique
+        "pack_match_to": pack_winner.pseudo if pack_winner else None,
+        "pack_classique_to": [p.pseudo for p in classic_to],
         "tactics": {"challenger": tactic, "defender": proposal.tactic,
                     "advantage": {"a": "challenger", "b": "defender"}.get(winner_tactic)},
         "events": events, "lineups": lineups,
