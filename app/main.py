@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, weekly, push
+from . import game_logic, duel_engine, schemas, weekly, push, schema_upgrades
 from sqlalchemy import or_
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox)
@@ -31,6 +31,7 @@ def require_admin(x_admin_key: str = Header(default=None)):
         raise HTTPException(status_code=403, detail="Clé admin manquante ou invalide")
 
 Base.metadata.create_all(bind=engine)
+schema_upgrades.ensure_schema(engine)      # ajoute les colonnes apparues depuis la création de la base (sans toucher aux données)
 
 app = FastAPI(title="FC IPSA V — API")
 
@@ -47,7 +48,7 @@ def card_out(card: Card) -> dict:
         "id": card.id,
         "player_name": card.player.name,
         "poste": card.player.poste,
-        "player_photo_url": card.player.photo_url,
+        "player_photo_url": game_logic.photo_for(card.player, card.tier.value),
         "display_note": game_logic.get_display_note(card.player, card.tier.value, card),
         "tier": card.tier.value,
         "vitesse": card.vitesse,
@@ -218,7 +219,7 @@ def player_detail(player_name: str, tier: str = "commune", db: Session = Depends
         "name": player.name,
         "moment": moment,
         "poste": player.poste,
-        "photo_url": player.photo_url,
+        "photo_url": game_logic.photo_for(player, tier),
         "matches_joues": player.matches_joues,
         "buts": player.buts,
         "passes_decisives": player.passes_decisives,
@@ -703,6 +704,7 @@ def admin_list_players(kind: str = None, db: Session = Depends(get_db)):
         if kind and k != kind:
             continue
         rows.append({"name": p.name, "type": k, "poste": p.poste, "photo": p.photo_url,
+                     "photos_par_rarete": game_logic.tier_photos(p),
                      "raretes": ", ".join(sorted((c.tier.value for c in p.cards), key=lambda t: order.get(t, 99))),
                      "buts": p.buts, "passes": p.passes_decisives, "matchs": p.matches_joues})
     rows.sort(key=lambda r: (r["type"], r["name"].lower()))
@@ -751,9 +753,16 @@ def admin_set_player_photo(payload: schemas.AdminSetPlayerPhotoRequest, db: Sess
     player = db.query(Player).filter_by(name=payload.player_name).first()
     if not player:
         raise HTTPException(status_code=404, detail="Joueur introuvable")
+    if payload.tier:
+        if payload.tier not in game_logic.TIER_ORDER:
+            raise HTTPException(status_code=400, detail="tier doit être : " + ", ".join(game_logic.TIER_ORDER))
+        game_logic.set_tier_photo(player, payload.tier, payload.photo_url)
+        db.commit()
+        return {"status": "ok", "player": player.name, "tier": payload.tier, "photo_url": payload.photo_url or None,
+                "photos_par_rarete": game_logic.tier_photos(player), "photo_par_defaut": player.photo_url}
     player.photo_url = payload.photo_url
     db.commit()
-    return {"status": "ok", "player": player.name, "photo_url": player.photo_url}
+    return {"status": "ok", "player": player.name, "photo_url": player.photo_url, "photos_par_rarete": game_logic.tier_photos(player)}
 
 
 def _checked_poste(player: Player, raw: str, label: str = None) -> str:
