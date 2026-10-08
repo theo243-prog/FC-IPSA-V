@@ -595,11 +595,7 @@ def shop_buy(payload: schemas.BuyShopItemRequest, user: User = Depends(get_curre
 
 @app.get("/leaderboard")
 def leaderboard(db: Session = Depends(get_db)):
-    all_total = db.query(Card).count()
-    # Une édition limitée terminée (ou pas commencée) ne fait pas baisser le pourcentage de ceux qui ne l'ont pas :
-    # ses cartes ne comptent que pour ceux qui les possèdent.
-    inactive = [Tier(k) for k in game_logic.EDITION_TIERS if game_logic.edition_status(db, k) != "active"]
-    inactive_total = db.query(Card).filter(Card.tier.in_(inactive)).count() if inactive else 0
+    total_cards = db.query(Card).count()      # 100 % = TOUTES les cartes du jeu, sans exception (éditions limitées et secrètes comprises)
     users = db.query(User).filter_by(is_test=False).all()
     rows = []
     for u in users:
@@ -608,9 +604,6 @@ def leaderboard(db: Session = Depends(get_db)):
             .filter(OwnedCard.user_id == u.id, OwnedCard.quantity > 0)
             .count()
         )
-        owned_inactive = (db.query(OwnedCard).join(Card).filter(OwnedCard.user_id == u.id, OwnedCard.quantity > 0, Card.tier.in_(inactive)).count()
-                          if inactive else 0)
-        total_cards = all_total - inactive_total + owned_inactive
         completion = round(100 * owned_count / total_cards, 1) if total_cards else 0.0
         rows.append({"pseudo": u.pseudo, "completion_pct": completion, "credits": u.credits})
     rows.sort(key=lambda r: (-r["completion_pct"], -r["credits"]))
