@@ -157,12 +157,26 @@
   }
   .pack:active{transform:scale(0.97);}
   .pack.disabled{opacity:.5;pointer-events:none;}
-  .pack.spinning{animation:packSpin 1.1s cubic-bezier(.45,0,.2,1);}
-  @keyframes packSpin{
-    0%{transform:rotate(0deg) scale(1);}
-    55%{transform:rotate(520deg) scale(1.1);}
-    100%{transform:rotate(720deg) scale(1);}
-  }
+  /* ---- Ouverture d'un pack : le pack se retourne (comme une carte qu'on tourne) et montre au dos la première carte ---- */
+  .pack-stage{position:relative;width:190px;aspect-ratio:3/4;perspective:1100px;}
+  .pack-flip{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .9s cubic-bezier(.45,.05,.2,1);}
+  .pack-flip.flipped{transform:rotateY(180deg);}
+  .pack-flip>.pack{position:absolute;inset:0;width:auto;aspect-ratio:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden;}
+  .pack-flip.flipped>.pack{pointer-events:none;}
+  .pack-back{position:absolute;inset:0;transform:rotateY(180deg);-webkit-backface-visibility:hidden;backface-visibility:hidden;}
+  .big-card-host{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
+  /* la carte en grand garde sa mise en page normale (140 px) ; on l'agrandit pour qu'elle ait la hauteur du pack */
+  .big-scale{transform:scale(var(--big-k,1.2));transform-origin:center;}
+  .card-slot.big{width:140px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .card-slot.big:focus-visible{outline:3px solid var(--focus);outline-offset:6px;border-radius:14px;}
+  .card-slot.pop{animation:cardPop .45s cubic-bezier(.34,1.56,.64,1) both;}
+  @keyframes cardPop{from{opacity:0;transform:scale(.72);}to{opacity:1;transform:scale(1);}}
+  .pack.shaking{animation:packShake .5s ease-in-out;}
+  @keyframes packShake{0%,100%{transform:translateX(0) rotate(0);}15%{transform:translateX(-6px) rotate(-1.6deg);}35%{transform:translateX(6px) rotate(1.6deg);}55%{transform:translateX(-4px) rotate(-1deg);}75%{transform:translateX(4px) rotate(1deg);}}
+  .reveal-hint{text-align:center;font-size:13px;font-weight:700;color:var(--text-muted);margin:2px 0 0;min-height:20px;}
+  .reveal-hint:empty{display:none;}
+  .reveal-hint.live{animation:hintPulse 1.6s ease-in-out infinite;}
+  @keyframes hintPulse{0%,100%{opacity:.55;}50%{opacity:1;}}
   .pack-wolf{width:92px;height:106px;color:var(--rose);}
   .pack-label{font-family:var(--font-head);font-weight:800;font-size:25px;color:var(--rose);letter-spacing:.8px;}
   .pack-status{text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:18px;}
@@ -181,15 +195,22 @@
   .btn-small.ghost:hover:not(:disabled){background:var(--bg-sunk);}
   .btn-small:disabled{opacity:.4;cursor:default;}
 
-  .reveal-area{display:flex;gap:14px;justify-content:center;margin-top:28px;flex-wrap:wrap;min-height:10px;}
-  .reveal-summary{text-align:center;margin-top:16px;font-size:14px;color:var(--text-muted);min-height:20px;}
+  /* largeur d'une carte rangée sous le pack : 140 px, ou moins sur téléphone pour que les TROIS tiennent sur une ligne */
+  :root{--slot-w:min(140px, calc((100vw - 52px) / 3));}
+  .reveal-area{display:flex;gap:14px;justify-content:center;margin-top:14px;flex-wrap:nowrap;}
+  .reveal-area:empty{display:none;}
+  .reveal-ph{width:var(--slot-w);aspect-ratio:2/3;position:relative;flex:0 0 auto;}
+  .reveal-ph .card-slot{width:100%;}
+  .reveal-summary{text-align:center;margin-top:12px;font-size:14px;color:var(--text-muted);}
+  .reveal-summary:empty{display:none;}
+  #packStatus{margin-top:14px;}
   .reveal-summary b{color:var(--text);}
   .craft-banner{
     margin-top:10px;background:var(--bg-elevated);border:1px solid var(--legend-1);border-radius:10px;
     padding:8px 14px;font-size:13px;text-align:center;color:var(--legend-text);
   }
 
-  .card-slot{width:140px;aspect-ratio:2/3;perspective:1000px;opacity:0;transform:translateY(16px) scale(.82);transition:opacity .35s ease, transform .45s cubic-bezier(.34,1.56,.64,1);}
+  .card-slot{width:var(--slot-w,140px);aspect-ratio:2/3;perspective:1000px;opacity:0;transform:translateY(16px) scale(.82);transition:opacity .35s ease, transform .45s cubic-bezier(.34,1.56,.64,1);}
   .card-slot.appear{opacity:1;transform:translateY(0) scale(1);}
   /* glow en box-shadow plutôt qu'en filter : un filter sur l'élément qui fait
      la rotation 3D (card-flip) casse le rendu du flip dans plusieurs navigateurs */
@@ -586,7 +607,9 @@
   .gate-toggle{display:flex;justify-content:center;gap:6px;margin-top:14px;font-size:12.5px;color:var(--text-muted);}
   .gate-toggle button{background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;font-size:12.5px;}
 
-  @media (max-width:480px){.titles h1{font-size:30px;} .brand-wolf{width:44px;height:51px;} .card,.card-slot{width:108px;}}
+  @media (max-width:480px){.titles h1{font-size:30px;} .brand-wolf{width:44px;height:51px;} .card{width:108px;} .reveal-area{gap:10px;}
+    /* sur une petite carte, l'étiquette « LIMITÉE » et la citrouille se marcheraient dessus : on garde la citrouille et le bandeau du thème */
+    .card .card-stats .tag-limitee,.card-slot:not(.big) .card-stats .tag-limitee{display:none;}}
   :focus-visible{outline:3px solid var(--focus);outline-offset:2px;}
   .topbar :focus-visible{outline-color:var(--rose);}
   @media (prefers-reduced-motion: reduce){
@@ -657,18 +680,24 @@
     <section id="tab-pack" class="tab-panel active">
       <div class="help-row"><button class="help-btn" type="button" data-help="pack"><span class="help-q">?</span> Aide</button></div>
       <div class="pitch-hero">
-        <div class="pack" id="packEl">
-          <svg class="crest-ico pack-wolf" viewBox="0 0 723 833" aria-hidden="true" focusable="false"><use href="#wolf-crest" width="723" height="833"/></svg>
-          <div class="pack-label">Pack officiel</div>
+        <div class="pack-stage" id="packStage">
+          <div class="pack-flip" id="packFlip">
+            <div class="pack" id="packEl">
+              <svg class="crest-ico pack-wolf" viewBox="0 0 723 833" aria-hidden="true" focusable="false"><use href="#wolf-crest" width="723" height="833"/></svg>
+              <div class="pack-label">Pack officiel</div>
+            </div>
+            <div class="pack-back" id="packBack"><div class="big-card-host" id="bigCardHost"></div></div>
+          </div>
         </div>
       </div>
+      <p class="reveal-hint" id="revealHint" aria-live="polite"></p>
+      <div class="reveal-area" id="revealArea"></div>
+      <div class="reveal-summary" id="revealSummary"></div>
       <p class="pack-status" id="packStatus">Chargement…</p>
       <div class="pack-actions">
         <button id="openFreePackBtn" class="btn-primary">Ouvrir un pack gratuit</button>
       </div>
       <div class="bonus-packs" id="bonusPacksEl"></div>
-      <div class="reveal-area" id="revealArea"></div>
-      <div class="reveal-summary" id="revealSummary"></div>
     </section>
 
     <section id="tab-collection" class="tab-panel">
@@ -1509,8 +1538,17 @@
     if (meInfo && meInfo.stored_packs > 0) openPack('free');
   });
 
-  const SPIN_DURATION = 1100;   // durée de la rotation du pack
-  const STAGGER_DELAY = 1000;   // écart entre chaque carte qui sort
+  const SHAKE_MS = 520;        // petite secousse du pack pendant que le serveur tire les cartes
+  const FLIP_MS = 900;         // le pack se retourne
+  const PLACE_MS = 520;        // la carte vient se ranger sous le pack
+  const NEXT_MS = 380;         // pause avant que la carte suivante apparaisse
+  // du moins rare au plus rare : la meilleure carte est toujours la dernière
+  const TIER_RANK = ['commune', 'rare', 'halloween', 'noel', 'gold', 'secrete', 'speciale', 'epique', 'legendaire'];
+  const rarityRank = card => { const i = TIER_RANK.indexOf(card.tier); return i < 0 ? TIER_RANK.length : i; };
+  const noteOf = card => (card.display_note && card.display_note.value) || 0;
+  function sortByRarity(cards){
+    return cards.map((c, i) => [c, i]).sort((x, y) => rarityRank(x[0]) - rarityRank(y[0]) || noteOf(x[0]) - noteOf(y[0]) || x[1] - y[1]).map(x => x[0]);
+  }
 
   function spawnSparks(slotEl){
     for (let i = 0; i < 10; i++){
@@ -1527,13 +1565,116 @@
     }
   }
 
-  let opening = false;
+  let opening = false;         // vrai tant qu'une ouverture n'est pas terminée (les 3 cartes rangées)
+  let reveal = null;           // l'ouverture en cours : { cards, index, busy, result, placeholders, big }
   let pendingTimers = [];
   function trackTimeout(fn, delay){
     const id = setTimeout(fn, delay);
     pendingTimers.push(id);
     return id;
   }
+
+  // une carte avec son dos (le loup) et sa face, comme avant
+  function buildRevealSlot(card){
+    const slot = document.createElement('div'); slot.className = 'card-slot';
+    const flip = document.createElement('div'); flip.className = 'card-flip';
+    const back = document.createElement('div'); back.className = 'card-face card-back'; back.innerHTML = crestIco();
+    const front = document.createElement('div'); front.className = 'card-face card-front tier-' + card.tier; front.innerHTML = cardFrontHTML(card);
+    markPhotoCard(front, card);
+    setCardName(front, cardDisplayName(card));
+    if (card.is_new) front.insertAdjacentHTML('beforeend', '<span class="new-ribbon">NEW</span>');  // carte débloquée
+    attachPhotoFallback(front, card);
+    flip.appendChild(back); flip.appendChild(front); slot.appendChild(flip);
+    return { slot, flip, card };
+  }
+  // la lueur de la rareté (et les étincelles des légendaires) quand la carte se montre
+  function applyCardEffects(slot, card){
+    if (card.tier === 'rare') slot.classList.add('glow-rare');
+    if (card.tier === 'epique') slot.classList.add('glow-epique');
+    if (card.tier === 'gold') slot.classList.add('glow-gold');
+    if (card.tier === 'speciale') slot.classList.add('glow-speciale');
+    if (EDITION_TIERS.includes(card.tier)) slot.classList.add('glow-' + card.tier);
+    if (card.tier === 'legendaire') { slot.classList.add('glow-legendaire'); spawnSparks(slot); }
+  }
+  // la carte en grand doit avoir la hauteur du pack : on calcule le grossissement depuis la taille réelle du pack
+  function setBigScale(){
+    const st = document.getElementById('packStage'); const h = st.getBoundingClientRect().height;
+    if (h > 0) st.style.setProperty('--big-k', (h / 210).toFixed(4));
+  }
+  window.addEventListener('resize', () => { if (reveal) setBigScale(); });
+
+  function updateRevealHint(){
+    const hint = document.getElementById('revealHint');
+    if (!reveal) { hint.textContent = ''; hint.classList.remove('live'); return; }
+    const n = reveal.cards.length, i = reveal.index + 1;
+    hint.textContent = reveal.busy ? '' : (i < n ? 'Appuie sur la carte pour continuer (' + i + '/' + n + ')' : 'Appuie sur la carte pour la ranger (' + i + '/' + n + ')');
+    hint.classList.toggle('live', !reveal.busy);
+  }
+
+  // montre la carte i en grand, à la place du pack (la première est au dos du pack ; les suivantes apparaissent sur place)
+  function showBigCard(i, first){
+    const r = reveal, card = r.cards[i], built = buildRevealSlot(card);
+    const host = document.getElementById('bigCardHost'); host.innerHTML = '';
+    const wrap = document.createElement('div'); wrap.className = 'big-scale';
+    built.slot.classList.add('big', 'appear');
+    built.slot.tabIndex = 0; built.slot.setAttribute('role', 'button');
+    built.slot.setAttribute('aria-label', cardDisplayName(card) + ' : appuie pour continuer');
+    wrap.appendChild(built.slot); host.appendChild(wrap);
+    r.big = built;
+    if (first) {
+      built.flip.style.transition = 'none'; built.flip.classList.add('revealed');     // déjà face visible : c'est le pack qui se retourne
+    } else {
+      built.slot.classList.add('pop');                                                 // le dos apparaît, puis la carte se retourne
+      trackTimeout(() => { built.flip.classList.add('revealed'); applyCardEffects(built.slot, card); }, 220);
+      built.slot.focus({ preventScroll: true });                                       // au clavier, la touche Entrée enchaîne
+    }
+  }
+
+  // la carte en grand vient se ranger, en taille normale, dans son emplacement sous le pack (animation « FLIP »)
+  function placeInRow(slot, ph){
+    const from = slot.getBoundingClientRect();                      // où elle est, et sa taille visible (grossie)
+    slot.classList.remove('big', 'pop'); slot.removeAttribute('tabindex'); slot.removeAttribute('role'); slot.removeAttribute('aria-label');
+    ph.appendChild(slot);                                           // son nouvel emplacement, en taille normale
+    slot.style.transition = 'none'; slot.style.transformOrigin = 'top left';
+    const to = slot.getBoundingClientRect();
+    const dx = from.left - to.left, dy = from.top - to.top, k = to.width ? from.width / to.width : 1;
+    slot.style.position = 'relative'; slot.style.zIndex = '30';
+    slot.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + k + ')';
+    void slot.offsetWidth;                                          // le navigateur enregistre le point de départ
+    slot.style.transition = 'transform ' + PLACE_MS + 'ms cubic-bezier(.25,.8,.25,1)';
+    slot.style.transform = 'translate(0px,0px) scale(1)';
+    trackTimeout(() => { slot.style.transition = ''; slot.style.transform = ''; slot.style.transformOrigin = ''; slot.style.position = ''; slot.style.zIndex = ''; }, PLACE_MS + 80);
+  }
+
+  // un appui sur la carte : elle se range, et la suivante apparaît (ou, après la dernière, le pack se retourne de nouveau)
+  function advanceReveal(){
+    const r = reveal;
+    if (!r || r.busy || !r.big) return;
+    r.busy = true;
+    const i = r.index;
+    placeInRow(r.big.slot, r.placeholders[i]);
+    if (i < r.cards.length - 1) {
+      r.index = i + 1;
+      updateRevealHint();
+      trackTimeout(() => { showBigCard(r.index, false); trackTimeout(() => { r.busy = false; updateRevealHint(); }, 820); }, NEXT_MS);
+    } else {
+      updateRevealHint();
+      trackTimeout(() => document.getElementById('packFlip').classList.remove('flipped'), 250);   // le pack revient : un nouveau pack à ouvrir
+      trackTimeout(finishReveal, PLACE_MS + 700);
+    }
+  }
+  function finishReveal(){
+    const r = reveal; if (!r) return;
+    document.getElementById('revealSummary').innerHTML = 'Tu as gagné <b>+' + r.result.credits_won + ' crédits</b>.';
+    document.getElementById('bigCardHost').innerHTML = '';
+    reveal = null; opening = false;
+    updateRevealHint();
+    refreshMe();
+    loadCollection();
+  }
+  const bigHost = document.getElementById('bigCardHost');
+  bigHost.addEventListener('click', e => { if (e.target.closest('.card-slot.big')) advanceReveal(); });
+  bigHost.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('.card-slot.big')) { e.preventDefault(); advanceReveal(); } });
 
   async function openPack(packType){
     if (opening) return;
@@ -1543,65 +1684,40 @@
     // pour ne jamais avoir deux séquences d'animation qui se marchent dessus
     pendingTimers.forEach(clearTimeout);
     pendingTimers = [];
+    reveal = null;
 
-    const packEl = document.getElementById('packEl');
-    packEl.classList.add('disabled', 'spinning');
+    const packEl = document.getElementById('packEl'), flipEl = document.getElementById('packFlip');
+    flipEl.classList.remove('flipped');
+    document.getElementById('bigCardHost').innerHTML = '';
+    packEl.classList.add('disabled', 'shaking');
     document.getElementById('openFreePackBtn').disabled = true;
     document.querySelectorAll('#bonusPacksEl button').forEach(b => b.disabled = true);
     document.getElementById('revealSummary').textContent = '';
     document.getElementById('revealArea').innerHTML = '';
+    updateRevealHint();
 
     const apiPromise = api('/pack/open', { method: 'POST', body: JSON.stringify({ pack_type: packType === 'free' ? null : packType }) });
 
     try {
-      // laisse le pack tourner sur lui-même pendant que la requête part en parallèle
-      await new Promise(r => setTimeout(r, SPIN_DURATION));
-      packEl.classList.remove('spinning');
+      await new Promise(r => setTimeout(r, SHAKE_MS));              // le pack tremble pendant que la requête part
+      packEl.classList.remove('shaking');
       const result = await apiPromise;
+      const cards = sortByRarity(result.cards_won);                 // de la moins rare à la plus rare
 
-      const area = document.getElementById('revealArea');
-      const slots = result.cards_won.map(card => {
-        const slot = document.createElement('div'); slot.className = 'card-slot';
-        const flip = document.createElement('div'); flip.className = 'card-flip';
-        const back = document.createElement('div'); back.className = 'card-face card-back'; back.innerHTML = crestIco();
-        const front = document.createElement('div'); front.className = 'card-face card-front tier-' + card.tier; front.innerHTML = cardFrontHTML(card);
-        markPhotoCard(front, card);
-        setCardName(front, cardDisplayName(card));
-        if (card.is_new) front.insertAdjacentHTML('beforeend', '<span class="new-ribbon">NEW</span>');  // carte débloquée
-        attachPhotoFallback(front, card);
-        flip.appendChild(back); flip.appendChild(front); slot.appendChild(flip); area.appendChild(slot);
-        return { slot, flip, card };
-      });
-
-      slots.forEach((s, i) => {
-        trackTimeout(() => {
-          s.slot.classList.add('appear');                 // la carte sort / apparaît
-          trackTimeout(() => {
-            s.flip.classList.add('revealed');              // puis elle se retourne
-            if (s.card.tier === 'rare') s.slot.classList.add('glow-rare');
-            if (s.card.tier === 'epique') s.slot.classList.add('glow-epique');
-            if (s.card.tier === 'gold') s.slot.classList.add('glow-gold');
-            if (s.card.tier === 'speciale') s.slot.classList.add('glow-speciale');
-            if (EDITION_TIERS.includes(s.card.tier)) s.slot.classList.add('glow-' + s.card.tier);
-            if (s.card.tier === 'legendaire') {
-              s.slot.classList.add('glow-legendaire');
-              spawnSparks(s.slot);
-            }
-          }, 280);
-        }, i * STAGGER_DELAY);
-      });
-
-      const totalTime = slots.length * STAGGER_DELAY + 900;
-      trackTimeout(() => {
-        document.getElementById('revealSummary').innerHTML = 'Tu as gagné <b>+' + result.credits_won + ' crédits</b>.';
-        refreshMe();
-        loadCollection();
-        packEl.classList.remove('disabled');
-        opening = false;
-      }, totalTime);
+      const area = document.getElementById('revealArea'), placeholders = [];
+      cards.forEach(() => { const ph = document.createElement('div'); ph.className = 'reveal-ph'; area.appendChild(ph); placeholders.push(ph); });
+      reveal = { cards, index: 0, busy: true, result, placeholders, big: null };
+      setBigScale();
+      showBigCard(0, true);
+      packEl.classList.remove('disabled');
+      requestAnimationFrame(() => flipEl.classList.add('flipped')); // le pack se retourne et montre au dos la première carte
+      trackTimeout(() => { applyCardEffects(reveal.big.slot, cards[0]); reveal.busy = false; updateRevealHint(); reveal.big.slot.focus({ preventScroll: true }); }, FLIP_MS);
     } catch(e) {
-      packEl.classList.remove('disabled', 'spinning');
-      opening = false;
+      packEl.classList.remove('disabled', 'shaking');
+      flipEl.classList.remove('flipped');
+      reveal = null; opening = false;
+      document.getElementById('revealArea').innerHTML = '';
+      updateRevealHint();
       refreshMe();
       toast(e.message);
     }
