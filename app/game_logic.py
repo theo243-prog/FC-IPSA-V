@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from .models import User, Card, OwnedCard, Tier, Player, AppSetting
 
-PACK_REGEN_SECONDS = 8 * 3600          # 8h pour régénérer un pack gratuit
+PACK_REGEN_SECONDS = 2 * 3600          # 8h pour régénérer un pack gratuit
 MAX_STORED_PACKS = 3                   # jamais plus de 3 packs gratuits en stock
 
 CREDIT_WEIGHTS = {1: 40, 2: 25, 3: 18, 4: 12, 5: 5}         # plus le nombre est grand, plus c'est rare
@@ -24,10 +24,10 @@ TIER_WEIGHTS = {"commune": 76, "rare": 18, "gold": 3.5, "epique": 2, "legendaire
 # Nombre de cartes à partir duquel une rareté atteint sa probabilité "pleine".
 # En dessous, sa probabilité est réduite proportionnellement : avec peu de cartes
 # épiques/légendaires, chacune ne tombe jamais plus souvent qu'avec le nombre de référence.
-TIER_REF_COUNT = {"gold": 6, "speciale": 3, "epique": 6, "legendaire": 4, "halloween": 5, "noel": 5}
+TIER_REF_COUNT = {"gold": 6, "speciale": 6, "epique": 6, "legendaire": 3, "halloween": 5, "noel": 5}
 
 # Les spéciales ont les mêmes valeurs que les épiques.
-DUPLICATE_SELL_VALUE = {"commune": 1, "rare": 3, "halloween": 4, "noel": 4, "gold": 4, "secrete": 5, "speciale": 4, "epique": 4, "legendaire": 5}
+DUPLICATE_SELL_VALUE = {"commune": 1, "rare": 3, "halloween": 5, "noel": 5, "gold": 5, "secrete": 10, "speciale": 10, "epique": 10, "legendaire": 50}
 
 # Ordre de rareté, de la plus commune à la plus rare.
 TIER_ORDER = ["commune", "rare", "halloween", "noel", "gold", "secrete", "speciale", "epique", "legendaire"]
@@ -51,7 +51,7 @@ PACK_TYPES = {
     # (rare 26 contre 18, gold 5 contre 3,5, épique 3 contre 2, légendaire 1 contre 0,5), et le seul où sortent les spéciales.
     "match": {"label": "Pack match", "price": None, "guaranteed": [],
               "token_field": "match_pack_tokens",
-              "weights": {"commune": 62, "rare": 26, "gold": 5, "speciale": 3, "epique": 3, "legendaire": 1},
+              "weights": {"commune": 51, "rare": 30, "gold": 6, "speciale": 8, "epique": 4, "legendaire": 1},
               "description": "3 cartes avec un peu plus de chances de rares que le pack classique, et le seul pack où sortent les cartes spéciales"},
 }
 
