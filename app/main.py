@@ -18,7 +18,7 @@ from .database import Base, engine, get_db, SessionLocal
 from . import game_logic, duel_engine, schemas, weekly, push, schema_upgrades
 from sqlalchemy import or_
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
-                     Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox)
+                     Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting)
 from .security import hash_password, verify_password, generate_token, get_current_user
 
 # Clé secrète pour les routes /admin/*. À définir dans Railway (Variables -> ADMIN_KEY).
@@ -161,7 +161,10 @@ def get_collection(user: User = Depends(get_current_user), db: Session = Depends
         if c.tier in (Tier.commune, Tier.rare):
             qty_by_player.setdefault(c.player_id, {})[c.tier.value] = owned_rows.get(c.id, 0)
     out = []
+    upcoming = {k for k in game_logic.EDITION_TIERS if game_logic.edition_status(db, k) == "upcoming"}
     for c in all_cards:
+        if c.tier.value in upcoming and not owned_rows.get(c.id, 0):
+            continue                                   # édition pas encore commencée : ses cartes restent une surprise
         row = {**card_out(c), "quantity": owned_rows.get(c.id, 0)}
         if c.tier == Tier.secrete:
             q = qty_by_player.get(c.player_id, {})
@@ -218,6 +221,7 @@ def player_detail(player_name: str, tier: str = "commune", db: Session = Depends
     return {
         "name": player.name,
         "moment": moment,
+        "edition": game_logic.edition_info(db, tier) if tier in game_logic.EDITION_TIERS else None,
         "poste": player.poste,
         "photo_url": game_logic.photo_for(player, tier),
         "matches_joues": player.matches_joues,
@@ -259,6 +263,12 @@ def list_upcoming_matches(db: Session = Depends(get_db)):
         "time": u.date.strftime("%H:%M") if (u.date.hour or u.date.minute) else None,
         "opponent": u.opponent, "location": u.location,
     } for u in rows]
+
+
+@app.get("/game/editions")
+def game_editions(db: Session = Depends(get_db)):
+    """Les éditions limitées : dates, état (à venir / en cours / terminée) et nombre de cartes."""
+    return [game_logic.edition_info(db, k) for k in game_logic.EDITIONS]
 
 
 @app.get("/game/rules")
@@ -585,7 +595,11 @@ def shop_buy(payload: schemas.BuyShopItemRequest, user: User = Depends(get_curre
 
 @app.get("/leaderboard")
 def leaderboard(db: Session = Depends(get_db)):
-    total_cards = db.query(Card).count()
+    all_total = db.query(Card).count()
+    # Une édition limitée terminée (ou pas commencée) ne fait pas baisser le pourcentage de ceux qui ne l'ont pas :
+    # ses cartes ne comptent que pour ceux qui les possèdent.
+    inactive = [Tier(k) for k in game_logic.EDITION_TIERS if game_logic.edition_status(db, k) != "active"]
+    inactive_total = db.query(Card).filter(Card.tier.in_(inactive)).count() if inactive else 0
     users = db.query(User).filter_by(is_test=False).all()
     rows = []
     for u in users:
@@ -594,6 +608,9 @@ def leaderboard(db: Session = Depends(get_db)):
             .filter(OwnedCard.user_id == u.id, OwnedCard.quantity > 0)
             .count()
         )
+        owned_inactive = (db.query(OwnedCard).join(Card).filter(OwnedCard.user_id == u.id, OwnedCard.quantity > 0, Card.tier.in_(inactive)).count()
+                          if inactive else 0)
+        total_cards = all_total - inactive_total + owned_inactive
         completion = round(100 * owned_count / total_cards, 1) if total_cards else 0.0
         rows.append({"pseudo": u.pseudo, "completion_pct": completion, "credits": u.credits})
     rows.sort(key=lambda r: (-r["completion_pct"], -r["credits"]))
@@ -642,6 +659,96 @@ def _plain(text: str) -> str:
     """Nom sans accents ni majuscules ni espaces en trop, pour repérer les quasi-doublons (Léo / Leo / léo)."""
     import unicodedata
     return " ".join("".join(c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn").lower().split())
+
+
+# ------------------------------------------------------ Éditions limitées ----
+
+@app.get("/admin/editions", dependencies=[Depends(require_admin)])
+def admin_list_editions(db: Session = Depends(get_db)):
+    """Les éditions limitées : dates, état, et la liste des joueurs et fans qui ont une carte dans chacune."""
+    out = []
+    for key in game_logic.EDITIONS:
+        info = game_logic.edition_info(db, key)
+        cards = db.query(Card).filter_by(tier=Tier(key)).all()
+        info["joueurs"] = sorted(c.player.name for c in cards)
+        info["part_des_cartes_classique_pct"] = round(100 * game_logic.EDITION_SHARE["classique"], 1)
+        info["part_des_cartes_match_pct"] = round(100 * game_logic.EDITION_SHARE["match"], 1)
+        out.append(info)
+    return out
+
+
+@app.post("/admin/create-edition-cards", dependencies=[Depends(require_admin)])
+def admin_create_edition_cards(payload: schemas.AdminCreateEditionCardsRequest, db: Session = Depends(get_db)):
+    """Crée les cartes d'une édition limitée pour la liste de joueurs et fans donnée (une carte par personne).
+    Relançable sans risque : une carte qui existe déjà n'est pas recréée."""
+    if payload.edition not in game_logic.EDITIONS:
+        raise HTTPException(status_code=400, detail="edition doit être : " + ", ".join(game_logic.EDITIONS))
+    names = list(dict.fromkeys(" ".join(n.split()) for n in payload.players if n and n.strip()))
+    if not names:
+        raise HTTPException(status_code=400, detail="La liste des joueurs est vide")
+    players = {p.name: p for p in db.query(Player).filter(Player.name.in_(names)).all()}
+    unknown = [n for n in names if n not in players]
+    if unknown:
+        raise HTTPException(status_code=404, detail="Joueur introuvable : " + ", ".join(unknown) + " (voir la commande 1.1 pour les noms exacts)")
+    not_people = [n for n in names if game_logic.card_kind(players[n]) not in ("joueur", "fan")]
+    if not_people:
+        raise HTTPException(status_code=400, detail="Seuls les joueurs et les fans ont une carte d'édition : " + ", ".join(not_people))
+    user = None
+    if payload.grant_to_pseudo:
+        user = db.query(User).filter_by(pseudo=payload.grant_to_pseudo).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="Utilisateur introuvable pour grant_to_pseudo")
+    tier = Tier(payload.edition)
+    created, existing = [], []
+    for n in names:
+        card = db.query(Card).filter_by(player_id=players[n].id, tier=tier).first()
+        if card is None:
+            card = Card(player_id=players[n].id, tier=tier, vitesse=0, tir=0)
+            db.add(card); db.flush(); created.append(n)
+        else:
+            existing.append(n)
+        if user:
+            game_logic.get_or_create_owned(db, user, card).quantity += 1
+    db.commit()
+    info = game_logic.edition_info(db, payload.edition)
+    return {"status": "ok", "edition": info, "cartes_creees": created, "deja_existantes": existing, "granted_to": user.pseudo if user else None,
+            "remarque": {"upcoming": "L'édition n'a pas encore commencé : ses cartes restent invisibles pour les joueurs jusqu'à son premier jour.",
+                         "active": "L'édition est en cours : ses cartes sortent des packs dès maintenant.",
+                         "ended": "L'édition est terminée : ses cartes ne sortent plus des packs (change les dates avec set-edition-dates)."}[info["status"]]}
+
+
+@app.post("/admin/set-edition-dates", dependencies=[Depends(require_admin)])
+def admin_set_edition_dates(payload: schemas.AdminSetEditionDatesRequest, db: Session = Depends(get_db)):
+    """Change les dates d'une édition (prolonger, raccourcir, décaler, ou terminer tout de suite). reset: true = dates d'origine."""
+    import json
+    if payload.edition not in game_logic.EDITIONS:
+        raise HTTPException(status_code=400, detail="edition doit être : " + ", ".join(game_logic.EDITIONS))
+    row = db.get(AppSetting, "edition_dates")
+    data = {}
+    if row is not None:
+        try:
+            data = json.loads(row.value)
+        except ValueError:
+            data = {}
+    if payload.reset:
+        data.pop(payload.edition, None)
+    else:
+        start, end = payload.start, payload.end
+        try:
+            s_day = game_logic._parse_day(start) if start else game_logic.edition_window(db, payload.edition)[0]
+            e_day = game_logic._parse_day(end) if end else game_logic.edition_window(db, payload.edition)[1]
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Les dates s'écrivent AAAA-MM-JJ (ex. 2026-11-30)")
+        if e_day < s_day:
+            raise HTTPException(status_code=400, detail="La date de fin ne peut pas être avant la date de début")
+        data[payload.edition] = {"start": s_day.isoformat(), "end": e_day.isoformat()}
+    value = json.dumps(data)
+    if row is None:
+        db.add(AppSetting(key="edition_dates", value=value))
+    else:
+        row.value = value
+    db.commit()
+    return {"status": "ok", "edition": game_logic.edition_info(db, payload.edition)}
 
 
 @app.post("/admin/create-player", dependencies=[Depends(require_admin)])
@@ -1113,7 +1220,7 @@ def admin_create_card(payload: schemas.AdminCreateCardRequest, db: Session = Dep
     try:
         tier = Tier(payload.tier)
     except ValueError:
-        raise HTTPException(status_code=400, detail="tier doit être commune, rare, gold, secrete, speciale, epique ou legendaire")
+        raise HTTPException(status_code=400, detail="tier doit être : " + ", ".join(game_logic.TIER_ORDER))
     player = db.query(Player).filter_by(name=payload.player_name).first()
     if not player:
         raise HTTPException(status_code=404, detail="Joueur introuvable")
@@ -1271,7 +1378,7 @@ def admin_delete_card(payload: schemas.AdminDeleteCardRequest, db: Session = Dep
     try:
         tier = Tier(payload.tier)
     except ValueError:
-        raise HTTPException(status_code=400, detail="tier doit être commune, rare, gold, secrete, speciale, epique ou legendaire")
+        raise HTTPException(status_code=400, detail="tier doit être : " + ", ".join(game_logic.TIER_ORDER))
     card = (
         db.query(Card).join(Player)
         .filter(Player.name == payload.player_name, Card.tier == tier)
@@ -1291,7 +1398,7 @@ def admin_update_card_stats(payload: schemas.AdminUpdateCardStatsRequest, db: Se
     try:
         tier = Tier(payload.tier)
     except ValueError:
-        raise HTTPException(status_code=400, detail="tier doit être commune, rare, gold, secrete, speciale, epique ou legendaire")
+        raise HTTPException(status_code=400, detail="tier doit être : " + ", ".join(game_logic.TIER_ORDER))
     card = (
         db.query(Card)
         .join(Player)
@@ -1380,6 +1487,7 @@ def _background_tick():
     _tick(weekly.check_and_run)             # cartes spéciales du vendredi 17h
     if push.AVAILABLE:
         _tick(push.check_packs)             # packs gratuits prêts
+        _tick(push.check_editions)          # annonce d'une édition limitée (début, dernier jour)
         _tick(push.process_outbox)          # envoi des notifications en attente
 
 
