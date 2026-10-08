@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from .models import User, Card, OwnedCard, Tier, Player
+from .models import User, Card, OwnedCard, Tier, Player, AppSetting
 
 PACK_REGEN_SECONDS = 8 * 3600          # 8h pour régénérer un pack gratuit
 MAX_STORED_PACKS = 3                   # jamais plus de 3 packs gratuits en stock
@@ -24,13 +24,14 @@ TIER_WEIGHTS = {"commune": 76, "rare": 18, "gold": 3.5, "epique": 2, "legendaire
 # Nombre de cartes à partir duquel une rareté atteint sa probabilité "pleine".
 # En dessous, sa probabilité est réduite proportionnellement : avec peu de cartes
 # épiques/légendaires, chacune ne tombe jamais plus souvent qu'avec le nombre de référence.
-TIER_REF_COUNT = {"gold": 6, "speciale": 3, "epique": 6, "legendaire": 4}
+TIER_REF_COUNT = {"gold": 6, "speciale": 3, "epique": 6, "legendaire": 4, "halloween": 5, "noel": 5}
 
 # Les spéciales ont les mêmes valeurs que les épiques.
-DUPLICATE_SELL_VALUE = {"commune": 1, "rare": 3, "gold": 4, "secrete": 5, "speciale": 4, "epique": 4, "legendaire": 5}
+DUPLICATE_SELL_VALUE = {"commune": 1, "rare": 3, "halloween": 4, "noel": 4, "gold": 4, "secrete": 5, "speciale": 4, "epique": 4, "legendaire": 5}
 
 # Ordre de rareté, de la plus commune à la plus rare.
-TIER_ORDER = ["commune", "rare", "gold", "secrete", "speciale", "epique", "legendaire"]
+TIER_ORDER = ["commune", "rare", "halloween", "noel", "gold", "secrete", "speciale", "epique", "legendaire"]
+EDITION_TIERS = ("halloween", "noel")      # les éditions limitées : plus rares que la rare, moins que les autres
 
 # Types de packs. "guaranteed" = raretés garanties ; les autres cartes (jusqu'à 3) suivent les probas classiques.
 PACK_TYPES = {
@@ -118,6 +119,70 @@ def tier_card_counts(db: Session) -> dict:
     return {tier.value: n for tier, n in rows}
 
 
+# ---------------------------------------------------------------------
+# ÉDITIONS LIMITÉES : un thème (Halloween, Noël…) avec ses dates. Ses cartes ne sortent des packs que pendant la
+# fenêtre (le changement se fait à minuit, heure de Paris) ; ensuite elles restent aux joueurs et s'échangent.
+# Les dates ci-dessous sont celles de départ : la commande /admin/set-edition-dates les change sans rien déployer.
+# ---------------------------------------------------------------------
+EDITIONS = {
+    "halloween": {"label": "Halloween", "icon": "🎃", "start": "2026-10-08", "end": "2026-11-30"},
+    "noel": {"label": "Noël", "icon": "❄️", "start": "2026-12-01", "end": "2026-12-31"},
+}
+EDITION_SHARE = {"classique": 0.08, "match": 0.10}      # part des cartes tirées qui sont de l'édition en cours (8 % / 10 %)
+
+
+def today_paris(now_utc=None):
+    """La date du jour à Paris (l'édition change à minuit, heure de Paris)."""
+    from . import weekly                       # (import ici pour éviter une dépendance circulaire)
+    return weekly.to_paris(now_utc or datetime.utcnow()).date()
+
+
+def _parse_day(text: str):
+    return datetime.strptime(text, "%Y-%m-%d").date()
+
+
+def edition_window(db: Session, key: str):
+    """(début, fin) d'une édition, fin comprise : les dates changées par commande priment sur celles de départ."""
+    import json
+    spec = EDITIONS[key]; start, end = spec["start"], spec["end"]
+    row = db.get(AppSetting, "edition_dates")
+    if row is not None:
+        try:
+            over = json.loads(row.value).get(key) or {}
+            start, end = over.get("start", start), over.get("end", end)
+        except ValueError:
+            pass
+    return _parse_day(start), _parse_day(end)
+
+
+def edition_status(db: Session, key: str, today=None) -> str:
+    """"upcoming" (pas encore commencée), "active" (cartes dans les packs) ou "ended" (terminée)."""
+    start, end = edition_window(db, key)
+    today = today or today_paris()
+    return "upcoming" if today < start else ("ended" if today > end else "active")
+
+
+def edition_info(db: Session, key: str, today=None) -> dict:
+    start, end = edition_window(db, key)
+    n = db.query(Card).filter_by(tier=Tier(key)).count()
+    return {"key": key, "label": EDITIONS[key]["label"], "icon": EDITIONS[key]["icon"], "start": start.isoformat(), "end": end.isoformat(),
+            "status": edition_status(db, key, today), "cards": n}
+
+
+def weights_with_editions(db: Session, base_weights: dict, kind: str, counts: dict, today=None) -> dict:
+    """Ajoute au tirage l'édition limitée en cours (8 % des cartes du pack classique, 10 % du pack match) : les autres
+    raretés se partagent le reste. Sans édition en cours (ou sans carte créée), rien ne change."""
+    active = [k for k in EDITION_TIERS if counts.get(k, 0) > 0 and edition_status(db, k, today) == "active"]
+    if not active:
+        return dict(base_weights)
+    share = EDITION_SHARE["match" if kind == "match" else "classique"]
+    total = sum(base_weights.values())
+    out = {t: w * (1 - share) for t, w in base_weights.items() if t not in EDITION_TIERS}
+    for k in active:
+        out[k] = total * share / len(active)
+    return out
+
+
 def classic_tier_weights(counts: dict, base_weights: dict = None) -> dict:
     """Probabilités de tirage : une rareté sans carte est ignorée, et les raretés récentes
     (épique, légendaire) sont réduites tant qu'elles ont peu de cartes.
@@ -176,7 +241,7 @@ def open_pack_for_user(db: Session, user: User, pack_type: str = "free") -> dict
     credits_won = int(_roll_weighted(CREDIT_WEIGHTS))
     user.credits += credits_won
 
-    weights = classic_tier_weights(counts, spec.get("weights"))
+    weights = classic_tier_weights(counts, weights_with_editions(db, spec.get("weights") or TIER_WEIGHTS, effective, counts))
     tiers_to_draw = list(spec["guaranteed"])
     while len(tiers_to_draw) < 3:
         tiers_to_draw.append(_roll_weighted(weights))
@@ -203,9 +268,9 @@ def open_pack_for_user(db: Session, user: User, pack_type: str = "free") -> dict
 # (plus de notes par poste). Réutilisée par le moteur de duel.
 # ---------------------------------------------------------------------
 
-CARD_NOTE = {"commune": 75, "rare": 85, "secrete": 90, "legendaire": 95}
+CARD_NOTE = {"commune": 75, "rare": 85, "halloween": 88, "noel": 88, "secrete": 90, "legendaire": 95}
 SPECIAL_BASE_NOTE = 80      # note d'une carte spéciale à sa création ; +1 à chaque nouvelle récompense
-TIER_FAN_BONUS = {"commune": 0.05, "rare": 0.10, "epique": 0.12, "secrete": 0.13, "legendaire": 0.15}  # bonus % apporté par le Fan
+TIER_FAN_BONUS = {"commune": 0.05, "rare": 0.10, "halloween": 0.11, "noel": 0.11, "epique": 0.12, "secrete": 0.13, "legendaire": 0.15}  # bonus % apporté par le Fan
 TIER_MASCOT_BONUS = dict(TIER_FAN_BONUS)       # la mascotte (Le Loup) a son propre emplacement, mêmes bonus que le Fan
 
 # Cartes Équipement : un bonus d'équipe en 1v1, qui s'ajoute à ceux du Fan et du Loup. Un seul équipement par équipe.
@@ -373,7 +438,7 @@ def pack_odds(db: Session) -> dict:
     counts = tier_card_counts(db)
     packs = {}
     for key, spec in PACK_TYPES.items():
-        base = spec.get("weights") or TIER_WEIGHTS
+        base = weights_with_editions(db, spec.get("weights") or TIER_WEIGHTS, key, counts)      # + l'édition limitée en cours
         packs[key] = {
             "label": spec["label"], "price": spec["price"], "description": spec["description"],
             "guaranteed": list(spec["guaranteed"]), "available": pack_available(counts, key),
@@ -382,7 +447,8 @@ def pack_odds(db: Session) -> dict:
         }
     return {"counts": counts, "packs": packs, "never_in_packs": ["secrete"],
             "sell_values": DUPLICATE_SELL_VALUE, "secret_fusion": {"cost": SECRET_FUSION_COST, "rare_value": RARE_FUSION_VALUE},
-            "tier_order": TIER_ORDER, "free_packs_max": MAX_STORED_PACKS, "free_pack_hours": PACK_REGEN_SECONDS // 3600}
+            "tier_order": TIER_ORDER, "free_packs_max": MAX_STORED_PACKS, "free_pack_hours": PACK_REGEN_SECONDS // 3600,
+            "editions": [edition_info(db, k) for k in EDITIONS]}
 
 
 # ---------------------------------------------------------------------
