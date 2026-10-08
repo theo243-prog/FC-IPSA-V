@@ -335,6 +335,42 @@
   }
   @keyframes holoWolf{from{background-position:0% 20%;}to{background-position:100% 80%;}}
 
+  /* ---- ÉDITIONS LIMITÉES : Halloween (noir et orange, toiles d'araignée, citrouille) et Noël (rouge, flocons, neige) ---- */
+  .card-front.tier-halloween,.card.tier-halloween:not(.locked){
+    background:radial-gradient(120% 70% at 50% 108%,#FF8A1F 0%,#E0540A 34%,rgba(40,18,40,0) 70%),linear-gradient(172deg,#0C0910 0%,#1B1022 55%,#2B1424 100%);
+    color:#FFF1E0;box-shadow:var(--shadow),inset 0 0 0 2px #FF8A1F,inset 0 0 14px rgba(255,138,31,.55);}
+  .tier-halloween .card-tier-label{background:#FF8A1F;color:#1A0B00;}
+  .tier-halloween .card-poste{background:rgba(0,0,0,.45);color:#FFE2C0;}
+  .tier-halloween .card-name,.tier-halloween.has-photo .card-name{color:#FFF1E0;text-shadow:0 0 6px rgba(0,0,0,.9),0 1px 2px rgba(0,0,0,.9);}
+  .tier-halloween .card-stats span{background:rgba(0,0,0,.5);color:#FFE2C0;}
+  .tier-halloween .card-watermark{display:none;}
+  .card-front.tier-noel,.card.tier-noel:not(.locked){
+    background:radial-gradient(90% 60% at 30% 0%,rgba(255,255,255,.22),rgba(255,255,255,0) 60%),linear-gradient(175deg,#D3202E 0%,#B3121D 60%,#8E0A14 100%);
+    color:#fff;box-shadow:var(--shadow),inset 0 0 0 2px #fff,inset 0 0 12px rgba(255,255,255,.4);}
+  .tier-noel .card-tier-label{background:#fff;color:#B3121D;}
+  .tier-noel .card-poste{background:rgba(0,0,0,.28);color:#fff;}
+  .tier-noel .card-name,.tier-noel.has-photo .card-name{color:#8E0A14;text-shadow:none;position:relative;z-index:3;}
+  .tier-noel .card-stats{z-index:3;}
+  .tier-noel .card-stats span{background:rgba(142,10,20,.14);color:#8E0A14;}
+  .tier-noel .card-watermark{color:#8E0A14;opacity:.3;z-index:3;}
+  .tier-noel .card-count{z-index:3;}
+  .card-deco{position:absolute;pointer-events:none;}
+  .card-deco-web{top:0;width:46%;aspect-ratio:1/1;z-index:1;opacity:.85;}
+  .card-deco-web.tl{left:0;} .card-deco-web.tr{right:0;transform:scaleX(-1);}
+  .card-deco-pk{right:6px;bottom:7px;width:19px;height:19px;z-index:2;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));}
+  .card-deco-snow{left:0;right:0;bottom:0;width:100%;height:37%;z-index:1;}
+  .card-deco-flake{z-index:1;}
+  .card-stats .tag-limitee{font-size:6.5px;font-weight:800;letter-spacing:.3px;padding:2px 4px;border-radius:4px;margin-left:4px;align-self:center;white-space:nowrap;}
+  .tier-halloween .card-stats .tag-limitee{background:#FF8A1F;color:#1A0B00;}
+  .tier-noel .card-stats .tag-limitee{background:#8E0A14;color:#fff;}
+  .mini-badge.tier-halloween{background:linear-gradient(160deg,#FF8A1F,#1B1022);color:#fff;}
+  .mini-badge.tier-noel{background:linear-gradient(160deg,#fff,#D3202E);color:#8E0A14;}
+  .card-slot.glow-halloween .card-front{animation:glowHalloweenBox 1.3s ease-in-out infinite;}
+  .card-slot.glow-noel .card-front{animation:glowNoelBox 1.3s ease-in-out infinite;}
+  @keyframes glowHalloweenBox{0%,100%{box-shadow:var(--shadow),inset 0 0 0 2px #FF8A1F,0 0 4px rgba(255,138,31,.5);}50%{box-shadow:var(--shadow),inset 0 0 0 2px #FF8A1F,0 0 24px 4px rgba(255,138,31,.95);}}
+  @keyframes glowNoelBox{0%,100%{box-shadow:var(--shadow),inset 0 0 0 2px #fff,0 0 4px rgba(255,255,255,.5);}50%{box-shadow:var(--shadow),inset 0 0 0 2px #fff,0 0 24px 4px rgba(255,90,100,.95);}}
+  .edition-note{font-family:var(--font-body);font-size:13px;font-weight:700;color:var(--text-muted);margin-left:8px;}
+  .tier-group.edition-group h3{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px;}
   /* ---- Gold (moment mémorable), spéciale (verte), secrète (nuit étoilée) ---- */
   .card-front.tier-gold::after,.card.tier-gold:not(.locked)::after{            /* reflet métallique fixe */
     content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
@@ -559,7 +595,7 @@
 </style>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="wolf-crest" viewBox="47 80 723 833"><g transform="translate(0,980) scale(0.1,-0.1)" fill="currentColor"><path d="M6293 8782 c-59 -53 -126 -111 -148 -127 -22 -16 -67 -52 -100 -80 -33 -29 -107 -87 -165 -130 -58 -43 -130 -101 -161 -129 -88 -80 -369 -289 -557 -413 -40 -26 -101 -69 -135 -95 -34 -26 -129 -92 -212 -147 -82 -55 -170 -114 -195 -131 -25 -17 -95 -59 -155 -93 -61 -34 -133 -78 -160 -98 -28 -20 -70 -47 -95 -59 -25 -12 -61 -35 -80 -50 -19 -15 -66 -43 -105 -63 -38 -19 -108 -59 -155 -88 -47 -29 -114 -69 -150 -89 -101 -57 -170 -101 -238 -152 -35 -27 -67 -48 -71 -48 -5 0 -47 -28 -94 -62 -47 -35 -120 -88 -164 -118 -332 -231 -646 -491 -905 -751 -97 -98 -211 -203 -252 -234 -111 -81 -125 -120 -81 -210 30 -61 31 -80 5 -122 l-19 -33 -108 -50 c-59 -28 -117 -56 -128 -62 -11 -6 -67 -36 -125 -66 -58 -30 -157 -86 -220 -122 -63 -37 -160 -90 -215 -118 -192 -96 -443 -256 -484 -308 -28 -36 -36 -86 -21 -139 13 -46 150 -215 254 -313 27 -25 57 -70 76 -110 57 -121 95 -144 198 -118 132 35 174 20 237 -84 39 -63 59 -80 97 -80 51 0 88 66 88 158 0 99 49 127 135 76 25 -14 52 -24 62 -22 10 2 36 30 58 63 l41 60 80 5 c94 6 95 6 138 74 35 54 59 69 130 81 l39 7 51 53 c37 38 64 56 96 65 l45 13 55 -13 c30 -7 112 -15 181 -19 l127 -6 21 -19 c25 -23 28 -72 6 -103 -8 -12 -52 -43 -97 -70 l-81 -48 -92 -115 c-51 -63 -115 -136 -142 -162 -28 -26 -69 -78 -91 -116 -27 -45 -52 -74 -75 -87 l-34 -18 -49 7 c-27 4 -65 10 -86 13 l-36 5 -19 -19 c-14 -14 -22 -40 -26 -88 -12 -125 -48 -142 -157 -75 -76 47 -98 49 -130 15 l-23 -25 1 -44 c1 -77 97 -231 196 -314 99 -83 188 -112 349 -112 49 0 152 -9 229 -21 l139 -20 34 11 c67 22 82 77 40 145 -52 86 -58 101 -57 143 1 71 50 127 141 162 31 12 85 41 121 65 74 51 315 152 441 186 46 12 116 36 154 53 l70 31 90 0 90 0 35 -22 c84 -52 91 -118 26 -253 -26 -52 -51 -123 -58 -157 l-11 -61 28 -114 c19 -78 26 -125 21 -149 -4 -22 -40 -83 -91 -154 -47 -65 -88 -130 -92 -143 l-6 -25 27 -24 c49 -42 102 -27 218 61 40 31 90 62 112 68 l39 12 19 -23 18 -24 -6 -36 c-9 -47 -26 -82 -82 -160 -25 -36 -52 -82 -59 -103 l-13 -38 21 -61 22 -62 -6 -59 -5 -60 -48 -79 c-27 -44 -70 -107 -97 -139 -62 -78 -97 -152 -97 -211 l0 -46 22 -20 c13 -11 42 -30 65 -42 71 -35 77 -103 23 -241 -12 -30 -28 -83 -36 -119 -8 -36 -34 -106 -57 -156 -24 -54 -42 -110 -45 -140 l-4 -50 19 -24 20 -24 38 1 c50 2 76 20 164 115 74 78 179 172 309 275 37 30 121 106 187 170 67 65 152 144 189 176 69 60 123 134 187 256 41 77 107 150 137 150 35 0 42 -28 32 -141 l-8 -104 -32 -70 c-18 -38 -40 -108 -50 -155 -10 -47 -23 -104 -29 -128 -15 -53 -7 -80 24 -88 46 -12 154 74 280 221 42 50 102 119 134 155 31 36 84 100 117 144 32 43 87 115 121 160 34 44 69 91 78 102 9 12 31 57 49 100 60 141 65 151 92 183 33 40 59 40 84 -2 l20 -32 0 -70 c-1 -38 -5 -90 -10 -115 -6 -25 -14 -115 -20 -200 -6 -95 -17 -184 -30 -230 -44 -164 -35 -252 26 -258 46 -4 76 26 170 171 47 71 100 150 119 175 118 154 310 663 336 892 6 47 19 130 30 185 l19 100 -2 133 -3 134 28 24 c50 43 90 17 157 -104 23 -42 67 -113 95 -158 74 -114 100 -168 129 -270 32 -115 81 -232 108 -261 61 -65 119 8 148 184 7 37 19 104 27 148 28 144 32 178 32 350 1 201 -13 408 -35 520 -31 159 -136 471 -194 580 -57 107 -112 242 -108 267 l3 23 37 -1 c42 -1 143 -61 246 -144 35 -28 93 -69 130 -92 37 -22 96 -67 132 -99 76 -67 174 -129 206 -129 60 0 61 64 4 243 -22 71 -40 137 -40 146 0 9 -18 55 -40 100 -23 46 -59 129 -82 184 -23 56 -81 161 -133 241 -50 77 -102 161 -117 186 -15 25 -61 81 -103 125 -123 129 -232 251 -245 276 l-13 23 23 18 c25 20 33 19 165 -22 50 -16 113 -31 141 -33 32 -4 79 -20 128 -46 82 -44 128 -51 164 -25 25 17 30 70 10 107 -32 61 -371 411 -451 466 -12 8 -50 39 -84 68 -35 29 -91 67 -125 84 -35 17 -97 51 -138 75 -41 23 -115 54 -165 68 -149 41 -161 81 -60 201 59 70 66 87 75 179 5 44 13 119 19 166 6 47 16 240 21 430 6 190 15 464 20 610 5 146 11 360 14 475 3 116 8 253 12 306 10 146 -16 199 -98 199 l-37 0 -108 -98z m-289 -874 c21 -30 20 -46 -8 -228 -14 -85 -32 -243 -41 -350 -14 -176 -24 -253 -55 -447 -11 -67 -42 -143 -108 -270 -32 -60 -68 -106 -138 -178 -94 -97 -115 -108 -138 -73 l-11 18 35 67 35 68 0 51 c0 64 -18 99 -64 120 -116 54 -108 106 49 314 78 103 100 149 100 210 l0 51 -25 24 c-49 50 -74 37 -237 -116 -68 -63 -157 -138 -198 -167 -41 -28 -106 -79 -145 -113 -113 -99 -210 -134 -250 -89 -29 32 -12 76 64 170 88 109 394 402 476 456 22 15 72 57 111 93 39 36 115 104 169 151 54 47 134 117 177 156 114 104 171 127 202 82z m-2866 -1972 l4 -30 -121 -116 c-80 -77 -121 -123 -121 -137 0 -23 33 -53 78 -72 37 -15 53 -48 39 -78 -14 -32 -78 -53 -176 -59 -47 -3 -127 -15 -178 -26 -51 -11 -103 -18 -117 -14 -29 7 -56 32 -56 51 0 29 208 256 325 355 97 81 245 162 289 158 l31 -3 3 -29z m-1978 -1319 c0 -18 -48 -74 -82 -95 -51 -32 -81 -36 -107 -15 l-23 18 12 26 c15 32 60 60 125 74 52 12 75 10 75 -8z M3820 8338 c-11 -18 -20 -39 -20 -47 0 -22 -67 -186 -146 -353 -40 -86 -80 -183 -89 -215 -9 -32 -31 -80 -49 -108 -18 -27 -43 -76 -54 -108 -12 -32 -40 -84 -62 -115 -22 -31 -56 -101 -75 -155 -42 -117 -53 -139 -116 -236 l-49 -74 0 -38 0 -38 21 -12 c39 -20 83 -2 212 85 70 47 150 97 179 112 29 15 138 82 243 150 266 172 325 209 365 229 19 10 56 32 82 51 26 18 69 44 96 58 65 33 112 87 112 129 0 35 -17 58 -75 103 -39 29 -229 278 -317 414 -30 47 -82 111 -116 143 l-61 57 -30 0 -31 0 -20 -32z"/></g></symbol></defs></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="wolf-crest" viewBox="47 80 723 833"><g transform="translate(0,980) scale(0.1,-0.1)" fill="currentColor"><path d="M6293 8782 c-59 -53 -126 -111 -148 -127 -22 -16 -67 -52 -100 -80 -33 -29 -107 -87 -165 -130 -58 -43 -130 -101 -161 -129 -88 -80 -369 -289 -557 -413 -40 -26 -101 -69 -135 -95 -34 -26 -129 -92 -212 -147 -82 -55 -170 -114 -195 -131 -25 -17 -95 -59 -155 -93 -61 -34 -133 -78 -160 -98 -28 -20 -70 -47 -95 -59 -25 -12 -61 -35 -80 -50 -19 -15 -66 -43 -105 -63 -38 -19 -108 -59 -155 -88 -47 -29 -114 -69 -150 -89 -101 -57 -170 -101 -238 -152 -35 -27 -67 -48 -71 -48 -5 0 -47 -28 -94 -62 -47 -35 -120 -88 -164 -118 -332 -231 -646 -491 -905 -751 -97 -98 -211 -203 -252 -234 -111 -81 -125 -120 -81 -210 30 -61 31 -80 5 -122 l-19 -33 -108 -50 c-59 -28 -117 -56 -128 -62 -11 -6 -67 -36 -125 -66 -58 -30 -157 -86 -220 -122 -63 -37 -160 -90 -215 -118 -192 -96 -443 -256 -484 -308 -28 -36 -36 -86 -21 -139 13 -46 150 -215 254 -313 27 -25 57 -70 76 -110 57 -121 95 -144 198 -118 132 35 174 20 237 -84 39 -63 59 -80 97 -80 51 0 88 66 88 158 0 99 49 127 135 76 25 -14 52 -24 62 -22 10 2 36 30 58 63 l41 60 80 5 c94 6 95 6 138 74 35 54 59 69 130 81 l39 7 51 53 c37 38 64 56 96 65 l45 13 55 -13 c30 -7 112 -15 181 -19 l127 -6 21 -19 c25 -23 28 -72 6 -103 -8 -12 -52 -43 -97 -70 l-81 -48 -92 -115 c-51 -63 -115 -136 -142 -162 -28 -26 -69 -78 -91 -116 -27 -45 -52 -74 -75 -87 l-34 -18 -49 7 c-27 4 -65 10 -86 13 l-36 5 -19 -19 c-14 -14 -22 -40 -26 -88 -12 -125 -48 -142 -157 -75 -76 47 -98 49 -130 15 l-23 -25 1 -44 c1 -77 97 -231 196 -314 99 -83 188 -112 349 -112 49 0 152 -9 229 -21 l139 -20 34 11 c67 22 82 77 40 145 -52 86 -58 101 -57 143 1 71 50 127 141 162 31 12 85 41 121 65 74 51 315 152 441 186 46 12 116 36 154 53 l70 31 90 0 90 0 35 -22 c84 -52 91 -118 26 -253 -26 -52 -51 -123 -58 -157 l-11 -61 28 -114 c19 -78 26 -125 21 -149 -4 -22 -40 -83 -91 -154 -47 -65 -88 -130 -92 -143 l-6 -25 27 -24 c49 -42 102 -27 218 61 40 31 90 62 112 68 l39 12 19 -23 18 -24 -6 -36 c-9 -47 -26 -82 -82 -160 -25 -36 -52 -82 -59 -103 l-13 -38 21 -61 22 -62 -6 -59 -5 -60 -48 -79 c-27 -44 -70 -107 -97 -139 -62 -78 -97 -152 -97 -211 l0 -46 22 -20 c13 -11 42 -30 65 -42 71 -35 77 -103 23 -241 -12 -30 -28 -83 -36 -119 -8 -36 -34 -106 -57 -156 -24 -54 -42 -110 -45 -140 l-4 -50 19 -24 20 -24 38 1 c50 2 76 20 164 115 74 78 179 172 309 275 37 30 121 106 187 170 67 65 152 144 189 176 69 60 123 134 187 256 41 77 107 150 137 150 35 0 42 -28 32 -141 l-8 -104 -32 -70 c-18 -38 -40 -108 -50 -155 -10 -47 -23 -104 -29 -128 -15 -53 -7 -80 24 -88 46 -12 154 74 280 221 42 50 102 119 134 155 31 36 84 100 117 144 32 43 87 115 121 160 34 44 69 91 78 102 9 12 31 57 49 100 60 141 65 151 92 183 33 40 59 40 84 -2 l20 -32 0 -70 c-1 -38 -5 -90 -10 -115 -6 -25 -14 -115 -20 -200 -6 -95 -17 -184 -30 -230 -44 -164 -35 -252 26 -258 46 -4 76 26 170 171 47 71 100 150 119 175 118 154 310 663 336 892 6 47 19 130 30 185 l19 100 -2 133 -3 134 28 24 c50 43 90 17 157 -104 23 -42 67 -113 95 -158 74 -114 100 -168 129 -270 32 -115 81 -232 108 -261 61 -65 119 8 148 184 7 37 19 104 27 148 28 144 32 178 32 350 1 201 -13 408 -35 520 -31 159 -136 471 -194 580 -57 107 -112 242 -108 267 l3 23 37 -1 c42 -1 143 -61 246 -144 35 -28 93 -69 130 -92 37 -22 96 -67 132 -99 76 -67 174 -129 206 -129 60 0 61 64 4 243 -22 71 -40 137 -40 146 0 9 -18 55 -40 100 -23 46 -59 129 -82 184 -23 56 -81 161 -133 241 -50 77 -102 161 -117 186 -15 25 -61 81 -103 125 -123 129 -232 251 -245 276 l-13 23 23 18 c25 20 33 19 165 -22 50 -16 113 -31 141 -33 32 -4 79 -20 128 -46 82 -44 128 -51 164 -25 25 17 30 70 10 107 -32 61 -371 411 -451 466 -12 8 -50 39 -84 68 -35 29 -91 67 -125 84 -35 17 -97 51 -138 75 -41 23 -115 54 -165 68 -149 41 -161 81 -60 201 59 70 66 87 75 179 5 44 13 119 19 166 6 47 16 240 21 430 6 190 15 464 20 610 5 146 11 360 14 475 3 116 8 253 12 306 10 146 -16 199 -98 199 l-37 0 -108 -98z m-289 -874 c21 -30 20 -46 -8 -228 -14 -85 -32 -243 -41 -350 -14 -176 -24 -253 -55 -447 -11 -67 -42 -143 -108 -270 -32 -60 -68 -106 -138 -178 -94 -97 -115 -108 -138 -73 l-11 18 35 67 35 68 0 51 c0 64 -18 99 -64 120 -116 54 -108 106 49 314 78 103 100 149 100 210 l0 51 -25 24 c-49 50 -74 37 -237 -116 -68 -63 -157 -138 -198 -167 -41 -28 -106 -79 -145 -113 -113 -99 -210 -134 -250 -89 -29 32 -12 76 64 170 88 109 394 402 476 456 22 15 72 57 111 93 39 36 115 104 169 151 54 47 134 117 177 156 114 104 171 127 202 82z m-2866 -1972 l4 -30 -121 -116 c-80 -77 -121 -123 -121 -137 0 -23 33 -53 78 -72 37 -15 53 -48 39 -78 -14 -32 -78 -53 -176 -59 -47 -3 -127 -15 -178 -26 -51 -11 -103 -18 -117 -14 -29 7 -56 32 -56 51 0 29 208 256 325 355 97 81 245 162 289 158 l31 -3 3 -29z m-1978 -1319 c0 -18 -48 -74 -82 -95 -51 -32 -81 -36 -107 -15 l-23 18 12 26 c15 32 60 60 125 74 52 12 75 10 75 -8z M3820 8338 c-11 -18 -20 -39 -20 -47 0 -22 -67 -186 -146 -353 -40 -86 -80 -183 -89 -215 -9 -32 -31 -80 -49 -108 -18 -27 -43 -76 -54 -108 -12 -32 -40 -84 -62 -115 -22 -31 -56 -101 -75 -155 -42 -117 -53 -139 -116 -236 l-49 -74 0 -38 0 -38 21 -12 c39 -20 83 -2 212 85 70 47 150 97 179 112 29 15 138 82 243 150 266 172 325 209 365 229 19 10 56 32 82 51 26 18 69 44 96 58 65 33 112 87 112 129 0 35 -17 58 -75 103 -39 29 -229 278 -317 414 -30 47 -82 111 -116 143 l-61 57 -30 0 -31 0 -20 -32z"/></g></symbol><symbol id="web-corner" viewBox="0 0 60 60"><path d="M0 0L60.0 0.0M0 0L55.4 23.0M0 0L42.4 42.4M0 0L23.0 55.4M0 0L0.0 60.0M12.0 0.0Q9.2 1.8 11.1 4.6M11.1 4.6Q7.8 5.2 8.5 8.5M8.5 8.5Q5.2 7.8 4.6 11.1M4.6 11.1Q1.8 9.2 0.0 12.0M24.0 0.0Q18.5 3.7 22.2 9.2M22.2 9.2Q15.7 10.5 17.0 17.0M17.0 17.0Q10.5 15.7 9.2 22.2M9.2 22.2Q3.7 18.5 0.0 24.0M36.0 0.0Q27.7 5.5 33.3 13.8M33.3 13.8Q23.5 15.7 25.5 25.5M25.5 25.5Q15.7 23.5 13.8 33.3M13.8 33.3Q5.5 27.7 0.0 36.0M48.0 0.0Q36.9 7.3 44.3 18.4M44.3 18.4Q31.3 20.9 33.9 33.9M33.9 33.9Q20.9 31.3 18.4 44.3M18.4 44.3Q7.3 36.9 0.0 48.0M60.0 0.0Q46.2 9.2 55.4 23.0M55.4 23.0Q39.1 26.2 42.4 42.4M42.4 42.4Q26.2 39.1 23.0 55.4M23.0 55.4Q9.2 46.2 0.0 60.0" fill="none" stroke="#FF9A2E" stroke-width=".85" stroke-linecap="round"/></symbol><symbol id="pumpkin" viewBox="0 0 40 40"><path d="M20 9c1-3 3-5 6-5-1 3-2 4-4 5z" fill="#3E7B2B"/><ellipse cx="20" cy="24" rx="17" ry="14" fill="#FF7A00"/><path d="M20 10c-6 3-9 8-9 14s3 11 9 14M20 10c6 3 9 8 9 14s-3 11-9 14M20 10v28" stroke="#C85500" stroke-width="1.6" fill="none"/><ellipse cx="20" cy="24" rx="17" ry="14" fill="none" stroke="#7A3300" stroke-width="1.2"/><path d="M11 20l4 4-8 0zM27 20l4 4-8 0z" fill="#2A1200"/><path d="M11 30q9 6 18 0" stroke="#2A1200" stroke-width="2" fill="none" stroke-linecap="round"/></symbol><symbol id="flake" viewBox="0 0 20 20"><g stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none"><path d="M10 1v18M2.2 5.5l15.6 9M2.2 14.5l15.6-9"/><path d="M10 4l-2-2M10 4l2-2M10 16l-2 2M10 16l2 2"/></g></symbol></defs></svg>
 
 <div class="gate" id="gate">
   <div class="gate-card">
@@ -949,7 +985,9 @@
   }
 
   // bonus d'équipe (en %) apporté par une carte Fan en match 1v1, selon sa rareté
-  const FAN_BONUS_PCT = { commune: 5, rare: 10, epique: 12, secrete: 13, legendaire: 15 };
+  const FAN_BONUS_PCT = { commune: 5, rare: 10, halloween: 11, noel: 11, epique: 12, secrete: 13, legendaire: 15 };
+  const EDITION_TIERS = ['halloween', 'noel'];          // les éditions limitées : un thème, des dates
+  let editionsInfo = {};                                 // {halloween: {label, icon, start, end, status, cards}} (lu sur le serveur)
   function isMascot(card){ return cardKind(card) === 'mascotte'; }
   // le médaillon de la mascotte : le blason du loup (ou, en légendaire, un loup holographique animé)
   function mascotMedalHTML(tier){
@@ -977,10 +1015,10 @@
       statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🐺 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span></div>';
       posteLabel = '🐺';
     } else if (kind === 'fan') {
-      statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🎉 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span></div>';
+      statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🎉 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span>' + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '</div>';
       posteLabel = '🎉';
     } else {
-      statsRow = '<div class="card-stats"><span>⭐ ' + (card.display_note ? card.display_note.value : '') + '</span></div>';
+      statsRow = '<div class="card-stats"><span>⭐ ' + (card.display_note ? card.display_note.value : '') + '</span>' + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '</div>';
       posteLabel = escapeHtml(card.poste);
     }
     const bgPhoto = usesBgPhoto(card) ? '<img class="card-bgphoto" src="' + escapeHtml(card.player_photo_url) + '" alt="">' : '';
@@ -988,7 +1026,7 @@
     else if (bgPhoto) midHTML = '';
     else if (kind === 'equipement' || kind === 'stade' || kind === 'moment') midHTML = itemMedalHTML(card);
     else midHTML = '<span class="ball-fallback">⚽</span>';
-    return bgPhoto + '<div class="card-top"><span class="card-tier-label">'+tierLabel(card.tier)+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
+    return bgPhoto + editionDecor(card.tier) + '<div class="card-top"><span class="card-tier-label">'+tierLabel(card.tier)+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
       '<div class="card-mid">'+midHTML+'</div>'+
       '<div><div class="card-name"></div>'+statsRow+'</div>'+
       crestIco('card-watermark');
@@ -1021,7 +1059,14 @@
       img.replaceWith(span);
     }, { once: true });
   }
-  function tierLabel(t){ return ({legendaire:'Légendaire', epique:'Épique', speciale:'Spéciale', secrete:'Secrète', gold:'Gold', rare:'Rare', commune:'Commune'})[t] || t; }
+  function tierLabel(t){ return ({legendaire:'Légendaire', epique:'Épique', speciale:'Spéciale', secrete:'Secrète', gold:'Gold', halloween:'Halloween', noel:'Noël', rare:'Rare', commune:'Commune'})[t] || t; }
+  // décor propre à une édition limitée (toiles et citrouille d'Halloween ; neige et flocons de Noël)
+  const FLAKES = [[4,12,12,.85],[86,10,10,.7],[90,30,14,.9],[6,34,9,.6],[10,52,13,.8],[84,52,10,.75],[47,6,8,.6],[70,17,9,.55],[24,19,8,.5],[92,62,11,.8],[3,63,9,.7]];
+  function editionDecor(tier){
+    if (tier === 'halloween') return '<svg class="card-deco card-deco-web tl" aria-hidden="true"><use href="#web-corner" width="100%" height="100%"/></svg><svg class="card-deco card-deco-web tr" aria-hidden="true"><use href="#web-corner" width="100%" height="100%"/></svg><svg class="card-deco card-deco-pk" aria-hidden="true"><use href="#pumpkin" width="100%" height="100%"/></svg>';
+    if (tier === 'noel') return FLAKES.map(f => '<svg class="card-deco card-deco-flake" aria-hidden="true" style="left:' + f[0] + '%;top:' + f[1] + '%;width:' + f[2] + 'px;height:' + f[2] + 'px;opacity:' + f[3] + '"><use href="#flake" width="100%" height="100%"/></svg>').join('') + '<svg class="card-deco card-deco-snow" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 8C12 3 22 4 33 7S54 11 66 6 88 3 100 7V40H0z" fill="#fff"/><path d="M0 8C12 3 22 4 33 7S54 11 66 6 88 3 100 7" fill="none" stroke="#D4E3F2" stroke-width="1.1"/></svg>';
+    return '';
+  }
   function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
   function makeMiniCard(card, opts){
@@ -1029,9 +1074,9 @@
     const locked = hideCount ? false : !card.quantity;
     const el = document.createElement('div');
     el.className = 'card tier-' + card.tier + (locked ? ' locked' : '');
-    el.style.background = locked ? '' : 'linear-gradient(160deg, var(--' + (card.tier === 'legendaire' ? 'legend-2' : card.tier + '-2') + '), var(--' + (card.tier === 'legendaire' ? 'legend-1' : card.tier + '-1') + '))';
+    el.style.background = (locked || EDITION_TIERS.includes(card.tier)) ? '' : 'linear-gradient(160deg, var(--' + (card.tier === 'legendaire' ? 'legend-2' : card.tier + '-2') + '), var(--' + (card.tier === 'legendaire' ? 'legend-1' : card.tier + '-1') + '))';
     el.innerHTML = cardFrontHTML(card);
-    if (locked) { const hidden = el.querySelector('.card-bgphoto'); if (hidden) hidden.remove(); }      // carte pas encore possédée : la photo reste secrète
+    if (locked) { el.querySelectorAll('.card-bgphoto, .card-deco').forEach(n => n.remove()); }      // carte pas encore possédée : la photo et le décor restent secrets
     else markPhotoCard(el, card);
     setCardName(el, cardDisplayName(card));
     attachPhotoFallback(el, card);
@@ -1093,6 +1138,7 @@
             statBox(p.cartons_jaunes, 'Cartons jaunes') +
             statBox(p.cartons_rouges, 'Cartons rouges') +
           '</div>';
+        if (p.edition) inner += '<p class="tm-hint" style="text-align:center;">' + p.edition.icon + ' <b>Édition limitée ' + escapeHtml(p.edition.label) + '</b> : ' + (p.edition.status === 'active' ? 'ses cartes sortent des packs jusqu\'au ' + formatDay(p.edition.end) + ' inclus.' : p.edition.status === 'ended' ? 'terminée le ' + formatDay(p.edition.end) + '. Elle ne sort plus des packs : seuls les joueurs qui l\'ont déjà peuvent l\'échanger.' : 'à partir du ' + formatDay(p.edition.start) + '.') + '</p>';
         if (p.tier === 'speciale') inner += '<p class="tm-hint" style="text-align:center;">Carte spéciale : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine. Elle ne sort que des packs gagnés en 1v1.</p>';
         if (p.tier === 'secrete') inner += '<p class="tm-hint" style="text-align:center;">Carte secrète : elle ne sort jamais des packs. On la débloque en fusionnant 100 points de doublons (commune = 1, rare = 5).</p>';
       }
@@ -1249,15 +1295,21 @@
   }
 
   // withSell=true ajoute le bouton "Vendre doublon" (uniquement pertinent pour SA PROPRE collection)
+  function formatDay(iso){ const [y, m, d] = iso.split('-').map(Number); return d + (d === 1 ? 'er ' : ' ') + ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'][m - 1]; }
+  async function loadEditions(){
+    try { const list = await fetch(API_BASE + '/game/editions').then(r => r.json()); editionsInfo = Object.fromEntries(list.map(e => [e.key, e])); } catch(e) { editionsInfo = {}; }
+  }
   function buildTierGroups(cards, withSell){
     const frag = document.createDocumentFragment();
-    ['legendaire','epique','speciale','secrete','gold','rare','commune'].forEach(tier => {
+    ['legendaire','epique','speciale','secrete','gold','noel','halloween','rare','commune'].forEach(tier => {
       const cardsOfTier = cards.filter(c => c.tier === tier)
         .sort((a, b) => a.player_name.localeCompare(b.player_name, 'fr'));
       if (!cardsOfTier.length) return;
       const owned = cardsOfTier.filter(c => c.quantity > 0).length;
-      const group = document.createElement('div'); group.className = 'tier-group';
-      group.innerHTML = '<h3>' + tierLabel(tier) + ' <span style="color:var(--text-muted);font-size:14px;font-family:var(--font-body);">' + owned + '/' + cardsOfTier.length + '</span></h3>';
+      const group = document.createElement('div'); group.className = 'tier-group' + (EDITION_TIERS.includes(tier) ? ' edition-group' : '');
+      const ed = editionsInfo[tier];
+      const edNote = ed ? '<span class="edition-note">' + ed.icon + ' Édition limitée · ' + (ed.status === 'active' ? 'dans les packs jusqu\'au ' + formatDay(ed.end) : ed.status === 'ended' ? 'terminée le ' + formatDay(ed.end) : 'à partir du ' + formatDay(ed.start)) + '</span>' : '';
+      group.innerHTML = '<h3>' + tierLabel(tier) + ' <span style="color:var(--text-muted);font-size:14px;font-family:var(--font-body);">' + owned + '/' + cardsOfTier.length + '</span>' + edNote + '</h3>';
       const grid = document.createElement('div'); grid.className = 'collection-grid';
       cardsOfTier.forEach(card => {
         const wrap = document.createElement('div'); wrap.className = 'card-wrap';
@@ -1331,8 +1383,8 @@
 
   // ---------- Aide : un bouton « ? Aide » par onglet ----------
   // Les pourcentages de tirage et les chiffres du 1v1 viennent du serveur : l'aide ne peut pas être en retard sur les règles.
-  const TIER_COLORS = { commune: '#C9965F', rare: '#B8C2C8', gold: '#E0A21B', secrete: '#4B3FA0', speciale: '#2FA45E', epique: '#7A3FC9', legendaire: '#F0C84B' };
-  const TIER_NAMES_PL = { commune: 'Commune', rare: 'Rare', gold: 'Gold', secrete: 'Secrète', speciale: 'Spéciale', epique: 'Épique', legendaire: 'Légendaire' };
+  const TIER_COLORS = { commune: '#C9965F', rare: '#B8C2C8', halloween: '#FF8A1F', noel: '#C8202C', gold: '#E0A21B', secrete: '#4B3FA0', speciale: '#2FA45E', epique: '#7A3FC9', legendaire: '#F0C84B' };
+  const TIER_NAMES_PL = { commune: 'Commune', rare: 'Rare', halloween: 'Halloween (édition limitée)', noel: 'Noël (édition limitée)', gold: 'Gold', secrete: 'Secrète', speciale: 'Spéciale', epique: 'Épique', legendaire: 'Légendaire' };
   let gameRules = null;
   async function getGameRules(){
     if (!gameRules) gameRules = await fetch(API_BASE + '/game/rules').then(r => r.json());
@@ -1361,6 +1413,7 @@
         '<ul><li><b>Packs gratuits</b> : tu peux en stocker ' + r.free_packs_max + ' au maximum, et un nouveau arrive toutes les ' + r.free_pack_hours + ' heures.</li>' +
         '<li><b>Packs bonus</b> (achetés au shop, offerts ou gagnés) : ils se stockent sans limite et s\'affichent sous les boutons.</li>' +
         '<li><b>Pack match</b> : il se gagne en remportant un match 1v1. C\'est le seul où sortent les cartes <b>spéciales</b>, avec de meilleures chances. Celui qui perd, ou qui fait match nul, reçoit un <b>pack classique</b>.</li></ul>' +
+        (r.editions.filter(e => e.status === 'active' && e.cards > 0).map(e => '<h3>' + e.icon + ' Édition limitée en cours</h3><p><b>' + escapeHtml(e.label) + '</b> : ses ' + e.cards + ' cartes sortent des packs <b>jusqu\'au ' + formatDay(e.end) + ' inclus</b> (' + Math.round(100 * 0.08) + ' % des cartes d\'un pack classique, ' + Math.round(100 * 0.10) + ' % d\'un pack match). Après cette date, elles ne sortent plus.</p>').join('')) +
         '<h3>Tes chances de tirage</h3>' + oddsTableHTML(r, ['classique', 'match']) +
         '<h3>Être prévenu</h3><p>Touche 🔔 en haut de la page pour recevoir une notification quand ton pack est prêt, quand une nouvelle carte arrive, quand ton défi 1v1 est joué ou quand ta carte est vendue.</p>' +
         '<h3>Et les doublons ?</h3><p>Rien n\'est perdu : tu peux les revendre, ou les garder pour remplir la jauge de la carte secrète du même joueur (voir l\'aide de la Collection).</p>';
@@ -1370,6 +1423,7 @@
       return '<h3>Tes cartes</h3><p>Les cartes sont rangées de la plus rare à la plus commune. Une carte grisée avec un « ? » n\'est pas encore à toi. Clique sur une carte pour voir sa fiche.</p>' +
         '<h3>Les raretés, de la plus commune à la plus rare</h3><ul>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.commune + '"></span><b>Commune</b> et <span class="help-tier" style="background:' + TIER_COLORS.rare + '"></span><b>Rare</b> : les cartes de base de chaque joueur.</li>' +
+        '<li><span class="help-tier" style="background:' + TIER_COLORS.halloween + '"></span><b>Édition limitée</b> (Halloween, Noël…) : quelques cartes par thème, <b>disponibles dans les packs seulement pendant leurs dates</b>. Ensuite elles restent à ceux qui les ont, et ne s\'obtiennent plus qu\'en échange. Note 88 (un petit bonus), ou +11 % pour un fan.</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.gold + '"></span><b>Gold</b> : un moment mémorable d\'un vrai match (petit pont, sauvetage…).</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.secrete + '"></span><b>Secrète</b> : une par joueur, fan et mascotte. Elle ne sort jamais d\'un pack (voir plus bas).</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.speciale + '"></span><b>Spéciale</b> : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine. Elle ne sort que des packs match.</li>' +
@@ -1418,7 +1472,7 @@
         '<li><b>Capitaine</b> : <b>+' + p(cfg.captain_bonus) + '</b> sur sa note.</li>' +
         '<li>Tu ne peux pas jouer deux fois la même carte (mais la commune et la rare d\'un joueur, oui).</li></ul>' +
         '<h3>Les bonus d\'équipe</h3><p>Trois emplacements facultatifs, dont les bonus <b>s\'additionnent</b> :</p><ul>' +
-        '<li><b>1 Fan</b> : ' + range(cfg.fan_bonus, ['commune', 'rare', 'epique', 'secrete', 'legendaire']) + ' %.</li>' +
+        '<li><b>1 Fan</b> : ' + range(cfg.fan_bonus, ['commune', 'rare', 'epique', 'secrete', 'legendaire']) + ' %, édition limitée +' + Math.round(cfg.fan_bonus.halloween * 100) + ' %.</li>' +
         '<li><b>1 Loup</b> (la mascotte) : mêmes bonus que le Fan.</li>' +
         '<li><b>' + cfg.max_equipment + ' Équipement</b> : ' + range(cfg.equipment_bonus, ['commune', 'rare', 'epique', 'legendaire']) + ' %.</li></ul>' +
         '<h3>Mises, packs et classement</h3><ul>' +
@@ -1528,6 +1582,7 @@
             if (s.card.tier === 'epique') s.slot.classList.add('glow-epique');
             if (s.card.tier === 'gold') s.slot.classList.add('glow-gold');
             if (s.card.tier === 'speciale') s.slot.classList.add('glow-speciale');
+            if (EDITION_TIERS.includes(s.card.tier)) s.slot.classList.add('glow-' + s.card.tier);
             if (s.card.tier === 'legendaire') {
               s.slot.classList.add('glow-legendaire');
               spawnSparks(s.slot);
@@ -2325,6 +2380,7 @@
     document.getElementById('gate').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     await refreshMe();
+    await loadEditions();
     await loadCollection();
     setInterval(refreshMe, 30000);
     applyDeepLink();
