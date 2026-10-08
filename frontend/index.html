@@ -1448,7 +1448,7 @@
         '<h3>Tes chances de tirage</h3>' + oddsTableHTML(r, ['classique']) + '<p>Pour les packs à carte garantie, les cartes qui ne sont pas garanties suivent ces mêmes chances.</p>';
     } },
     classement: { title: 'Le classement', html(){
-      return '<h3>Qui a la plus belle collection ?</h3><p>Les joueurs sont classés par <b>pourcentage de collection</b> : le nombre de cartes différentes que tu possèdes divisé par le nombre de cartes qui existent (cartes secrètes comprises). En cas d\'égalité, c\'est le nombre de crédits qui départage.</p>' +
+      return '<h3>Qui a la plus belle collection ?</h3><p>Les joueurs sont classés par <b>pourcentage de collection</b> : le nombre de cartes différentes que tu possèdes divisé par le nombre de cartes qui existent dans le jeu, <b>sans exception</b> (cartes secrètes et éditions limitées comprises, même terminées). En cas d\'égalité, c\'est le nombre de crédits qui départage.</p>' +
         '<ul><li>Clique sur un joueur pour voir sa collection.</li><li>Les comptes de test ne sont pas classés.</li></ul>';
     } },
     actualite: { title: 'L\'actualité du club', html(){
