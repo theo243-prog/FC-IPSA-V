@@ -36,7 +36,7 @@ VAPID_SUBJECT = os.getenv("VAPID_SUBJECT", "https://fc-ipsa-v-production.up.rail
 # On n'envoie qu'aux vrais services de notification des navigateurs (sinon un joueur pourrait faire
 # appeler une adresse interne de notre serveur).
 ALLOWED_HOSTS = ("fcm.googleapis.com", "push.apple.com", "push.services.mozilla.com", "notify.windows.com")
-TIER_NAMES = {"commune": "Commune", "rare": "Rare", "gold": "Gold", "secrete": "Secrète", "speciale": "Spéciale",
+TIER_NAMES = {"commune": "Commune", "rare": "Rare", "halloween": "Halloween", "noel": "Noël", "gold": "Gold", "secrete": "Secrète", "speciale": "Spéciale",
               "epique": "Épique", "legendaire": "Légendaire"}
 
 _vapid_cache = {}
@@ -326,3 +326,35 @@ def notify_listing_sold(db: Session, seller_id: str, buyer_pseudo: str, card, pr
     enqueue(db, seller_id, "market", "Carte vendue ! 💰",
             "%s a acheté ta carte %s (%s) pour %d crédits." % (buyer_pseudo, card.player.name, TIER_NAMES.get(card.tier.value, card.tier.value), price),
             url="/#marche", tag="market")
+
+
+# --------------------------------------------------- éditions limitées ----
+
+def check_editions(db: Session, now: datetime = None) -> int:
+    """Prévient tout le monde quand une édition limitée devient disponible (une seule fois) et le dernier jour
+    (une seule fois). Une édition sans carte créée n'annonce rien."""
+    from . import game_logic
+    now = now or datetime.utcnow()
+    today = game_logic.today_paris(now)
+    sent = 0
+    for key, spec in game_logic.EDITIONS.items():
+        if db.query(game_logic.Card).filter_by(tier=game_logic.Tier(key)).count() == 0:
+            continue
+        if game_logic.edition_status(db, key, today) != "active":
+            continue
+        start, end = game_logic.edition_window(db, key)
+        for kind, cond, title, body in (
+            ("start", True, "%s Édition limitée %s !" % (spec["icon"], spec["label"]),
+             "Les cartes %s sortent des packs jusqu'au %s. Ne les rate pas !" % (spec["label"], end.strftime("%d/%m"))),
+            ("last", today == end, "Dernier jour pour les cartes %s %s" % (spec["label"], spec["icon"]),
+             "L'édition %s se termine ce soir : après, ses cartes ne sortiront plus des packs." % spec["label"]),
+        ):
+            # l'annonce de lancement ne dépend que de la date de début (prolonger l'édition ne la renvoie pas) ;
+            # celle du dernier jour suit la date de fin, même si elle est repoussée
+            marker = "edition_notice_%s_%s_%s" % (kind, key, (start if kind == "start" else end).isoformat())
+            if not cond or db.get(AppSetting, marker) is not None:
+                continue
+            sent += notify_all(db, "cards", title, body, url="/#pack", tag="edition", now=now)
+            db.add(AppSetting(key=marker, value=now.isoformat()))
+    db.commit()
+    return sent
