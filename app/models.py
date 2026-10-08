@@ -31,9 +31,11 @@ def gen_id():
 
 
 class Tier(str, enum.Enum):
-    # ordre de rareté : commune < rare < gold < secrete < speciale < epique < legendaire
+    # ordre de rareté : commune < rare < édition limitée < gold < secrete < speciale < epique < legendaire
     commune = "commune"
     rare = "rare"
+    halloween = "halloween"  # ÉDITION LIMITÉE : disponible dans les packs pendant ses dates seulement (voir game_logic.EDITIONS)
+    noel = "noel"            # ÉDITION LIMITÉE de décembre
     gold = "gold"            # moment mémorable d'un match IRL (créée par l'admin)
     secrete = "secrete"      # jamais dans les packs : se débloque par fusion de doublons
     speciale = "speciale"    # créée chaque vendredi 17h pour les stars du 1v1 ; packs gagnés en 1v1 uniquement
