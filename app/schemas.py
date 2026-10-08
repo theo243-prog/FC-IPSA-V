@@ -257,3 +257,16 @@ class AdminReset1v1Request(BaseModel):
     scope: str = "test"            # "test" : les matchs où un compte de test a joué ; "all" : tous les matchs ; "none" : aucun (recalcule seulement l'Elo)
     recompute_elo: bool = True     # recalcule l'Elo de tout le monde à partir des matchs qui restent
     dry_run: bool = True           # True (par défaut) : montre ce qui serait fait, sans rien modifier
+
+
+class AdminCreateEditionCardsRequest(BaseModel):
+    edition: str                         # "halloween" ou "noel"
+    players: List[str]                   # les joueurs et fans qui ont une carte dans cette édition (noms exacts)
+    grant_to_pseudo: Optional[str] = None   # offre 1 exemplaire de chaque carte de la liste à ce compte
+
+
+class AdminSetEditionDatesRequest(BaseModel):
+    edition: str
+    start: Optional[str] = None          # "AAAA-MM-JJ" : premier jour où les cartes sortent des packs
+    end: Optional[str] = None            # "AAAA-MM-JJ" : dernier jour (compris)
+    reset: bool = False                  # True : revient aux dates d'origine
