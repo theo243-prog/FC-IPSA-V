@@ -38,15 +38,21 @@ PACK_TYPES = {
     "classique": {"label": "Pack classique", "price": 10, "guaranteed": [],
                   "token_field": "shop_pack_tokens",
                   "description": "3 cartes aux probabilités classiques"},
-    "rare": {"label": "Pack rare", "price": 20, "guaranteed": ["rare", "rare"],
+    "rare": {"label": "Pack rare", "price": 25, "guaranteed": ["rare", "rare"],
              "token_field": "rare_pack_tokens",
              "description": "2 cartes rares garanties + 1 carte aux probabilités classiques"},
-    "epique": {"label": "Pack épique", "price": 50, "guaranteed": ["epique"],
+    "epique": {"label": "Pack épique", "price": 75, "guaranteed": ["epique"],
                "token_field": "epic_pack_tokens",
                "description": "1 carte épique garantie + 2 cartes aux probabilités classiques"},
-    "legendaire": {"label": "Pack légendaire", "price": 100, "guaranteed": ["legendaire"],
+    "legendaire": {"label": "Pack légendaire", "price": 150, "guaranteed": ["legendaire"],
                    "token_field": "legendary_pack_tokens",
                    "description": "1 carte légendaire garantie + 2 cartes aux probabilités classiques"},
+    # Le pack ULTRA : 10 cartes, toutes différentes. Pour chaque case, les raretés autorisées gardent les MÊMES rapports que dans
+    # un pack classique (voir SLOT_RULES). Les cases sont listées dans l'ordre où on les tire (les plus contraignantes d'abord).
+    "ultra": {"label": "Pack ultra", "price": 150, "guaranteed": [],
+              "token_field": "ultra_pack_tokens",
+              "slots": [(1, "epique_legendaire"), (1, "edition_min"), (2, "rare_plus"), (6, "toutes")],
+              "description": "10 cartes : 6 aux probabilités classiques, 2 rares ou mieux, 1 édition limitée ou mieux, 1 épique ou légendaire"},
     # Récompense des matchs 1v1 : pas en vente (price None). Un peu mieux que le pack classique pour CHAQUE rareté
     # (rare 30 contre 18, gold 6 contre 3,5, épique 4 contre 2, légendaire 1 contre 0,5), et le seul où sortent les spéciales (8 %).
     "match": {"label": "Pack match", "price": None, "guaranteed": [],
@@ -199,9 +205,34 @@ def classic_tier_weights(counts: dict, base_weights: dict = None) -> dict:
     return weights
 
 
+# Raretés autorisées pour chaque case d'un pack ultra (None = toutes). Les cartes spéciales (pack match seulement) et
+# secrètes (fusion seulement) ne sortent jamais d'un pack à vendre.
+SLOT_RULES = {
+    "toutes": None,
+    "rare_plus": {"rare", "halloween", "noel", "gold", "epique", "legendaire"},          # pas de commune
+    "edition_min": {"halloween", "noel", "gold", "epique", "legendaire"},                # édition limitée ou mieux : pas de commune ni de rare
+    "epique_legendaire": {"epique", "legendaire"},
+}
+
+
+def _slot_weights(weights: dict, rule: str) -> dict:
+    """Les probabilités d'une case : celles du pack classique, limitées aux raretés autorisées (mêmes rapports entre elles).
+    Si aucune rareté autorisée n'a de carte, on retombe sur la règle juste au-dessus, puis sur toutes les raretés."""
+    for r in (rule, "edition_min", "epique_legendaire"):
+        allowed = SLOT_RULES[r]
+        sw = {t: w for t, w in weights.items() if allowed is None or t in allowed}
+        if sw:
+            return sw
+    return dict(weights)
+
+
 def pack_available(counts: dict, pack_type: str) -> bool:
-    """Un pack à carte garantie n'est disponible que si la rareté garantie existe déjà."""
-    return all(counts.get(t, 0) > 0 for t in set(PACK_TYPES[pack_type]["guaranteed"]))
+    """Un pack à carte garantie n'est disponible que si la rareté garantie existe déjà ; le pack ultra, que s'il existe au
+    moins une carte épique ou légendaire (sa dernière case)."""
+    spec = PACK_TYPES[pack_type]
+    if spec.get("slots"):
+        return counts.get("epique", 0) + counts.get("legendaire", 0) > 0
+    return all(counts.get(t, 0) > 0 for t in set(spec["guaranteed"]))
 
 
 def _draw_distinct_card(db: Session, tier_name: str, weights: dict, taken: set) -> Card:
@@ -262,21 +293,32 @@ def open_pack_for_user(db: Session, user: User, pack_type: str = "free") -> dict
     user.credits += credits_won
 
     weights = classic_tier_weights(counts, weights_with_editions(db, spec.get("weights") or TIER_WEIGHTS, effective, counts))
-    tiers_to_draw = list(spec["guaranteed"])
-    while len(tiers_to_draw) < 3:
-        tiers_to_draw.append(_roll_weighted(weights))
-    random.shuffle(tiers_to_draw)
+    if spec.get("slots"):
+        # pack ultra : chaque case a ses propres raretés autorisées
+        plan = []
+        for n, rule in spec["slots"]:
+            slot_w = _slot_weights(weights, rule)
+            plan += [(_roll_weighted(slot_w), slot_w) for _ in range(n)]
+    else:
+        tiers_to_draw = list(spec["guaranteed"])
+        while len(tiers_to_draw) < 3:
+            tiers_to_draw.append(_roll_weighted(weights))
+        random.shuffle(tiers_to_draw)
+        plan = [(t, weights) for t in tiers_to_draw]
 
     cards_won = []
     new_flags = []
     taken = set()                               # les cartes déjà sorties dans CE pack
-    for tier_name in tiers_to_draw:
-        card = _draw_distinct_card(db, tier_name, weights, taken)
+    for tier_name, slot_weights in plan:
+        card = _draw_distinct_card(db, tier_name, slot_weights, taken)
         taken.add(card.id)
         owned = get_or_create_owned(db, user, card)
         new_flags.append(owned.quantity == 0)   # première fois qu'on possède cette carte => NEW
         owned.quantity += 1
         cards_won.append(card)
+    if spec.get("slots"):                       # l'ordre des cases ne doit rien révéler
+        mixed = list(zip(cards_won, new_flags)); random.shuffle(mixed)
+        cards_won, new_flags = [c for c, _ in mixed], [f for _, f in mixed]
 
     db.commit()
 
@@ -454,6 +496,9 @@ def _percent(weights: dict) -> dict:
     return {k: round(100 * w / total, 1) for k, w in weights.items()} if total else {}
 
 
+ULTRA_DISPLAY_ORDER = ["toutes", "rare_plus", "edition_min", "epique_legendaire"]     # ordre d'affichage : cartes 1 à 6, 7-8, 9, 10
+
+
 def pack_odds(db: Session) -> dict:
     """Pour chaque type de pack : les cartes garanties et la chance de chaque rareté pour les autres cartes."""
     counts = tier_card_counts(db)
@@ -466,6 +511,11 @@ def pack_odds(db: Session) -> dict:
             "odds": _percent(classic_tier_weights(counts, base)),          # réel (rareté sans carte ignorée, rareté récente réduite)
             "nominal": _percent(base),                                      # théorique, avec toutes les raretés présentes
         }
+        if spec.get("slots"):                                                   # pack ultra : les chances de CHAQUE case
+            real = classic_tier_weights(counts, base)
+            packs[key]["cards"] = sum(n for n, _ in spec["slots"])
+            packs[key]["slots"] = [{"count": n, "rule": rule, "odds": _percent(_slot_weights(real, rule))}
+                                   for n, rule in sorted(spec["slots"], key=lambda s: ULTRA_DISPLAY_ORDER.index(s[1]))]
     return {"counts": counts, "packs": packs, "never_in_packs": ["secrete"],
             "sell_values": DUPLICATE_SELL_VALUE, "secret_fusion": {"cost": SECRET_FUSION_COST, "rare_value": RARE_FUSION_VALUE},
             "tier_order": TIER_ORDER, "free_packs_max": MAX_STORED_PACKS, "free_pack_hours": PACK_REGEN_SECONDS // 3600,
