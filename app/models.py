@@ -124,6 +124,7 @@ class PackState(Base):
     epic_pack_tokens = Column(Integer, nullable=False, default=0)       # jetons de pack épique
     legendary_pack_tokens = Column(Integer, nullable=False, default=0)  # jetons de pack légendaire
     match_pack_tokens = Column(Integer, nullable=False, default=0)      # jetons de pack match (récompense des victoires 1v1)
+    ultra_pack_tokens = Column(Integer, nullable=False, default=0)      # jetons de pack ULTRA (10 cartes, vendu au shop)
 
     user = relationship("User", back_populates="pack_state")
 
