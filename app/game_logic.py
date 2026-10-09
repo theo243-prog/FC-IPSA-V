@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from .models import User, Card, OwnedCard, Tier, Player, AppSetting
 
-PACK_REGEN_SECONDS = 2 * 3600          # 8h pour régénérer un pack gratuit
+PACK_REGEN_SECONDS = 2 * 3600          # 2h pour régénérer un pack gratuit
 MAX_STORED_PACKS = 3                   # jamais plus de 3 packs gratuits en stock
 
 CREDIT_WEIGHTS = {1: 40, 2: 25, 3: 18, 4: 12, 5: 5}         # plus le nombre est grand, plus c'est rare
@@ -26,7 +26,7 @@ TIER_WEIGHTS = {"commune": 76, "rare": 18, "gold": 3.5, "epique": 2, "legendaire
 # épiques/légendaires, chacune ne tombe jamais plus souvent qu'avec le nombre de référence.
 TIER_REF_COUNT = {"gold": 6, "speciale": 6, "epique": 6, "legendaire": 3, "halloween": 5, "noel": 5}
 
-# Les spéciales ont les mêmes valeurs que les épiques.
+# Valeur de revente d'un doublon, en crédits. Les spéciales et les secrètes valent autant que les épiques ; les éditions limitées autant que les gold.
 DUPLICATE_SELL_VALUE = {"commune": 1, "rare": 3, "halloween": 5, "noel": 5, "gold": 5, "secrete": 10, "speciale": 10, "epique": 10, "legendaire": 50}
 
 # Ordre de rareté, de la plus commune à la plus rare.
@@ -48,7 +48,7 @@ PACK_TYPES = {
                    "token_field": "legendary_pack_tokens",
                    "description": "1 carte légendaire garantie + 2 cartes aux probabilités classiques"},
     # Récompense des matchs 1v1 : pas en vente (price None). Un peu mieux que le pack classique pour CHAQUE rareté
-    # (rare 26 contre 18, gold 5 contre 3,5, épique 3 contre 2, légendaire 1 contre 0,5), et le seul où sortent les spéciales.
+    # (rare 30 contre 18, gold 6 contre 3,5, épique 4 contre 2, légendaire 1 contre 0,5), et le seul où sortent les spéciales (8 %).
     "match": {"label": "Pack match", "price": None, "guaranteed": [],
               "token_field": "match_pack_tokens",
               "weights": {"commune": 51, "rare": 30, "gold": 6, "speciale": 8, "epique": 4, "legendaire": 1},
@@ -204,11 +204,31 @@ def pack_available(counts: dict, pack_type: str) -> bool:
     return all(counts.get(t, 0) > 0 for t in set(PACK_TYPES[pack_type]["guaranteed"]))
 
 
+def _draw_distinct_card(db: Session, tier_name: str, weights: dict, taken: set) -> Card:
+    """Tire une carte de la rareté demandée qui n'est PAS déjà dans le pack en cours.
+    Si toutes les cartes de cette rareté sont déjà sorties (ex. une seule carte légendaire existe), on tire une autre
+    rareté selon les mêmes probabilités, plutôt que de redonner la même carte. Ce n'est qu'en dernier recours, avec un
+    catalogue minuscule où il est impossible de faire autrement, qu'une carte peut revenir."""
+    tried = set()
+    tier = tier_name
+    while True:
+        pool = [c for c in db.query(Card).filter_by(tier=Tier(tier)).all() if c.id not in taken]
+        if pool:
+            return random.choice(pool)
+        tried.add(tier)
+        remaining = {t: w for t, w in weights.items() if t not in tried}
+        if not remaining:
+            break
+        tier = _roll_weighted(remaining)
+    return random.choice(db.query(Card).filter_by(tier=Tier(tier_name)).all())
+
+
 def open_pack_for_user(db: Session, user: User, pack_type: str = "free") -> dict:
     """
     Ouvre un pack. pack_type : "free" (pack gratuit qui se régénère) ou un type de PACK_TYPES
     (consomme un jeton de ce type). Tire les crédits, puis 3 cartes (dont les cartes garanties
     du type de pack), applique les crafts.
+    Les 3 cartes d'un pack sont TOUJOURS différentes (jamais deux fois la même carte).
     Lève ValueError("no_pack_available") / ValueError("tier_unavailable") / ValueError("unknown_pack").
     """
     effective = "classique" if pack_type == "free" else pack_type
@@ -249,9 +269,10 @@ def open_pack_for_user(db: Session, user: User, pack_type: str = "free") -> dict
 
     cards_won = []
     new_flags = []
+    taken = set()                               # les cartes déjà sorties dans CE pack
     for tier_name in tiers_to_draw:
-        pool = db.query(Card).filter_by(tier=Tier(tier_name)).all()
-        card = random.choice(pool)
+        card = _draw_distinct_card(db, tier_name, weights, taken)
+        taken.add(card.id)
         owned = get_or_create_owned(db, user, card)
         new_flags.append(owned.quantity == 0)   # première fois qu'on possède cette carte => NEW
         owned.quantity += 1
