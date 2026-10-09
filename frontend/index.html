@@ -330,7 +330,13 @@
     box-shadow:0 16px 30px rgba(0,0,0,.2),0 0 24px rgba(255,205,90,.8);
   }
   .card.locked{background:var(--bg-sunk);color:var(--text-muted);border:1px dashed var(--border);opacity:.7;}
-  .card.locked .card-mid{filter:grayscale(1);opacity:.6;}
+  /* carte pas encore débloquée : un « ? » et rien d'autre (ni nom, ni poste, ni photo) pour garder la surprise */
+  .card.locked{cursor:default;justify-content:center;}
+  .card.locked .card-mid{filter:grayscale(1);opacity:.55;font-family:var(--font-display);font-size:54px;font-weight:800;line-height:1;}
+  .card.locked .card-stats{width:100%;}
+  /* confettis qui sortent du pack (spéciale = vert, épique = violet, légendaire = or) */
+  #confettiLayer{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:80;}
+  #confettiLayer .confetti{position:absolute;left:0;top:0;display:block;will-change:transform,opacity;}
   .card-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
 
   /* ---- La mascotte : la tête de loup du maillot dans un médaillon, un traitement par rareté ---- */
@@ -1103,30 +1109,36 @@
   }
   function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+  // Une carte pas encore débloquée : seulement un « ? » (la jauge de fusion en plus pour une carte secrète). Aucun nom, aucun
+  // poste, aucune photo, et elle n'ouvre pas de fiche : on ne doit pas deviner de quelle carte il s'agit.
+  function makeLockedCard(card){
+    const el = document.createElement('div');
+    el.className = 'card tier-' + card.tier + ' locked';
+    el.setAttribute('aria-label', 'Carte pas encore débloquée');
+    el.innerHTML = '<div class="card-mid">?</div>';
+    if (card.tier === 'secrete' && card.fusion) {          // carte secrète : la jauge des doublons (elle ne dit rien du joueur)
+      const pct = Math.max(0, Math.min(100, Math.floor(100 * card.fusion.points / card.fusion.needed)));
+      el.insertAdjacentHTML('beforeend', '<div class="card-stats"><div class="fusion-gauge" title="' + card.fusion.points + ' / ' + card.fusion.needed + ' points de doublons"><div class="fusion-bar" style="width:' + pct + '%"></div><span>' + pct + ' %</span></div></div>');
+    }
+    return el;
+  }
+
   function makeMiniCard(card, opts){
     const hideCount = !!(opts && opts.hideCount);      // carte "de vitrine" : toujours dévoilée, sans compteur
     const locked = hideCount ? false : !card.quantity;
+    if (locked) return makeLockedCard(card);
     const el = document.createElement('div');
-    el.className = 'card tier-' + card.tier + (locked ? ' locked' : '');
-    el.style.background = (locked || EDITION_TIERS.includes(card.tier)) ? '' : 'linear-gradient(160deg, var(--' + (card.tier === 'legendaire' ? 'legend-2' : card.tier + '-2') + '), var(--' + (card.tier === 'legendaire' ? 'legend-1' : card.tier + '-1') + '))';
+    el.className = 'card tier-' + card.tier;
+    el.style.background = EDITION_TIERS.includes(card.tier) ? '' : 'linear-gradient(160deg, var(--' + (card.tier === 'legendaire' ? 'legend-2' : card.tier + '-2') + '), var(--' + (card.tier === 'legendaire' ? 'legend-1' : card.tier + '-1') + '))';
     el.innerHTML = cardFrontHTML(card);
-    if (locked) { el.querySelectorAll('.card-bgphoto, .card-deco').forEach(n => n.remove()); }      // carte pas encore possédée : la photo et le décor restent secrets
-    else markPhotoCard(el, card);
+    markPhotoCard(el, card);
     setCardName(el, cardDisplayName(card));
     attachPhotoFallback(el, card);
-    if (locked && card.tier === 'secrete' && card.fusion) {          // carte secrète pas encore débloquée : la jauge de fusion
-      const pct = Math.max(0, Math.min(100, Math.floor(100 * card.fusion.points / card.fusion.needed)));
-      el.querySelector('.card-stats').innerHTML = '<div class="fusion-gauge" title="' + card.fusion.points + ' / ' + card.fusion.needed + ' points de doublons"><div class="fusion-bar" style="width:' + pct + '%"></div><span>' + pct + ' %</span></div>';
-    }
-    if (!locked) {
-      if (!hideCount) {
-        const badge = document.createElement('div');
-        badge.className = 'card-count';
-        badge.textContent = '×' + card.quantity;
-        el.appendChild(badge);
-      }
-    } else {
-      el.querySelector('.card-mid').textContent = '?';
+    if (!hideCount) {
+      const badge = document.createElement('div');
+      badge.className = 'card-count';
+      badge.textContent = '×' + card.quantity;
+      el.appendChild(badge);
     }
     el.style.cursor = 'pointer';
     el.addEventListener('click', () => openPlayerDetail(card.player_name, card.tier));
@@ -1337,7 +1349,7 @@
     const frag = document.createDocumentFragment();
     ['legendaire','epique','speciale','secrete','gold','noel','halloween','rare','commune'].forEach(tier => {
       const cardsOfTier = cards.filter(c => c.tier === tier)
-        .sort((a, b) => a.player_name.localeCompare(b.player_name, 'fr'));
+        .sort((a, b) => (!!b.quantity - !!a.quantity) || (a.quantity ? a.player_name.localeCompare(b.player_name, 'fr') : a.id - b.id));   // d'abord celles qu'on a ; les inconnues ensuite, sans indice
       if (!cardsOfTier.length) return;
       const owned = cardsOfTier.filter(c => c.quantity > 0).length;
       const group = document.createElement('div'); group.className = 'tier-group' + (EDITION_TIERS.includes(tier) ? ' edition-group' : '');
@@ -1592,8 +1604,45 @@
     flip.appendChild(back); flip.appendChild(front); slot.appendChild(flip);
     return { slot, flip, card };
   }
+  // Confettis qui sortent du pack quand une carte spéciale (vert), épique (violet) ou légendaire (or) apparaît
+  const CONFETTI_COLORS = {
+    speciale: ['#1F7A44', '#2FA45E', '#5CC985', '#9DEBB8', '#D9F9E3'],
+    epique: ['#4B1E8C', '#7A3FC9', '#9B66E8', '#C4A1FF', '#EBDDFF'],
+    legendaire: ['#B8860B', '#E0A21B', '#F0C84B', '#FFE08A', '#FFF4C7']
+  };
+  function launchConfetti(tier){
+    const colors = CONFETTI_COLORS[tier]; if (!colors) return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let layer = document.getElementById('confettiLayer');
+    if (!layer) { layer = document.createElement('div'); layer.id = 'confettiLayer'; layer.setAttribute('aria-hidden', 'true'); document.body.appendChild(layer); }
+    const r = document.getElementById('packStage').getBoundingClientRect();
+    const ox = r.left + r.width / 2, oy = r.top + r.height * 0.3;           // la fente du pack, en haut
+    const n = tier === 'legendaire' ? 130 : 80;                                // nombre de confettis
+    const reach = Math.max(0.45, Math.min(1, window.innerWidth / 900));      // sur un petit écran le jet est moins large : les confettis restent visibles
+    const K = 2.6, VT = 230;                                                  // frottement de l'air ; vitesse à laquelle ils retombent (px/s)
+    for (let i = 0; i < n; i++) {
+      const piece = document.createElement('i');
+      piece.className = 'confetti'; piece.dataset.tier = tier;
+      const w = 6 + Math.random() * 6, h = 9 + Math.random() * 8;
+      piece.style.cssText = 'width:' + w + 'px;height:' + h + 'px;background:' + colors[Math.floor(Math.random() * colors.length)] + ';border-radius:' + (Math.random() < 0.3 ? '50%' : '2px') + ';left:' + ox + 'px;top:' + oy + 'px;';
+      layer.appendChild(piece);
+      const dur = 1700 + Math.random() * 1100;
+      setTimeout(() => piece.remove(), dur + 150);
+      if (!piece.animate) continue;
+      const angle = -Math.PI * (0.1 + 0.8 * Math.random()), speed = (350 + Math.random() * 550) * reach;      // vers le haut, en éventail
+      const vx = Math.cos(angle) * speed, vy = Math.sin(angle) * speed, spin = (Math.random() - 0.5) * 1500, flip = Math.random() * 360;
+      const frames = [];
+      for (let k = 0; k <= 16; k++) {
+        const f = k / 16, t = f * dur / 1000, e = 1 - Math.exp(-K * t);       // l'air les freine : ils jaillissent, puis flottent vers le bas
+        frames.push({ transform: 'translate(' + (vx * e / K).toFixed(1) + 'px,' + ((vy - VT) * e / K + VT * t).toFixed(1) + 'px) rotate(' + (flip + spin * t).toFixed(0) + 'deg) scaleY(' + (Math.cos(t * 9 + i) * 0.7 + 0.3).toFixed(2) + ')', opacity: f < 0.7 ? 1 : 1 - (f - 0.7) / 0.3 });
+      }
+      piece.animate(frames, { duration: dur, easing: 'linear', fill: 'forwards' });
+    }
+  }
+
   // la lueur de la rareté (et les étincelles des légendaires) quand la carte se montre
   function applyCardEffects(slot, card){
+    launchConfetti(card.tier);
     if (card.tier === 'rare') slot.classList.add('glow-rare');
     if (card.tier === 'epique') slot.classList.add('glow-epique');
     if (card.tier === 'gold') slot.classList.add('glow-gold');
