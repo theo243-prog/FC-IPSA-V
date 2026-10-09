@@ -249,6 +249,9 @@
   .card-front.tier-gold{background:linear-gradient(160deg,var(--gold-2),var(--gold-1));color:var(--gold-text);}
   .card-front.tier-speciale{background:linear-gradient(160deg,var(--speciale-2),var(--speciale-1));color:var(--speciale-text);}
   .card-front.tier-secrete{background:linear-gradient(160deg,var(--secrete-2),var(--secrete-1));color:var(--secrete-text);}
+  /* Les cartes secrètes sont stratosphériques : Saturne se montre dans le coin du ciel étoilé (par-dessus la photo, sous les étiquettes) */
+  :root{--saturn:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Cdefs%3E%3CradialGradient%20id='g'%20cx='50%25'%20cy='50%25'%20r='50%25'%3E%3Cstop%20offset='0'%20stop-color='%23FFE2A8'%20stop-opacity='.38'/%3E%3Cstop%20offset='1'%20stop-color='%23FFE2A8'%20stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient%20id='b'%20cx='36%25'%20cy='30%25'%20r='80%25'%3E%3Cstop%20offset='0'%20stop-color='%23FFF3CF'/%3E%3Cstop%20offset='.42'%20stop-color='%23EBC47F'/%3E%3Cstop%20offset='1'%20stop-color='%237E4F25'/%3E%3C/radialGradient%3E%3ClinearGradient%20id='r'%20x1='0'%20x2='1'%3E%3Cstop%20offset='0'%20stop-color='%23B98C4E'/%3E%3Cstop%20offset='.5'%20stop-color='%23F8E7BB'/%3E%3Cstop%20offset='1'%20stop-color='%23B58648'/%3E%3C/linearGradient%3E%3CclipPath%20id='f'%3E%3Crect%20x='0'%20y='50'%20width='100'%20height='50'/%3E%3C/clipPath%3E%3CclipPath%20id='p'%3E%3Ccircle%20cx='50'%20cy='50'%20r='22'/%3E%3C/clipPath%3E%3C/defs%3E%3Ccircle%20cx='50'%20cy='50'%20r='48'%20fill='url%28%23g%29'/%3E%3Cg%20transform='rotate%28-22%2050%2050%29'%3E%3Cellipse%20cx='50'%20cy='50'%20rx='46'%20ry='12.5'%20fill='none'%20stroke='url%28%23r%29'%20stroke-width='5.5'%20opacity='.92'/%3E%3Cellipse%20cx='50'%20cy='50'%20rx='38'%20ry='9.6'%20fill='none'%20stroke='%23E9D3A0'%20stroke-width='1.4'%20opacity='.55'/%3E%3Ccircle%20cx='50'%20cy='50'%20r='22'%20fill='url%28%23b%29'/%3E%3Cg%20clip-path='url%28%23p%29'%3E%3Crect%20x='20'%20y='37'%20width='60'%20height='3.2'%20fill='%238A5A2B'%20opacity='.28'/%3E%3Crect%20x='20'%20y='46'%20width='60'%20height='4.2'%20fill='%238A5A2B'%20opacity='.22'/%3E%3Crect%20x='20'%20y='56'%20width='60'%20height='3'%20fill='%238A5A2B'%20opacity='.26'/%3E%3C/g%3E%3Cellipse%20cx='50'%20cy='50'%20rx='46'%20ry='12.5'%20fill='none'%20stroke='url%28%23r%29'%20stroke-width='5.5'%20clip-path='url%28%23f%29'/%3E%3Cellipse%20cx='50'%20cy='50'%20rx='38'%20ry='9.6'%20fill='none'%20stroke='%23E9D3A0'%20stroke-width='1.4'%20opacity='.55'%20clip-path='url%28%23f%29'/%3E%3C/g%3E%3C/svg%3E");}
+  .card-deco-saturn{top:-2%;right:-7%;width:47%;aspect-ratio:1/1;background:var(--saturn) center / contain no-repeat;z-index:1;filter:drop-shadow(0 2px 5px rgba(8,5,30,.55));}
   /* ---- Cartes légendaires : feuille holographique animée ----
      arc-en-ciel qui dérive, reflet blanc qui balaie la carte, paillettes ; le reflet suit la souris.
      Tout est placé SOUS le texte, la photo et le médaillon (z-index 1) : le nom reste net et lisible. ---- */
@@ -409,6 +412,7 @@
       linear-gradient(165deg,rgba(255,255,255,.18),rgba(255,255,255,0) 45%);
   }
   .card-front.tier-secrete,.card.tier-secrete:not(.locked){box-shadow:var(--shadow),inset 0 0 0 2px rgba(190,176,255,.7);}
+  .tier-secrete .card-tier-label{background:rgba(22,17,43,.78);color:#ECE8FF;}      /* lisible même sur une photo claire */
   .tier-secrete .mascot-medal{background:radial-gradient(circle at 34% 28%,#3B2F7A,#0C0919 75%);box-shadow:0 0 0 3px #B7A9FF,0 0 16px 3px rgba(150,130,255,.8);}
   .tier-secrete .mascot-medal .mascot-wolf{color:#E6E0FF;filter:drop-shadow(0 0 5px rgba(170,150,255,.95));}
   .tier-gold .item-medal{background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.7),rgba(255,214,90,.25) 70%);box-shadow:inset 0 0 0 3px #FFF0A8,0 0 16px 3px rgba(255,200,60,.85);}
@@ -1094,6 +1098,7 @@
   function editionDecor(tier){
     if (tier === 'halloween') return '<svg class="card-deco card-deco-web tl" aria-hidden="true"><use href="#web-corner" width="100%" height="100%"/></svg><svg class="card-deco card-deco-web tr" aria-hidden="true"><use href="#web-corner" width="100%" height="100%"/></svg><svg class="card-deco card-deco-pk" aria-hidden="true"><use href="#pumpkin" width="100%" height="100%"/></svg>';
     if (tier === 'noel') return FLAKES.map(f => '<svg class="card-deco card-deco-flake" aria-hidden="true" style="left:' + f[0] + '%;top:' + f[1] + '%;width:' + f[2] + 'px;height:' + f[2] + 'px;opacity:' + f[3] + '"><use href="#flake" width="100%" height="100%"/></svg>').join('') + '<svg class="card-deco card-deco-snow" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 8C12 3 22 4 33 7S54 11 66 6 88 3 100 7V40H0z" fill="#fff"/><path d="M0 8C12 3 22 4 33 7S54 11 66 6 88 3 100 7" fill="none" stroke="#D4E3F2" stroke-width="1.1"/></svg>';
+    if (tier === 'secrete') return '<div class="card-deco card-deco-saturn" aria-hidden="true"></div>';
     return '';
   }
   function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
