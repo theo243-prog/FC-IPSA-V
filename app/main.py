@@ -8,6 +8,7 @@ Puis ouvrir http://127.0.0.1:8000/docs pour tester chaque route.
 import asyncio
 import json
 import os
+from typing import Optional
 from datetime import datetime, timedelta
 
 from fastapi import FastAPI, Depends, Header, HTTPException
@@ -41,6 +42,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def locked_out(card: Card) -> dict:
+    """Ce que le serveur dit d'une carte PAS ENCORE DÉBLOQUÉE : sa rareté, et rien d'autre (ni nom, ni poste, ni photo,
+    ni note). Le nom n'est même pas envoyé au navigateur : la surprise reste entière, même en regardant le réseau."""
+    return {"id": card.id, "tier": card.tier.value, "player_name": "?", "poste": None, "player_photo_url": None,
+            "display_note": None, "vitesse": 0, "tir": 0, "locked": True}
+
+
+def is_admin_key(x_admin_key) -> bool:
+    return bool(ADMIN_KEY) and x_admin_key == ADMIN_KEY
 
 
 def card_out(card: Card) -> dict:
@@ -153,7 +165,8 @@ def open_pack(
 # ---------------------------------------------------------- Collection ----
 
 @app.get("/collection")
-def get_collection(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_collection(user: User = Depends(get_current_user), db: Session = Depends(get_db), x_admin_key: Optional[str] = Header(default=None)):
+    reveal = is_admin_key(x_admin_key)          # seul l'admin voit le détail des cartes pas encore débloquées
     all_cards = db.query(Card).all()
     owned_rows = {o.card_id: o.quantity for o in db.query(OwnedCard).filter_by(user_id=user.id).all()}
     qty_by_player = {}                      # joueur -> quantités possédées en commune / rare (pour la jauge de fusion)
@@ -165,7 +178,8 @@ def get_collection(user: User = Depends(get_current_user), db: Session = Depends
     for c in all_cards:
         if c.tier.value in upcoming and not owned_rows.get(c.id, 0):
             continue                                   # édition pas encore commencée : ses cartes restent une surprise
-        row = {**card_out(c), "quantity": owned_rows.get(c.id, 0)}
+        qty = owned_rows.get(c.id, 0)
+        row = {**(card_out(c) if (qty > 0 or reveal) else locked_out(c)), "quantity": qty}
         if c.tier == Tier.secrete:
             q = qty_by_player.get(c.player_id, {})
             points = game_logic.fusion_points(q.get("commune", 0), q.get("rare", 0))
@@ -363,14 +377,23 @@ def players_stats(db: Session = Depends(get_db)):
 
 
 @app.get("/users/{pseudo}/collection")
-def get_user_collection(pseudo: str, db: Session = Depends(get_db)):
-    """Collection PUBLIQUE d'un autre joueur (lecture seule), pour le classement."""
+def get_user_collection(pseudo: str, db: Session = Depends(get_db), x_admin_key: Optional[str] = Header(default=None)):
+    """Collection PUBLIQUE d'un autre joueur (lecture seule), pour le classement. Les cartes qu'il n'a pas encore sont
+    cachées (rareté seulement, pas de nom) : cette adresse est ouverte à tous, elle ne doit rien révéler."""
     user = db.query(User).filter_by(pseudo=pseudo).first()
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    reveal = is_admin_key(x_admin_key)
     all_cards = db.query(Card).all()
     owned_rows = {o.card_id: o.quantity for o in db.query(OwnedCard).filter_by(user_id=user.id).all()}
-    return [{**card_out(c), "quantity": owned_rows.get(c.id, 0)} for c in all_cards]
+    upcoming = {k for k in game_logic.EDITION_TIERS if game_logic.edition_status(db, k) == "upcoming"}
+    out = []
+    for c in all_cards:
+        qty = owned_rows.get(c.id, 0)
+        if c.tier.value in upcoming and not qty and not reveal:
+            continue                                   # une édition pas encore commencée reste une surprise pour tout le monde
+        out.append({**(card_out(c) if (qty > 0 or reveal) else locked_out(c)), "quantity": qty})
+    return out
 
 
 # -------------------------------------------------------------- Marché ----
