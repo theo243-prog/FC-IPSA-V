@@ -201,6 +201,11 @@
   .reveal-area:empty{display:none;}
   .reveal-ph{width:var(--slot-w);aspect-ratio:2/3;position:relative;flex:0 0 auto;}
   .reveal-ph .card-slot{width:100%;}
+  /* pack à 10 cartes (ultra) : 2 rangées de 5 ; chaque carte garde sa mise en page de 140 px, réduite pour tenir */
+  .reveal-area.many{display:grid;grid-template-columns:repeat(5,var(--slot-w5));justify-content:center;gap:10px;--slot-w5:min(140px, calc((100vw - 72px) / 5));}
+  .reveal-area.many .reveal-ph{width:var(--slot-w5);height:calc(var(--slot-w5) * 1.5);aspect-ratio:auto;}
+  .reveal-area.many .ph-scale{position:absolute;left:0;top:0;width:140px;transform:scale(var(--k5,1));transform-origin:top left;}
+  .reveal-area.many .reveal-ph .card-slot{width:140px;}
   .reveal-summary{text-align:center;margin-top:12px;font-size:14px;color:var(--text-muted);}
   .reveal-summary:empty{display:none;}
   #packStatus{margin-top:14px;}
@@ -1308,8 +1313,8 @@
     } catch(e) { /* pas de son possible : tant pis */ }
   }
 
-  const PACK_ORDER = ['classique', 'rare', 'epique', 'legendaire', 'match'];
-  const PACK_LABELS = { classique: 'pack classique', rare: 'pack rare', epique: 'pack épique', legendaire: 'pack légendaire', match: 'pack match' };
+  const PACK_ORDER = ['classique', 'rare', 'epique', 'legendaire', 'ultra', 'match'];
+  const PACK_LABELS = { classique: 'pack classique', rare: 'pack rare', epique: 'pack épique', legendaire: 'pack légendaire', ultra: 'pack ultra', match: 'pack match' };
   // un bouton par type de pack bonus possédé (le compte test les a tous, sans limite)
   function renderBonusPacks(){
     const root = document.getElementById('bonusPacksEl');
@@ -1449,13 +1454,22 @@
     return html + '</tbody></table>' +
       '<p class="help-note">Ces chances s\'appliquent à chaque carte tirée. Elles sont calculées en direct avec les cartes qui existent aujourd\'hui : une rareté sans carte ne sort pas, et une rareté récente (gold, spéciale, épique, légendaire) est réduite tant qu\'elle compte peu de cartes. Les cartes <b>secrètes</b> ne sortent jamais d\'un pack, et les <b>spéciales</b> ne sortent que des packs match.</p>';
   }
+  // pack ultra : les chances de chaque groupe de cartes (calculées en direct par le serveur)
+  function ultraOddsHTML(rules){
+    const u = rules.packs.ultra; if (!u || !u.slots) return '';
+    const heads = { toutes: '6 cartes<br>probas classiques', rare_plus: '2 cartes<br>rare ou mieux', edition_min: '1 carte<br>édition limitée ou mieux', epique_legendaire: '1 carte<br>épique ou légendaire' };
+    const tiers = rules.tier_order.filter(t => u.slots.some(sl => (sl.odds[t] || 0) > 0));
+    let html = '<h3>Le pack ultra, carte par carte</h3><table class="odds"><thead><tr><th>Rareté</th>' + u.slots.map(sl => '<th>' + heads[sl.rule] + '</th>').join('') + '</tr></thead><tbody>';
+    tiers.forEach(t => { html += '<tr><td><span class="help-tier" style="background:' + TIER_COLORS[t] + '"></span>' + TIER_NAMES_PL[t] + '</td>' + u.slots.map(sl => { const v = sl.odds[t]; return '<td>' + (v ? String(v).replace('.', ',') + ' %' : '<span class="odds-dash">—</span>') + '</td>'; }).join('') + '</tr>'; });
+    return html + '</tbody></table><p class="help-note">Les 10 cartes d\'un pack ultra sont toujours <b>différentes</b>. Pour chaque groupe, les raretés autorisées gardent entre elles les mêmes rapports que dans un pack classique. L\'édition limitée en cours compte dans les cartes « édition limitée ou mieux ».</p>';
+  }
   function guaranteedPacksHTML(rules){
-    return '<ul>' + ['rare', 'epique', 'legendaire'].map(k => '<li><b>' + escapeHtml(rules.packs[k].label) + '</b> (' + rules.packs[k].price + ' crédits) : ' + escapeHtml(rules.packs[k].description) + (rules.packs[k].available ? '' : ' <i>(pas encore disponible : aucune carte de cette rareté n\'existe)</i>') + '</li>').join('') + '</ul>';
+    return '<ul>' + ['rare', 'epique', 'legendaire', 'ultra'].map(k => '<li><b>' + escapeHtml(rules.packs[k].label) + '</b> (' + rules.packs[k].price + ' crédits) : ' + escapeHtml(rules.packs[k].description) + (rules.packs[k].available ? '' : ' <i>(pas encore disponible : aucune carte de cette rareté n\'existe)</i>') + '</li>').join('') + '</ul>';
   }
   const HELP = {
     pack: { title: 'Les packs', async html(){
       const r = await getGameRules();
-      return '<h3>Ouvrir un pack</h3><p>Chaque pack contient <b>3 cartes</b> et te rapporte quelques crédits.</p>' +
+      return '<h3>Ouvrir un pack</h3><p>Chaque pack contient <b>3 cartes</b> (<b>10</b> pour le pack ultra) et te rapporte quelques crédits.</p>' +
         '<ul><li><b>Packs gratuits</b> : tu peux en stocker ' + r.free_packs_max + ' au maximum, et un nouveau arrive toutes les ' + r.free_pack_hours + ' heures.</li>' +
         '<li><b>Packs bonus</b> (achetés au shop, offerts ou gagnés) : ils se stockent sans limite et s\'affichent sous les boutons.</li>' +
         '<li><b>Pack match</b> : il se gagne en remportant un match 1v1. C\'est le seul où sortent les cartes <b>spéciales</b>, avec de meilleures chances. Celui qui perd, ou qui fait match nul, reçoit un <b>pack classique</b>.</li></ul>' +
@@ -1491,7 +1505,7 @@
       return '<h3>Acheter des packs avec tes crédits</h3><p>Tu gagnes des crédits en ouvrant des packs, en revendant des doublons et en gagnant des matchs 1v1. Un pack acheté arrive dans tes packs bonus (onglet Packs), sans limite de stock.</p>' +
         '<ul><li><b>' + escapeHtml(r.packs.classique.label) + '</b> (' + r.packs.classique.price + ' crédits) : ' + escapeHtml(r.packs.classique.description) + '.</li></ul>' + guaranteedPacksHTML(r) +
         '<p class="help-note">Un pack à carte garantie n\'est en vente que si au moins une carte de cette rareté existe. Le pack match ne s\'achète pas : il se gagne en 1v1 (et le perdant, ou chacun des deux en cas de nul, reçoit un pack classique).</p>' +
-        '<h3>Tes chances de tirage</h3>' + oddsTableHTML(r, ['classique']) + '<p>Pour les packs à carte garantie, les cartes qui ne sont pas garanties suivent ces mêmes chances.</p>';
+        '<h3>Tes chances de tirage</h3>' + oddsTableHTML(r, ['classique']) + '<p>Pour les packs à carte garantie, les cartes qui ne sont pas garanties suivent ces mêmes chances.</p>' + ultraOddsHTML(r);
     } },
     classement: { title: 'Le classement', html(){
       return '<h3>Qui a la plus belle collection ?</h3><p>Les joueurs sont classés par <b>pourcentage de collection</b> : le nombre de cartes différentes que tu possèdes divisé par le nombre de cartes qui existent dans le jeu, <b>sans exception</b> (cartes secrètes et éditions limitées comprises, même terminées). En cas d\'égalité, c\'est le nombre de crédits qui départage.</p>' +
@@ -1655,7 +1669,12 @@
     const st = document.getElementById('packStage'); const h = st.getBoundingClientRect().height;
     if (h > 0) st.style.setProperty('--big-k', (h / 210).toFixed(4));
   }
-  window.addEventListener('resize', () => { if (reveal) setBigScale(); });
+  // pack à 10 cartes : les cartes rangées gardent leur mise en page de 140 px, réduite à la largeur de leur emplacement
+  function setRowScale(){
+    const area = document.getElementById('revealArea'), ph = area.querySelector('.reveal-ph');
+    if (ph && area.classList.contains('many')) { const w = ph.getBoundingClientRect().width; if (w > 0) area.style.setProperty('--k5', (w / 140).toFixed(4)); }
+  }
+  window.addEventListener('resize', () => { if (reveal) { setBigScale(); setRowScale(); } });
 
   function updateRevealHint(){
     const hint = document.getElementById('revealHint');
@@ -1688,10 +1707,12 @@
   function placeInRow(slot, ph){
     const from = slot.getBoundingClientRect();                      // où elle est, et sa taille visible (grossie)
     slot.classList.remove('big', 'pop'); slot.removeAttribute('tabindex'); slot.removeAttribute('role'); slot.removeAttribute('aria-label');
-    ph.appendChild(slot);                                           // son nouvel emplacement, en taille normale
+    const host = ph.querySelector('.ph-scale') || ph;               // (pack à 10 cartes : le conteneur est réduit)
+    host.appendChild(slot);                                         // son nouvel emplacement, en taille normale
     slot.style.transition = 'none'; slot.style.transformOrigin = 'top left';
     const to = slot.getBoundingClientRect();
-    const dx = from.left - to.left, dy = from.top - to.top, k = to.width ? from.width / to.width : 1;
+    const kp = host.offsetWidth ? host.getBoundingClientRect().width / host.offsetWidth : 1;      // réduction du conteneur
+    const dx = (from.left - to.left) / kp, dy = (from.top - to.top) / kp, k = to.width ? from.width / to.width : 1;
     slot.style.position = 'relative'; slot.style.zIndex = '30';
     slot.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + k + ')';
     void slot.offsetWidth;                                          // le navigateur enregistre le point de départ
@@ -1748,6 +1769,7 @@
     document.querySelectorAll('#bonusPacksEl button').forEach(b => b.disabled = true);
     document.getElementById('revealSummary').textContent = '';
     document.getElementById('revealArea').innerHTML = '';
+    document.getElementById('revealArea').classList.remove('many');
     updateRevealHint();
 
     const apiPromise = api('/pack/open', { method: 'POST', body: JSON.stringify({ pack_type: packType === 'free' ? null : packType }) });
@@ -1758,8 +1780,10 @@
       const result = await apiPromise;
       const cards = sortByRarity(result.cards_won);                 // de la moins rare à la plus rare
 
-      const area = document.getElementById('revealArea'), placeholders = [];
-      cards.forEach(() => { const ph = document.createElement('div'); ph.className = 'reveal-ph'; area.appendChild(ph); placeholders.push(ph); });
+      const area = document.getElementById('revealArea'), placeholders = [], many = cards.length > 3;
+      area.classList.toggle('many', many);                                    // plus de 3 cartes (pack ultra) : 2 rangées de 5
+      cards.forEach(() => { const ph = document.createElement('div'); ph.className = 'reveal-ph'; if (many) ph.innerHTML = '<div class="ph-scale"></div>'; area.appendChild(ph); placeholders.push(ph); });
+      setRowScale();
       reveal = { cards, index: 0, busy: true, result, placeholders, big: null };
       setBigScale();
       showBigCard(0, true);
