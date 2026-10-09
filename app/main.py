@@ -1477,7 +1477,7 @@ def admin_grant_packs(payload: schemas.AdminGrantPacksRequest, db: Session = Dep
     """
     spec = game_logic.PACK_TYPES.get(payload.pack_type)
     if not spec:
-        raise HTTPException(status_code=400, detail="pack_type doit être classique, rare, epique, legendaire ou match")
+        raise HTTPException(status_code=400, detail="pack_type doit être classique, rare, epique, legendaire, ultra ou match")
     user = db.query(User).filter_by(pseudo=payload.pseudo).first()
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
