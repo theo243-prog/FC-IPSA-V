@@ -251,6 +251,8 @@ class AdminCreatePlayerRequest(BaseModel):
     with_rare: Optional[bool] = None       # carte rare ? par défaut : oui pour un joueur, non pour un fan
     grant_to_pseudo: Optional[str] = None  # offre 1 exemplaire de chaque carte créée à ce compte
     force: bool = False                    # True : crée même si un nom très proche existe (Léo / Leo)
+    numero: Optional[str] = None           # numéro de maillot (1 à 3 chiffres, ex. "10" ou "007")
+    surnom: Optional[str] = None           # surnom, écrit sur la carte secrète
 
 
 class AdminReset1v1Request(BaseModel):
@@ -270,3 +272,14 @@ class AdminSetEditionDatesRequest(BaseModel):
     start: Optional[str] = None          # "AAAA-MM-JJ" : premier jour où les cartes sortent des packs
     end: Optional[str] = None            # "AAAA-MM-JJ" : dernier jour (compris)
     reset: bool = False                  # True : revient aux dates d'origine
+
+
+class AdminPlayerInfoItem(BaseModel):
+    name: str                              # le prénom tel qu'il est dans le jeu (majuscules et accents sans importance)
+    numero: Optional[str] = None           # numéro de maillot ; absent = on n'y touche pas ; "" = on l'efface
+    surnom: Optional[str] = None           # surnom ; absent = on n'y touche pas ; "" = on l'efface
+
+
+class AdminSetPlayerInfoRequest(BaseModel):
+    players: List[AdminPlayerInfoItem]
+    dry_run: bool = False                  # True : montre ce qui serait changé sans rien enregistrer
