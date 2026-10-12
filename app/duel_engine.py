@@ -1,2677 +1,769 @@
-<!doctype html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FC IPSA V — Cartes</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<meta name="theme-color" content="#3C1951">
-<link rel="manifest" href="/manifest.webmanifest">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="FC IPSA V">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233C1951'/%3E%3Csvg x='12.9' y='10' width='38.2' height='44' viewBox='47 80 723 833'%3E%3Cg transform='translate(0,980) scale(0.1,-0.1)' fill='%23FCC2E2'%3E%3Cpath d='M6293 8782 c-59 -53 -126 -111 -148 -127 -22 -16 -67 -52 -100 -80 -33 -29 -107 -87 -165 -130 -58 -43 -130 -101 -161 -129 -88 -80 -369 -289 -557 -413 -40 -26 -101 -69 -135 -95 -34 -26 -129 -92 -212 -147 -82 -55 -170 -114 -195 -131 -25 -17 -95 -59 -155 -93 -61 -34 -133 -78 -160 -98 -28 -20 -70 -47 -95 -59 -25 -12 -61 -35 -80 -50 -19 -15 -66 -43 -105 -63 -38 -19 -108 -59 -155 -88 -47 -29 -114 -69 -150 -89 -101 -57 -170 -101 -238 -152 -35 -27 -67 -48 -71 -48 -5 0 -47 -28 -94 -62 -47 -35 -120 -88 -164 -118 -332 -231 -646 -491 -905 -751 -97 -98 -211 -203 -252 -234 -111 -81 -125 -120 -81 -210 30 -61 31 -80 5 -122 l-19 -33 -108 -50 c-59 -28 -117 -56 -128 -62 -11 -6 -67 -36 -125 -66 -58 -30 -157 -86 -220 -122 -63 -37 -160 -90 -215 -118 -192 -96 -443 -256 -484 -308 -28 -36 -36 -86 -21 -139 13 -46 150 -215 254 -313 27 -25 57 -70 76 -110 57 -121 95 -144 198 -118 132 35 174 20 237 -84 39 -63 59 -80 97 -80 51 0 88 66 88 158 0 99 49 127 135 76 25 -14 52 -24 62 -22 10 2 36 30 58 63 l41 60 80 5 c94 6 95 6 138 74 35 54 59 69 130 81 l39 7 51 53 c37 38 64 56 96 65 l45 13 55 -13 c30 -7 112 -15 181 -19 l127 -6 21 -19 c25 -23 28 -72 6 -103 -8 -12 -52 -43 -97 -70 l-81 -48 -92 -115 c-51 -63 -115 -136 -142 -162 -28 -26 -69 -78 -91 -116 -27 -45 -52 -74 -75 -87 l-34 -18 -49 7 c-27 4 -65 10 -86 13 l-36 5 -19 -19 c-14 -14 -22 -40 -26 -88 -12 -125 -48 -142 -157 -75 -76 47 -98 49 -130 15 l-23 -25 1 -44 c1 -77 97 -231 196 -314 99 -83 188 -112 349 -112 49 0 152 -9 229 -21 l139 -20 34 11 c67 22 82 77 40 145 -52 86 -58 101 -57 143 1 71 50 127 141 162 31 12 85 41 121 65 74 51 315 152 441 186 46 12 116 36 154 53 l70 31 90 0 90 0 35 -22 c84 -52 91 -118 26 -253 -26 -52 -51 -123 -58 -157 l-11 -61 28 -114 c19 -78 26 -125 21 -149 -4 -22 -40 -83 -91 -154 -47 -65 -88 -130 -92 -143 l-6 -25 27 -24 c49 -42 102 -27 218 61 40 31 90 62 112 68 l39 12 19 -23 18 -24 -6 -36 c-9 -47 -26 -82 -82 -160 -25 -36 -52 -82 -59 -103 l-13 -38 21 -61 22 -62 -6 -59 -5 -60 -48 -79 c-27 -44 -70 -107 -97 -139 -62 -78 -97 -152 -97 -211 l0 -46 22 -20 c13 -11 42 -30 65 -42 71 -35 77 -103 23 -241 -12 -30 -28 -83 -36 -119 -8 -36 -34 -106 -57 -156 -24 -54 -42 -110 -45 -140 l-4 -50 19 -24 20 -24 38 1 c50 2 76 20 164 115 74 78 179 172 309 275 37 30 121 106 187 170 67 65 152 144 189 176 69 60 123 134 187 256 41 77 107 150 137 150 35 0 42 -28 32 -141 l-8 -104 -32 -70 c-18 -38 -40 -108 -50 -155 -10 -47 -23 -104 -29 -128 -15 -53 -7 -80 24 -88 46 -12 154 74 280 221 42 50 102 119 134 155 31 36 84 100 117 144 32 43 87 115 121 160 34 44 69 91 78 102 9 12 31 57 49 100 60 141 65 151 92 183 33 40 59 40 84 -2 l20 -32 0 -70 c-1 -38 -5 -90 -10 -115 -6 -25 -14 -115 -20 -200 -6 -95 -17 -184 -30 -230 -44 -164 -35 -252 26 -258 46 -4 76 26 170 171 47 71 100 150 119 175 118 154 310 663 336 892 6 47 19 130 30 185 l19 100 -2 133 -3 134 28 24 c50 43 90 17 157 -104 23 -42 67 -113 95 -158 74 -114 100 -168 129 -270 32 -115 81 -232 108 -261 61 -65 119 8 148 184 7 37 19 104 27 148 28 144 32 178 32 350 1 201 -13 408 -35 520 -31 159 -136 471 -194 580 -57 107 -112 242 -108 267 l3 23 37 -1 c42 -1 143 -61 246 -144 35 -28 93 -69 130 -92 37 -22 96 -67 132 -99 76 -67 174 -129 206 -129 60 0 61 64 4 243 -22 71 -40 137 -40 146 0 9 -18 55 -40 100 -23 46 -59 129 -82 184 -23 56 -81 161 -133 241 -50 77 -102 161 -117 186 -15 25 -61 81 -103 125 -123 129 -232 251 -245 276 l-13 23 23 18 c25 20 33 19 165 -22 50 -16 113 -31 141 -33 32 -4 79 -20 128 -46 82 -44 128 -51 164 -25 25 17 30 70 10 107 -32 61 -371 411 -451 466 -12 8 -50 39 -84 68 -35 29 -91 67 -125 84 -35 17 -97 51 -138 75 -41 23 -115 54 -165 68 -149 41 -161 81 -60 201 59 70 66 87 75 179 5 44 13 119 19 166 6 47 16 240 21 430 6 190 15 464 20 610 5 146 11 360 14 475 3 116 8 253 12 306 10 146 -16 199 -98 199 l-37 0 -108 -98z m-289 -874 c21 -30 20 -46 -8 -228 -14 -85 -32 -243 -41 -350 -14 -176 -24 -253 -55 -447 -11 -67 -42 -143 -108 -270 -32 -60 -68 -106 -138 -178 -94 -97 -115 -108 -138 -73 l-11 18 35 67 35 68 0 51 c0 64 -18 99 -64 120 -116 54 -108 106 49 314 78 103 100 149 100 210 l0 51 -25 24 c-49 50 -74 37 -237 -116 -68 -63 -157 -138 -198 -167 -41 -28 -106 -79 -145 -113 -113 -99 -210 -134 -250 -89 -29 32 -12 76 64 170 88 109 394 402 476 456 22 15 72 57 111 93 39 36 115 104 169 151 54 47 134 117 177 156 114 104 171 127 202 82z m-2866 -1972 l4 -30 -121 -116 c-80 -77 -121 -123 -121 -137 0 -23 33 -53 78 -72 37 -15 53 -48 39 -78 -14 -32 -78 -53 -176 -59 -47 -3 -127 -15 -178 -26 -51 -11 -103 -18 -117 -14 -29 7 -56 32 -56 51 0 29 208 256 325 355 97 81 245 162 289 158 l31 -3 3 -29z m-1978 -1319 c0 -18 -48 -74 -82 -95 -51 -32 -81 -36 -107 -15 l-23 18 12 26 c15 32 60 60 125 74 52 12 75 10 75 -8z M3820 8338 c-11 -18 -20 -39 -20 -47 0 -22 -67 -186 -146 -353 -40 -86 -80 -183 -89 -215 -9 -32 -31 -80 -49 -108 -18 -27 -43 -76 -54 -108 -12 -32 -40 -84 -62 -115 -22 -31 -56 -101 -75 -155 -42 -117 -53 -139 -116 -236 l-49 -74 0 -38 0 -38 21 -12 c39 -20 83 -2 212 85 70 47 150 97 179 112 29 15 138 82 243 150 266 172 325 209 365 229 19 10 56 32 82 51 26 18 69 44 96 58 65 33 112 87 112 129 0 35 -17 58 -75 103 -39 29 -229 278 -317 414 -30 47 -82 111 -116 143 l-61 57 -30 0 -31 0 -20 -32z'/%3E%3C/g%3E%3C/svg%3E%3C/svg%3E">
-<style>
-  :root{
-    /* Maillot FC IPSA V : rose du tissu, violet profond, mauve du loup */
-    --rose:#FCC2E2; --violet:#3C1951; --violet-2:#6A2C8F; --mauve:#AE608C;
-    --bg:#FCC2E2; --bg-elevated:#FFF4FA; --bg-sunk:#F8DCEC; --input-bg:#FFFFFF;
-    --text:#3C1951; --text-muted:#6B3566; --accent:#3C1951; --accent-text:#FFE9F5;
-    --stripe:#3C1951; --collar:#3C1951; --focus:#6A2C8F;
-    --line:rgba(174,96,140,.28); --border:rgba(60,25,81,.22); --shadow:0 6px 16px rgba(60,25,81,.18);
-    --scrim:rgba(36,10,52,.74); --toast-bg:#3C1951; --toast-text:#FCC2E2;
-    --pattern:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='46' viewBox='0 0 46 46'%3E%3Cg fill='none' stroke='%23AE608C' stroke-opacity='.17' stroke-width='1.5' stroke-linecap='square' stroke-linejoin='miter'%3E%3Cpath d='M3 3h20v14h-9v-6h4'/%3E%3Cpath d='M27 3h16v20h-8v-9'/%3E%3Cpath d='M3 27v16h20v-9h-7'/%3E%3Cpath d='M43 27H29v8h8v-4M23 23v7'/%3E%3C/g%3E%3C/svg%3E");
-    --wm:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='47 80 723 833'%3E%3Cg transform='translate(0,980) scale(0.1,-0.1)' fill='%23AE608C'%3E%3Cpath d='M6293 8782 c-59 -53 -126 -111 -148 -127 -22 -16 -67 -52 -100 -80 -33 -29 -107 -87 -165 -130 -58 -43 -130 -101 -161 -129 -88 -80 -369 -289 -557 -413 -40 -26 -101 -69 -135 -95 -34 -26 -129 -92 -212 -147 -82 -55 -170 -114 -195 -131 -25 -17 -95 -59 -155 -93 -61 -34 -133 -78 -160 -98 -28 -20 -70 -47 -95 -59 -25 -12 -61 -35 -80 -50 -19 -15 -66 -43 -105 -63 -38 -19 -108 -59 -155 -88 -47 -29 -114 -69 -150 -89 -101 -57 -170 -101 -238 -152 -35 -27 -67 -48 -71 -48 -5 0 -47 -28 -94 -62 -47 -35 -120 -88 -164 -118 -332 -231 -646 -491 -905 -751 -97 -98 -211 -203 -252 -234 -111 -81 -125 -120 -81 -210 30 -61 31 -80 5 -122 l-19 -33 -108 -50 c-59 -28 -117 -56 -128 -62 -11 -6 -67 -36 -125 -66 -58 -30 -157 -86 -220 -122 -63 -37 -160 -90 -215 -118 -192 -96 -443 -256 -484 -308 -28 -36 -36 -86 -21 -139 13 -46 150 -215 254 -313 27 -25 57 -70 76 -110 57 -121 95 -144 198 -118 132 35 174 20 237 -84 39 -63 59 -80 97 -80 51 0 88 66 88 158 0 99 49 127 135 76 25 -14 52 -24 62 -22 10 2 36 30 58 63 l41 60 80 5 c94 6 95 6 138 74 35 54 59 69 130 81 l39 7 51 53 c37 38 64 56 96 65 l45 13 55 -13 c30 -7 112 -15 181 -19 l127 -6 21 -19 c25 -23 28 -72 6 -103 -8 -12 -52 -43 -97 -70 l-81 -48 -92 -115 c-51 -63 -115 -136 -142 -162 -28 -26 -69 -78 -91 -116 -27 -45 -52 -74 -75 -87 l-34 -18 -49 7 c-27 4 -65 10 -86 13 l-36 5 -19 -19 c-14 -14 -22 -40 -26 -88 -12 -125 -48 -142 -157 -75 -76 47 -98 49 -130 15 l-23 -25 1 -44 c1 -77 97 -231 196 -314 99 -83 188 -112 349 -112 49 0 152 -9 229 -21 l139 -20 34 11 c67 22 82 77 40 145 -52 86 -58 101 -57 143 1 71 50 127 141 162 31 12 85 41 121 65 74 51 315 152 441 186 46 12 116 36 154 53 l70 31 90 0 90 0 35 -22 c84 -52 91 -118 26 -253 -26 -52 -51 -123 -58 -157 l-11 -61 28 -114 c19 -78 26 -125 21 -149 -4 -22 -40 -83 -91 -154 -47 -65 -88 -130 -92 -143 l-6 -25 27 -24 c49 -42 102 -27 218 61 40 31 90 62 112 68 l39 12 19 -23 18 -24 -6 -36 c-9 -47 -26 -82 -82 -160 -25 -36 -52 -82 -59 -103 l-13 -38 21 -61 22 -62 -6 -59 -5 -60 -48 -79 c-27 -44 -70 -107 -97 -139 -62 -78 -97 -152 -97 -211 l0 -46 22 -20 c13 -11 42 -30 65 -42 71 -35 77 -103 23 -241 -12 -30 -28 -83 -36 -119 -8 -36 -34 -106 -57 -156 -24 -54 -42 -110 -45 -140 l-4 -50 19 -24 20 -24 38 1 c50 2 76 20 164 115 74 78 179 172 309 275 37 30 121 106 187 170 67 65 152 144 189 176 69 60 123 134 187 256 41 77 107 150 137 150 35 0 42 -28 32 -141 l-8 -104 -32 -70 c-18 -38 -40 -108 -50 -155 -10 -47 -23 -104 -29 -128 -15 -53 -7 -80 24 -88 46 -12 154 74 280 221 42 50 102 119 134 155 31 36 84 100 117 144 32 43 87 115 121 160 34 44 69 91 78 102 9 12 31 57 49 100 60 141 65 151 92 183 33 40 59 40 84 -2 l20 -32 0 -70 c-1 -38 -5 -90 -10 -115 -6 -25 -14 -115 -20 -200 -6 -95 -17 -184 -30 -230 -44 -164 -35 -252 26 -258 46 -4 76 26 170 171 47 71 100 150 119 175 118 154 310 663 336 892 6 47 19 130 30 185 l19 100 -2 133 -3 134 28 24 c50 43 90 17 157 -104 23 -42 67 -113 95 -158 74 -114 100 -168 129 -270 32 -115 81 -232 108 -261 61 -65 119 8 148 184 7 37 19 104 27 148 28 144 32 178 32 350 1 201 -13 408 -35 520 -31 159 -136 471 -194 580 -57 107 -112 242 -108 267 l3 23 37 -1 c42 -1 143 -61 246 -144 35 -28 93 -69 130 -92 37 -22 96 -67 132 -99 76 -67 174 -129 206 -129 60 0 61 64 4 243 -22 71 -40 137 -40 146 0 9 -18 55 -40 100 -23 46 -59 129 -82 184 -23 56 -81 161 -133 241 -50 77 -102 161 -117 186 -15 25 -61 81 -103 125 -123 129 -232 251 -245 276 l-13 23 23 18 c25 20 33 19 165 -22 50 -16 113 -31 141 -33 32 -4 79 -20 128 -46 82 -44 128 -51 164 -25 25 17 30 70 10 107 -32 61 -371 411 -451 466 -12 8 -50 39 -84 68 -35 29 -91 67 -125 84 -35 17 -97 51 -138 75 -41 23 -115 54 -165 68 -149 41 -161 81 -60 201 59 70 66 87 75 179 5 44 13 119 19 166 6 47 16 240 21 430 6 190 15 464 20 610 5 146 11 360 14 475 3 116 8 253 12 306 10 146 -16 199 -98 199 l-37 0 -108 -98z m-289 -874 c21 -30 20 -46 -8 -228 -14 -85 -32 -243 -41 -350 -14 -176 -24 -253 -55 -447 -11 -67 -42 -143 -108 -270 -32 -60 -68 -106 -138 -178 -94 -97 -115 -108 -138 -73 l-11 18 35 67 35 68 0 51 c0 64 -18 99 -64 120 -116 54 -108 106 49 314 78 103 100 149 100 210 l0 51 -25 24 c-49 50 -74 37 -237 -116 -68 -63 -157 -138 -198 -167 -41 -28 -106 -79 -145 -113 -113 -99 -210 -134 -250 -89 -29 32 -12 76 64 170 88 109 394 402 476 456 22 15 72 57 111 93 39 36 115 104 169 151 54 47 134 117 177 156 114 104 171 127 202 82z m-2866 -1972 l4 -30 -121 -116 c-80 -77 -121 -123 -121 -137 0 -23 33 -53 78 -72 37 -15 53 -48 39 -78 -14 -32 -78 -53 -176 -59 -47 -3 -127 -15 -178 -26 -51 -11 -103 -18 -117 -14 -29 7 -56 32 -56 51 0 29 208 256 325 355 97 81 245 162 289 158 l31 -3 3 -29z m-1978 -1319 c0 -18 -48 -74 -82 -95 -51 -32 -81 -36 -107 -15 l-23 18 12 26 c15 32 60 60 125 74 52 12 75 10 75 -8z M3820 8338 c-11 -18 -20 -39 -20 -47 0 -22 -67 -186 -146 -353 -40 -86 -80 -183 -89 -215 -9 -32 -31 -80 -49 -108 -18 -27 -43 -76 -54 -108 -12 -32 -40 -84 -62 -115 -22 -31 -56 -101 -75 -155 -42 -117 -53 -139 -116 -236 l-49 -74 0 -38 0 -38 21 -12 c39 -20 83 -2 212 85 70 47 150 97 179 112 29 15 138 82 243 150 266 172 325 209 365 229 19 10 56 32 82 51 26 18 69 44 96 58 65 33 112 87 112 129 0 35 -17 58 -75 103 -39 29 -229 278 -317 414 -30 47 -82 111 -116 143 l-61 57 -30 0 -31 0 -20 -32z'/%3E%3C/g%3E%3C/svg%3E"); --wm-opacity:.12;
-    /* couleurs des cartes : inchangées */
-    --commune-1:#9C6B3E; --commune-2:#D3A874; --commune-text:#2B1A0E;
-    --rare-1:#9AA6AC; --rare-2:#E9EEF0; --rare-text:#1F2A31;
-    --epique-1:#6A2FB8; --epique-2:#C7A2F5; --epique-text:#1E0B3A;
-    --legend-1:#DFA82E; --legend-2:#FFE79A; --legend-text:#4A3400;
-    --gold-1:#B87A00; --gold-2:#FFD45C; --gold-text:#3A2500;
-    --speciale-1:#1E8A4B; --speciale-2:#9CE9B4; --speciale-text:#053018;
-    --secrete-1:#16112B; --secrete-2:#5646AB; --secrete-text:#ECE8FF;
-    --font-head:'Saira Condensed','Arial Narrow',sans-serif; --font-body:'Manrope',sans-serif;
-  }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --bg:#1B0A28; --bg-elevated:#2A1240; --bg-sunk:#210F33; --input-bg:#1B0A28;
-      --text:#FCE6F2; --text-muted:#C79ABA; --accent:#F8B4D6; --accent-text:#2A0F3D;
-      --stripe:#FCC2E2; --collar:#2E1145; --focus:#F8B4D6;
-      --line:rgba(252,194,226,.12); --border:rgba(252,194,226,.22); --shadow:0 8px 20px rgba(0,0,0,.45);
-      --scrim:rgba(12,4,20,.82); --toast-bg:#FCC2E2; --toast-text:#3C1951;
-      --pattern:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='46' viewBox='0 0 46 46'%3E%3Cg fill='none' stroke='%23FCC2E2' stroke-opacity='.07' stroke-width='1.5' stroke-linecap='square' stroke-linejoin='miter'%3E%3Cpath d='M3 3h20v14h-9v-6h4'/%3E%3Cpath d='M27 3h16v20h-8v-9'/%3E%3Cpath d='M3 27v16h20v-9h-7'/%3E%3Cpath d='M43 27H29v8h8v-4M23 23v7'/%3E%3C/g%3E%3C/svg%3E");
-      --wm:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='47 80 723 833'%3E%3Cg transform='translate(0,980) scale(0.1,-0.1)' fill='%23FCC2E2'%3E%3Cpath d='M6293 8782 c-59 -53 -126 -111 -148 -127 -22 -16 -67 -52 -100 -80 -33 -29 -107 -87 -165 -130 -58 -43 -130 -101 -161 -129 -88 -80 -369 -289 -557 -413 -40 -26 -101 -69 -135 -95 -34 -26 -129 -92 -212 -147 -82 -55 -170 -114 -195 -131 -25 -17 -95 -59 -155 -93 -61 -34 -133 -78 -160 -98 -28 -20 -70 -47 -95 -59 -25 -12 -61 -35 -80 -50 -19 -15 -66 -43 -105 -63 -38 -19 -108 -59 -155 -88 -47 -29 -114 -69 -150 -89 -101 -57 -170 -101 -238 -152 -35 -27 -67 -48 -71 -48 -5 0 -47 -28 -94 -62 -47 -35 -120 -88 -164 -118 -332 -231 -646 -491 -905 -751 -97 -98 -211 -203 -252 -234 -111 -81 -125 -120 -81 -210 30 -61 31 -80 5 -122 l-19 -33 -108 -50 c-59 -28 -117 -56 -128 -62 -11 -6 -67 -36 -125 -66 -58 -30 -157 -86 -220 -122 -63 -37 -160 -90 -215 -118 -192 -96 -443 -256 -484 -308 -28 -36 -36 -86 -21 -139 13 -46 150 -215 254 -313 27 -25 57 -70 76 -110 57 -121 95 -144 198 -118 132 35 174 20 237 -84 39 -63 59 -80 97 -80 51 0 88 66 88 158 0 99 49 127 135 76 25 -14 52 -24 62 -22 10 2 36 30 58 63 l41 60 80 5 c94 6 95 6 138 74 35 54 59 69 130 81 l39 7 51 53 c37 38 64 56 96 65 l45 13 55 -13 c30 -7 112 -15 181 -19 l127 -6 21 -19 c25 -23 28 -72 6 -103 -8 -12 -52 -43 -97 -70 l-81 -48 -92 -115 c-51 -63 -115 -136 -142 -162 -28 -26 -69 -78 -91 -116 -27 -45 -52 -74 -75 -87 l-34 -18 -49 7 c-27 4 -65 10 -86 13 l-36 5 -19 -19 c-14 -14 -22 -40 -26 -88 -12 -125 -48 -142 -157 -75 -76 47 -98 49 -130 15 l-23 -25 1 -44 c1 -77 97 -231 196 -314 99 -83 188 -112 349 -112 49 0 152 -9 229 -21 l139 -20 34 11 c67 22 82 77 40 145 -52 86 -58 101 -57 143 1 71 50 127 141 162 31 12 85 41 121 65 74 51 315 152 441 186 46 12 116 36 154 53 l70 31 90 0 90 0 35 -22 c84 -52 91 -118 26 -253 -26 -52 -51 -123 -58 -157 l-11 -61 28 -114 c19 -78 26 -125 21 -149 -4 -22 -40 -83 -91 -154 -47 -65 -88 -130 -92 -143 l-6 -25 27 -24 c49 -42 102 -27 218 61 40 31 90 62 112 68 l39 12 19 -23 18 -24 -6 -36 c-9 -47 -26 -82 -82 -160 -25 -36 -52 -82 -59 -103 l-13 -38 21 -61 22 -62 -6 -59 -5 -60 -48 -79 c-27 -44 -70 -107 -97 -139 -62 -78 -97 -152 -97 -211 l0 -46 22 -20 c13 -11 42 -30 65 -42 71 -35 77 -103 23 -241 -12 -30 -28 -83 -36 -119 -8 -36 -34 -106 -57 -156 -24 -54 -42 -110 -45 -140 l-4 -50 19 -24 20 -24 38 1 c50 2 76 20 164 115 74 78 179 172 309 275 37 30 121 106 187 170 67 65 152 144 189 176 69 60 123 134 187 256 41 77 107 150 137 150 35 0 42 -28 32 -141 l-8 -104 -32 -70 c-18 -38 -40 -108 -50 -155 -10 -47 -23 -104 -29 -128 -15 -53 -7 -80 24 -88 46 -12 154 74 280 221 42 50 102 119 134 155 31 36 84 100 117 144 32 43 87 115 121 160 34 44 69 91 78 102 9 12 31 57 49 100 60 141 65 151 92 183 33 40 59 40 84 -2 l20 -32 0 -70 c-1 -38 -5 -90 -10 -115 -6 -25 -14 -115 -20 -200 -6 -95 -17 -184 -30 -230 -44 -164 -35 -252 26 -258 46 -4 76 26 170 171 47 71 100 150 119 175 118 154 310 663 336 892 6 47 19 130 30 185 l19 100 -2 133 -3 134 28 24 c50 43 90 17 157 -104 23 -42 67 -113 95 -158 74 -114 100 -168 129 -270 32 -115 81 -232 108 -261 61 -65 119 8 148 184 7 37 19 104 27 148 28 144 32 178 32 350 1 201 -13 408 -35 520 -31 159 -136 471 -194 580 -57 107 -112 242 -108 267 l3 23 37 -1 c42 -1 143 -61 246 -144 35 -28 93 -69 130 -92 37 -22 96 -67 132 -99 76 -67 174 -129 206 -129 60 0 61 64 4 243 -22 71 -40 137 -40 146 0 9 -18 55 -40 100 -23 46 -59 129 -82 184 -23 56 -81 161 -133 241 -50 77 -102 161 -117 186 -15 25 -61 81 -103 125 -123 129 -232 251 -245 276 l-13 23 23 18 c25 20 33 19 165 -22 50 -16 113 -31 141 -33 32 -4 79 -20 128 -46 82 -44 128 -51 164 -25 25 17 30 70 10 107 -32 61 -371 411 -451 466 -12 8 -50 39 -84 68 -35 29 -91 67 -125 84 -35 17 -97 51 -138 75 -41 23 -115 54 -165 68 -149 41 -161 81 -60 201 59 70 66 87 75 179 5 44 13 119 19 166 6 47 16 240 21 430 6 190 15 464 20 610 5 146 11 360 14 475 3 116 8 253 12 306 10 146 -16 199 -98 199 l-37 0 -108 -98z m-289 -874 c21 -30 20 -46 -8 -228 -14 -85 -32 -243 -41 -350 -14 -176 -24 -253 -55 -447 -11 -67 -42 -143 -108 -270 -32 -60 -68 -106 -138 -178 -94 -97 -115 -108 -138 -73 l-11 18 35 67 35 68 0 51 c0 64 -18 99 -64 120 -116 54 -108 106 49 314 78 103 100 149 100 210 l0 51 -25 24 c-49 50 -74 37 -237 -116 -68 -63 -157 -138 -198 -167 -41 -28 -106 -79 -145 -113 -113 -99 -210 -134 -250 -89 -29 32 -12 76 64 170 88 109 394 402 476 456 22 15 72 57 111 93 39 36 115 104 169 151 54 47 134 117 177 156 114 104 171 127 202 82z m-2866 -1972 l4 -30 -121 -116 c-80 -77 -121 -123 -121 -137 0 -23 33 -53 78 -72 37 -15 53 -48 39 -78 -14 -32 -78 -53 -176 -59 -47 -3 -127 -15 -178 -26 -51 -11 -103 -18 -117 -14 -29 7 -56 32 -56 51 0 29 208 256 325 355 97 81 245 162 289 158 l31 -3 3 -29z m-1978 -1319 c0 -18 -48 -74 -82 -95 -51 -32 -81 -36 -107 -15 l-23 18 12 26 c15 32 60 60 125 74 52 12 75 10 75 -8z M3820 8338 c-11 -18 -20 -39 -20 -47 0 -22 -67 -186 -146 -353 -40 -86 -80 -183 -89 -215 -9 -32 -31 -80 -49 -108 -18 -27 -43 -76 -54 -108 -12 -32 -40 -84 -62 -115 -22 -31 -56 -101 -75 -155 -42 -117 -53 -139 -116 -236 l-49 -74 0 -38 0 -38 21 -12 c39 -20 83 -2 212 85 70 47 150 97 179 112 29 15 138 82 243 150 266 172 325 209 365 229 19 10 56 32 82 51 26 18 69 44 96 58 65 33 112 87 112 129 0 35 -17 58 -75 103 -39 29 -229 278 -317 414 -30 47 -82 111 -116 143 l-61 57 -30 0 -31 0 -20 -32z'/%3E%3C/g%3E%3C/svg%3E"); --wm-opacity:.09;
+"""
+Moteur des matchs 1v1 à 5 joueurs (1 gardien + 4 joueurs de champ).
+
+Principe : un joueur PROPOSE un match (son équipe, sa tactique secrète, une mise de 1 à 10
+crédits, retirée de ses crédits tant que le défi est ouvert). Un autre joueur le JOUE avec sa
+propre équipe : le match est résolu tout de suite, raconté minute par minute, et le gagnant
+remporte les deux mises + un "pack match" (un peu meilleur que le classique) ; le perdant reçoit un pack classique,
+et en cas de match nul chacun récupère sa mise ET reçoit un pack classique. Aucune limite de packs par jour.
+Aucun délai n'est imposé entre deux matchs des mêmes joueurs : on peut rejouer tout de suite.
+
+Ce que comptent les calculs :
+- la note de chaque carte (75 commune, 85 rare, 85+ épique, 95 légendaire) ;
+- -10 % si la carte joue HORS de son vrai poste (les postes "X" ne sont jamais pénalisés) ;
+- +10 % pour la carte capitaine ;
+- le Fan optionnel : +5 % / +10 % / +12 % / +15 % à toute l'équipe selon sa rareté ;
+- 1 carte Fan (supporter) et 1 carte Loup (la mascotte), chacune optionnelle : +5 % / +10 % / +12 % / +13 % / +15 % à toute l'équipe ;
+- 1 seule carte Équipement : +1 % / +2 % / +3 % / +5 % à toute l'équipe (s'additionne au Fan et au Loup) ;
+- la tactique (pierre-feuille-ciseaux) : +6 % à toute l'équipe pour celle qui l'emporte ;
+- la disposition (2-1-1, 1-2-1, 1-1-2) qui répartit la force entre attaque et défense.
+"""
+import json
+import random
+from collections import Counter
+from datetime import datetime, timedelta
+
+from sqlalchemy import or_
+from sqlalchemy.orm import Session
+
+from .game_logic import (card_note, TIER_FAN_BONUS, TIER_MASCOT_BONUS, TIER_EQUIPMENT_BONUS, MAX_EQUIPMENT,
+                         card_kind, is_fan, is_equipment, is_mascot)
+from .models import User, Card, OwnedCard, MatchProposal, ProposalSlot, ProposalEquipment, Duel
+
+# ----------------------------------------------------------------- Règles ----
+
+TEAM_SIZE = 5
+
+# Nombre de joueurs par ligne (le gardien est toujours en plus, compris dans les 5)
+FORMATIONS = {
+    "2-1-1": {"GB": 1, "DEF": 2, "MC": 1, "ATT": 1},   # prudente
+    "1-2-1": {"GB": 1, "DEF": 1, "MC": 2, "ATT": 1},   # équilibrée
+    "1-1-2": {"GB": 1, "DEF": 1, "MC": 1, "ATT": 2},   # offensive
+}
+FORMATION_LABELS = {"2-1-1": "prudente", "1-2-1": "équilibrée", "1-1-2": "offensive"}
+SLOT_LABELS = {"GB": "Gardien", "DEF": "Défenseur", "MC": "Milieu", "ATT": "Attaquant"}
+
+# Pierre-feuille-ciseaux : chaque tactique en bat une autre.
+TACTICS = {
+    "pressing": {"label": "Pressing haut", "beats": "possession"},
+    "possession": {"label": "Possession", "beats": "contre"},
+    "contre": {"label": "Contre-attaque", "beats": "pressing"},
+}
+
+# vrai poste (peut avoir plusieurs codes historiques) -> emplacement
+POSTE_CATEGORY = {
+    "GB": "GB",
+    "DEF": "DEF", "DD": "DEF", "DC": "DEF", "DG": "DEF",
+    "MC": "MC", "MDC": "MC", "MOC": "MC",
+    "ATT": "ATT", "AD": "ATT", "BU": "ATT",
+}
+
+OUT_OF_POSITION_MALUS = 0.10
+CAPTAIN_BONUS = 0.10
+TACTIC_BONUS = 0.06
+
+REFEREE_BONUS = 0.05     # bonus d'équipe (+5 %) donné par l'arbitre à celui qui a mis la plus grosse enveloppe
+STAKE_MIN, STAKE_MAX = 1, 10
+MAX_OPEN_PROPOSALS = 3
+ELO_K = 32
+
+MATCH_MINUTES = 40               # 2 mi-temps de 20 minutes
+HALF_TIME_MINUTE = 20
+
+# Poids de chaque emplacement dans la ligne d'attaque / la ligne de défense (le milieu compte
+# dans les deux). La force d'une ligne est la MOYENNE pondérée des notes de ses joueurs.
+ATTACK_WEIGHT = {"ATT": 1.0, "MC": 0.5, "DEF": 0.0, "GB": 0.0}
+DEFENSE_WEIGHT = {"ATT": 0.0, "MC": 0.5, "DEF": 1.0, "GB": 1.5}
+# La disposition donne un "style" : offensive = plus de buts des deux côtés, prudente = moins.
+# Elle ne rend pas l'équipe plus forte en soi (attaque x défense reste constant) : elle décide
+# surtout quelles cartes comptent le plus (attaquants en 1-1-2, défenseurs/gardien en 2-1-1).
+FORMATION_SKEW = 0.5
+BASE_XG = 3.0                    # donne ~2 buts par équipe dans un match équilibré (1-2-1 contre 1-2-1)
+XG_EXPONENT = 1.5                # plus il est grand, plus l'écart de niveau pèse sur le score
+
+
+class DuelError(Exception):
+    def __init__(self, message: str, status_code: int = 400):
+        super().__init__(message)
+        self.message = message
+        self.status_code = status_code
+
+
+# ------------------------------------------------------------- Utilitaires ----
+
+def poste_category(poste):
+    """Emplacement naturel d'un poste, ou None si le poste n'est pas défini (X) : pas de malus."""
+    return POSTE_CATEGORY.get((poste or "").upper())
+
+
+def get_config() -> dict:
+    return {
+        "team_size": TEAM_SIZE,
+        "formations": FORMATIONS,
+        "formation_labels": FORMATION_LABELS,
+        "slot_labels": SLOT_LABELS,
+        "tactics": TACTICS,
+        "poste_category": POSTE_CATEGORY,
+        "out_of_position_malus": OUT_OF_POSITION_MALUS,
+        "captain_bonus": CAPTAIN_BONUS,
+        "tactic_bonus": TACTIC_BONUS,
+        "stake_min": STAKE_MIN,
+        "stake_max": STAKE_MAX,
+        "max_open_proposals": MAX_OPEN_PROPOSALS,
+        "fan_bonus": TIER_FAN_BONUS,
+        "mascot_bonus": TIER_MASCOT_BONUS,
+        "equipment_bonus": TIER_EQUIPMENT_BONUS,
+        "max_equipment": MAX_EQUIPMENT,
+        "referee_bonus": REFEREE_BONUS,
     }
-  }
-  :root[data-theme="dark"]{
-    --bg:#1B0A28; --bg-elevated:#2A1240; --bg-sunk:#210F33; --input-bg:#1B0A28;
-    --text:#FCE6F2; --text-muted:#C79ABA; --accent:#F8B4D6; --accent-text:#2A0F3D;
-    --stripe:#FCC2E2; --collar:#2E1145; --focus:#F8B4D6;
-    --line:rgba(252,194,226,.12); --border:rgba(252,194,226,.22); --shadow:0 8px 20px rgba(0,0,0,.45);
-    --scrim:rgba(12,4,20,.82); --toast-bg:#FCC2E2; --toast-text:#3C1951;
-    --pattern:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='46' viewBox='0 0 46 46'%3E%3Cg fill='none' stroke='%23FCC2E2' stroke-opacity='.07' stroke-width='1.5' stroke-linecap='square' stroke-linejoin='miter'%3E%3Cpath d='M3 3h20v14h-9v-6h4'/%3E%3Cpath d='M27 3h16v20h-8v-9'/%3E%3Cpath d='M3 27v16h20v-9h-7'/%3E%3Cpath d='M43 27H29v8h8v-4M23 23v7'/%3E%3C/g%3E%3C/svg%3E");
-    --wm:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='47 80 723 833'%3E%3Cg transform='translate(0,980) scale(0.1,-0.1)' fill='%23FCC2E2'%3E%3Cpath d='M6293 8782 c-59 -53 -126 -111 -148 -127 -22 -16 -67 -52 -100 -80 -33 -29 -107 -87 -165 -130 -58 -43 -130 -101 -161 -129 -88 -80 -369 -289 -557 -413 -40 -26 -101 -69 -135 -95 -34 -26 -129 -92 -212 -147 -82 -55 -170 -114 -195 -131 -25 -17 -95 -59 -155 -93 -61 -34 -133 -78 -160 -98 -28 -20 -70 -47 -95 -59 -25 -12 -61 -35 -80 -50 -19 -15 -66 -43 -105 -63 -38 -19 -108 -59 -155 -88 -47 -29 -114 -69 -150 -89 -101 -57 -170 -101 -238 -152 -35 -27 -67 -48 -71 -48 -5 0 -47 -28 -94 -62 -47 -35 -120 -88 -164 -118 -332 -231 -646 -491 -905 -751 -97 -98 -211 -203 -252 -234 -111 -81 -125 -120 -81 -210 30 -61 31 -80 5 -122 l-19 -33 -108 -50 c-59 -28 -117 -56 -128 -62 -11 -6 -67 -36 -125 -66 -58 -30 -157 -86 -220 -122 -63 -37 -160 -90 -215 -118 -192 -96 -443 -256 -484 -308 -28 -36 -36 -86 -21 -139 13 -46 150 -215 254 -313 27 -25 57 -70 76 -110 57 -121 95 -144 198 -118 132 35 174 20 237 -84 39 -63 59 -80 97 -80 51 0 88 66 88 158 0 99 49 127 135 76 25 -14 52 -24 62 -22 10 2 36 30 58 63 l41 60 80 5 c94 6 95 6 138 74 35 54 59 69 130 81 l39 7 51 53 c37 38 64 56 96 65 l45 13 55 -13 c30 -7 112 -15 181 -19 l127 -6 21 -19 c25 -23 28 -72 6 -103 -8 -12 -52 -43 -97 -70 l-81 -48 -92 -115 c-51 -63 -115 -136 -142 -162 -28 -26 -69 -78 -91 -116 -27 -45 -52 -74 -75 -87 l-34 -18 -49 7 c-27 4 -65 10 -86 13 l-36 5 -19 -19 c-14 -14 -22 -40 -26 -88 -12 -125 -48 -142 -157 -75 -76 47 -98 49 -130 15 l-23 -25 1 -44 c1 -77 97 -231 196 -314 99 -83 188 -112 349 -112 49 0 152 -9 229 -21 l139 -20 34 11 c67 22 82 77 40 145 -52 86 -58 101 -57 143 1 71 50 127 141 162 31 12 85 41 121 65 74 51 315 152 441 186 46 12 116 36 154 53 l70 31 90 0 90 0 35 -22 c84 -52 91 -118 26 -253 -26 -52 -51 -123 -58 -157 l-11 -61 28 -114 c19 -78 26 -125 21 -149 -4 -22 -40 -83 -91 -154 -47 -65 -88 -130 -92 -143 l-6 -25 27 -24 c49 -42 102 -27 218 61 40 31 90 62 112 68 l39 12 19 -23 18 -24 -6 -36 c-9 -47 -26 -82 -82 -160 -25 -36 -52 -82 -59 -103 l-13 -38 21 -61 22 -62 -6 -59 -5 -60 -48 -79 c-27 -44 -70 -107 -97 -139 -62 -78 -97 -152 -97 -211 l0 -46 22 -20 c13 -11 42 -30 65 -42 71 -35 77 -103 23 -241 -12 -30 -28 -83 -36 -119 -8 -36 -34 -106 -57 -156 -24 -54 -42 -110 -45 -140 l-4 -50 19 -24 20 -24 38 1 c50 2 76 20 164 115 74 78 179 172 309 275 37 30 121 106 187 170 67 65 152 144 189 176 69 60 123 134 187 256 41 77 107 150 137 150 35 0 42 -28 32 -141 l-8 -104 -32 -70 c-18 -38 -40 -108 -50 -155 -10 -47 -23 -104 -29 -128 -15 -53 -7 -80 24 -88 46 -12 154 74 280 221 42 50 102 119 134 155 31 36 84 100 117 144 32 43 87 115 121 160 34 44 69 91 78 102 9 12 31 57 49 100 60 141 65 151 92 183 33 40 59 40 84 -2 l20 -32 0 -70 c-1 -38 -5 -90 -10 -115 -6 -25 -14 -115 -20 -200 -6 -95 -17 -184 -30 -230 -44 -164 -35 -252 26 -258 46 -4 76 26 170 171 47 71 100 150 119 175 118 154 310 663 336 892 6 47 19 130 30 185 l19 100 -2 133 -3 134 28 24 c50 43 90 17 157 -104 23 -42 67 -113 95 -158 74 -114 100 -168 129 -270 32 -115 81 -232 108 -261 61 -65 119 8 148 184 7 37 19 104 27 148 28 144 32 178 32 350 1 201 -13 408 -35 520 -31 159 -136 471 -194 580 -57 107 -112 242 -108 267 l3 23 37 -1 c42 -1 143 -61 246 -144 35 -28 93 -69 130 -92 37 -22 96 -67 132 -99 76 -67 174 -129 206 -129 60 0 61 64 4 243 -22 71 -40 137 -40 146 0 9 -18 55 -40 100 -23 46 -59 129 -82 184 -23 56 -81 161 -133 241 -50 77 -102 161 -117 186 -15 25 -61 81 -103 125 -123 129 -232 251 -245 276 l-13 23 23 18 c25 20 33 19 165 -22 50 -16 113 -31 141 -33 32 -4 79 -20 128 -46 82 -44 128 -51 164 -25 25 17 30 70 10 107 -32 61 -371 411 -451 466 -12 8 -50 39 -84 68 -35 29 -91 67 -125 84 -35 17 -97 51 -138 75 -41 23 -115 54 -165 68 -149 41 -161 81 -60 201 59 70 66 87 75 179 5 44 13 119 19 166 6 47 16 240 21 430 6 190 15 464 20 610 5 146 11 360 14 475 3 116 8 253 12 306 10 146 -16 199 -98 199 l-37 0 -108 -98z m-289 -874 c21 -30 20 -46 -8 -228 -14 -85 -32 -243 -41 -350 -14 -176 -24 -253 -55 -447 -11 -67 -42 -143 -108 -270 -32 -60 -68 -106 -138 -178 -94 -97 -115 -108 -138 -73 l-11 18 35 67 35 68 0 51 c0 64 -18 99 -64 120 -116 54 -108 106 49 314 78 103 100 149 100 210 l0 51 -25 24 c-49 50 -74 37 -237 -116 -68 -63 -157 -138 -198 -167 -41 -28 -106 -79 -145 -113 -113 -99 -210 -134 -250 -89 -29 32 -12 76 64 170 88 109 394 402 476 456 22 15 72 57 111 93 39 36 115 104 169 151 54 47 134 117 177 156 114 104 171 127 202 82z m-2866 -1972 l4 -30 -121 -116 c-80 -77 -121 -123 -121 -137 0 -23 33 -53 78 -72 37 -15 53 -48 39 -78 -14 -32 -78 -53 -176 -59 -47 -3 -127 -15 -178 -26 -51 -11 -103 -18 -117 -14 -29 7 -56 32 -56 51 0 29 208 256 325 355 97 81 245 162 289 158 l31 -3 3 -29z m-1978 -1319 c0 -18 -48 -74 -82 -95 -51 -32 -81 -36 -107 -15 l-23 18 12 26 c15 32 60 60 125 74 52 12 75 10 75 -8z M3820 8338 c-11 -18 -20 -39 -20 -47 0 -22 -67 -186 -146 -353 -40 -86 -80 -183 -89 -215 -9 -32 -31 -80 -49 -108 -18 -27 -43 -76 -54 -108 -12 -32 -40 -84 -62 -115 -22 -31 -56 -101 -75 -155 -42 -117 -53 -139 -116 -236 l-49 -74 0 -38 0 -38 21 -12 c39 -20 83 -2 212 85 70 47 150 97 179 112 29 15 138 82 243 150 266 172 325 209 365 229 19 10 56 32 82 51 26 18 69 44 96 58 65 33 112 87 112 129 0 35 -17 58 -75 103 -39 29 -229 278 -317 414 -30 47 -82 111 -116 143 l-61 57 -30 0 -31 0 -20 -32z'/%3E%3C/g%3E%3C/svg%3E"); --wm-opacity:.09;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background-color:var(--bg); background-image:var(--pattern); color:var(--text);
-    font-family:var(--font-body); min-height:100vh; position:relative; overflow-x:hidden;
-  }
-  /* le loup du maillot, en filigrane en bas à gauche de la page */
-  body::before{
-    content:""; position:fixed; left:-120px; bottom:-80px; width:540px; height:620px;
-    background:var(--wm) no-repeat left bottom / contain; opacity:var(--wm-opacity);
-    pointer-events:none; z-index:0;
-  }
-  #app{position:relative;z-index:1;}
-  .wrap{max-width:960px;margin:0 auto;padding:0 16px 70px;}
-  .crest-ico{display:block;fill:currentColor;}
 
-  /* ---- le col du maillot : bande violette, liserés roses, encoche en V, blason ---- */
-  .topbar{position:relative;z-index:3;background:var(--collar);color:var(--rose);margin-bottom:46px;}
-  .topbar::after{                       /* côtes du col : deux liserés roses dans le violet */
-    content:"";position:absolute;left:0;right:0;bottom:0;height:17px;
-    background:linear-gradient(to bottom,var(--collar) 0,var(--collar) 4px,var(--rose) 4px,var(--rose) 7px,var(--collar) 7px,var(--collar) 11px,var(--rose) 11px,var(--rose) 14px,var(--collar) 14px,var(--collar) 17px);
-  }
-  .notch{position:absolute;left:50%;bottom:-24px;margin-left:-30px;width:0;height:0;
-    border-left:30px solid transparent;border-right:30px solid transparent;border-top:24px solid var(--rose);}
-  .notch::after{content:"";position:absolute;left:-25px;top:-24px;width:0;height:0;
-    border-left:25px solid transparent;border-right:25px solid transparent;border-top:19px solid var(--collar);}
-  .sleeve{                              /* rayures d'épaule, comme sur les manches */
-    position:absolute;top:0;bottom:17px;width:max(0px,calc((100vw - 960px) / 2 - 12px));pointer-events:none;
-    background:repeating-linear-gradient(112deg,transparent 0,transparent 16px,rgba(252,194,226,.55) 16px,rgba(252,194,226,.55) 20px,transparent 20px,transparent 24px,rgba(252,194,226,.55) 24px,rgba(252,194,226,.55) 27px);
-    -webkit-mask-image:linear-gradient(to right,#000 45%,transparent);mask-image:linear-gradient(to right,#000 45%,transparent);
-  }
-  .sleeve-l{left:0;}
-  .sleeve-r{right:0;transform:scaleX(-1);}
-  .topbar-inner{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:18px 16px 36px;display:flex;align-items:center;gap:14px 18px;flex-wrap:wrap;}
-  .brand{display:flex;align-items:center;gap:14px;flex:0 0 auto;}
-  .brand-wolf{width:52px;height:60px;color:var(--rose);flex:0 0 auto;}
-  .titles h1{font-family:var(--font-head);font-weight:800;font-size:40px;line-height:.92;margin:0;letter-spacing:.8px;color:var(--rose);white-space:nowrap;}
-  .titles p{margin:6px 0 0;color:rgba(252,194,226,.82);font-size:12.5px;font-weight:500;white-space:nowrap;}
-  .stats-chip{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:nowrap;}
-  .stat-pill{
-    background:rgba(252,194,226,.14);border:1.5px solid rgba(252,194,226,.42);color:var(--rose);border-radius:6px;
-    padding:6px 12px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;white-space:nowrap;
-  }
-  .stat-pill .lab{color:rgba(252,194,226,.78);font-weight:600;}
-  .logout-btn{background:none;border:none;color:rgba(252,194,226,.8);font-size:12px;text-decoration:underline;cursor:pointer;padding:4px;font-family:var(--font-body);}
-  .logout-btn:hover{color:var(--rose);}
-  .sound-btn{background:rgba(252,194,226,.14);border:1.5px solid rgba(252,194,226,.42);color:var(--rose);border-radius:6px;padding:5px 9px;font-size:14px;line-height:1;cursor:pointer;}
-  .sound-btn:hover{background:rgba(252,194,226,.26);}
-  @media (max-width:760px){
-    .titles h1{font-size:34px;}
-    .stats-chip{margin-left:0;flex-wrap:wrap;width:100%;}
-    body::before{width:360px;height:414px;left:-90px;bottom:-60px;}
-  }
 
-  /* ---- navigation : texte de flocage, liseré de manchette sous l'onglet actif ---- */
-  .tabs{display:flex;gap:2px;margin:0 0 26px;overflow-x:auto;border-bottom:2px solid var(--line);}
-  .tab{appearance:none;border:none;background:none;color:var(--text-muted);font-family:var(--font-head);font-weight:700;font-size:20px;letter-spacing:.4px;padding:10px 14px 16px;cursor:pointer;position:relative;white-space:nowrap;}
-  .tab:hover{color:var(--text);}
-  .tab.active{color:var(--text);}
-  .tab.active::after{content:"";position:absolute;left:10px;right:10px;bottom:3px;height:9px;background:linear-gradient(to bottom,var(--stripe) 0,var(--stripe) 3px,transparent 3px,transparent 5px,var(--stripe) 5px,var(--stripe) 9px);}
-  .tab-panel{display:none;}
-  .diff-pos{color:#1B7F3B;} .diff-neg{color:#B3261E;}
-  :root[data-theme="dark"] .diff-pos,:root:not([data-theme="light"]) .diff-pos{color:inherit;}
-  /* ---- notifications ---- */
-  .notif-row{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;}
-  .notif-row input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent);flex:0 0 auto;cursor:pointer;}
-  .notif-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center;}
-  .notif-ok{display:inline-block;background:var(--bg-sunk);border-radius:8px;padding:6px 10px;font-weight:700;}
-  .notif-steps{margin:8px 0 0 20px;padding:0;}
-  .notif-steps li{margin:4px 0;}
-  /* ---- bouton d'aide de chaque onglet + fenêtre ---- */
-  .help-row{display:flex;justify-content:flex-end;margin:-8px 0 14px;}
-  .help-btn{display:inline-flex;align-items:center;gap:7px;background:transparent;color:var(--accent);border:1.5px solid var(--accent);border-radius:999px;padding:3px 14px 3px 4px;cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:16px;letter-spacing:.3px;}
-  .help-btn:hover{background:var(--bg-sunk);}
-  .help-q{width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-text);display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1;}
-  .help-box{max-width:640px;}
-  .help-body{font-size:14px;line-height:1.55;}
-  .help-body h3{font-family:var(--font-head);font-weight:800;font-size:21px;margin:18px 0 4px;}
-  .help-body h3:first-child{margin-top:0;}
-  .help-body p{margin:6px 0;}
-  .help-body ul{margin:6px 0 6px 18px;padding:0;}
-  .help-body li{margin:3px 0;}
-  .help-body table.odds{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0;}
-  .help-body table.odds th{text-align:right;font-size:11.5px;color:var(--text-muted);padding:5px 6px;border-bottom:1.5px solid var(--border);}
-  .help-body table.odds th:first-child,.help-body table.odds td:first-child{text-align:left;}
-  .help-body table.odds td{padding:6px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;}
-  .help-body .odds-dash{color:var(--text-muted);}
-  .help-body .help-note{font-size:12.5px;color:var(--text-muted);}
-  .help-tier{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px;}
-  .tab-panel.active{display:block;animation:fadein .25s ease;}
-  @keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+def poisson_random(lam: float) -> int:
+    """Tire un entier selon une loi de Poisson de moyenne lam (algorithme de Knuth)."""
+    lam = max(0.05, lam)
+    limit = pow(2.718281828459045, -lam)
+    k, p = 0, 1.0
+    while True:
+        k += 1
+        p *= random.random()
+        if p <= limit:
+            return min(9, k - 1)
 
-  .pitch-hero{display:flex;justify-content:center;padding:28px 0 20px;}
-  .pack{
-    position:relative;overflow:hidden;width:190px;aspect-ratio:3/4;border-radius:14px;cursor:pointer;
-    background:repeating-linear-gradient(112deg,transparent 0,transparent 22px,rgba(252,194,226,.10) 22px,rgba(252,194,226,.10) 25px),
-      linear-gradient(160deg,#5A2878,#3C1951 55%,#2A0F3D);
-    box-shadow:inset 0 0 0 4px var(--rose),var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
-    transition:transform .18s ease;border:4px solid #2A0F3D;
-  }
-  .pack:active{transform:scale(0.97);}
-  .pack.disabled{opacity:.5;pointer-events:none;}
-  /* ---- Ouverture d'un pack : le pack se retourne (comme une carte qu'on tourne) et montre au dos la première carte ---- */
-  .pack-stage{position:relative;width:190px;aspect-ratio:3/4;perspective:1100px;}
-  .pack-flip{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .9s cubic-bezier(.45,.05,.2,1);}
-  .pack-flip.flipped{transform:rotateY(180deg);}
-  .pack-flip>.pack{position:absolute;inset:0;width:auto;aspect-ratio:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden;}
-  .pack-flip.flipped>.pack{pointer-events:none;}
-  .pack-back{position:absolute;inset:0;transform:rotateY(180deg);-webkit-backface-visibility:hidden;backface-visibility:hidden;}
-  .big-card-host{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
-  /* la carte en grand garde sa mise en page normale (140 px) ; on l'agrandit pour qu'elle ait la hauteur du pack */
-  .big-scale{transform:scale(var(--big-k,1.2));transform-origin:center;}
-  .card-slot.big{width:140px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
-  .card-slot.big:focus-visible{outline:3px solid var(--focus);outline-offset:6px;border-radius:14px;}
-  .card-slot.pop{animation:cardPop .45s cubic-bezier(.34,1.56,.64,1) both;}
-  @keyframes cardPop{from{opacity:0;transform:scale(.72);}to{opacity:1;transform:scale(1);}}
-  .pack.shaking{animation:packShake .5s ease-in-out;}
-  @keyframes packShake{0%,100%{transform:translateX(0) rotate(0);}15%{transform:translateX(-6px) rotate(-1.6deg);}35%{transform:translateX(6px) rotate(1.6deg);}55%{transform:translateX(-4px) rotate(-1deg);}75%{transform:translateX(4px) rotate(1deg);}}
-  .reveal-hint{text-align:center;font-size:13px;font-weight:700;color:var(--text-muted);margin:2px 0 0;min-height:20px;}
-  .reveal-hint:empty{display:none;}
-  .reveal-hint.live{animation:hintPulse 1.6s ease-in-out infinite;}
-  @keyframes hintPulse{0%,100%{opacity:.55;}50%{opacity:1;}}
-  .pack-wolf{width:92px;height:106px;color:var(--rose);}
-  .pack-label{font-family:var(--font-head);font-weight:800;font-size:25px;color:var(--rose);letter-spacing:.8px;}
-  .pack-status{text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:18px;}
-  .pack-actions{display:flex;flex-direction:column;align-items:center;gap:10px;}
 
-  .btn-primary,.btn-secondary{font-family:var(--font-head);font-weight:700;font-size:19px;letter-spacing:.5px;line-height:1.1;border:none;border-radius:6px;padding:11px 24px 12px;cursor:pointer;}
-  .btn-primary{background:var(--accent);color:var(--accent-text);box-shadow:inset 0 -3px 0 rgba(0,0,0,.28);}
-  .btn-primary:hover:not(:disabled){filter:brightness(1.22);}
-  .btn-primary:disabled{opacity:.45;cursor:default;box-shadow:none;}
-  .btn-secondary{background:transparent;color:var(--accent);border:2px solid var(--accent);padding:9px 22px 10px;}
-  .btn-secondary:hover:not(:disabled){background:var(--bg-sunk);}
-  .btn-secondary:disabled{opacity:.45;cursor:default;}
-  .btn-small{font-family:var(--font-head);font-weight:700;font-size:16px;letter-spacing:.4px;line-height:1.1;border:none;border-radius:5px;padding:6px 13px 7px;cursor:pointer;background:var(--accent);color:var(--accent-text);}
-  .btn-small:hover:not(:disabled){filter:brightness(1.22);}
-  .btn-small.ghost{background:transparent;border:1.5px solid var(--text-muted);color:var(--text-muted);padding:5px 12px 6px;}
-  .btn-small.ghost:hover:not(:disabled){background:var(--bg-sunk);}
-  .btn-small:disabled{opacity:.4;cursor:default;}
+def elo_update(elo_a: int, elo_b: int, result_a: float, k: int = ELO_K):
+    """result_a : 1 si A gagne, 0.5 nul, 0 si A perd. Retourne (nouvel_elo_a, nouvel_elo_b)."""
+    expected_a = 1 / (1 + 10 ** ((elo_b - elo_a) / 400))
+    new_a = round(elo_a + k * (result_a - expected_a))
+    new_b = round(elo_b + k * ((1 - result_a) - (1 - expected_a)))
+    return new_a, new_b
 
-  /* largeur d'une carte rangée sous le pack : 140 px, ou moins sur téléphone pour que les TROIS tiennent sur une ligne */
-  :root{--slot-w:min(140px, calc((100vw - 52px) / 3));}
-  .reveal-area{display:flex;gap:14px;justify-content:center;margin-top:14px;flex-wrap:nowrap;}
-  .reveal-area:empty{display:none;}
-  .reveal-ph{width:var(--slot-w);aspect-ratio:2/3;position:relative;flex:0 0 auto;}
-  .reveal-ph .card-slot{width:100%;}
-  /* pack à 10 cartes (ultra) : 2 rangées de 5 ; chaque carte garde sa mise en page de 140 px, réduite pour tenir */
-  .reveal-area.many{display:grid;grid-template-columns:repeat(5,var(--slot-w5));justify-content:center;gap:10px;--slot-w5:min(140px, calc((100vw - 72px) / 5));}
-  .reveal-area.many .reveal-ph{width:var(--slot-w5);height:calc(var(--slot-w5) * 1.5);aspect-ratio:auto;}
-  .reveal-area.many .ph-scale{position:absolute;left:0;top:0;width:140px;transform:scale(var(--k5,1));transform-origin:top left;}
-  .reveal-area.many .reveal-ph .card-slot{width:140px;}
-  .reveal-summary{text-align:center;margin-top:12px;font-size:14px;color:var(--text-muted);}
-  .reveal-summary:empty{display:none;}
-  #packStatus{margin-top:14px;}
-  .reveal-summary b{color:var(--text);}
-  .craft-banner{
-    margin-top:10px;background:var(--bg-elevated);border:1px solid var(--legend-1);border-radius:10px;
-    padding:8px 14px;font-size:13px;text-align:center;color:var(--legend-text);
-  }
 
-  .card-slot{width:var(--slot-w,140px);aspect-ratio:2/3;perspective:1000px;opacity:0;transform:translateY(16px) scale(.82);transition:opacity .35s ease, transform .45s cubic-bezier(.34,1.56,.64,1);}
-  .card-slot.appear{opacity:1;transform:translateY(0) scale(1);}
-  /* glow en box-shadow plutôt qu'en filter : un filter sur l'élément qui fait
-     la rotation 3D (card-flip) casse le rendu du flip dans plusieurs navigateurs */
-  .card-slot.glow-rare .card-front{animation:glowRareBox 1.3s ease-in-out infinite;}
-  .card-slot.glow-epique .card-front{animation:glowEpiqueBox 1.3s ease-in-out infinite;}
-  .card-slot.glow-legendaire .card-front{animation:glowLegendBox 1.3s ease-in-out infinite;}
-  .card-slot.glow-gold .card-front{animation:glowGoldBox 1.3s ease-in-out infinite;}
-  .card-slot.glow-speciale .card-front{animation:glowSpecialeBox 1.3s ease-in-out infinite;}
-  @keyframes glowGoldBox{0%,100%{box-shadow:var(--shadow), 0 0 4px rgba(255,190,40,.5);}50%{box-shadow:var(--shadow), 0 0 24px 4px rgba(255,190,40,.95);}}
-  @keyframes glowSpecialeBox{0%,100%{box-shadow:var(--shadow), 0 0 4px rgba(60,200,110,.5);}50%{box-shadow:var(--shadow), 0 0 24px 4px rgba(60,200,110,.95);}}
-  @keyframes glowEpiqueBox{
-    0%,100%{box-shadow:var(--shadow), 0 0 4px rgba(150,90,230,.5);}
-    50%{box-shadow:var(--shadow), 0 0 26px 5px rgba(150,90,230,.95);}
-  }
-  @keyframes glowRareBox{
-    0%,100%{box-shadow:var(--shadow), 0 0 3px rgba(210,215,225,.4);}
-    50%{box-shadow:var(--shadow), 0 0 24px 4px rgba(225,230,240,.95);}
-  }
-  @keyframes glowLegendBox{
-    0%,100%{box-shadow:var(--shadow), 0 0 4px rgba(255,210,100,.45);}
-    50%{box-shadow:var(--shadow), 0 0 28px 5px rgba(255,210,100,1);}
-  }
-  .spark{position:absolute;left:50%;top:50%;font-size:13px;pointer-events:none;z-index:5;animation:sparkFly .9s ease-out forwards;}
-  @keyframes sparkFly{to{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0;}}
-  .card-flip{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,.2,.2,1);}
-  .card-flip.revealed{transform:rotateY(180deg);}
-  .card-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;overflow:hidden;}
-  .card-back{background:repeating-linear-gradient(112deg,transparent 0,transparent 14px,rgba(252,194,226,.09) 14px,rgba(252,194,226,.09) 16px),linear-gradient(160deg,#5A2878,#3C1951 60%,#2A0F3D);border:3px solid #2A0F3D;box-shadow:inset 0 0 0 2px var(--rose);display:flex;align-items:center;justify-content:center;color:var(--rose);}
-  .card-back .crest-ico{width:46%;height:auto;opacity:.92;}
-  /* La face de la carte remplit TOUT l'emplacement (comme le dos) : toutes les cartes ont exactement la même taille, quel que soit leur contenu. */
-  .card-front{position:absolute;inset:0;transform:rotateY(180deg);padding:10px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;}
-  .card-front.tier-commune{background:linear-gradient(160deg,var(--commune-2),var(--commune-1));color:var(--commune-text);}
-  .card-front.tier-rare{background:linear-gradient(160deg,var(--rare-2),var(--rare-1));color:var(--rare-text);}
-  .card-front.tier-epique{background:linear-gradient(160deg,var(--epique-2),var(--epique-1));color:var(--epique-text);}
-  .card-front.tier-legendaire{background:linear-gradient(160deg,var(--legend-2),var(--legend-1));color:var(--legend-text);}
-  .card-front.tier-gold{background:linear-gradient(160deg,var(--gold-2),var(--gold-1));color:var(--gold-text);}
-  .card-front.tier-speciale{background:linear-gradient(160deg,var(--speciale-2),var(--speciale-1));color:var(--speciale-text);}
-  .card-front.tier-secrete{background:linear-gradient(160deg,var(--secrete-2),var(--secrete-1));color:var(--secrete-text);}
-  /* Les cartes secrètes sont stratosphériques : Saturne se montre dans le coin du ciel étoilé (par-dessus la photo, sous les étiquettes) */
-  :root{--saturn:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Cdefs%3E%3CradialGradient%20id='g'%20cx='50%25'%20cy='50%25'%20r='50%25'%3E%3Cstop%20offset='0'%20stop-color='%23FFE2A8'%20stop-opacity='.38'/%3E%3Cstop%20offset='1'%20stop-color='%23FFE2A8'%20stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient%20id='b'%20cx='36%25'%20cy='30%25'%20r='80%25'%3E%3Cstop%20offset='0'%20stop-color='%23FFF3CF'/%3E%3Cstop%20offset='.42'%20stop-color='%23EBC47F'/%3E%3Cstop%20offset='1'%20stop-color='%237E4F25'/%3E%3C/radialGradient%3E%3ClinearGradient%20id='r'%20x1='0'%20x2='1'%3E%3Cstop%20offset='0'%20stop-color='%23B98C4E'/%3E%3Cstop%20offset='.5'%20stop-color='%23F8E7BB'/%3E%3Cstop%20offset='1'%20stop-color='%23B58648'/%3E%3C/linearGradient%3E%3CclipPath%20id='f'%3E%3Crect%20x='0'%20y='50'%20width='100'%20height='50'/%3E%3C/clipPath%3E%3CclipPath%20id='p'%3E%3Ccircle%20cx='50'%20cy='50'%20r='22'/%3E%3C/clipPath%3E%3C/defs%3E%3Ccircle%20cx='50'%20cy='50'%20r='48'%20fill='url%28%23g%29'/%3E%3Cg%20transform='rotate%28-22%2050%2050%29'%3E%3Cellipse%20cx='50'%20cy='50'%20rx='46'%20ry='12.5'%20fill='none'%20stroke='url%28%23r%29'%20stroke-width='5.5'%20opacity='.92'/%3E%3Cellipse%20cx='50'%20cy='50'%20rx='38'%20ry='9.6'%20fill='none'%20stroke='%23E9D3A0'%20stroke-width='1.4'%20opacity='.55'/%3E%3Ccircle%20cx='50'%20cy='50'%20r='22'%20fill='url%28%23b%29'/%3E%3Cg%20clip-path='url%28%23p%29'%3E%3Crect%20x='20'%20y='37'%20width='60'%20height='3.2'%20fill='%238A5A2B'%20opacity='.28'/%3E%3Crect%20x='20'%20y='46'%20width='60'%20height='4.2'%20fill='%238A5A2B'%20opacity='.22'/%3E%3Crect%20x='20'%20y='56'%20width='60'%20height='3'%20fill='%238A5A2B'%20opacity='.26'/%3E%3C/g%3E%3Cellipse%20cx='50'%20cy='50'%20rx='46'%20ry='12.5'%20fill='none'%20stroke='url%28%23r%29'%20stroke-width='5.5'%20clip-path='url%28%23f%29'/%3E%3Cellipse%20cx='50'%20cy='50'%20rx='38'%20ry='9.6'%20fill='none'%20stroke='%23E9D3A0'%20stroke-width='1.4'%20opacity='.55'%20clip-path='url%28%23f%29'/%3E%3C/g%3E%3C/svg%3E");}
-  .card-deco-saturn{top:-2%;right:-7%;width:47%;aspect-ratio:1/1;background:var(--saturn) center / contain no-repeat;z-index:1;filter:drop-shadow(0 2px 5px rgba(8,5,30,.55));}
-  /* ---- Cartes légendaires : feuille holographique animée ----
-     arc-en-ciel qui dérive, reflet blanc qui balaie la carte, paillettes ; le reflet suit la souris.
-     Tout est placé SOUS le texte, la photo et le médaillon (z-index 1) : le nom reste net et lisible. ---- */
-  .card-front.tier-legendaire::after,
-  .card.tier-legendaire:not(.locked)::after{
-    content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
-    background:repeating-linear-gradient(125deg,rgba(255,70,170,.9) 0%,rgba(255,205,70,.9) 9%,rgba(70,255,175,.85) 18%,rgba(70,175,255,.9) 27%,rgba(195,90,255,.9) 36%,rgba(255,70,170,.9) 45%);
-    background-size:170% 170%;background-repeat:no-repeat;background-position:0% 0%;
-    mix-blend-mode:var(--foil-blend,hard-light);opacity:var(--foil-opacity,.5);
-    animation:foilDrift 5.5s ease-in-out infinite alternate;
-  }
-  @keyframes foilDrift{from{background-position:0% 0%;}to{background-position:100% 100%;}}
-  .card-front.tier-legendaire::before,
-  .card.tier-legendaire:not(.locked)::before{
-    background:
-      radial-gradient(circle at 17% 24%,rgba(255,255,255,.95) 0,rgba(255,255,255,.95) 1.3px,rgba(255,255,255,0) 2.6px),
-      radial-gradient(circle at 78% 15%,rgba(255,255,255,.9) 0,rgba(255,255,255,.9) 1px,rgba(255,255,255,0) 2.2px),
-      radial-gradient(circle at 86% 52%,rgba(255,255,255,.95) 0,rgba(255,255,255,.95) 1.4px,rgba(255,255,255,0) 2.8px),
-      radial-gradient(circle at 24% 66%,rgba(255,255,255,.85) 0,rgba(255,255,255,.85) 1px,rgba(255,255,255,0) 2.2px),
-      radial-gradient(circle at 62% 80%,rgba(255,255,255,.95) 0,rgba(255,255,255,.95) 1.2px,rgba(255,255,255,0) 2.4px),
-      radial-gradient(circle at var(--holo-x,28%) var(--holo-y,18%),rgba(255,255,255,.55),rgba(255,255,255,0) 40%),
-      linear-gradient(115deg,rgba(255,255,255,0) 38%,rgba(255,255,255,.5) 50%,rgba(255,255,255,0) 62%),
-      linear-gradient(165deg,rgba(255,255,255,.4),rgba(255,255,255,0) 45%);
-    background-size:100% 100%,100% 100%,100% 100%,100% 100%,100% 100%,100% 100%,240% 100%,100% 100%;
-    background-repeat:no-repeat;
-    background-position:0 0,0 0,0 0,0 0,0 0,0 0,130% 0,0 0;
-    animation:twinkle 2.8s ease-in-out infinite,foilSweep 3.8s ease-in-out infinite;
-  }
-  @keyframes twinkle{0%,100%{opacity:.6;}50%{opacity:1;}}
-  @keyframes foilSweep{
-    0%,30%{background-position:0 0,0 0,0 0,0 0,0 0,0 0,130% 0,0 0;}
-    100%{background-position:0 0,0 0,0 0,0 0,0 0,0 0,-30% 0,0 0;}
-  }
-  /* fin glacis en haut de carte, sur toute carte "face visible" */
-  .card-front::before, .card:not(.locked)::before{
-    content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-    background:linear-gradient(165deg, rgba(255,255,255,0.4), rgba(255,255,255,0) 45%);
-  }
-  /* ---- Photo plein cadre : l'image remplit le haut de la carte (plus de rond) et se fond dans la couleur de la
-     rareté sous le nom. Elle passe sous les textes, le reflet et les paillettes. ---- */
-  .card-bgphoto{
-    position:absolute;left:0;top:0;width:100%;height:86%;object-fit:cover;object-position:center 18%;
-    z-index:0;pointer-events:none;display:block;
-    -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 52%,rgba(0,0,0,.65) 72%,rgba(0,0,0,.22) 88%,rgba(0,0,0,0) 100%);
-    mask-image:linear-gradient(to bottom,#000 0,#000 52%,rgba(0,0,0,.65) 72%,rgba(0,0,0,.22) 88%,rgba(0,0,0,0) 100%);
-  }
-  .has-photo::before{z-index:1;}
-  .has-photo .card-name{text-shadow:0 0 5px rgba(255,255,255,.7),0 0 12px rgba(255,255,255,.45);}
-  .card-top{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;font-family:var(--font-head);gap:4px;}
-  .card-tier-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;background:rgba(255,255,255,0.4);padding:2px 6px;border-radius:5px;}
-  .card-poste{font-size:11px;font-weight:700;background:rgba(0,0,0,0.15);padding:2px 7px;border-radius:6px;white-space:nowrap;}
-  .card-mid{position:relative;z-index:1;flex:1;display:flex;align-items:center;justify-content:center;}
-  .card-photo{width:62%;aspect-ratio:1/1;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.6);box-shadow:0 4px 10px rgba(0,0,0,0.25);display:block;}
-  .ball-fallback{font-size:38px;display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));}
-  .card-name{position:relative;z-index:1;font-family:var(--font-head);font-size:19px;font-weight:600;line-height:1.05;text-shadow:0 1px 1px rgba(255,255,255,0.3);}
-  .card-stats{position:relative;z-index:1;display:flex;gap:6px;font-size:10px;font-weight:800;margin-top:4px;}
-  .tier-secrete .card-stats span{white-space:nowrap;}
-  .card-stats .card-num{margin-left:auto;background:rgba(22,17,43,.82);color:#FFE08A;border:1px solid rgba(255,224,138,.6);letter-spacing:.3px;}   /* numéro de maillot (carte secrète) */
-  .card-stats span{background:rgba(0,0,0,0.14);padding:2px 6px;border-radius:6px;}
-  .card-watermark{position:absolute;bottom:6px;right:7px;z-index:1;width:13px;height:15px;opacity:.38;}
-  .card-count{position:absolute;top:50%;right:6px;transform:translateY(-50%);background:var(--accent);color:var(--accent-text);font-size:11px;font-weight:800;border-radius:20px;padding:1px 7px;z-index:4;box-shadow:0 2px 6px rgba(0,0,0,0.25);}
-  /* le texte d'une carte suit sa rareté, jamais le thème clair/sombre de la page */
-  .card.tier-commune:not(.locked){color:var(--commune-text);}
-  .card.tier-rare:not(.locked){color:var(--rare-text);}
-  .card.tier-epique:not(.locked){color:var(--epique-text);}
-  .card.tier-legendaire:not(.locked){color:var(--legend-text);}
-  .card.tier-gold:not(.locked){color:var(--gold-text);}
-  .card.tier-speciale:not(.locked){color:var(--speciale-text);}
-  .card.tier-secrete:not(.locked){color:var(--secrete-text);}
-  .card{width:122px;aspect-ratio:2/3;border-radius:13px;padding:9px;display:flex;flex-direction:column;justify-content:space-between;position:relative;box-shadow:var(--shadow);overflow:hidden;transition:transform .15s ease, box-shadow .15s ease;}
-  .card:not(.locked):hover{transform:translateY(-3px);box-shadow:0 16px 30px rgba(0,0,0,0.18);}
-  .card.tier-legendaire:not(.locked){
-    box-shadow:var(--shadow),0 0 16px rgba(255,205,90,.55);
-    transform:perspective(700px) rotateX(var(--tilt-y,0deg)) rotateY(var(--tilt-x,0deg));
-  }
-  .card.tier-legendaire:not(.locked):hover{
-    transform:translateY(-3px) perspective(700px) rotateX(var(--tilt-y,0deg)) rotateY(var(--tilt-x,0deg));
-    box-shadow:0 16px 30px rgba(0,0,0,.2),0 0 24px rgba(255,205,90,.8);
-  }
-  .card.locked{background:var(--bg-sunk);color:var(--text-muted);border:1px dashed var(--border);opacity:.7;}
-  /* carte pas encore débloquée : un « ? » et rien d'autre (ni nom, ni poste, ni photo) pour garder la surprise */
-  .card.locked{cursor:default;justify-content:center;}
-  .card.locked .card-mid{filter:grayscale(1);opacity:.55;font-family:var(--font-display);font-size:54px;font-weight:800;line-height:1;}
-  .card.locked .card-stats{width:100%;}
-  /* confettis qui sortent du pack (spéciale = vert, épique = violet, légendaire = or) */
-  #confettiLayer{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:80;}
-  #confettiLayer .confetti{position:absolute;left:0;top:0;display:block;will-change:transform,opacity;}
-  .card-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
+# ------------------------------------------------------------ Validation ----
 
-  /* ---- La mascotte : la tête de loup du maillot dans un médaillon, un traitement par rareté ---- */
-  .mascot-medal{
-    position:relative;width:70%;aspect-ratio:1/1;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    background:radial-gradient(circle at 34% 28%,#6A2C8F,#2A0F3D 72%);
-    box-shadow:0 0 0 3px rgba(252,194,226,.92),0 4px 10px rgba(0,0,0,.3);
-  }
-  .mascot-medal .mascot-wolf{width:60%;height:auto;color:var(--rose);margin-left:-3%;}
-  .tier-rare .mascot-medal{box-shadow:0 0 0 2px #2A0F3D,0 0 0 5px #F4F7F8,0 4px 10px rgba(0,0,0,.3);}
-  .tier-rare .mascot-medal .mascot-wolf{color:#FFFFFF;filter:drop-shadow(0 0 3px rgba(190,205,215,.9));}
-  .tier-epique .mascot-medal{background:radial-gradient(circle at 34% 28%,#7B33C8,#1E0B3A 74%);box-shadow:0 0 0 3px #C7A2F5,0 0 16px 3px rgba(165,100,245,.85);}
-  .tier-epique .mascot-medal .mascot-wolf{color:#EBDDFF;filter:drop-shadow(0 0 5px rgba(190,140,255,.95));}
-  .tier-legendaire .mascot-medal{background:radial-gradient(circle at 34% 28%,#2B1240,#0E0518 75%);box-shadow:0 0 0 3px #FFE79A,0 0 20px 4px rgba(255,205,90,.85);}
-  .tier-legendaire .mascot-medal::before{        /* anneau doré qui tourne autour du médaillon */
-    content:"";position:absolute;inset:-6px;border-radius:50%;z-index:-1;
-    background:conic-gradient(from 0deg,#FFE79A,#DFA82E,#FFF6CF,#DFA82E,#FFE79A);animation:spinRing 6s linear infinite;
-  }
-  @keyframes spinRing{to{transform:rotate(360deg);}}
-  .mascot-holo{                                  /* le loup lui-même, rempli d'un dégradé holographique qui dérive */
-    width:60%;aspect-ratio:723/833;display:block;margin-left:-3%;
-    background:linear-gradient(115deg,#FF6FC4,#FFD36A 18%,#6CFFC4 36%,#6CB6FF 54%,#C46CFF 72%,#FF6FC4 90%);
-    background-size:320% 320%;
-    -webkit-mask:var(--wm) center/contain no-repeat;mask:var(--wm) center/contain no-repeat;
-    animation:holoWolf 4.5s ease-in-out infinite alternate;
-  }
-  @keyframes holoWolf{from{background-position:0% 20%;}to{background-position:100% 80%;}}
+def validate_team(db: Session, user: User, formation: str, tactic: str, slots: list,
+                  captain_card_id=None, fan_card_id=None, equipment_card_ids=None, mascot_card_id=None):
+    """
+    Vérifie une équipe. Règles : disposition connue, 5 cartes, bon nombre par emplacement, cartes
+    toutes possédées, JAMAIS deux fois la même carte (même si on l'a en plusieurs exemplaires ;
+    en revanche deux raretés du même joueur sont possibles), seuls de vrais joueurs sur le terrain
+    (ni Fan, ni Loup, ni équipement, ni stade), au plus 1 Fan, 1 Loup et MAX_EQUIPMENT Équipement.
+    Retourne (cartes [(Card, emplacement)], capitaine Card|None, fan Card|None, équipements [Card], loup Card|None).
+    """
+    if formation not in FORMATIONS:
+        raise DuelError("Disposition inconnue : " + str(formation))
+    if tactic not in TACTICS:
+        raise DuelError("Tactique inconnue : " + str(tactic))
+    if len(slots) != TEAM_SIZE:
+        raise DuelError("Une équipe doit avoir exactement " + str(TEAM_SIZE) + " cartes")
 
-  /* ---- ÉDITIONS LIMITÉES : Halloween (noir et orange, toiles d'araignée, citrouille) et Noël (rouge, flocons, neige) ---- */
-  .card-front.tier-halloween,.card.tier-halloween:not(.locked){
-    background:radial-gradient(120% 70% at 50% 108%,#FF8A1F 0%,#E0540A 34%,rgba(40,18,40,0) 70%),linear-gradient(172deg,#0C0910 0%,#1B1022 55%,#2B1424 100%);
-    color:#FFF1E0;box-shadow:var(--shadow),inset 0 0 0 2px #FF8A1F,inset 0 0 14px rgba(255,138,31,.55);}
-  .tier-halloween .card-tier-label{background:#FF8A1F;color:#1A0B00;}
-  .tier-halloween .card-poste{background:rgba(0,0,0,.45);color:#FFE2C0;}
-  .tier-halloween .card-name,.tier-halloween.has-photo .card-name{color:#FFF1E0;text-shadow:0 0 6px rgba(0,0,0,.9),0 1px 2px rgba(0,0,0,.9);}
-  .tier-halloween .card-stats span{background:rgba(0,0,0,.5);color:#FFE2C0;}
-  .tier-halloween .card-watermark{display:none;}
-  .card-front.tier-noel,.card.tier-noel:not(.locked){
-    background:radial-gradient(90% 60% at 30% 0%,rgba(255,255,255,.22),rgba(255,255,255,0) 60%),linear-gradient(175deg,#D3202E 0%,#B3121D 60%,#8E0A14 100%);
-    color:#fff;box-shadow:var(--shadow),inset 0 0 0 2px #fff,inset 0 0 12px rgba(255,255,255,.4);}
-  .tier-noel .card-tier-label{background:#fff;color:#B3121D;}
-  .tier-noel .card-poste{background:rgba(0,0,0,.28);color:#fff;}
-  .tier-noel .card-name,.tier-noel.has-photo .card-name{color:#8E0A14;text-shadow:none;position:relative;z-index:3;}
-  .tier-noel .card-stats{z-index:3;}
-  .tier-noel .card-stats span{background:rgba(142,10,20,.14);color:#8E0A14;}
-  .tier-noel .card-watermark{color:#8E0A14;opacity:.3;z-index:3;}
-  .tier-noel .card-count{z-index:3;}
-  .card-deco{position:absolute;pointer-events:none;}
-  .card-deco-web{top:0;width:46%;aspect-ratio:1/1;z-index:1;opacity:.85;}
-  .card-deco-web.tl{left:0;} .card-deco-web.tr{right:0;transform:scaleX(-1);}
-  .card-deco-pk{right:6px;bottom:7px;width:19px;height:19px;z-index:2;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));}
-  .card-deco-snow{left:0;right:0;bottom:0;width:100%;height:37%;z-index:1;}
-  .card-deco-flake{z-index:1;}
-  .card-stats .tag-limitee{font-size:6.5px;font-weight:800;letter-spacing:.3px;padding:2px 4px;border-radius:4px;margin-left:4px;align-self:center;white-space:nowrap;}
-  .tier-halloween .card-stats .tag-limitee{background:#FF8A1F;color:#1A0B00;}
-  .tier-noel .card-stats .tag-limitee{background:#8E0A14;color:#fff;}
-  .mini-badge.tier-halloween{background:linear-gradient(160deg,#FF8A1F,#1B1022);color:#fff;}
-  .mini-badge.tier-noel{background:linear-gradient(160deg,#fff,#D3202E);color:#8E0A14;}
-  .card-slot.glow-halloween .card-front{animation:glowHalloweenBox 1.3s ease-in-out infinite;}
-  .card-slot.glow-noel .card-front{animation:glowNoelBox 1.3s ease-in-out infinite;}
-  @keyframes glowHalloweenBox{0%,100%{box-shadow:var(--shadow),inset 0 0 0 2px #FF8A1F,0 0 4px rgba(255,138,31,.5);}50%{box-shadow:var(--shadow),inset 0 0 0 2px #FF8A1F,0 0 24px 4px rgba(255,138,31,.95);}}
-  @keyframes glowNoelBox{0%,100%{box-shadow:var(--shadow),inset 0 0 0 2px #fff,0 0 4px rgba(255,255,255,.5);}50%{box-shadow:var(--shadow),inset 0 0 0 2px #fff,0 0 24px 4px rgba(255,90,100,.95);}}
-  .edition-note{font-family:var(--font-body);font-size:13px;font-weight:700;color:var(--text-muted);margin-left:8px;}
-  .tier-group.edition-group h3{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px;}
-  /* ---- Gold (moment mémorable), spéciale (verte), secrète (nuit étoilée) ---- */
-  .card-front.tier-gold::after,.card.tier-gold:not(.locked)::after{            /* reflet métallique fixe */
-    content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
-    background:linear-gradient(115deg,rgba(255,255,255,0) 28%,rgba(255,255,255,.5) 46%,rgba(255,255,255,0) 62%);
-  }
-  .card-front.tier-gold,.card.tier-gold:not(.locked){box-shadow:var(--shadow),inset 0 0 0 2px rgba(255,238,170,.9);}
-  .card-front.tier-speciale,.card.tier-speciale:not(.locked){box-shadow:var(--shadow),inset 0 0 0 2px rgba(220,255,230,.75);}
-  .card-front.tier-secrete::before,.card.tier-secrete:not(.locked)::before{    /* étoiles */
-    background:
-      radial-gradient(circle at 16% 22%,rgba(255,255,255,.9) 0,rgba(255,255,255,.9) 1px,rgba(255,255,255,0) 2px),
-      radial-gradient(circle at 80% 18%,rgba(220,210,255,.9) 0,rgba(220,210,255,.9) 1.2px,rgba(255,255,255,0) 2.4px),
-      radial-gradient(circle at 88% 56%,rgba(255,255,255,.8) 0,rgba(255,255,255,.8) 1px,rgba(255,255,255,0) 2px),
-      radial-gradient(circle at 22% 68%,rgba(220,210,255,.85) 0,rgba(220,210,255,.85) 1px,rgba(255,255,255,0) 2px),
-      radial-gradient(circle at 58% 84%,rgba(255,255,255,.85) 0,rgba(255,255,255,.85) 1.2px,rgba(255,255,255,0) 2.4px),
-      linear-gradient(165deg,rgba(255,255,255,.18),rgba(255,255,255,0) 45%);
-  }
-  .card-front.tier-secrete,.card.tier-secrete:not(.locked){box-shadow:var(--shadow),inset 0 0 0 2px rgba(190,176,255,.7);}
-  .tier-secrete .card-tier-label{background:rgba(22,17,43,.78);color:#ECE8FF;}      /* lisible même sur une photo claire */
-  .tier-secrete .mascot-medal{background:radial-gradient(circle at 34% 28%,#3B2F7A,#0C0919 75%);box-shadow:0 0 0 3px #B7A9FF,0 0 16px 3px rgba(150,130,255,.8);}
-  .tier-secrete .mascot-medal .mascot-wolf{color:#E6E0FF;filter:drop-shadow(0 0 5px rgba(170,150,255,.95));}
-  .tier-gold .item-medal{background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.7),rgba(255,214,90,.25) 70%);box-shadow:inset 0 0 0 3px #FFF0A8,0 0 16px 3px rgba(255,200,60,.85);}
-  /* jauge de fusion sur une carte secrète pas encore débloquée */
-  .card-stats .fusion-gauge{position:relative;flex:1 1 auto;min-width:0;height:18px;border-radius:9px;background:rgba(70,55,140,.2);box-shadow:inset 0 0 0 1.5px rgba(124,108,224,.55);overflow:hidden;}
-  .fusion-bar{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#6A59D6,#A99BFF);border-radius:9px;}
-  .card-stats .fusion-gauge span{position:relative;z-index:1;display:block;text-align:center;font-size:10.5px;font-weight:800;line-height:18px;color:var(--text);background:none;padding:0;border-radius:0;text-shadow:0 0 3px var(--bg-elevated),0 0 3px var(--bg-elevated);}
-  .card.locked.tier-secrete{border-style:solid;border-color:rgba(124,108,224,.55);}
+    required = FORMATIONS[formation]
+    counts = {cat: 0 for cat in required}
+    seen = set()
+    cards = []
+    for entry in slots:
+        card_id, cat = entry["card_id"], entry["slot_category"]
+        if cat not in counts:
+            raise DuelError("Emplacement invalide : " + str(cat))
+        if card_id in seen:
+            raise DuelError("Tu ne peux pas utiliser deux fois la même carte dans une équipe")
+        seen.add(card_id)
+        owned = db.query(OwnedCard).filter_by(user_id=user.id, card_id=card_id).first()
+        if not owned or owned.quantity < 1:
+            raise DuelError("Tu ne possèdes pas une des cartes sélectionnées")
+        card = owned.card
+        kind = card_kind(card.player)
+        if kind == "fan":
+            raise DuelError(card.player.name + " est une carte supporter : elle ne peut jouer que comme Fan")
+        if kind == "mascotte":
+            raise DuelError(card.player.name + " est la mascotte : place-la dans l'emplacement Loup")
+        if kind == "equipement":
+            raise DuelError(card.player.name + " est un équipement : place-le dans un emplacement Équipement")
+        if kind in ("stade", "moment"):
+            raise DuelError(card.player.name + " est une carte de collection : elle ne peut pas jouer sur le terrain")
+        counts[cat] += 1
+        cards.append((card, cat))
 
-  /* ---- Cartes Équipement et Stades : une pastille avec l'objet (ou sa photo, quand elle sera ajoutée) ---- */
-  .item-medal{
-    width:68%;aspect-ratio:1/1;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    background:rgba(255,255,255,.42);box-shadow:inset 0 0 0 3px rgba(255,255,255,.6),0 3px 8px rgba(0,0,0,.16);
-  }
-  .item-icon{font-size:38px;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.28));}
-  .tier-rare .item-medal{background:rgba(255,255,255,.62);box-shadow:inset 0 0 0 3px #fff,0 3px 8px rgba(60,80,95,.25);}
-  .tier-epique .item-medal{background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.6),rgba(255,255,255,.14) 70%);box-shadow:inset 0 0 0 3px #E4CFFF,0 0 14px 2px rgba(160,100,240,.75);}
-  .tier-legendaire .item-medal{background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.75),rgba(255,230,150,.22) 70%);box-shadow:inset 0 0 0 3px #FFE79A,0 0 18px 3px rgba(255,205,90,.8);}
-  .item-medal.is-stade{                           /* un stade : une petite pelouse rayée */
-    width:80%;aspect-ratio:4/3;border-radius:14px;
-    background:repeating-linear-gradient(90deg,#3A9A44 0,#3A9A44 13px,#318A3B 13px,#318A3B 26px);
-    box-shadow:inset 0 0 0 3px rgba(255,255,255,.9),0 3px 8px rgba(0,0,0,.25);
-  }
-  .item-medal.is-stade .item-icon{font-size:34px;}
-  .tm-equip{display:flex;gap:8px;flex-wrap:wrap;}
-  .tm-equip select{flex:1 1 100%;min-width:0;}
+    for cat, needed in required.items():
+        if counts[cat] != needed:
+            raise DuelError("La disposition " + formation + " demande " + str(needed) + " "
+                            + SLOT_LABELS[cat].lower() + "(s), tu en as mis " + str(counts[cat]))
 
-  .collection-intro{color:var(--text-muted);font-size:14px;margin-bottom:18px;}
-  .tier-group{margin-bottom:26px;}
-  .tier-group h3{font-family:var(--font-head);font-weight:600;font-size:20px;margin:0 0 12px;letter-spacing:.3px;}
-  .collection-grid{display:flex;flex-wrap:wrap;gap:12px;}
+    captain = None
+    if captain_card_id:
+        if captain_card_id not in seen:
+            raise DuelError("Le capitaine doit faire partie des 5 joueurs de l'équipe")
+        captain = next(card for card, _ in cards if card.id == captain_card_id)
 
-  /* panneau : liseré de manchette en haut, coin coupé comme les panneaux latéraux du maillot */
-  .panel-box{
-    position:relative;background:var(--bg-elevated);border-top:6px solid var(--accent);
-    box-shadow:inset 0 3px 0 var(--bg-elevated),inset 0 5px 0 var(--rose);
-    padding:20px 18px 22px;margin-bottom:22px;
-    clip-path:polygon(0 0,100% 0,100% calc(100% - 22px),calc(100% - 22px) 100%,0 100%);
-  }
-  .panel-box h2{font-family:var(--font-head);font-size:27px;font-weight:800;letter-spacing:.3px;margin:0 0 14px;line-height:1.05;}
-  .form-row{margin-bottom:12px;}
-  .form-row label{display:block;font-size:12.5px;color:var(--text-muted);margin-bottom:5px;font-weight:700;}
-  select,input[type=number],input[type=text],input[type=password]{
-    width:100%;padding:10px;border-radius:6px;border:1.5px solid var(--border);
-    background:var(--input-bg);color:var(--text);font-family:var(--font-body);font-size:14px;
-  }
-  .listings{display:flex;flex-direction:column;gap:10px;}
-  .listing{background:var(--bg-elevated);border:1px solid var(--border);border-left:5px solid var(--accent);border-radius:0 8px 8px 0;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-  .mini-badge{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-size:14px;flex:0 0 auto;}
-  .mini-badge.tier-commune{background:linear-gradient(160deg,var(--commune-2),var(--commune-1));color:var(--commune-text);}
-  .mini-badge.tier-rare{background:linear-gradient(160deg,var(--rare-2),var(--rare-1));color:var(--rare-text);}
-  .mini-badge.tier-epique{background:linear-gradient(160deg,var(--epique-2),var(--epique-1));color:var(--epique-text);}
-  .mini-badge.tier-legendaire{background:linear-gradient(160deg,var(--legend-2),var(--legend-1));color:var(--legend-text);}
-  .mini-badge.tier-gold{background:linear-gradient(160deg,var(--gold-2),var(--gold-1));color:var(--gold-text);}
-  .mini-badge.tier-speciale{background:linear-gradient(160deg,var(--speciale-2),var(--speciale-1));color:var(--speciale-text);}
-  .mini-badge.tier-secrete{background:linear-gradient(160deg,var(--secrete-2),var(--secrete-1));color:var(--secrete-text);}
-  .listing-text{font-size:13px;flex:1;min-width:170px;}
-  .listing-text b{font-weight:700;}
-  .listing-meta{font-size:11px;color:var(--text-muted);}
-  .empty-state{text-align:center;color:var(--text-muted);font-size:14px;padding:34px 20px;border:2px dashed var(--border);border-radius:6px;}
+    fan = None
+    if fan_card_id:
+        owned = db.query(OwnedCard).filter_by(user_id=user.id, card_id=fan_card_id).first()
+        if not owned or owned.quantity < 1:
+            raise DuelError("Tu ne possèdes pas la carte Fan sélectionnée")
+        if not is_fan(owned.card.player):
+            raise DuelError(owned.card.player.name + " n'est pas une carte supporter")
+        fan = owned.card
 
-  .shop-item{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg-elevated);border:1px solid var(--border);border-left:5px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 16px;margin-bottom:10px;}
-  .shop-item-name{font-weight:700;font-size:14px;}
-  .shop-item-price{font-size:12.5px;color:var(--text-muted);}
-  .shop-item-desc{font-size:12px;color:var(--text-muted);margin:2px 0;}
-  .bonus-packs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
-  .new-ribbon{position:absolute;left:0;top:34%;z-index:4;background:#D62828;color:#fff;font-family:var(--font-body);font-size:10px;font-weight:800;letter-spacing:1px;padding:3px 9px 3px 7px;border-radius:0 6px 6px 0;box-shadow:0 2px 6px rgba(0,0,0,.3);}
+    equipment = []
+    equipment_ids = list(equipment_card_ids or [])
+    if len(equipment_ids) > MAX_EQUIPMENT:
+        raise DuelError("Tu peux équiper %d cartes Équipement au maximum" % MAX_EQUIPMENT)
+    if len(set(equipment_ids)) != len(equipment_ids):
+        raise DuelError("Tu ne peux pas équiper deux fois la même carte Équipement")
+    for equipment_id in equipment_ids:
+        owned = db.query(OwnedCard).filter_by(user_id=user.id, card_id=equipment_id).first()
+        if not owned or owned.quantity < 1:
+            raise DuelError("Tu ne possèdes pas une des cartes Équipement sélectionnées")
+        if not is_equipment(owned.card.player):
+            raise DuelError(owned.card.player.name + " n'est pas une carte Équipement")
+        equipment.append(owned.card)
 
-  table.leaderboard{width:100%;border-collapse:collapse;}
-  table.leaderboard th{text-align:left;font-size:11.5px;color:var(--text-muted);font-weight:700;padding:6px 10px;border-bottom:1px solid var(--border);}
-  table.leaderboard td{padding:10px;border-bottom:1px solid var(--border);font-size:14px;}
-  table.leaderboard tr.me{background:var(--bg-sunk);}
-  .rank-num{font-family:var(--font-head);font-size:18px;color:var(--text-muted);width:30px;display:inline-block;}
+    mascot = None
+    if mascot_card_id:
+        owned = db.query(OwnedCard).filter_by(user_id=user.id, card_id=mascot_card_id).first()
+        if not owned or owned.quantity < 1:
+            raise DuelError("Tu ne possèdes pas la carte Loup sélectionnée")
+        if not is_mascot(owned.card.player):
+            raise DuelError(owned.card.player.name + " n'est pas la mascotte : l'emplacement Loup est réservé à ses cartes")
+        mascot = owned.card
 
-  table.leaderboard .pseudo-link{background:none;border:none;padding:0;font:inherit;color:var(--text);cursor:pointer;text-decoration:underline;text-decoration-color:var(--border);}
-  table.leaderboard .pseudo-link:hover{color:var(--accent);}
+    return cards, captain, fan, equipment, mascot
 
-  .modal-overlay{position:fixed;inset:0;background:var(--scrim);display:none;align-items:center;justify-content:center;z-index:90;padding:16px;}
-  .modal-box{background:var(--bg-elevated);border-top:6px solid var(--accent);border-radius:0 0 10px 10px;padding:20px;max-width:620px;width:100%;max-height:82vh;overflow-y:auto;box-shadow:var(--shadow);}
-  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
-  .modal-header h2{font-family:var(--font-head);font-weight:800;font-size:28px;margin:0;}
-  .modal-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);padding:4px 8px;}
 
-  .match-card{background:var(--bg-elevated);border:1px solid var(--border);border-left:5px solid var(--accent);border-radius:0 8px 8px 0;padding:16px;margin-bottom:14px;}
-  .match-header{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
-  .match-score{font-family:var(--font-head);font-size:24px;font-weight:600;}
-  .match-date{font-size:12px;color:var(--text-muted);}
-  .match-row{font-size:13px;margin-top:5px;}
-  .match-row b{font-weight:700;}
-  .match-motm{display:inline-flex;align-items:center;gap:5px;background:var(--bg-sunk);border-radius:8px;padding:4px 10px;font-size:12.5px;font-weight:700;margin-top:8px;}
+# ---------------------------------------------------------------- Calculs ----
 
-  .player-detail-photo{width:100px;height:100px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 14px;border:3px solid var(--border);}
-  .player-detail-poste{text-align:center;color:var(--text-muted);font-size:13px;margin-top:-8px;margin-bottom:14px;}
-  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-  .stat-box{background:var(--bg-sunk);border-radius:10px;padding:10px 12px;text-align:center;}
-  .stat-box .num{font-family:var(--font-head);font-size:24px;font-weight:600;}
-  .stat-box .lab{font-size:11px;color:var(--text-muted);}
-  .player-note{text-align:center;font-family:var(--font-head);font-size:34px;font-weight:600;margin:4px 0 16px;}
-  .player-note small{display:block;font-family:var(--font-body);font-size:11px;font-weight:600;color:var(--text-muted);}
-  .note-box{border-radius:10px;padding:10px 6px;text-align:center;background:var(--bg-sunk);}
-  .note-box.active{background:var(--accent);color:var(--accent-text);}
-  .note-box .num{font-family:var(--font-head);font-size:20px;font-weight:600;}
-  .note-box .lab{font-size:10px;}
+def build_members(cards_with_slots, captain_card_id):
+    """Pour chaque carte : note de base, note effective (malus hors poste, bonus capitaine)."""
+    members = []
+    for card, slot in cards_with_slots:
+        base = card_note(card.player, card.tier.value, card)
+        natural = poste_category(card.player.poste)
+        out = natural is not None and natural != slot
+        effective = base * (1 - OUT_OF_POSITION_MALUS if out else 1.0)
+        is_captain = card.id == captain_card_id
+        if is_captain:
+            effective *= (1 + CAPTAIN_BONUS)
+        members.append({
+            "slot": slot, "player": card.player.name, "tier": card.tier.value,
+            "poste": card.player.poste, "base_note": base, "effective": effective,
+            "out_of_position": out, "captain": is_captain,
+        })
+    return members
 
-  /* ---- Actualité ---- */
-  .news-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;margin-bottom:22px;}
-  .news-grid .panel-box{margin-bottom:0;}
-  @media (max-width:760px){.news-grid{grid-template-columns:1fr;}}
-  .news-subtitle{font-family:var(--font-head);font-size:22px;font-weight:600;margin:6px 0 12px;}
-  .upcoming-row{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
-  .upcoming-row:last-child{border-bottom:none;}
-  .upcoming-date{min-width:52px;text-align:center;background:var(--bg-sunk);border-radius:10px;padding:6px 4px;line-height:1.1;}
-  .upcoming-date b{display:block;font-family:var(--font-head);font-size:24px;font-weight:600;}
-  .upcoming-date span{font-size:11px;color:var(--text-muted);text-transform:capitalize;}
-  .upcoming-main{flex:1;font-size:13.5px;}
-  .upcoming-meta{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
-  .upcoming-badge{display:inline-block;background:var(--accent);color:var(--accent-text);border-radius:6px;font-size:10.5px;font-weight:800;padding:1px 6px;margin-left:6px;}
-  .stats-scroll{max-height:340px;overflow-y:auto;}
-  table.pstats{width:100%;border-collapse:collapse;font-size:13px;}
-  table.pstats th{position:sticky;top:0;background:var(--bg-elevated);text-align:left;font-size:11px;color:var(--text-muted);font-weight:700;padding:5px 6px;border-bottom:1px solid var(--border);}
-  table.pstats td{padding:7px 6px;border-bottom:1px solid var(--border);}
-  table.pstats .num{text-align:center;font-weight:700;}
-  table.pstats .zero{color:var(--text-muted);font-weight:400;opacity:.6;}
-  table.pstats .pname{cursor:pointer;}
-  table.pstats .pname:hover{color:var(--accent);}
-  table.pstats .poste{font-size:11px;color:var(--text-muted);}
-  /* ---- 1v1 : cartes stars ---- */
-  .duel-grid .duel-stars{grid-column:1 / -1;}
-  .stars-block{margin-bottom:16px;}
-  .stars-block:last-child{margin-bottom:0;}
-  .stars-block h3{font-family:var(--font-head);font-size:18px;font-weight:600;margin:0 0 8px;}
-  .stars-row{display:flex;gap:14px;flex-wrap:wrap;}
-  .star-item{display:flex;flex-direction:column;align-items:center;gap:6px;}
-  .star-caption{font-size:12px;font-weight:700;color:var(--text-muted);}
-  /* ---- 1v1 ---- */
-  .duel-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
-  .duel-grid .panel-box{margin-bottom:0;}
-  .duel-grid .duel-proposals{grid-column:1 / -1;}
-  @media (max-width:760px){.duel-grid{grid-template-columns:1fr;}}
-  .duel-proposals-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
-  .duel-proposals-head h2{margin:0;}
-  .duel-hint{font-size:12.5px;color:var(--text-muted);margin:0 0 12px;}
-  table.duel-table{width:100%;border-collapse:collapse;font-size:13px;}
-  table.duel-table th{text-align:left;font-size:11px;color:var(--text-muted);font-weight:700;padding:5px 6px;border-bottom:1px solid var(--border);}
-  table.duel-table td{padding:8px 6px;border-bottom:1px solid var(--border);}
-  table.duel-table tr.me{background:var(--bg-sunk);}
-  table.duel-table .num{text-align:center;}
-  .history-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;}
-  .history-row:last-child{border-bottom:none;}
-  .history-main{flex:1;min-width:150px;font-size:13px;}
-  .history-main b{font-weight:700;}
-  .history-score{font-family:var(--font-head);font-size:20px;font-weight:600;margin:0 6px;}
-  .history-meta{font-size:11px;color:var(--text-muted);}
-  .proposal-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;}
-  .proposal-row:last-child{border-bottom:none;}
-  .proposal-main{flex:1;min-width:170px;font-size:13.5px;}
-  .proposal-meta{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
-  .tm-intro{font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.45;}
-  .tm-restored{background:rgba(255,224,138,.28);border:1px dashed var(--border);border-radius:10px;padding:8px 10px;font-size:12.5px;margin:0 0 12px;display:flex;gap:10px;align-items:center;justify-content:space-between;}
-  .tm-restored span{flex:1;}
-  .tm-hint{font-size:11.5px;color:var(--text-muted);margin-top:4px;}
-  .tm-section{font-family:var(--font-head);font-size:17px;margin:14px 0 6px;}
-  .tm-error{color:#C0392B;font-size:13px;margin:8px 0;min-height:18px;}
-  .match-scoreboard{display:flex;align-items:center;justify-content:center;gap:16px;font-family:var(--font-head);margin:6px 0 2px;flex-wrap:wrap;}
-  .match-scoreboard .ms-name{font-size:20px;max-width:34%;overflow-wrap:anywhere;text-align:center;}
-  .match-scoreboard .ms-score{font-size:46px;font-weight:600;min-width:110px;text-align:center;}
-  .match-scoreboard .ms-score.flash{animation:scoreflash .9s ease;}
-  @keyframes scoreflash{0%{transform:scale(1);}30%{transform:scale(1.35);color:var(--accent);}100%{transform:scale(1);}}
-  .match-clock{text-align:center;font-size:13px;color:var(--text-muted);margin-bottom:8px;font-weight:700;}
-  .match-timeline{max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:8px;background:var(--bg);}
-  .ev{display:flex;gap:8px;padding:6px 9px;border-radius:8px;font-size:13px;margin-bottom:4px;background:var(--bg-sunk);animation:evin .3s ease;}
-  .ev .min{font-family:var(--font-head);color:var(--text-muted);min-width:30px;font-size:15px;}
-  .ev.goal{font-weight:700;background:var(--bg-elevated);box-shadow:inset 0 0 0 1px var(--accent);}
-  .ev.side-challenger{border-left:3px solid var(--accent);}
-  .ev.side-defender{border-left:3px solid var(--mauve);}
-  .ev.sys{background:transparent;color:var(--text-muted);font-size:12.5px;}
-  @keyframes evin{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:none;}}
-  .match-result{margin-top:12px;padding:12px;border-radius:10px;background:var(--bg-sunk);text-align:center;font-size:14px;line-height:1.5;}
-  .match-result .big{font-family:var(--font-head);font-size:24px;}
-  .lineups{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
-  @media (max-width:560px){.lineups{grid-template-columns:1fr;}}
-  .lineup{border:1px solid var(--border);border-radius:10px;padding:9px 11px;font-size:12.5px;}
-  .lineup h4{margin:0 0 6px;font-family:var(--font-head);font-size:16px;font-weight:600;}
-  .lineup .lu-sub{font-size:11px;color:var(--text-muted);margin-bottom:6px;}
-  .lineup .lu-row{display:flex;justify-content:space-between;gap:6px;padding:2px 0;}
-  .lineup .lu-flag{color:var(--accent);font-weight:700;}
-  .match-actions{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
 
-  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--toast-bg);color:var(--toast-text);padding:10px 18px;border-radius:6px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .25s ease, transform .25s ease;z-index:50;max-width:90vw;text-align:center;}
-  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+def equipment_bonus_total(equipment_cards) -> float:
+    return sum(TIER_EQUIPMENT_BONUS.get(c.tier.value, 0.0) for c in (equipment_cards or []))
 
-  .gate{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;}
-  .gate-card{background:var(--bg-elevated);border-top:6px solid var(--accent);box-shadow:inset 0 3px 0 var(--bg-elevated),inset 0 5px 0 var(--rose);border-radius:0 0 10px 10px;padding:26px;max-width:340px;width:100%;}
-  .gate-card .crest-ico{width:58px;height:67px;margin:0 auto 8px;color:var(--accent);}
-  .gate-card h2{font-family:var(--font-head);font-weight:800;font-size:34px;letter-spacing:.8px;margin:0 0 4px;text-align:center;line-height:1;}
-  .gate-card p{color:var(--text-muted);font-size:13px;margin:0 0 16px;text-align:center;}
-  .gate-card .error{color:#C0392B;font-size:12.5px;margin:-6px 0 10px;min-height:16px;}
-  .gate-toggle{display:flex;justify-content:center;gap:6px;margin-top:14px;font-size:12.5px;color:var(--text-muted);}
-  .gate-toggle button{background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;font-size:12.5px;}
 
-  @media (max-width:480px){.titles h1{font-size:30px;} .brand-wolf{width:44px;height:51px;} .card{width:108px;} .reveal-area{gap:10px;}
-    .card.tier-secrete .card-stats{gap:3px;} .card.tier-secrete .card-stats span{padding-left:4px;padding-right:4px;} .card .card-stats .card-num{font-size:9px;}
-    /* sur une petite carte, l'étiquette « LIMITÉE » et la citrouille se marcheraient dessus : on garde la citrouille et le bandeau du thème */
-    .card .card-stats .tag-limitee,.card-slot:not(.big) .card-stats .tag-limitee{display:none;}}
-  :focus-visible{outline:3px solid var(--focus);outline-offset:2px;}
-  .topbar :focus-visible{outline-color:var(--rose);}
-  @media (prefers-reduced-motion: reduce){
-    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important;}
-  }
-</style>
-</head>
-<body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="wolf-crest" viewBox="47 80 723 833"><g transform="translate(0,980) scale(0.1,-0.1)" fill="currentColor"><path d="M6293 8782 c-59 -53 -126 -111 -148 -127 -22 -16 -67 -52 -100 -80 -33 -29 -107 -87 -165 -130 -58 -43 -130 -101 -161 -129 -88 -80 -369 -289 -557 -413 -40 -26 -101 -69 -135 -95 -34 -26 -129 -92 -212 -147 -82 -55 -170 -114 -195 -131 -25 -17 -95 -59 -155 -93 -61 -34 -133 -78 -160 -98 -28 -20 -70 -47 -95 -59 -25 -12 -61 -35 -80 -50 -19 -15 -66 -43 -105 -63 -38 -19 -108 -59 -155 -88 -47 -29 -114 -69 -150 -89 -101 -57 -170 -101 -238 -152 -35 -27 -67 -48 -71 -48 -5 0 -47 -28 -94 -62 -47 -35 -120 -88 -164 -118 -332 -231 -646 -491 -905 -751 -97 -98 -211 -203 -252 -234 -111 -81 -125 -120 -81 -210 30 -61 31 -80 5 -122 l-19 -33 -108 -50 c-59 -28 -117 -56 -128 -62 -11 -6 -67 -36 -125 -66 -58 -30 -157 -86 -220 -122 -63 -37 -160 -90 -215 -118 -192 -96 -443 -256 -484 -308 -28 -36 -36 -86 -21 -139 13 -46 150 -215 254 -313 27 -25 57 -70 76 -110 57 -121 95 -144 198 -118 132 35 174 20 237 -84 39 -63 59 -80 97 -80 51 0 88 66 88 158 0 99 49 127 135 76 25 -14 52 -24 62 -22 10 2 36 30 58 63 l41 60 80 5 c94 6 95 6 138 74 35 54 59 69 130 81 l39 7 51 53 c37 38 64 56 96 65 l45 13 55 -13 c30 -7 112 -15 181 -19 l127 -6 21 -19 c25 -23 28 -72 6 -103 -8 -12 -52 -43 -97 -70 l-81 -48 -92 -115 c-51 -63 -115 -136 -142 -162 -28 -26 -69 -78 -91 -116 -27 -45 -52 -74 -75 -87 l-34 -18 -49 7 c-27 4 -65 10 -86 13 l-36 5 -19 -19 c-14 -14 -22 -40 -26 -88 -12 -125 -48 -142 -157 -75 -76 47 -98 49 -130 15 l-23 -25 1 -44 c1 -77 97 -231 196 -314 99 -83 188 -112 349 -112 49 0 152 -9 229 -21 l139 -20 34 11 c67 22 82 77 40 145 -52 86 -58 101 -57 143 1 71 50 127 141 162 31 12 85 41 121 65 74 51 315 152 441 186 46 12 116 36 154 53 l70 31 90 0 90 0 35 -22 c84 -52 91 -118 26 -253 -26 -52 -51 -123 -58 -157 l-11 -61 28 -114 c19 -78 26 -125 21 -149 -4 -22 -40 -83 -91 -154 -47 -65 -88 -130 -92 -143 l-6 -25 27 -24 c49 -42 102 -27 218 61 40 31 90 62 112 68 l39 12 19 -23 18 -24 -6 -36 c-9 -47 -26 -82 -82 -160 -25 -36 -52 -82 -59 -103 l-13 -38 21 -61 22 -62 -6 -59 -5 -60 -48 -79 c-27 -44 -70 -107 -97 -139 -62 -78 -97 -152 -97 -211 l0 -46 22 -20 c13 -11 42 -30 65 -42 71 -35 77 -103 23 -241 -12 -30 -28 -83 -36 -119 -8 -36 -34 -106 -57 -156 -24 -54 -42 -110 -45 -140 l-4 -50 19 -24 20 -24 38 1 c50 2 76 20 164 115 74 78 179 172 309 275 37 30 121 106 187 170 67 65 152 144 189 176 69 60 123 134 187 256 41 77 107 150 137 150 35 0 42 -28 32 -141 l-8 -104 -32 -70 c-18 -38 -40 -108 -50 -155 -10 -47 -23 -104 -29 -128 -15 -53 -7 -80 24 -88 46 -12 154 74 280 221 42 50 102 119 134 155 31 36 84 100 117 144 32 43 87 115 121 160 34 44 69 91 78 102 9 12 31 57 49 100 60 141 65 151 92 183 33 40 59 40 84 -2 l20 -32 0 -70 c-1 -38 -5 -90 -10 -115 -6 -25 -14 -115 -20 -200 -6 -95 -17 -184 -30 -230 -44 -164 -35 -252 26 -258 46 -4 76 26 170 171 47 71 100 150 119 175 118 154 310 663 336 892 6 47 19 130 30 185 l19 100 -2 133 -3 134 28 24 c50 43 90 17 157 -104 23 -42 67 -113 95 -158 74 -114 100 -168 129 -270 32 -115 81 -232 108 -261 61 -65 119 8 148 184 7 37 19 104 27 148 28 144 32 178 32 350 1 201 -13 408 -35 520 -31 159 -136 471 -194 580 -57 107 -112 242 -108 267 l3 23 37 -1 c42 -1 143 -61 246 -144 35 -28 93 -69 130 -92 37 -22 96 -67 132 -99 76 -67 174 -129 206 -129 60 0 61 64 4 243 -22 71 -40 137 -40 146 0 9 -18 55 -40 100 -23 46 -59 129 -82 184 -23 56 -81 161 -133 241 -50 77 -102 161 -117 186 -15 25 -61 81 -103 125 -123 129 -232 251 -245 276 l-13 23 23 18 c25 20 33 19 165 -22 50 -16 113 -31 141 -33 32 -4 79 -20 128 -46 82 -44 128 -51 164 -25 25 17 30 70 10 107 -32 61 -371 411 -451 466 -12 8 -50 39 -84 68 -35 29 -91 67 -125 84 -35 17 -97 51 -138 75 -41 23 -115 54 -165 68 -149 41 -161 81 -60 201 59 70 66 87 75 179 5 44 13 119 19 166 6 47 16 240 21 430 6 190 15 464 20 610 5 146 11 360 14 475 3 116 8 253 12 306 10 146 -16 199 -98 199 l-37 0 -108 -98z m-289 -874 c21 -30 20 -46 -8 -228 -14 -85 -32 -243 -41 -350 -14 -176 -24 -253 -55 -447 -11 -67 -42 -143 -108 -270 -32 -60 -68 -106 -138 -178 -94 -97 -115 -108 -138 -73 l-11 18 35 67 35 68 0 51 c0 64 -18 99 -64 120 -116 54 -108 106 49 314 78 103 100 149 100 210 l0 51 -25 24 c-49 50 -74 37 -237 -116 -68 -63 -157 -138 -198 -167 -41 -28 -106 -79 -145 -113 -113 -99 -210 -134 -250 -89 -29 32 -12 76 64 170 88 109 394 402 476 456 22 15 72 57 111 93 39 36 115 104 169 151 54 47 134 117 177 156 114 104 171 127 202 82z m-2866 -1972 l4 -30 -121 -116 c-80 -77 -121 -123 -121 -137 0 -23 33 -53 78 -72 37 -15 53 -48 39 -78 -14 -32 -78 -53 -176 -59 -47 -3 -127 -15 -178 -26 -51 -11 -103 -18 -117 -14 -29 7 -56 32 -56 51 0 29 208 256 325 355 97 81 245 162 289 158 l31 -3 3 -29z m-1978 -1319 c0 -18 -48 -74 -82 -95 -51 -32 -81 -36 -107 -15 l-23 18 12 26 c15 32 60 60 125 74 52 12 75 10 75 -8z M3820 8338 c-11 -18 -20 -39 -20 -47 0 -22 -67 -186 -146 -353 -40 -86 -80 -183 -89 -215 -9 -32 -31 -80 -49 -108 -18 -27 -43 -76 -54 -108 -12 -32 -40 -84 -62 -115 -22 -31 -56 -101 -75 -155 -42 -117 -53 -139 -116 -236 l-49 -74 0 -38 0 -38 21 -12 c39 -20 83 -2 212 85 70 47 150 97 179 112 29 15 138 82 243 150 266 172 325 209 365 229 19 10 56 32 82 51 26 18 69 44 96 58 65 33 112 87 112 129 0 35 -17 58 -75 103 -39 29 -229 278 -317 414 -30 47 -82 111 -116 143 l-61 57 -30 0 -31 0 -20 -32z"/></g></symbol><symbol id="web-corner" viewBox="0 0 60 60"><path d="M0 0L60.0 0.0M0 0L55.4 23.0M0 0L42.4 42.4M0 0L23.0 55.4M0 0L0.0 60.0M12.0 0.0Q9.2 1.8 11.1 4.6M11.1 4.6Q7.8 5.2 8.5 8.5M8.5 8.5Q5.2 7.8 4.6 11.1M4.6 11.1Q1.8 9.2 0.0 12.0M24.0 0.0Q18.5 3.7 22.2 9.2M22.2 9.2Q15.7 10.5 17.0 17.0M17.0 17.0Q10.5 15.7 9.2 22.2M9.2 22.2Q3.7 18.5 0.0 24.0M36.0 0.0Q27.7 5.5 33.3 13.8M33.3 13.8Q23.5 15.7 25.5 25.5M25.5 25.5Q15.7 23.5 13.8 33.3M13.8 33.3Q5.5 27.7 0.0 36.0M48.0 0.0Q36.9 7.3 44.3 18.4M44.3 18.4Q31.3 20.9 33.9 33.9M33.9 33.9Q20.9 31.3 18.4 44.3M18.4 44.3Q7.3 36.9 0.0 48.0M60.0 0.0Q46.2 9.2 55.4 23.0M55.4 23.0Q39.1 26.2 42.4 42.4M42.4 42.4Q26.2 39.1 23.0 55.4M23.0 55.4Q9.2 46.2 0.0 60.0" fill="none" stroke="#FF9A2E" stroke-width=".85" stroke-linecap="round"/></symbol><symbol id="pumpkin" viewBox="0 0 40 40"><path d="M20 9c1-3 3-5 6-5-1 3-2 4-4 5z" fill="#3E7B2B"/><ellipse cx="20" cy="24" rx="17" ry="14" fill="#FF7A00"/><path d="M20 10c-6 3-9 8-9 14s3 11 9 14M20 10c6 3 9 8 9 14s-3 11-9 14M20 10v28" stroke="#C85500" stroke-width="1.6" fill="none"/><ellipse cx="20" cy="24" rx="17" ry="14" fill="none" stroke="#7A3300" stroke-width="1.2"/><path d="M11 20l4 4-8 0zM27 20l4 4-8 0z" fill="#2A1200"/><path d="M11 30q9 6 18 0" stroke="#2A1200" stroke-width="2" fill="none" stroke-linecap="round"/></symbol><symbol id="flake" viewBox="0 0 20 20"><g stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none"><path d="M10 1v18M2.2 5.5l15.6 9M2.2 14.5l15.6-9"/><path d="M10 4l-2-2M10 4l2-2M10 16l-2 2M10 16l2 2"/></g></symbol></defs></svg>
+def team_powers(members, fan_card, tactic_multiplier=1.0, equipment_cards=(), mascot_card=None, referee_bonus=0.0):
+    units_att = sum(ATTACK_WEIGHT[m["slot"]] for m in members)
+    units_def = sum(DEFENSE_WEIGHT[m["slot"]] for m in members)
+    attack_avg = sum(ATTACK_WEIGHT[m["slot"]] * m["effective"] for m in members) / units_att
+    defense_avg = sum(DEFENSE_WEIGHT[m["slot"]] * m["effective"] for m in members) / units_def
+    style = (units_att / units_def) ** (FORMATION_SKEW / 2)      # <1 prudente, >1 offensive
+    fan_bonus = TIER_FAN_BONUS.get(fan_card.tier.value, 0.0) if fan_card else 0.0
+    equipment_bonus = equipment_bonus_total(equipment_cards)
+    mascot_bonus = TIER_MASCOT_BONUS.get(mascot_card.tier.value, 0.0) if mascot_card else 0.0
+    mult = (1 + fan_bonus + mascot_bonus + equipment_bonus + referee_bonus) * tactic_multiplier      # Fan, Loup, équipement et arbitre s'additionnent
+    return attack_avg * style * mult, defense_avg / style * mult, fan_bonus, equipment_bonus, mascot_bonus
 
-<div class="gate" id="gate">
-  <div class="gate-card">
-    <svg class="crest-ico" viewBox="0 0 723 833" aria-hidden="true" focusable="false"><use href="#wolf-crest" width="723" height="833"/></svg>
-    <h2>FC IPSA V</h2>
-    <p id="gateSubtitle">Crée ton compte pour commencer ta collection.</p>
-    <div class="form-row">
-      <label>Pseudo</label>
-      <input id="pseudoInput" type="text" maxlength="24" placeholder="Ton pseudo">
-    </div>
-    <div class="form-row">
-      <label>Mot de passe</label>
-      <input id="passwordInput" type="password" maxlength="72" placeholder="4 caractères minimum">
-    </div>
-    <div class="error" id="gateError"></div>
-    <button class="btn-primary" id="gateSubmit" style="width:100%;">Créer mon compte</button>
-    <div class="gate-toggle">
-      <span id="gateToggleText">Déjà un compte ?</span>
-      <button id="gateToggleBtn">Se connecter</button>
-    </div>
-  </div>
-</div>
 
-<div id="app" style="display:none;">
-  <header class="topbar">
-    <span class="sleeve sleeve-l" aria-hidden="true"></span><span class="sleeve sleeve-r" aria-hidden="true"></span>
-    <div class="topbar-inner">
-      <div class="brand">
-        <svg class="crest-ico brand-wolf" viewBox="0 0 723 833" aria-hidden="true" focusable="false"><use href="#wolf-crest" width="723" height="833"/></svg>
-        <div class="titles">
-          <h1>FC IPSA V</h1>
-          <p>Cartes officielles du club</p>
-        </div>
-      </div>
-      <div class="stats-chip">
-        <span class="stat-pill">💰 <span id="chipCredits">0</span></span>
-        <span class="stat-pill"><span class="lab">Packs</span> <span id="chipPacks">0/3</span></span>
-        <span class="stat-pill" id="chipPseudo">…</span>
-        <button class="sound-btn" id="soundBtn" type="button" aria-pressed="true" aria-label="Couper le son" title="Couper le son">🔊</button>
-        <button class="sound-btn" id="notifBtn" type="button" aria-label="Notifications" title="Notifications">🔕</button>
-        <button class="logout-btn" id="logoutBtn">déconnexion</button>
-      </div>
-    </div>
-    <span class="notch" aria-hidden="true"></span>
-  </header>
+def tactic_advantage(tactic_a: str, tactic_b: str):
+    """'a' si A l'emporte, 'b' si B l'emporte, None si égalité."""
+    if TACTICS[tactic_a]["beats"] == tactic_b:
+        return "a"
+    if TACTICS[tactic_b]["beats"] == tactic_a:
+        return "b"
+    return None
 
-  <div class="wrap">
-  <nav class="tabs">
-    <button class="tab active" data-tab="pack">Packs</button>
-    <button class="tab" data-tab="collection">Collection</button>
-    <button class="tab" data-tab="marche">Marché</button>
-    <button class="tab" data-tab="shop">Shop</button>
-    <button class="tab" data-tab="classement">Classement</button>
-    <button class="tab" data-tab="actualite">Actualité</button>
-    <button class="tab" data-tab="duels">Matchs 1v1</button>
-  </nav>
 
-  <main>
-    <section id="tab-pack" class="tab-panel active">
-      <div class="help-row"><button class="help-btn" type="button" data-help="pack"><span class="help-q">?</span> Aide</button></div>
-      <div class="pitch-hero">
-        <div class="pack-stage" id="packStage">
-          <div class="pack-flip" id="packFlip">
-            <div class="pack" id="packEl">
-              <svg class="crest-ico pack-wolf" viewBox="0 0 723 833" aria-hidden="true" focusable="false"><use href="#wolf-crest" width="723" height="833"/></svg>
-              <div class="pack-label">Pack officiel</div>
-            </div>
-            <div class="pack-back" id="packBack"><div class="big-card-host" id="bigCardHost"></div></div>
-          </div>
-        </div>
-      </div>
-      <p class="reveal-hint" id="revealHint" aria-live="polite"></p>
-      <div class="reveal-area" id="revealArea"></div>
-      <div class="reveal-summary" id="revealSummary"></div>
-      <p class="pack-status" id="packStatus">Chargement…</p>
-      <div class="pack-actions">
-        <button id="openFreePackBtn" class="btn-primary">Ouvrir un pack gratuit</button>
-      </div>
-      <div class="bonus-packs" id="bonusPacksEl"></div>
-    </section>
+def expected_goals(attack: float, opponent_defense: float) -> float:
+    return max(0.15, BASE_XG * (attack / opponent_defense) ** XG_EXPONENT)
 
-    <section id="tab-collection" class="tab-panel">
-      <div class="help-row"><button class="help-btn" type="button" data-help="collection"><span class="help-q">?</span> Aide</button></div>
-      <p class="collection-intro">Chaque pack ouvert ajoute des cartes ici. Un doublon peut être revendu contre des crédits, ou servir à remplir la jauge d'une carte secrète.</p>
-      <div id="collectionByTier"></div>
-    </section>
 
-    <section id="tab-marche" class="tab-panel">
-      <div class="help-row"><button class="help-btn" type="button" data-help="marche"><span class="help-q">?</span> Aide</button></div>
-      <div class="panel-box">
-        <h2>Proposer un échange</h2>
-        <div class="form-row"><label>Ta carte à vendre</label><select id="offerSelect"></select></div>
-        <div class="form-row"><label>Prix (en crédits)</label><input id="priceInput" type="number" min="1" value="10"></div>
-        <button id="createListingBtn" class="btn-secondary">Mettre en vente</button>
-      </div>
-      <div id="listingsEl"></div>
-    </section>
+# ----------------------------------------------------------------- Récit ----
 
-    <section id="tab-shop" class="tab-panel">
-      <div class="help-row"><button class="help-btn" type="button" data-help="shop"><span class="help-q">?</span> Aide</button></div>
-      <div id="shopItemsEl"></div>
-    </section>
+SCORER_WEIGHT = {"ATT": 5.0, "MC": 3.0, "DEF": 1.0, "GB": 0.05}
+ASSIST_WEIGHT = {"ATT": 3.0, "MC": 4.0, "DEF": 2.0, "GB": 0.2}
 
-    <section id="tab-classement" class="tab-panel">
-      <div class="help-row"><button class="help-btn" type="button" data-help="classement"><span class="help-q">?</span> Aide</button></div>
-      <div id="leaderboardEl"></div>
-    </section>
 
-    <section id="tab-actualite" class="tab-panel">
-      <div class="help-row"><button class="help-btn" type="button" data-help="actualite"><span class="help-q">?</span> Aide</button></div>
-      <div class="news-grid">
-        <div class="panel-box">
-          <h2>Prochains matchs</h2>
-          <div id="upcomingEl"></div>
-        </div>
-        <div class="panel-box">
-          <h2>Stats des joueurs</h2>
-          <p class="duel-hint" style="margin-bottom:8px;">Statistiques réelles de la saison. Clique sur un joueur pour voir sa fiche.</p>
-          <div class="stats-scroll" id="playerStatsEl"></div>
-        </div>
-      </div>
-      <h2 class="news-subtitle">Résultats</h2>
-      <div id="matchesEl"></div>
-    </section>
+def _pick(members, slot_weights, exclude=None):
+    pool = [m for m in members if m is not exclude]
+    weights = [slot_weights[m["slot"]] * m["effective"] for m in pool]
+    return random.choices(pool, weights=weights, k=1)[0]
 
-    <section id="tab-duels" class="tab-panel">
-      <div class="help-row"><button class="help-btn" type="button" data-help="duels"><span class="help-q">?</span> Aide</button></div>
-      <div class="duel-grid">
-        <div class="panel-box">
-          <h2>Profils & classement Elo</h2>
-          <div id="duelBoardEl"></div>
-        </div>
-        <div class="panel-box">
-          <h2>Derniers matchs</h2>
-          <div id="duelHistoryEl"></div>
-        </div>
-        <div class="panel-box duel-proposals">
-          <div class="duel-proposals-head">
-            <h2>Défis</h2>
-            <button class="btn-primary" id="proposeMatchBtn">Proposer un match</button>
-          </div>
-          <p class="duel-hint">Un défi bloque ta mise le temps qu'il est ouvert. Le gagnant d'un match remporte les deux mises et un pack match (un peu meilleur que le classique) ; le perdant reçoit un pack classique, et en cas de nul chacun reçoit le sien. Pas de limite de packs : joue autant que tu veux. Les tactiques restent secrètes jusqu'au coup d'envoi.</p>
-          <div id="duelProposalsEl"></div>
-        </div>
-        <div class="panel-box duel-stars" id="duelWeekBox">
-          <h2>Cartes stars de la semaine</h2>
-          <p class="duel-hint" id="duelWeekHint" style="margin-bottom:12px;"></p>
-          <div id="duelWeekEl"></div>
-        </div>
-        <div class="panel-box duel-stars">
-          <h2>Cartes stars de tous les temps</h2>
-          <p class="duel-hint" style="margin-bottom:12px;">L'historique complet des matchs 1v1, depuis le début.</p>
-          <div id="duelStarsEl"></div>
-        </div>
-      </div>
-    </section>
-  </main>
-  </div>
-</div>
-<div class="modal-overlay" id="teamModal">
-  <div class="modal-box">
-    <div class="modal-header"><h2 id="tmTitle">Mon équipe</h2><button class="modal-close" id="tmClose">✕</button></div>
-    <div class="tm-intro" id="tmIntro"></div>
-    <div class="tm-restored" id="tmRestored" style="display:none;"></div>
-    <div class="form-row"><label>Disposition</label><select id="tmFormation"></select></div>
-    <div class="form-row"><label>Tactique (secrète jusqu'au coup d'envoi)</label><select id="tmTactic"></select><div class="tm-hint" id="tmTacticHint"></div></div>
-    <div class="form-row" id="tmStakeRow"><label>Mise (1 à 10 crédits)</label><input id="tmStake" type="number" min="1" max="10" value="2"></div>
-    <div class="form-row" id="tmRefRow"><label>Enveloppe pour l'arbitre (crédits, 0 = aucune)</label><input id="tmReferee" type="number" min="0" step="1" value="0"><div class="tm-hint" id="tmRefHint"></div></div>
-    <div class="tm-section">Les 5 joueurs</div>
-    <div id="tmSlots"></div>
-    <div class="form-row"><label id="tmCaptainLabel">Capitaine</label><select id="tmCaptain"></select></div>
-    <div class="form-row"><label>Fan (optionnel, apporte un bonus à toute l'équipe)</label><select id="tmFan"></select></div>
-    <div class="form-row"><label>Loup (optionnel, la mascotte apporte un bonus à toute l'équipe)</label><select id="tmMascot"></select></div>
-    <div class="form-row" id="tmEquipRow"><label id="tmEquipLabel">Équipement (optionnel)</label><div class="tm-equip" id="tmEquip"></div><div class="tm-hint" id="tmEquipHint"></div></div>
-    <div class="tm-error" id="tmError"></div>
-    <button class="btn-primary" id="tmSubmit" style="width:100%;">Valider</button>
-  </div>
-</div>
-<div class="modal-overlay" id="matchModal">
-  <div class="modal-box" style="max-width:700px;">
-    <div class="modal-header"><h2 id="msTitle">Match</h2><button class="modal-close" id="msClose">✕</button></div>
-    <div class="match-scoreboard"><span class="ms-name" id="msNameA"></span><span class="ms-score" id="msScore">0 - 0</span><span class="ms-name" id="msNameB"></span></div>
-    <div class="match-clock" id="msClock">0'</div>
-    <div class="match-timeline" id="msTimeline"></div>
-    <div id="msResult"></div>
-    <div class="lineups" id="msLineups"></div>
-    <div class="match-actions">
-      <button class="btn-secondary" id="msSkip">Passer l'animation</button>
-      <button class="btn-secondary" id="msReplay" style="display:none;">Rejouer l'animation</button>
-      <button class="btn-primary" id="msDone">Fermer</button>
-    </div>
-  </div>
-</div>
-<div class="modal-overlay" id="notifModal">
-  <div class="modal-box help-box" role="dialog" aria-modal="true" aria-labelledby="notifTitle">
-    <div class="modal-header">
-      <h2 id="notifTitle">Notifications</h2>
-      <button class="modal-close" id="notifClose" type="button" aria-label="Fermer les notifications">✕</button>
-    </div>
-    <div id="notifBody" class="help-body"></div>
-  </div>
-</div>
-<div class="modal-overlay" id="helpModal">
-  <div class="modal-box help-box" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <div class="modal-header">
-      <h2 id="helpTitle">Aide</h2>
-      <button class="modal-close" id="helpClose" type="button" aria-label="Fermer l'aide">✕</button>
-    </div>
-    <div id="helpBody" class="help-body"></div>
-  </div>
-</div>
-<div class="modal-overlay" id="userCollectionModal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <h2 id="modalTitle">Collection</h2>
-      <button class="modal-close" id="modalCloseBtn">✕</button>
-    </div>
-    <div id="modalBody"></div>
-  </div>
-</div>
-<div class="toast" id="toast"></div>
 
-<script>
-(function(){
-  "use strict";
+def build_events(side_a, side_b, score_a, score_b, xg_a, xg_b, tactic_winner):
+    """
+    side_a / side_b : {"pseudo", "members", "formation", "tactic"} (a = celui qui joue le défi,
+    b = celui qui l'a proposé). Retourne la liste chronologique des événements du match.
+    """
+    sides = {"challenger": side_a, "defender": side_b}
+    # un même joueur peut être aligné par les deux équipes : on précise alors de quelle équipe on parle
+    shared = {m["player"] for m in side_a["members"]} & {m["player"] for m in side_b["members"]}
 
-  const API_BASE = "https://fc-ipsa-v-production.up.railway.app";
+    def label(member, team):
+        return member["player"] + (" (" + team["pseudo"] + ")" if member["player"] in shared else "")
 
-  // ---------- Auth state ----------
-  let token = localStorage.getItem("fca5_token") || null;
-  let myPseudo = localStorage.getItem("fca5_pseudo") || null;
-  let gateMode = "register"; // or "login"
+    total_goals = score_a + score_b
+    n_chances = random.randint(3, 6)
+    minutes = random.sample(range(1, MATCH_MINUTES), total_goals + n_chances)
 
-  let myCollection = []; // raw array from /collection
-  let meInfo = null;
+    raw = []   # (minute, kind, side, payload)
+    goal_sides = ["challenger"] * score_a + ["defender"] * score_b
+    random.shuffle(goal_sides)
+    for side_name, minute in zip(goal_sides, minutes[:total_goals]):
+        raw.append((minute, "goal", side_name, None))
+    share_a = xg_a / (xg_a + xg_b)
+    for minute in minutes[total_goals:]:
+        side_name = "challenger" if random.random() < share_a else "defender"
+        raw.append((minute, "chance", side_name, None))
+    raw.sort(key=lambda e: e[0])
 
-  function toast(msg){
-    const t = document.getElementById('toast');
-    t.textContent = msg; t.classList.add('show');
-    clearTimeout(toast._h);
-    toast._h = setTimeout(() => t.classList.remove('show'), 2600);
-  }
+    events = [{
+        "minute": 0, "kind": "kickoff", "side": None, "score": [0, 0],
+        "text": "🏁 Coup d'envoi ! %s (%s) affronte %s (%s) — 5 contre 5, 2 × %d minutes."
+                % (side_a["pseudo"], side_a["formation"], side_b["pseudo"], side_b["formation"], HALF_TIME_MINUTE),
+    }]
+    if tactic_winner is None:
+        adv = "Les deux équipes jouent la même tactique : pas d'avantage."
+    else:
+        winner_side = side_a if tactic_winner == "a" else side_b
+        adv = "Avantage tactique à %s (+%d %% pour toute l'équipe) !" % (winner_side["pseudo"], round(TACTIC_BONUS * 100))
+    events.append({
+        "minute": 0, "kind": "tactic", "side": None, "score": [0, 0],
+        "text": "🎯 Tactiques dévoilées : %s joue « %s », %s joue « %s ». %s" % (
+            side_a["pseudo"], TACTICS[side_a["tactic"]]["label"],
+            side_b["pseudo"], TACTICS[side_b["tactic"]]["label"], adv),
+    })
 
-  async function api(path, options = {}) {
-    const headers = Object.assign({ "Content-Type": "application/json" }, options.headers || {});
-    if (token) headers["Authorization"] = "Bearer " + token;
-    const res = await fetch(API_BASE + path, Object.assign({}, options, { headers }));
-    let data = null;
-    try { data = await res.json(); } catch(e) { /* no body */ }
-    if (res.status === 401) {
-      localStorage.removeItem("fca5_token");
-      localStorage.removeItem("fca5_pseudo");
-      token = null;
-      showGate("login", "Session expirée, reconnecte-toi.");
-      throw new Error("unauthorized");
+    score = [0, 0]
+    half_done = False
+    for minute, kind, side_name, _ in raw:
+        if not half_done and minute > HALF_TIME_MINUTE:
+            events.append({"minute": HALF_TIME_MINUTE, "kind": "half", "side": None, "score": list(score),
+                           "text": "⏸️ Mi-temps : %s %d-%d %s." % (side_a["pseudo"], score[0], score[1], side_b["pseudo"])})
+            half_done = True
+        team = sides[side_name]
+        opp = sides["defender" if side_name == "challenger" else "challenger"]
+        idx = 0 if side_name == "challenger" else 1
+
+        if kind == "goal":
+            before = score[idx] - score[1 - idx]
+            scorer = _pick(team["members"], SCORER_WEIGHT)
+            assist = _pick(team["members"], ASSIST_WEIGHT, exclude=scorer) if random.random() < 0.65 else None
+            score[idx] += 1
+            after = score[idx] - score[1 - idx]
+            if score[0] + score[1] == 1:
+                ctx = "ouvre le score pour %s !" % team["pseudo"]
+            elif after == 0:
+                ctx = "égalise pour %s !" % team["pseudo"]
+            elif before == 0:
+                ctx = "donne l'avantage à %s !" % team["pseudo"]
+            elif after < 0:
+                ctx = "réduit l'écart pour %s !" % team["pseudo"]
+            else:
+                ctx = "creuse l'écart pour %s !" % team["pseudo"]
+            text = "⚽ BUT ! %s %s" % (label(scorer, team), ctx)
+            if scorer["captain"]:
+                text += " Le capitaine montre l'exemple !"
+            if assist:
+                text += " Passe décisive de %s." % label(assist, team)
+            text += " (%d-%d)" % (score[0], score[1])
+            events.append({"minute": minute, "kind": "goal", "side": side_name, "score": list(score), "text": text,
+                           "scorer": scorer["player"], "scorer_tier": scorer["tier"],
+                           "assist": assist["player"] if assist else None,
+                           "assist_tier": assist["tier"] if assist else None})
+        else:
+            shooter = _pick(team["members"], SCORER_WEIGHT)
+            keeper = next((m for m in opp["members"] if m["slot"] == "GB"), opp["members"][0])
+            blocker = _pick([m for m in opp["members"] if m["slot"] in ("DEF", "MC")] or opp["members"], ASSIST_WEIGHT)
+            text = random.choice([
+                "🧤 %s sort un arrêt magnifique devant %s !" % (label(keeper, opp), label(shooter, team)),
+                "🥅 Poteau ! La frappe de %s fait trembler la barre." % label(shooter, team),
+                "💨 %s tente sa chance, mais le ballon passe à côté." % label(shooter, team),
+                "🛡️ %s se jette et contre la frappe de %s !" % (label(blocker, opp), label(shooter, team)),
+            ])
+            events.append({"minute": minute, "kind": "chance", "side": side_name, "score": list(score), "text": text})
+
+    if not half_done:
+        events.append({"minute": HALF_TIME_MINUTE, "kind": "half", "side": None, "score": [score[0], score[1]],
+                       "text": "⏸️ Mi-temps : %s %d-%d %s." % (side_a["pseudo"], score[0], score[1], side_b["pseudo"])})
+        # la mi-temps doit rester avant les événements de la 2e période : on remet dans l'ordre
+        events.sort(key=lambda e: (e["minute"], {"kickoff": 0, "tactic": 1}.get(e["kind"], 2)))
+    events.append({"minute": MATCH_MINUTES, "kind": "full", "side": None, "score": list(score),
+                   "text": "🏁 Coup de sifflet final ! %s %d-%d %s." % (side_a["pseudo"], score[0], score[1], side_b["pseudo"])})
+    return events
+
+
+def _lineup_snapshot(side, fan_card, equipment_cards=(), mascot_card=None, referee_bonus=0.0):
+    return {
+        "referee_bonus_pct": round(referee_bonus * 100),
+        "pseudo": side["pseudo"], "formation": side["formation"], "tactic": side["tactic"],
+        "players": [{
+            "slot": m["slot"], "player": m["player"], "tier": m["tier"], "poste": m["poste"],
+            "base_note": m["base_note"], "effective_note": round(m["effective"], 1),
+            "out_of_position": m["out_of_position"], "captain": m["captain"],
+        } for m in side["members"]],
+        "fan": ({"player": fan_card.player.name, "tier": fan_card.tier.value,
+                 "bonus_pct": round(TIER_FAN_BONUS.get(fan_card.tier.value, 0) * 100)} if fan_card else None),
+        "mascot": ({"player": mascot_card.player.name, "tier": mascot_card.tier.value,
+                    "bonus_pct": round(TIER_MASCOT_BONUS.get(mascot_card.tier.value, 0) * 100)} if mascot_card else None),
+        "equipment": [{"player": c.player.name, "tier": c.tier.value,
+                       "bonus_pct": round(TIER_EQUIPMENT_BONUS.get(c.tier.value, 0) * 100)} for c in (equipment_cards or [])],
     }
-    if (!res.ok) {
-      const msg = (data && data.detail) ? data.detail : ("Erreur " + res.status);
-      throw new Error(msg);
+
+
+# ----------------------------------------------------------------- Défis ----
+
+def cancel_proposal(db: Session, proposal: MatchProposal):
+    """Supprime un défi et rend à son créateur sa mise ET son enveloppe, séquestrées (l'appelant fait le commit)."""
+    proposal.creator.credits += proposal.stake + (proposal.referee_bid or 0)
+    db.delete(proposal)
+
+
+def purge_card_references(db: Session, card_ids: list):
+    """Annule (avec remboursement) tous les défis qui utilisent l'une de ces cartes.
+    À appeler avant de supprimer une carte ou un joueur."""
+    if not card_ids:
+        return
+    proposals = (
+        db.query(MatchProposal)
+        .outerjoin(ProposalSlot, ProposalSlot.proposal_id == MatchProposal.id)
+        .outerjoin(ProposalEquipment, ProposalEquipment.proposal_id == MatchProposal.id)
+        .filter(or_(ProposalSlot.card_id.in_(card_ids), ProposalEquipment.card_id.in_(card_ids),
+                    MatchProposal.captain_card_id.in_(card_ids),
+                    MatchProposal.fan_card_id.in_(card_ids),
+                    MatchProposal.mascot_card_id.in_(card_ids)))
+        .distinct().all()
+    )
+    for proposal in proposals:
+        cancel_proposal(db, proposal)
+    db.flush()   # les défis (et leurs emplacements) doivent disparaître avant la carte elle-même
+
+
+def reserved_credits(db: Session) -> dict:
+    """Crédits séquestrés dans les défis ouverts, par joueur (mise + enveloppe). Le classement public les compte dans le
+    total de leur propriétaire : ainsi, voir ses crédits baisser ne révèle rien du montant de son enveloppe."""
+    out = {}
+    for creator_id, stake, bid in db.query(MatchProposal.creator_id, MatchProposal.stake, MatchProposal.referee_bid).all():
+        out[creator_id] = out.get(creator_id, 0) + stake + (bid or 0)
+    return out
+
+
+def referee_winner(bid_challenger: int, bid_defender: int):
+    """Qui gagne le bonus de l'arbitre : celui qui a mis le PLUS (« challenger » ou « defender »), personne si égalité."""
+    if bid_challenger > bid_defender:
+        return "challenger"
+    if bid_defender > bid_challenger:
+        return "defender"
+    return None
+
+
+def create_proposal(db: Session, user: User, formation, tactic, stake, slots, captain_card_id, fan_card_id,
+                    equipment_card_ids=None, mascot_card_id=None, referee_bid=0):
+    if not (STAKE_MIN <= stake <= STAKE_MAX):
+        raise DuelError("La mise doit être comprise entre %d et %d crédits" % (STAKE_MIN, STAKE_MAX))
+    open_count = db.query(MatchProposal).filter_by(creator_id=user.id).count()
+    if open_count >= MAX_OPEN_PROPOSALS:
+        raise DuelError("Tu as déjà %d défis ouverts : annule-en un ou attends qu'il soit joué" % MAX_OPEN_PROPOSALS)
+    referee_bid = int(referee_bid or 0)
+    if referee_bid < 0:
+        raise DuelError("L'enveloppe de l'arbitre ne peut pas être négative")
+    if user.credits < stake + referee_bid:
+        raise DuelError("Pas assez de crédits : mise %d%s" % (stake, (" + enveloppe de l'arbitre %d = %d" % (referee_bid, stake + referee_bid)) if referee_bid else ""))
+    validate_team(db, user, formation, tactic, slots, captain_card_id, fan_card_id, equipment_card_ids, mascot_card_id)
+
+    user.credits -= stake + referee_bid   # séquestre : rendu si le défi est annulé ; la mise est jouée, l'enveloppe est dépensée
+    proposal = MatchProposal(creator_id=user.id, stake=stake, referee_bid=referee_bid, formation=formation, tactic=tactic,
+                             captain_card_id=captain_card_id or None, fan_card_id=fan_card_id or None,
+                             mascot_card_id=mascot_card_id or None)
+    db.add(proposal)
+    db.flush()
+    for entry in slots:
+        db.add(ProposalSlot(proposal_id=proposal.id, card_id=entry["card_id"], slot_category=entry["slot_category"]))
+    for equipment_id in (equipment_card_ids or []):
+        db.add(ProposalEquipment(proposal_id=proposal.id, card_id=equipment_id))
+    db.commit()
+    return proposal
+
+
+def play_proposal(db: Session, challenger: User, proposal_id: str, formation, tactic, slots,
+                  captain_card_id, fan_card_id, equipment_card_ids=None, mascot_card_id=None, referee_bid=0) -> dict:
+    # verrou : si deux joueurs cliquent en même temps, un seul passe, l'autre voit "n'existe plus"
+    proposal = db.query(MatchProposal).filter_by(id=proposal_id).with_for_update().first()
+    if not proposal:
+        raise DuelError("Ce défi n'existe plus (déjà joué ou annulé)", 404)
+    creator = proposal.creator
+    if creator.id == challenger.id:
+        raise DuelError("Tu ne peux pas jouer ton propre défi")
+
+    # (aucun délai entre deux matchs des mêmes joueurs : on peut rejouer tout de suite)
+
+    stake = proposal.stake
+    referee_bid = int(referee_bid or 0)
+    if referee_bid < 0:
+        raise DuelError("L'enveloppe de l'arbitre ne peut pas être négative")
+    if challenger.credits < stake + referee_bid:
+        raise DuelError("Pas assez de crédits pour cette mise (%d)%s" % (stake, (" et cette enveloppe pour l'arbitre (%d)" % referee_bid) if referee_bid else ""))
+
+    cards_c, captain_c, fan_c, equip_c, mascot_c = validate_team(db, challenger, formation, tactic, slots, captain_card_id,
+                                                                 fan_card_id, equipment_card_ids, mascot_card_id)
+
+    proposal_slots = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in proposal.slots]
+    try:
+        cards_d, captain_d, fan_d, equip_d, mascot_d = validate_team(db, creator, proposal.formation, proposal.tactic,
+                                                                     proposal_slots, proposal.captain_card_id, proposal.fan_card_id,
+                                                                     [e.card_id for e in proposal.equipment], proposal.mascot_card_id)
+    except DuelError:
+        cancel_proposal(db, proposal)
+        db.commit()
+        raise DuelError("Ce défi n'était plus valide (l'adversaire n'a plus toutes ses cartes) : "
+                        "il a été annulé et sa mise remboursée. Choisis-en un autre.")
+
+    side_c = {"pseudo": challenger.pseudo, "formation": formation, "tactic": tactic,
+              "members": build_members(cards_c, captain_c.id if captain_c else None)}
+    side_d = {"pseudo": creator.pseudo, "formation": proposal.formation, "tactic": proposal.tactic,
+              "members": build_members(cards_d, captain_d.id if captain_d else None)}
+
+    winner_tactic = tactic_advantage(tactic, proposal.tactic)          # 'a' = challenger, 'b' = créateur
+    mult_c = 1 + TACTIC_BONUS if winner_tactic == "a" else 1.0
+    mult_d = 1 + TACTIC_BONUS if winner_tactic == "b" else 1.0
+    bid_d = proposal.referee_bid or 0                                   # l'enveloppe du créateur (secrète jusqu'ici)
+    ref_winner = referee_winner(referee_bid, bid_d)                     # l'arbitre favorise celui qui a mis le plus, personne si égalité
+    ref_c = REFEREE_BONUS if ref_winner == "challenger" else 0.0
+    ref_d = REFEREE_BONUS if ref_winner == "defender" else 0.0
+    att_c, def_c, _, _, _ = team_powers(side_c["members"], fan_c, mult_c, equip_c, mascot_c, ref_c)
+    att_d, def_d, _, _, _ = team_powers(side_d["members"], fan_d, mult_d, equip_d, mascot_d, ref_d)
+
+    xg_c = expected_goals(att_c, def_d)
+    xg_d = expected_goals(att_d, def_c)
+    score_c, score_d = poisson_random(xg_c), poisson_random(xg_d)
+    events = build_events(side_c, side_d, score_c, score_d, xg_c, xg_d, winner_tactic)
+
+    if score_c > score_d:
+        outcome, result_c = "victoire", 1.0
+    elif score_c < score_d:
+        outcome, result_c = "défaite", 0.0
+    else:
+        outcome, result_c = "nul", 0.5
+    elo_c_before, elo_d_before = challenger.elo, creator.elo
+    challenger.elo, creator.elo = elo_update(elo_c_before, elo_d_before, result_c)
+
+    # crédits : la mise et l'enveloppe du créateur sont déjà séquestrées, celles du challenger sont prélevées maintenant.
+    # Les DEUX enveloppes sont dépensées (celle de l'arbitre n'est jamais rendue, même au joueur qui a mis le moins)
+    challenger.credits -= stake + referee_bid
+    pot = 2 * stake
+    pack_winner = None
+    if outcome == "victoire":
+        challenger.credits += pot
+        pack_winner = challenger
+        classic_to = [creator]                                # le perdant
+    elif outcome == "défaite":
+        creator.credits += pot
+        pack_winner = creator
+        classic_to = [challenger]                             # le perdant
+    else:   # nul : chacun récupère sa mise
+        challenger.credits += stake
+        creator.credits += stake
+        classic_to = [challenger, creator]                    # les deux joueurs
+    if pack_winner is not None:
+        pack_winner.pack_state.match_pack_tokens += 1         # le gagnant : un pack match
+    for player in classic_to:
+        player.pack_state.shop_pack_tokens += 1               # perdant ou nul : un pack classique (aucune limite par jour)
+    referee = {"challenger": referee_bid, "defender": bid_d, "winner": ref_winner, "bonus_pct": round(REFEREE_BONUS * 100) if ref_winner else 0}
+    lineups = {"challenger": _lineup_snapshot(side_c, fan_c, equip_c, mascot_c, ref_c), "defender": _lineup_snapshot(side_d, fan_d, equip_d, mascot_d, ref_d),
+               "referee": referee}                                      # (enregistré avec la composition : visible dans le récap APRÈS le match)
+    duel = Duel(
+        challenger_id=challenger.id, defender_id=creator.id, stake=stake,
+        formation_challenger=formation, formation_defender=proposal.formation,
+        score_challenger=score_c, score_defender=score_d,
+        elo_challenger_before=elo_c_before, elo_defender_before=elo_d_before,
+        elo_challenger_after=challenger.elo, elo_defender_after=creator.elo,
+        tactic_challenger=tactic, tactic_defender=proposal.tactic,
+        events_json=json.dumps(events, ensure_ascii=False),
+        lineups_json=json.dumps(lineups, ensure_ascii=False),
+    )
+    db.add(duel)
+    db.delete(proposal)   # le défi est consommé
+    db.commit()
+
+    return {
+        "duel_id": duel.id,
+        "challenger": challenger.pseudo, "defender": creator.pseudo,
+        "score_challenger": score_c, "score_defender": score_d,
+        "result": outcome, "stake": stake,
+        "credits_delta": {"victoire": stake, "défaite": -stake, "nul": 0}[outcome],
+        "elo_challenger_before": elo_c_before, "elo_challenger_after": challenger.elo,
+        "elo_defender_before": elo_d_before, "elo_defender_after": creator.elo,
+        "pack_match_won": outcome == "victoire",                       # le challenger gagne un pack match
+        "pack_classique_won": challenger in classic_to,                # le challenger a perdu ou fait match nul : pack classique
+        "pack_match_to": pack_winner.pseudo if pack_winner else None,
+        "pack_classique_to": [p.pseudo for p in classic_to],
+        "tactics": {"challenger": tactic, "defender": proposal.tactic,
+                    "advantage": {"a": "challenger", "b": "defender"}.get(winner_tactic)},
+        "referee": referee,
+        "events": events, "lineups": lineups,
     }
-    return data;
-  }
 
-  // ---------- Gate (register/login) ----------
-  function showGate(mode, message){
-    gateMode = mode;
-    document.getElementById('gate').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
-    document.getElementById('gateSubtitle').textContent = mode === 'register'
-      ? "Crée ton compte pour commencer ta collection."
-      : "Reconnecte-toi pour retrouver ta collection.";
-    document.getElementById('gateSubmit').textContent = mode === 'register' ? "Créer mon compte" : "Se connecter";
-    document.getElementById('gateToggleText').textContent = mode === 'register' ? "Déjà un compte ?" : "Pas encore de compte ?";
-    document.getElementById('gateToggleBtn').textContent = mode === 'register' ? "Se connecter" : "Créer un compte";
-    document.getElementById('gateError').textContent = message || "";
-  }
 
-  document.getElementById('gateToggleBtn').addEventListener('click', () => {
-    showGate(gateMode === 'register' ? 'login' : 'register');
-  });
+# ------------------------------------------------- Pages : profils, historique ----
 
-  document.getElementById('gateSubmit').addEventListener('click', async () => {
-    const pseudo = document.getElementById('pseudoInput').value.trim();
-    const password = document.getElementById('passwordInput').value;
-    const errEl = document.getElementById('gateError');
-    errEl.textContent = "";
-    if (!pseudo || !password) { errEl.textContent = "Remplis les deux champs."; return; }
-    try {
-      const path = gateMode === 'register' ? '/auth/register' : '/auth/login';
-      const data = await api(path, { method: 'POST', body: JSON.stringify({ pseudo, password }) });
-      token = data.token; myPseudo = data.pseudo;
-      localStorage.setItem("fca5_token", token);
-      localStorage.setItem("fca5_pseudo", myPseudo);
-      startApp();
-    } catch (e) {
-      errEl.textContent = e.message;
+def duel_board(db: Session) -> list:
+    """Profils des joueurs qui jouent (au moins un match ou un défi ouvert), classés par Elo.
+    Les comptes de test n'y apparaissent pas."""
+    stats = {}
+    for d in db.query(Duel).all():
+        for uid, mine, theirs in ((d.challenger_id, d.score_challenger, d.score_defender),
+                                  (d.defender_id, d.score_defender, d.score_challenger)):
+            s = stats.setdefault(uid, {"played": 0, "wins": 0, "losses": 0, "draws": 0, "goals_for": 0, "goals_against": 0})
+            s["played"] += 1
+            s["goals_for"] += mine
+            s["goals_against"] += theirs
+            if mine > theirs:
+                s["wins"] += 1
+            elif mine < theirs:
+                s["losses"] += 1
+            else:
+                s["draws"] += 1
+    open_by_user = {}
+    for p in db.query(MatchProposal).all():
+        open_by_user[p.creator_id] = open_by_user.get(p.creator_id, 0) + 1
+
+    rows = []
+    for user in db.query(User).filter_by(is_test=False).all():
+        s = stats.get(user.id)
+        if not s and user.id not in open_by_user:
+            continue
+        s = s or {"played": 0, "wins": 0, "losses": 0, "draws": 0, "goals_for": 0, "goals_against": 0}
+        rows.append({"pseudo": user.pseudo, "elo": user.elo, "open_proposals": open_by_user.get(user.id, 0), **s,
+                     "goal_diff": s["goals_for"] - s["goals_against"]})
+    rows.sort(key=lambda r: (-r["elo"], -r["wins"], -r["goal_diff"], r["pseudo"]))
+    return rows
+
+
+def duel_history(db: Session, limit: int = 15) -> list:
+    duels = db.query(Duel).order_by(Duel.created_at.desc()).limit(limit).all()
+    out = []
+    for d in duels:
+        if d.score_challenger > d.score_defender:
+            winner = d.challenger.pseudo
+        elif d.score_challenger < d.score_defender:
+            winner = d.defender.pseudo
+        else:
+            winner = None
+        out.append({
+            "id": d.id, "date": d.created_at.isoformat(),
+            "challenger": d.challenger.pseudo, "defender": d.defender.pseudo,
+            "score_challenger": d.score_challenger, "score_defender": d.score_defender,
+            "winner": winner, "stake": d.stake, "has_recap": bool(d.events_json),
+        })
+    return out
+
+
+def duel_recap(db: Session, duel_id: str) -> dict:
+    d = db.get(Duel, duel_id)
+    if not d:
+        raise DuelError("Match introuvable", 404)
+    return {
+        "duel_id": d.id, "date": d.created_at.isoformat(),
+        "challenger": d.challenger.pseudo, "defender": d.defender.pseudo,
+        "score_challenger": d.score_challenger, "score_defender": d.score_defender,
+        "stake": d.stake,
+        "elo_challenger_before": d.elo_challenger_before, "elo_challenger_after": d.elo_challenger_after,
+        "elo_defender_before": d.elo_defender_before, "elo_defender_after": d.elo_defender_after,
+        "tactics": {"challenger": d.tactic_challenger, "defender": d.tactic_defender},
+        "events": json.loads(d.events_json) if d.events_json else [],
+        "lineups": json.loads(d.lineups_json) if d.lineups_json else None,
     }
-  });
 
-  document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.removeItem("fca5_token");
-    localStorage.removeItem("fca5_pseudo");
-    token = null;
-    showGate('login');
-  });
 
-  // ---------- Tabs ----------
-  document.querySelectorAll('.tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-      if (btn.dataset.tab === 'collection') loadCollection();
-      if (btn.dataset.tab === 'marche') { loadCollection().then(renderMarketForm); loadListings(); }
-      if (btn.dataset.tab === 'shop') loadShop();
-      if (btn.dataset.tab === 'classement') loadLeaderboard();
-      if (btn.dataset.tab === 'actualite') loadNews();
-      if (btn.dataset.tab === 'duels') loadDuelsTab();
-    });
-  });
-
-  // ---------- Card rendering ----------
-  // Cartes légendaires : le reflet holographique et l'inclinaison suivent la souris (ou le doigt qui glisse)
-  (function holoPointer(){
-    const HOLO = '.card.tier-legendaire:not(.locked), .card-front.tier-legendaire';
-    let current = null, frame = 0, last = null;
-    const reset = el => { if (el) ['--holo-x', '--holo-y', '--tilt-x', '--tilt-y'].forEach(v => el.style.removeProperty(v)); };
-    document.addEventListener('pointermove', e => {
-      const el = e.target.closest ? e.target.closest(HOLO) : null;
-      if (current && current !== el) { reset(current); current = null; }
-      if (!el) return;
-      current = el; last = e;
-      if (frame) return;
-      frame = requestAnimationFrame(() => {
-        frame = 0;
-        if (!current) return;
-        const r = current.getBoundingClientRect();
-        if (!r.width || !r.height) return;
-        const x = Math.min(1, Math.max(0, (last.clientX - r.left) / r.width)), y = Math.min(1, Math.max(0, (last.clientY - r.top) / r.height));
-        current.style.setProperty('--holo-x', (x * 100).toFixed(1) + '%');
-        current.style.setProperty('--holo-y', (y * 100).toFixed(1) + '%');
-        if (current.classList.contains('card')) {      // inclinaison : seulement sur les cartes de la collection (pas sur les faces qui se retournent)
-          current.style.setProperty('--tilt-x', ((x - 0.5) * 16).toFixed(1) + 'deg');
-          current.style.setProperty('--tilt-y', ((0.5 - y) * 16).toFixed(1) + 'deg');
-        }
-      });
-    }, { passive: true });
-    document.addEventListener('pointerout', e => { if (!e.relatedTarget && current) { reset(current); current = null; } });
-  })();
-
-  // le blason du loup (défini une fois dans le <symbol id="wolf-crest"> en haut de page)
-  function crestIco(cls){
-    return '<svg class="crest-ico' + (cls ? ' ' + cls : '') + '" viewBox="0 0 723 833" aria-hidden="true" focusable="false"><use href="#wolf-crest" width="723" height="833"/></svg>';
-  }
-  function isFan(card){ return (card.poste || '').toUpperCase().startsWith('FAN'); }
-
-  // Types de cartes, reconnus à leur poste : joueur | fan (supporters, mascotte) | equipement | stade
-  function cardKind(card){
-    const poste = (card.poste || '').toUpperCase();
-    if (poste === 'MASCOTTE' || poste.startsWith('FAN/MASCOTTE')) return 'mascotte';
-    if (poste.startsWith('FAN')) return 'fan';
-    if (poste === 'EQUIPEMENT') return 'equipement';
-    if (poste === 'STADE') return 'stade';
-    if (poste === 'MOMENT') return 'moment';
-    return 'joueur';
-  }
-  // une carte gold s'appelle « Petit pont — Mathis » : l'action en titre, le joueur en dessous
-  function momentParts(name){
-    const i = name.indexOf(' — ');
-    if (i < 0) return { action: name, who: '' };
-    return { action: name.slice(0, i), who: name.slice(i + 3).replace(/ \(\d\d\/\d\d\)\+*$/, '').replace(/\++$/, '') };
-  }
-  // Sur une carte SECRÈTE, c'est le surnom du joueur qui s'écrit (à défaut, son prénom) ; son numéro de maillot est dans la ligne du bas.
-  function cardDisplayName(card){ if (cardKind(card) === 'moment') return momentParts(card.player_name).action; return (card.tier === 'secrete' && card.surnom) ? card.surnom : card.player_name; }
-  function numChip(card){ return (card.tier === 'secrete' && card.numero != null && card.numero !== '') ? '<span class="card-num" title="Numéro de maillot">#' + escapeHtml(String(card.numero)) + '</span>' : ''; }
-  const EQUIP_BONUS_PCT = { commune: 1, rare: 2, epique: 3, legendaire: 5 };
-  const ITEM_ICONS = {
-    'gourde': '💧', 'ballon du match': '⚽', 'protege-tibias': '🦵', 'chasuble': '🦺', 'chaussettes trouees': '🧦',
-    'banc de touche': '🪑', 'galette-saucisse': '🌭', 'enceinte jbl': '🔊', 'trousse a pharmacie': '🩹',
-    'tableau tactique': '📋', 'pack de biere': '🍺',
-  };
-  function itemIcon(card){
-    const key = (card.player_name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return ITEM_ICONS[key] || (cardKind(card) === 'stade' ? '🏟️' : cardKind(card) === 'moment' ? '🌟' : '🎒');
-  }
-  function itemMedalHTML(card){
-    const stade = cardKind(card) === 'stade';
-    return '<div class="item-medal' + (stade ? ' is-stade' : '') + '"><span class="item-icon" aria-hidden="true">' + itemIcon(card) + '</span></div>';
-  }
-  // les noms longs (« Chaussettes trouées ») rétrécissent pour tenir sur la carte
-  function setCardName(root, name){
-    const el = root.querySelector('.card-name');
-    el.textContent = name;
-    const n = name.length;
-    el.style.fontSize = n >= 18 ? '12.5px' : n >= 15 ? '14px' : n >= 12 ? '16px' : '';
-  }
-
-  // bonus d'équipe (en %) apporté par une carte Fan en match 1v1, selon sa rareté
-  const FAN_BONUS_PCT = { commune: 5, rare: 10, halloween: 11, noel: 11, epique: 12, secrete: 13, legendaire: 15 };
-  const EDITION_TIERS = ['halloween', 'noel'];          // les éditions limitées : un thème, des dates
-  let editionsInfo = {};                                 // {halloween: {label, icon, start, end, status, cards}} (lu sur le serveur)
-  function isMascot(card){ return cardKind(card) === 'mascotte'; }
-  // le médaillon de la mascotte : le blason du loup (ou, en légendaire, un loup holographique animé)
-  function mascotMedalHTML(tier){
-    return '<div class="mascot-medal">' + (tier === 'legendaire' ? '<span class="mascot-holo" aria-hidden="true"></span>' : crestIco('mascot-wolf')) + '</div>';
-  }
-
-  // La photo d'une carte (joueur, fan, équipement, stade, moment gold) devient le fond de la carte.
-  // La mascotte garde son médaillon : le loup est son illustration.
-  function usesBgPhoto(card){ return !!card.player_photo_url && cardKind(card) !== 'mascotte'; }
-  function markPhotoCard(el, card){ if (usesBgPhoto(card) && el.querySelector('.card-bgphoto')) el.classList.add('has-photo'); }
-
-  function cardFrontHTML(card){
-    const kind = cardKind(card);
-    let statsRow, posteLabel, midHTML;
-    if (kind === 'equipement') {
-      statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🎒 +' + (EQUIP_BONUS_PCT[card.tier] || 0) + ' %</span></div>';
-      posteLabel = '🎒';
-    } else if (kind === 'stade') {
-      statsRow = '<div class="card-stats"><span>🏟️ STADE</span></div>';
-      posteLabel = '🏟️';
-    } else if (kind === 'moment') {
-      statsRow = '<div class="card-stats" title="Moment mémorable d\'un match"><span>🌟 ' + escapeHtml(momentParts(card.player_name).who) + '</span></div>';
-      posteLabel = '🌟';
-    } else if (kind === 'mascotte') {
-      statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🐺 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span></div>';
-      posteLabel = '🐺';
-    } else if (kind === 'fan') {
-      statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🎉 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span>' + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
-      posteLabel = '🎉';
-    } else {
-      statsRow = '<div class="card-stats"><span>⭐ ' + (card.display_note ? card.display_note.value : '') + '</span>' + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
-      posteLabel = escapeHtml(card.poste);
-    }
-    const bgPhoto = usesBgPhoto(card) ? '<img class="card-bgphoto" src="' + escapeHtml(card.player_photo_url) + '" alt="">' : '';
-    if (kind === 'mascotte') midHTML = mascotMedalHTML(card.tier);
-    else if (bgPhoto) midHTML = '';
-    else if (kind === 'equipement' || kind === 'stade' || kind === 'moment') midHTML = itemMedalHTML(card);
-    else midHTML = '<span class="ball-fallback">⚽</span>';
-    return bgPhoto + editionDecor(card.tier) + '<div class="card-top"><span class="card-tier-label">'+tierLabel(card.tier)+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
-      '<div class="card-mid">'+midHTML+'</div>'+
-      '<div><div class="card-name"></div>'+statsRow+'</div>'+
-      crestIco('card-watermark');
-  }
-
-  // si l'image ne charge pas (lien cassé, photo pas encore ajoutée), on retombe sur le ballon
-  function attachPhotoFallback(container, card){
-    const bg = container.querySelector('.card-bgphoto');
-    if (bg) {
-      bg.addEventListener('error', () => {                          // photo introuvable : on retombe sur le ballon ou l'icône
-        const kind = card ? cardKind(card) : 'joueur';
-        bg.remove();
-        container.classList.remove('has-photo');
-        const mid = container.querySelector('.card-mid');
-        if (mid) mid.innerHTML = (kind === 'equipement' || kind === 'stade' || kind === 'moment') ? itemMedalHTML(card) : '<span class="ball-fallback">⚽</span>';
-      }, { once: true });
-    }
-    const img = container.querySelector('.card-photo');
-    if (!img) return;
-    img.addEventListener('error', () => {
-      const kind = card ? cardKind(card) : 'joueur';
-      if (kind === 'equipement' || kind === 'stade') {
-        const holder = document.createElement('div'); holder.innerHTML = itemMedalHTML(card);
-        img.replaceWith(holder.firstChild);
-        return;
-      }
-      const span = document.createElement('span');
-      span.className = 'ball-fallback';
-      span.textContent = '⚽';
-      img.replaceWith(span);
-    }, { once: true });
-  }
-  function tierLabel(t){ return ({legendaire:'Légendaire', epique:'Épique', speciale:'Spéciale', secrete:'Secrète', gold:'Gold', halloween:'Halloween', noel:'Noël', rare:'Rare', commune:'Commune'})[t] || t; }
-  // décor propre à une édition limitée (toiles et citrouille d'Halloween ; neige et flocons de Noël)
-  const FLAKES = [[4,12,12,.85],[86,10,10,.7],[90,30,14,.9],[6,34,9,.6],[10,52,13,.8],[84,52,10,.75],[47,6,8,.6],[70,17,9,.55],[24,19,8,.5],[92,62,11,.8],[3,63,9,.7]];
-  function editionDecor(tier){
-    if (tier === 'halloween') return '<svg class="card-deco card-deco-web tl" aria-hidden="true"><use href="#web-corner" width="100%" height="100%"/></svg><svg class="card-deco card-deco-web tr" aria-hidden="true"><use href="#web-corner" width="100%" height="100%"/></svg><svg class="card-deco card-deco-pk" aria-hidden="true"><use href="#pumpkin" width="100%" height="100%"/></svg>';
-    if (tier === 'noel') return FLAKES.map(f => '<svg class="card-deco card-deco-flake" aria-hidden="true" style="left:' + f[0] + '%;top:' + f[1] + '%;width:' + f[2] + 'px;height:' + f[2] + 'px;opacity:' + f[3] + '"><use href="#flake" width="100%" height="100%"/></svg>').join('') + '<svg class="card-deco card-deco-snow" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 8C12 3 22 4 33 7S54 11 66 6 88 3 100 7V40H0z" fill="#fff"/><path d="M0 8C12 3 22 4 33 7S54 11 66 6 88 3 100 7" fill="none" stroke="#D4E3F2" stroke-width="1.1"/></svg>';
-    if (tier === 'secrete') return '<div class="card-deco card-deco-saturn" aria-hidden="true"></div>';
-    return '';
-  }
-  function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
-  // Une carte pas encore débloquée : seulement un « ? » (la jauge de fusion en plus pour une carte secrète). Aucun nom, aucun
-  // poste, aucune photo, et elle n'ouvre pas de fiche : on ne doit pas deviner de quelle carte il s'agit.
-  function makeLockedCard(card){
-    const el = document.createElement('div');
-    el.className = 'card tier-' + card.tier + ' locked';
-    el.setAttribute('aria-label', 'Carte pas encore débloquée');
-    el.innerHTML = '<div class="card-mid">?</div>';
-    if (card.tier === 'secrete' && card.fusion) {          // carte secrète : la jauge des doublons (elle ne dit rien du joueur)
-      const pct = Math.max(0, Math.min(100, Math.floor(100 * card.fusion.points / card.fusion.needed)));
-      el.insertAdjacentHTML('beforeend', '<div class="card-stats"><div class="fusion-gauge" title="' + card.fusion.points + ' / ' + card.fusion.needed + ' points de doublons"><div class="fusion-bar" style="width:' + pct + '%"></div><span>' + pct + ' %</span></div></div>');
-    }
-    return el;
-  }
-
-  function makeMiniCard(card, opts){
-    const hideCount = !!(opts && opts.hideCount);      // carte "de vitrine" : toujours dévoilée, sans compteur
-    const locked = hideCount ? false : !card.quantity;
-    if (locked) return makeLockedCard(card);
-    const el = document.createElement('div');
-    el.className = 'card tier-' + card.tier;
-    el.style.background = EDITION_TIERS.includes(card.tier) ? '' : 'linear-gradient(160deg, var(--' + (card.tier === 'legendaire' ? 'legend-2' : card.tier + '-2') + '), var(--' + (card.tier === 'legendaire' ? 'legend-1' : card.tier + '-1') + '))';
-    el.innerHTML = cardFrontHTML(card);
-    markPhotoCard(el, card);
-    setCardName(el, cardDisplayName(card));
-    attachPhotoFallback(el, card);
-    if (!hideCount) {
-      const badge = document.createElement('div');
-      badge.className = 'card-count';
-      badge.textContent = '×' + card.quantity;
-      el.appendChild(badge);
-    }
-    el.style.cursor = 'pointer';
-    el.addEventListener('click', () => openPlayerDetail(card.player_name, card.tier));
-    return el;
-  }
-
-  // ---------- Fiche détaillée d'un joueur ----------
-  async function openPlayerDetail(playerName, tier){
-    try {
-      const res = await fetch(API_BASE + '/players/' + encodeURIComponent(playerName) + '/detail?tier=' + encodeURIComponent(tier || 'commune'));
-      if (!res.ok) throw new Error('Impossible de charger ce joueur');
-      const p = await res.json();
-      document.getElementById('modalTitle').textContent = p.name;
-      const body = document.getElementById('modalBody');
-      const photoHTML = p.photo_url
-        ? '<img class="player-detail-photo" src="' + escapeHtml(p.photo_url) + '" alt="" onerror="this.style.display=\'none\'">'
-        : '';
-      const kind = cardKind({ poste: p.poste });
-      const role = kind === 'fan' ? (p.poste.split('/')[1] || '').trim() : '';
-      const posteText = kind === 'fan' ? (role || 'Supporter') : kind === 'mascotte' ? 'Mascotte' : kind === 'equipement' ? 'Équipement'
-        : kind === 'stade' ? 'Stade' : kind === 'moment' ? 'Moment mémorable' : p.poste;
-      const maxEq = (duelConfig && duelConfig.max_equipment) || 1;
-      let inner;
-      if (kind === 'fan') {          // une carte Fan n'a ni stats ni note : elle apporte un bonus d'équipe en 1v1
-        inner = '<div class="player-note">+' + (FAN_BONUS_PCT[p.tier] || 0) + ' %<small>Bonus d\'équipe en match 1v1, sur l\'emplacement Fan</small></div>';
-      } else if (kind === 'mascotte') {
-        inner = '<div class="player-note">+' + (FAN_BONUS_PCT[p.tier] || 0) + ' %<small>Bonus d\'équipe en match 1v1, sur l\'emplacement Loup (en plus du Fan)</small></div>';
-      } else if (kind === 'equipement') {
-        inner = '<div class="player-note">+' + (EQUIP_BONUS_PCT[p.tier] || 0) + ' %<small>Bonus d\'équipe en match 1v1. ' + (maxEq > 1 ? 'Jusqu\'à ' + maxEq + ' équipements par équipe' : 'Un seul équipement par équipe') + ', en plus du Fan et du Loup.</small></div>';
-      } else if (kind === 'stade') {
-        inner = '<div class="player-note">' + p.matches_joues + '<small>' + (p.matches_joues > 1 ? 'matchs joués' : 'match joué') + ' dans ce stade</small></div>';
-      } else if (kind === 'moment') {
-        const m = p.moment, parts = momentParts(p.name);
-        inner = '<div class="player-note">🌟<small>' + escapeHtml(m ? m.action : parts.action) + ' — ' + escapeHtml(m ? m.player : parts.who) +
-          (m && m.opponent ? '<br>Match contre ' + escapeHtml(m.opponent) + (m.date ? ', le ' + escapeHtml(m.date.split('-').reverse().join('/')) : '') : '') + '</small></div>';
-      } else {
-        inner = (p.display_note ? '<div class="player-note">⭐ ' + p.display_note.value + '<small>Note de la carte</small></div>' : '') +
-          '<div class="stat-grid">' +
-            statBox(p.matches_joues, 'Matchs joués') +
-            statBox(p.buts, 'Buts') +
-            statBox(p.passes_decisives, 'Passes décisives') +
-            statBox(p.homme_du_match_count, 'Homme du match') +
-            statBox(p.cartons_jaunes, 'Cartons jaunes') +
-            statBox(p.cartons_rouges, 'Cartons rouges') +
-          '</div>';
-        if (p.tier === 'secrete' && (p.surnom || (p.numero != null && p.numero !== ''))) inner += '<p class="tm-hint" style="text-align:center;">' + (p.surnom ? 'Surnom : <b>' + escapeHtml(p.surnom) + '</b>' : '') + (p.surnom && p.numero != null && p.numero !== '' ? ' · ' : '') + (p.numero != null && p.numero !== '' ? 'Maillot n° <b>' + escapeHtml(String(p.numero)) + '</b>' : '') + '</p>';
-        if (p.edition) inner += '<p class="tm-hint" style="text-align:center;">' + p.edition.icon + ' <b>Édition limitée ' + escapeHtml(p.edition.label) + '</b> : ' + (p.edition.status === 'active' ? 'ses cartes sortent des packs jusqu\'au ' + formatDay(p.edition.end) + ' inclus.' : p.edition.status === 'ended' ? 'terminée le ' + formatDay(p.edition.end) + '. Elle ne sort plus des packs : seuls les joueurs qui l\'ont déjà peuvent l\'échanger.' : 'à partir du ' + formatDay(p.edition.start) + '.') + '</p>';
-        if (p.tier === 'speciale') inner += '<p class="tm-hint" style="text-align:center;">Carte spéciale : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine. Elle ne sort que des packs gagnés en 1v1.</p>';
-        if (p.tier === 'secrete') inner += '<p class="tm-hint" style="text-align:center;">Carte secrète : elle ne sort jamais des packs. On la débloque en fusionnant 100 points de doublons (commune = 1, rare = 5).</p>';
-      }
-      body.innerHTML = photoHTML + '<div class="player-detail-poste">' + escapeHtml(posteText) + ' · ' + tierLabel(p.tier) + '</div>' + inner;
-      document.getElementById('userCollectionModal').style.display = 'flex';
-    } catch(e) { toast(e.message); }
-  }
-  function statBox(num, label){
-    return '<div class="stat-box"><div class="num">' + num + '</div><div class="lab">' + escapeHtml(label) + '</div></div>';
-  }
-
-  // ---------- /me ----------
-  async function refreshMe(){
-    try {
-      meInfo = await api('/me');
-      document.getElementById('chipCredits').textContent = meInfo.credits;
-      const bonusTotal = Object.values(meInfo.pack_tokens || {}).reduce((a, b) => a + b, 0);
-      document.getElementById('chipPacks').textContent = meInfo.stored_packs + '/3' + (bonusTotal ? (' +' + bonusTotal + ' bonus') : '');
-      document.getElementById('chipPseudo').textContent = meInfo.pseudo;
-      const openFreeBtn = document.getElementById('openFreePackBtn');
-      openFreeBtn.disabled = meInfo.stored_packs <= 0 || opening;
-      renderBonusPacks();
-      let statusMsg = meInfo.stored_packs + ' pack(s) gratuit(s) disponible(s) sur 3.';
-      if (meInfo.seconds_until_next_pack !== null && meInfo.seconds_until_next_pack !== undefined) {
-        statusMsg += ' Prochain dans ' + formatDuration(meInfo.seconds_until_next_pack) + '.';
-      }
-      if (bonusTotal > 0) statusMsg += ' (' + bonusTotal + ' pack(s) bonus en stock)';
-      document.getElementById('packStatus').textContent = statusMsg;
-    } catch(e) { /* handled by api() for 401 */ }
-  }
-  // ---------- Son : le hurlement du loup à l'ouverture d'un pack ----------
-  // Si le fichier "sounds/loup.mp3" existe à côté de index.html, c'est lui qui est joué.
-  // Sinon, le navigateur fabrique lui-même un hurlement (Web Audio), sans aucun fichier.
-  const SOUND_KEY = 'fca5_sound';
-  let soundOn = (function(){ try { return localStorage.getItem(SOUND_KEY) !== '0'; } catch(e) { return true; } })();
-  let audioCtx = null, howlFile = null, howlFileOk = false;
-
-  function refreshSoundBtn(){
-    const b = document.getElementById('soundBtn');
-    b.textContent = soundOn ? '🔊' : '🔇';
-    b.setAttribute('aria-pressed', String(soundOn));
-    const label = soundOn ? 'Couper le son' : 'Activer le son';
-    b.title = label;
-    b.setAttribute('aria-label', label);
-  }
-  document.getElementById('soundBtn').addEventListener('click', () => {
-    soundOn = !soundOn;
-    try { localStorage.setItem(SOUND_KEY, soundOn ? '1' : '0'); } catch(e) {}
-    refreshSoundBtn();
-    if (soundOn) playHowl();          // petit aperçu quand on réactive le son
-  });
-  refreshSoundBtn();
-
-  try {                                // on tente de précharger un vrai fichier ; sinon on se rabat sur le son fabriqué
-    howlFile = new Audio();
-    howlFile.preload = 'auto';
-    howlFile.addEventListener('canplaythrough', () => { howlFileOk = true; }, { once: true });
-    howlFile.addEventListener('error', () => { howlFileOk = false; });
-    howlFile.src = 'sounds/loup.mp3';
-  } catch(e) { howlFile = null; }
-
-  function synthHowl(ctx){
-    const t0 = ctx.currentTime + 0.02, dur = 2.6;
-    const master = ctx.createGain();
-    master.gain.setValueAtTime(0.0001, t0);
-    master.gain.exponentialRampToValueAtTime(0.30, t0 + 0.3);
-    master.gain.setValueAtTime(0.30, t0 + 1.5);
-    master.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    const tone = ctx.createBiquadFilter(); tone.type = 'lowpass'; tone.frequency.value = 2400;
-    tone.connect(master); master.connect(ctx.destination);
-
-    // la voix : la hauteur monte, tient, puis retombe ; un vibrato s'installe au milieu
-    const pitch = (osc, k) => {
-      const f = osc.frequency;
-      f.setValueAtTime(250 * k, t0);
-      f.exponentialRampToValueAtTime(640 * k, t0 + 0.9);
-      f.exponentialRampToValueAtTime(600 * k, t0 + 1.6);
-      f.exponentialRampToValueAtTime(320 * k, t0 + dur);
-    };
-    const lfo = ctx.createOscillator(); lfo.frequency.value = 5.5;
-    const voices = [['triangle', 1, 1], ['sine', 2, 0.35]].map(([type, k, level]) => {
-      const osc = ctx.createOscillator(); osc.type = type; pitch(osc, k);
-      const g = ctx.createGain(); g.gain.value = level;
-      const vib = ctx.createGain();
-      vib.gain.setValueAtTime(0, t0); vib.gain.linearRampToValueAtTime(11 * k, t0 + 1.1);
-      lfo.connect(vib); vib.connect(osc.frequency);
-      osc.connect(g); g.connect(tone);
-      return osc;
-    });
-    // le souffle : un peu de bruit filtré
-    const len = Math.floor(ctx.sampleRate * dur), buf = ctx.createBuffer(1, len, ctx.sampleRate), data = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
-    const noise = ctx.createBufferSource(); noise.buffer = buf;
-    const band = ctx.createBiquadFilter(); band.type = 'bandpass'; band.frequency.value = 1100; band.Q.value = 0.8;
-    const ng = ctx.createGain(); ng.gain.value = 0.05;
-    noise.connect(band); band.connect(ng); ng.connect(tone);
-
-    [...voices, lfo, noise].forEach(n => n.start(t0));
-    [...voices, lfo, noise].forEach(n => n.stop(t0 + dur + 0.1));
-  }
-
-  function playHowl(){
-    if (!soundOn) return;
-    try {
-      if (howlFile && howlFileOk) {
-        howlFile.currentTime = 0;
-        const pr = howlFile.play();
-        if (pr && pr.catch) pr.catch(() => playSynth());
-        return;
-      }
-      playSynth();
-    } catch(e) { /* le son ne doit jamais empêcher d'ouvrir un pack */ }
-  }
-  function playSynth(){
-    try {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      if (!audioCtx) audioCtx = new AC();                 // créé pendant un clic : autorisé par les navigateurs
-      if (audioCtx.state === 'suspended' && audioCtx.resume) audioCtx.resume();
-      synthHowl(audioCtx);
-    } catch(e) { /* pas de son possible : tant pis */ }
-  }
-
-  const PACK_ORDER = ['classique', 'rare', 'epique', 'legendaire', 'ultra', 'match'];
-  const PACK_LABELS = { classique: 'pack classique', rare: 'pack rare', epique: 'pack épique', legendaire: 'pack légendaire', ultra: 'pack ultra', match: 'pack match' };
-  // un bouton par type de pack bonus possédé (le compte test les a tous, sans limite)
-  function renderBonusPacks(){
-    const root = document.getElementById('bonusPacksEl');
-    root.innerHTML = '';
-    if (!meInfo) return;
-    PACK_ORDER.forEach(t => {
-      const n = (meInfo.pack_tokens || {})[t] || 0;
-      if (n <= 0 && !meInfo.is_test) return;
-      const btn = document.createElement('button');
-      btn.className = 'btn-secondary';
-      btn.textContent = 'Ouvrir un ' + PACK_LABELS[t] + (meInfo.is_test ? '' : ' (×' + n + ')');
-      btn.disabled = opening;
-      btn.addEventListener('click', () => openPack(t));
-      root.appendChild(btn);
-    });
-  }
-  function formatDuration(seconds){
-    const h = Math.floor(seconds/3600), m = Math.floor((seconds%3600)/60);
-    return h > 0 ? (h + 'h' + String(m).padStart(2,'0')) : (m + ' min');
-  }
-
-  // ---------- Collection ----------
-  async function loadCollection(){
-    try {
-      myCollection = await api('/collection');
-      renderCollection();
-      return myCollection;
-    } catch(e) { toast(e.message); return []; }
-  }
-
-  // withSell=true ajoute le bouton "Vendre doublon" (uniquement pertinent pour SA PROPRE collection)
-  function formatDay(iso){ const [y, m, d] = iso.split('-').map(Number); return d + (d === 1 ? 'er ' : ' ') + ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'][m - 1]; }
-  async function loadEditions(){
-    try { const list = await fetch(API_BASE + '/game/editions').then(r => r.json()); editionsInfo = Object.fromEntries(list.map(e => [e.key, e])); } catch(e) { editionsInfo = {}; }
-  }
-  function buildTierGroups(cards, withSell){
-    const frag = document.createDocumentFragment();
-    ['legendaire','epique','speciale','secrete','gold','noel','halloween','rare','commune'].forEach(tier => {
-      const cardsOfTier = cards.filter(c => c.tier === tier)
-        .sort((a, b) => (!!b.quantity - !!a.quantity) || (a.quantity ? a.player_name.localeCompare(b.player_name, 'fr') : a.id - b.id));   // d'abord celles qu'on a ; les inconnues ensuite, sans indice
-      if (!cardsOfTier.length) return;
-      const owned = cardsOfTier.filter(c => c.quantity > 0).length;
-      const group = document.createElement('div'); group.className = 'tier-group' + (EDITION_TIERS.includes(tier) ? ' edition-group' : '');
-      const ed = editionsInfo[tier];
-      const edNote = ed ? '<span class="edition-note">' + ed.icon + ' Édition limitée · ' + (ed.status === 'active' ? 'dans les packs jusqu\'au ' + formatDay(ed.end) : ed.status === 'ended' ? 'terminée le ' + formatDay(ed.end) : 'à partir du ' + formatDay(ed.start)) + '</span>' : '';
-      group.innerHTML = '<h3>' + tierLabel(tier) + ' <span style="color:var(--text-muted);font-size:14px;font-family:var(--font-body);">' + owned + '/' + cardsOfTier.length + '</span>' + edNote + '</h3>';
-      const grid = document.createElement('div'); grid.className = 'collection-grid';
-      cardsOfTier.forEach(card => {
-        const wrap = document.createElement('div'); wrap.className = 'card-wrap';
-        wrap.appendChild(makeMiniCard(card));
-        if (withSell && card.quantity > 1) {
-          const sellBtn = document.createElement('button');
-          sellBtn.className = 'btn-small ghost';
-          sellBtn.textContent = 'Vendre doublon';
-          sellBtn.addEventListener('click', () => sellDuplicate(card.id));
-          wrap.appendChild(sellBtn);
-        }
-        if (withSell && card.tier === 'secrete' && card.fusion && card.fusion.ready) {    // assez de doublons : on peut fusionner
-          const unlockBtn = document.createElement('button');
-          unlockBtn.className = 'btn-small';
-          unlockBtn.textContent = 'Débloquer';
-          unlockBtn.addEventListener('click', () => unlockSecret(card.id, unlockBtn));
-          wrap.appendChild(unlockBtn);
-        }
-        grid.appendChild(wrap);
-      });
-      group.appendChild(grid);
-      frag.appendChild(group);
-    });
-    return frag;
-  }
-
-  function renderCollection(){
-    const root = document.getElementById('collectionByTier');
-    root.innerHTML = '';
-    root.appendChild(buildTierGroups(myCollection, true));
-  }
-
-  // ---------- Voir la collection d'un autre joueur (depuis le classement) ----------
-  document.getElementById('modalCloseBtn').addEventListener('click', closeUserCollectionModal);
-  document.getElementById('userCollectionModal').addEventListener('click', (e) => {
-    if (e.target.id === 'userCollectionModal') closeUserCollectionModal();
-  });
-  function closeUserCollectionModal(){
-    document.getElementById('userCollectionModal').style.display = 'none';
-  }
-  async function openUserCollection(pseudo){
-    try {
-      const res = await fetch(API_BASE + '/users/' + encodeURIComponent(pseudo) + '/collection');
-      if (!res.ok) throw new Error('Impossible de charger cette collection');
-      const cards = await res.json();
-      document.getElementById('modalTitle').textContent = 'Collection de ' + pseudo;
-      const body = document.getElementById('modalBody');
-      body.innerHTML = '';
-      body.appendChild(buildTierGroups(cards, false));
-      document.getElementById('userCollectionModal').style.display = 'flex';
-    } catch(e) { toast(e.message); }
-  }
-
-  async function unlockSecret(cardId, btn){
-    btn.disabled = true;
-    try {
-      const res = await api('/collection/unlock-secret', { method: 'POST', body: JSON.stringify({ card_id: cardId }) });
-      toast('Carte secrète débloquée : ' + (res.surnom || res.player) + ' !');
-      await loadCollection();
-      await refreshMe();
-    } catch(e) { toast(e.message); btn.disabled = false; }
-  }
-  async function sellDuplicate(cardId){
-    try {
-      const res = await api('/collection/sell-duplicate', { method: 'POST', body: JSON.stringify({ card_id: cardId }) });
-      toast('+' + res.credits_gained + ' crédits');
-      await loadCollection();
-      await refreshMe();
-    } catch(e) { toast(e.message); }
-  }
-
-  // ---------- Aide : un bouton « ? Aide » par onglet ----------
-  // Les pourcentages de tirage et les chiffres du 1v1 viennent du serveur : l'aide ne peut pas être en retard sur les règles.
-  const TIER_COLORS = { commune: '#C9965F', rare: '#B8C2C8', halloween: '#FF8A1F', noel: '#C8202C', gold: '#E0A21B', secrete: '#4B3FA0', speciale: '#2FA45E', epique: '#7A3FC9', legendaire: '#F0C84B' };
-  const TIER_NAMES_PL = { commune: 'Commune', rare: 'Rare', halloween: 'Halloween (édition limitée)', noel: 'Noël (édition limitée)', gold: 'Gold', secrete: 'Secrète', speciale: 'Spéciale', epique: 'Épique', legendaire: 'Légendaire' };
-  let gameRules = null;
-  async function getGameRules(){
-    if (!gameRules) gameRules = await fetch(API_BASE + '/game/rules').then(r => r.json());
-    return gameRules;
-  }
-  const pct = (x, digits) => (Math.round(x * 100 * (digits === 0 ? 1 : 10)) / (digits === 0 ? 1 : 10)).toString().replace('.', ',') + ' %';
-
-  // tableau « chance de chaque rareté » pour les packs demandés, avec les cartes qui existent aujourd'hui
-  function oddsTableHTML(rules, packKeys){
-    const tiers = rules.tier_order.filter(t => packKeys.some(k => (rules.packs[k].odds[t] || 0) > 0));
-    let html = '<table class="odds"><thead><tr><th>Rareté (cartes existantes)</th>' + packKeys.map(k => '<th>' + escapeHtml(rules.packs[k].label) + '</th>').join('') + '</tr></thead><tbody>';
-    tiers.forEach(t => {
-      html += '<tr><td><span class="help-tier" style="background:' + TIER_COLORS[t] + '"></span>' + TIER_NAMES_PL[t] + ' <span class="odds-dash">(' + (rules.counts[t] || 0) + ')</span></td>' +
-        packKeys.map(k => { const v = rules.packs[k].odds[t]; return '<td>' + (v ? String(v).replace('.', ',') + ' %' : '<span class="odds-dash">—</span>') + '</td>'; }).join('') + '</tr>';
-    });
-    return html + '</tbody></table>' +
-      '<p class="help-note">Ces chances s\'appliquent à chaque carte tirée. Elles sont calculées en direct avec les cartes qui existent aujourd\'hui : une rareté sans carte ne sort pas, et une rareté récente (gold, spéciale, épique, légendaire) est réduite tant qu\'elle compte peu de cartes. Les cartes <b>secrètes</b> ne sortent jamais d\'un pack, et les <b>spéciales</b> ne sortent que des packs match.</p>';
-  }
-  // pack ultra : les chances de chaque groupe de cartes (calculées en direct par le serveur)
-  function ultraOddsHTML(rules){
-    const u = rules.packs.ultra; if (!u || !u.slots) return '';
-    const heads = { toutes: '6 cartes<br>probas classiques', rare_plus: '2 cartes<br>rare ou mieux', edition_min: '1 carte<br>édition limitée ou mieux', epique_legendaire: '1 carte<br>épique ou légendaire' };
-    const tiers = rules.tier_order.filter(t => u.slots.some(sl => (sl.odds[t] || 0) > 0));
-    let html = '<h3>Le pack ultra, carte par carte</h3><table class="odds"><thead><tr><th>Rareté</th>' + u.slots.map(sl => '<th>' + heads[sl.rule] + '</th>').join('') + '</tr></thead><tbody>';
-    tiers.forEach(t => { html += '<tr><td><span class="help-tier" style="background:' + TIER_COLORS[t] + '"></span>' + TIER_NAMES_PL[t] + '</td>' + u.slots.map(sl => { const v = sl.odds[t]; return '<td>' + (v ? String(v).replace('.', ',') + ' %' : '<span class="odds-dash">—</span>') + '</td>'; }).join('') + '</tr>'; });
-    return html + '</tbody></table><p class="help-note">Les 10 cartes d\'un pack ultra sont toujours <b>différentes</b>. Pour chaque groupe, les raretés autorisées gardent entre elles les mêmes rapports que dans un pack classique. L\'édition limitée en cours compte dans les cartes « édition limitée ou mieux ».</p>';
-  }
-  function guaranteedPacksHTML(rules){
-    return '<ul>' + ['rare', 'epique', 'legendaire', 'ultra'].map(k => '<li><b>' + escapeHtml(rules.packs[k].label) + '</b> (' + rules.packs[k].price + ' crédits) : ' + escapeHtml(rules.packs[k].description) + (rules.packs[k].available ? '' : ' <i>(pas encore disponible : aucune carte de cette rareté n\'existe)</i>') + '</li>').join('') + '</ul>';
-  }
-  const HELP = {
-    pack: { title: 'Les packs', async html(){
-      const r = await getGameRules();
-      return '<h3>Ouvrir un pack</h3><p>Chaque pack contient <b>3 cartes</b> (<b>10</b> pour le pack ultra) et te rapporte quelques crédits.</p>' +
-        '<ul><li><b>Packs gratuits</b> : tu peux en stocker ' + r.free_packs_max + ' au maximum, et un nouveau arrive toutes les ' + r.free_pack_hours + ' heures.</li>' +
-        '<li><b>Packs bonus</b> (achetés au shop, offerts ou gagnés) : ils se stockent sans limite et s\'affichent sous les boutons.</li>' +
-        '<li><b>Pack match</b> : il se gagne en remportant un match 1v1. C\'est le seul où sortent les cartes <b>spéciales</b>, avec de meilleures chances. Celui qui perd, ou qui fait match nul, reçoit un <b>pack classique</b>.</li></ul>' +
-        (r.editions.filter(e => e.status === 'active' && e.cards > 0).map(e => '<h3>' + e.icon + ' Édition limitée en cours</h3><p><b>' + escapeHtml(e.label) + '</b> : ses ' + e.cards + ' cartes sortent des packs <b>jusqu\'au ' + formatDay(e.end) + ' inclus</b> (' + Math.round(100 * 0.08) + ' % des cartes d\'un pack classique, ' + Math.round(100 * 0.10) + ' % d\'un pack match). Après cette date, elles ne sortent plus.</p>').join('')) +
-        '<h3>Tes chances de tirage</h3>' + oddsTableHTML(r, ['classique', 'match']) +
-        '<h3>Être prévenu</h3><p>Touche 🔔 en haut de la page pour recevoir une notification quand ton pack est prêt, quand une nouvelle carte arrive, quand ton défi 1v1 est joué ou quand ta carte est vendue.</p>' +
-        '<h3>Et les doublons ?</h3><p>Rien n\'est perdu : tu peux les revendre, ou les garder pour remplir la jauge de la carte secrète du même joueur (voir l\'aide de la Collection).</p>';
-    } },
-    collection: { title: 'Ta collection', async html(){
-      const r = await getGameRules(), sv = r.sell_values;
-      return '<h3>Tes cartes</h3><p>Les cartes sont rangées de la plus rare à la plus commune. Une carte grisée avec un « ? » n\'est pas encore à toi. Clique sur une carte pour voir sa fiche.</p>' +
-        '<h3>Les raretés, de la plus commune à la plus rare</h3><ul>' +
-        '<li><span class="help-tier" style="background:' + TIER_COLORS.commune + '"></span><b>Commune</b> et <span class="help-tier" style="background:' + TIER_COLORS.rare + '"></span><b>Rare</b> : les cartes de base de chaque joueur.</li>' +
-        '<li><span class="help-tier" style="background:' + TIER_COLORS.halloween + '"></span><b>Édition limitée</b> (Halloween, Noël…) : quelques cartes par thème, <b>disponibles dans les packs seulement pendant leurs dates</b>. Ensuite elles restent à ceux qui les ont, et ne s\'obtiennent plus qu\'en échange. Note 88 (un petit bonus), ou +11 % pour un fan.</li>' +
-        '<li><span class="help-tier" style="background:' + TIER_COLORS.gold + '"></span><b>Gold</b> : un moment mémorable d\'un vrai match (petit pont, sauvetage…).</li>' +
-        '<li><span class="help-tier" style="background:' + TIER_COLORS.secrete + '"></span><b>Secrète</b> : une par joueur, fan et mascotte. Elle ne sort jamais d\'un pack (voir plus bas).</li>' +
-        '<li><span class="help-tier" style="background:' + TIER_COLORS.speciale + '"></span><b>Spéciale</b> : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine. Elle ne sort que des packs match.</li>' +
-        '<li><span class="help-tier" style="background:' + TIER_COLORS.epique + '"></span><b>Épique</b> : le joueur qui marque dans un vrai match. Sa note vaut 85 au premier but, puis +2 par but.</li>' +
-        '<li><span class="help-tier" style="background:' + TIER_COLORS.legendaire + '"></span><b>Légendaire</b> : la plus rare, holographique et animée.</li></ul>' +
-        '<h3>Les doublons</h3><ul><li><b>Les revendre</b> avec « Vendre doublon » : commune ' + sv.commune + ' crédit, rare ' + sv.rare + ', gold ' + sv.gold + ', spéciale ' + sv.speciale + ', épique ' + sv.epique + ', légendaire ' + sv.legendaire + '.</li>' +
-        '<li><b>Débloquer une carte secrète</b> : la carte secrète d\'un joueur affiche une jauge. Chaque doublon <b>commune</b> de ce joueur vaut <b>1 point</b>, chaque doublon <b>rare</b> vaut <b>' + r.secret_fusion.rare_value + ' points</b>. À <b>' + r.secret_fusion.cost + ' points</b>, le bouton « Débloquer » apparaît : les doublons nécessaires sont consommés (tu gardes toujours ton premier exemplaire de chaque carte).</li></ul>' +
-        '<h3>Les autres types de cartes</h3><ul><li><b>Fans</b>, <b>Le Loup</b> (la mascotte) et <b>équipements</b> : pas de note, ils donnent un bonus d\'équipe en 1v1.</li><li><b>Stades</b> et <b>moments gold</b> : des cartes de collection.</li></ul>';
-    } },
-    marche: { title: 'Le marché', html(){
-      return '<h3>Acheter et vendre entre joueurs</h3><ul>' +
-        '<li><b>Vendre</b> : choisis une carte que tu possèdes et fixe ton prix en crédits. Elle quitte ta collection tant que l\'annonce est ouverte.</li>' +
-        '<li><b>Annuler</b> une de tes annonces te rend la carte.</li>' +
-        '<li><b>Acheter</b> : le prix est débité de tes crédits et versé au vendeur. Tu ne peux pas acheter tes propres annonces.</li></ul>' +
-        '<p class="help-note">Pour garder une carte précieuse, vends plutôt tes doublons.</p>';
-    } },
-    shop: { title: 'Le shop', async html(){
-      const r = await getGameRules();
-      return '<h3>Acheter des packs avec tes crédits</h3><p>Tu gagnes des crédits en ouvrant des packs, en revendant des doublons et en gagnant des matchs 1v1. Un pack acheté arrive dans tes packs bonus (onglet Packs), sans limite de stock.</p>' +
-        '<ul><li><b>' + escapeHtml(r.packs.classique.label) + '</b> (' + r.packs.classique.price + ' crédits) : ' + escapeHtml(r.packs.classique.description) + '.</li></ul>' + guaranteedPacksHTML(r) +
-        '<p class="help-note">Un pack à carte garantie n\'est en vente que si au moins une carte de cette rareté existe. Le pack match ne s\'achète pas : il se gagne en 1v1 (et le perdant, ou chacun des deux en cas de nul, reçoit un pack classique).</p>' +
-        '<h3>Tes chances de tirage</h3>' + oddsTableHTML(r, ['classique']) + '<p>Pour les packs à carte garantie, les cartes qui ne sont pas garanties suivent ces mêmes chances.</p>' + ultraOddsHTML(r);
-    } },
-    classement: { title: 'Le classement', html(){
-      return '<h3>Qui a la plus belle collection ?</h3><p>Les joueurs sont classés par <b>pourcentage de collection</b> : le nombre de cartes différentes que tu possèdes divisé par le nombre de cartes qui existent dans le jeu, <b>sans exception</b> (cartes secrètes et éditions limitées comprises, même terminées). En cas d\'égalité, c\'est le nombre de crédits qui départage.</p>' +
-        '<ul><li>Clique sur un joueur pour voir sa collection.</li><li>Les comptes de test ne sont pas classés.</li></ul>';
-    } },
-    actualite: { title: 'L\'actualité du club', html(){
-      return '<h3>Ce que tu vois ici</h3><ul>' +
-        '<li><b>Prochains matchs</b> : les rencontres à venir du club. Un match passé dont le résultat n\'est pas encore saisi est signalé « Résultat à venir ».</li>' +
-        '<li><b>Stats des joueurs</b> : les vraies statistiques de la saison. M = matchs joués, ⚽ = buts, PD = passes décisives, 🏅 = homme du match. Clique sur un joueur pour sa fiche.</li>' +
-        '<li><b>Résultats</b> : le score, le stade, les buteurs, les passeurs et les moments mémorables de chaque match.</li></ul>' +
-        '<h3>Ce que chaque match fait gagner au jeu</h3><ul>' +
-        '<li>Un joueur qui marque reçoit sa carte <b>épique</b> (note 85 au premier but, puis +2 par but supplémentaire).</li>' +
-        '<li>Un moment mémorable crée une carte <b>gold</b>.</li>' +
-        '<li>Un nouveau stade crée sa carte commune.</li></ul>';
-    } },
-    duels: { title: 'Les matchs 1v1', async html(){
-      const [r, cfg] = [await getGameRules(), await loadDuelConfig()];
-      const p = x => Math.round(x * 100) + ' %', range = (tab, tiers) => tiers.map(t => TIER_NAMES_PL[t].toLowerCase() + ' +' + Math.round(tab[t] * 100)).join(', ');
-      return '<h3>Le principe</h3><p>Tu composes une équipe de <b>5 cartes</b> (1 gardien + 4 joueurs de champ) et tu défies les autres joueurs. Le match est simulé tout de suite, minute par minute.</p>' +
-        '<h3>Composer ton équipe</h3><ul>' +
-        '<li><b>Disposition</b> : 2-1-1 (prudente), 1-2-1 (équilibrée) ou 1-1-2 (offensive).</li>' +
-        '<li><b>Tactique secrète</b> : Pressing bat Possession, qui bat Contre-attaque, qui bat Pressing. La tactique gagnante donne <b>+' + p(cfg.tactic_bonus) + '</b> à toute l\'équipe.</li>' +
-        '<li><b>Poste</b> : un joueur placé hors de son poste perd <b>' + p(cfg.out_of_position_malus) + '</b> (les postes « X » ne sont jamais pénalisés).</li>' +
-        '<li><b>Capitaine</b> : <b>+' + p(cfg.captain_bonus) + '</b> sur sa note.</li>' +
-        '<li>Tu ne peux pas jouer deux fois la même carte (mais la commune et la rare d\'un joueur, oui).</li></ul>' +
-        '<h3>Les bonus d\'équipe</h3><p>Trois emplacements facultatifs, dont les bonus <b>s\'additionnent</b> :</p><ul>' +
-        '<li><b>1 Fan</b> : ' + range(cfg.fan_bonus, ['commune', 'rare', 'epique', 'secrete', 'legendaire']) + ' %, édition limitée +' + Math.round(cfg.fan_bonus.halloween * 100) + ' %.</li>' +
-        '<li><b>1 Loup</b> (la mascotte) : mêmes bonus que le Fan.</li>' +
-        '<li><b>' + cfg.max_equipment + ' Équipement</b> : ' + range(cfg.equipment_bonus, ['commune', 'rare', 'epique', 'legendaire']) + ' %.</li></ul>' +
-        '<h3>Mises, packs et classement</h3><ul>' +
-        '<li><b>Mise</b> de ' + cfg.stake_min + ' à ' + cfg.stake_max + ' crédits, bloquée tant que le défi est ouvert. Le gagnant prend les deux mises <b>et un pack match</b> ; le perdant reçoit <b>un pack classique</b>. En cas de <b>nul</b>, chacun récupère sa mise <b>et reçoit un pack classique</b>. Il n\'y a aucune limite de packs gagnés par jour.</li>' +
-        '<li><b>Enveloppe pour l\'arbitre</b> (facultative, sans plafond) : tu glisses des crédits à l\'arbitre en plus de ta mise. <b>Celui qui met le plus gagne +' + Math.round(cfg.referee_bonus * 100) + ' %</b> dans le match, comme un bonus d\'équipe ; en cas d\'égalité, personne ne l\'a. '
-        + 'Les <b>deux</b> enveloppes sont dépensées, même celle du joueur qui a mis le moins, et même si le match est perdu ou nul. '
-        + 'Les montants sont <b>secrets</b> : celui qui accepte un défi ne voit pas l\'enveloppe de son adversaire, et ne les découvre tous les deux qu\'à la fin du match. '
-        + 'Si tu annules ton défi, ton enveloppe t\'est rendue. Astuce : ce bonus vaut environ <b>14 points</b> d\'écart entre victoires et défaites, soit moins de 2 crédits en moyenne : inutile de mettre une fortune.</li>' +
-        '<li>Tu peux avoir ' + cfg.max_open_proposals + ' défis ouverts au maximum. Aucun délai : tu peux rejouer tout de suite contre le même adversaire.</li>' +
-        '<li><b>Classement</b> : par Elo. M = matchs, V = victoires, D = défaites, N = nuls, <b>Diff</b> = buts marqués moins buts encaissés.</li></ul>' +
-        '<h3>Les cartes stars</h3><p>Deux classements, avec les 5 cartes les plus utilisées et les 5 plus décisives en buts et en passes :</p><ul>' +
-        '<li><b>De la semaine</b> : remis à zéro chaque <b>vendredi à 17h</b>. À ce moment, le n°1 de chaque catégorie (✨) reçoit une <b>carte spéciale</b> (note 80, puis +1 chaque fois qu\'il la regagne). Le classement de la semaine compte par joueur, toutes raretés confondues.</li>' +
-        '<li><b>De tous les temps</b> : l\'historique complet, depuis le premier match.</li></ul>' +
-        '<p>Les cartes spéciales ne sortent que des packs gagnés en 1v1 :</p>' +
-        oddsTableHTML(r, ['match']);
-    } },
-  };
-  let helpOpener = null;
-  async function openHelp(key, opener){
-    const h = HELP[key]; if (!h) return;
-    helpOpener = opener || null;
-    document.getElementById('helpTitle').textContent = h.title;
-    document.getElementById('helpBody').innerHTML = '<p class="help-note">Chargement…</p>';
-    document.getElementById('helpModal').style.display = 'flex';
-    document.getElementById('helpClose').focus();
-    try { document.getElementById('helpBody').innerHTML = await h.html(); }
-    catch(e) { document.getElementById('helpBody').innerHTML = '<p>Impossible de charger l\'aide pour le moment.</p>'; }
-  }
-  function closeHelp(){ document.getElementById('helpModal').style.display = 'none'; if (helpOpener) { helpOpener.focus(); helpOpener = null; } }
-  document.querySelectorAll('.help-btn').forEach(b => b.addEventListener('click', () => openHelp(b.dataset.help, b)));
-  document.getElementById('helpClose').addEventListener('click', closeHelp);
-  document.getElementById('helpModal').addEventListener('click', e => { if (e.target.id === 'helpModal') closeHelp(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('helpModal').style.display === 'flex') closeHelp(); });
-
-  // ---------- Packs ----------
-  document.getElementById('openFreePackBtn').addEventListener('click', () => openPack('free'));
-  document.getElementById('packEl').addEventListener('click', () => {
-    if (meInfo && meInfo.stored_packs > 0) openPack('free');
-  });
-
-  const SHAKE_MS = 520;        // petite secousse du pack pendant que le serveur tire les cartes
-  const FLIP_MS = 900;         // le pack se retourne
-  const PLACE_MS = 520;        // la carte vient se ranger sous le pack
-  const NEXT_MS = 380;         // pause avant que la carte suivante apparaisse
-  // du moins rare au plus rare : la meilleure carte est toujours la dernière
-  const TIER_RANK = ['commune', 'rare', 'halloween', 'noel', 'gold', 'secrete', 'speciale', 'epique', 'legendaire'];
-  const rarityRank = card => { const i = TIER_RANK.indexOf(card.tier); return i < 0 ? TIER_RANK.length : i; };
-  const noteOf = card => (card.display_note && card.display_note.value) || 0;
-  function sortByRarity(cards){
-    return cards.map((c, i) => [c, i]).sort((x, y) => rarityRank(x[0]) - rarityRank(y[0]) || noteOf(x[0]) - noteOf(y[0]) || x[1] - y[1]).map(x => x[0]);
-  }
-
-  function spawnSparks(slotEl){
-    for (let i = 0; i < 10; i++){
-      const spark = document.createElement('span');
-      spark.className = 'spark';
-      spark.textContent = '✨';
-      const angle = Math.random() * Math.PI * 2;
-      const dist = 40 + Math.random() * 30;
-      spark.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
-      spark.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
-      spark.style.animationDelay = (Math.random() * 0.15) + 's';
-      slotEl.appendChild(spark);
-      setTimeout(() => spark.remove(), 1200);
-    }
-  }
-
-  let opening = false;         // vrai tant qu'une ouverture n'est pas terminée (les 3 cartes rangées)
-  let reveal = null;           // l'ouverture en cours : { cards, index, busy, result, placeholders, big }
-  let pendingTimers = [];
-  function trackTimeout(fn, delay){
-    const id = setTimeout(fn, delay);
-    pendingTimers.push(id);
-    return id;
-  }
-
-  // une carte avec son dos (le loup) et sa face, comme avant
-  function buildRevealSlot(card){
-    const slot = document.createElement('div'); slot.className = 'card-slot';
-    const flip = document.createElement('div'); flip.className = 'card-flip';
-    const back = document.createElement('div'); back.className = 'card-face card-back'; back.innerHTML = crestIco();
-    const front = document.createElement('div'); front.className = 'card-face card-front tier-' + card.tier; front.innerHTML = cardFrontHTML(card);
-    markPhotoCard(front, card);
-    setCardName(front, cardDisplayName(card));
-    if (card.is_new) front.insertAdjacentHTML('beforeend', '<span class="new-ribbon">NEW</span>');  // carte débloquée
-    attachPhotoFallback(front, card);
-    flip.appendChild(back); flip.appendChild(front); slot.appendChild(flip);
-    return { slot, flip, card };
-  }
-  // Confettis qui sortent du pack quand une carte spéciale (vert), épique (violet) ou légendaire (or) apparaît
-  const CONFETTI_COLORS = {
-    speciale: ['#1F7A44', '#2FA45E', '#5CC985', '#9DEBB8', '#D9F9E3'],
-    epique: ['#4B1E8C', '#7A3FC9', '#9B66E8', '#C4A1FF', '#EBDDFF'],
-    legendaire: ['#B8860B', '#E0A21B', '#F0C84B', '#FFE08A', '#FFF4C7']
-  };
-  function launchConfetti(tier){
-    const colors = CONFETTI_COLORS[tier]; if (!colors) return;
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    let layer = document.getElementById('confettiLayer');
-    if (!layer) { layer = document.createElement('div'); layer.id = 'confettiLayer'; layer.setAttribute('aria-hidden', 'true'); document.body.appendChild(layer); }
-    const r = document.getElementById('packStage').getBoundingClientRect();
-    const ox = r.left + r.width / 2, oy = r.top + r.height * 0.3;           // la fente du pack, en haut
-    const n = tier === 'legendaire' ? 130 : 80;                                // nombre de confettis
-    const reach = Math.max(0.45, Math.min(1, window.innerWidth / 900));      // sur un petit écran le jet est moins large : les confettis restent visibles
-    const K = 2.6, VT = 230;                                                  // frottement de l'air ; vitesse à laquelle ils retombent (px/s)
-    for (let i = 0; i < n; i++) {
-      const piece = document.createElement('i');
-      piece.className = 'confetti'; piece.dataset.tier = tier;
-      const w = 6 + Math.random() * 6, h = 9 + Math.random() * 8;
-      piece.style.cssText = 'width:' + w + 'px;height:' + h + 'px;background:' + colors[Math.floor(Math.random() * colors.length)] + ';border-radius:' + (Math.random() < 0.3 ? '50%' : '2px') + ';left:' + ox + 'px;top:' + oy + 'px;';
-      layer.appendChild(piece);
-      const dur = 1700 + Math.random() * 1100;
-      setTimeout(() => piece.remove(), dur + 150);
-      if (!piece.animate) continue;
-      const angle = -Math.PI * (0.1 + 0.8 * Math.random()), speed = (350 + Math.random() * 550) * reach;      // vers le haut, en éventail
-      const vx = Math.cos(angle) * speed, vy = Math.sin(angle) * speed, spin = (Math.random() - 0.5) * 1500, flip = Math.random() * 360;
-      const frames = [];
-      for (let k = 0; k <= 16; k++) {
-        const f = k / 16, t = f * dur / 1000, e = 1 - Math.exp(-K * t);       // l'air les freine : ils jaillissent, puis flottent vers le bas
-        frames.push({ transform: 'translate(' + (vx * e / K).toFixed(1) + 'px,' + ((vy - VT) * e / K + VT * t).toFixed(1) + 'px) rotate(' + (flip + spin * t).toFixed(0) + 'deg) scaleY(' + (Math.cos(t * 9 + i) * 0.7 + 0.3).toFixed(2) + ')', opacity: f < 0.7 ? 1 : 1 - (f - 0.7) / 0.3 });
-      }
-      piece.animate(frames, { duration: dur, easing: 'linear', fill: 'forwards' });
-    }
-  }
-
-  // la lueur de la rareté (et les étincelles des légendaires) quand la carte se montre
-  function applyCardEffects(slot, card){
-    launchConfetti(card.tier);
-    if (card.tier === 'rare') slot.classList.add('glow-rare');
-    if (card.tier === 'epique') slot.classList.add('glow-epique');
-    if (card.tier === 'gold') slot.classList.add('glow-gold');
-    if (card.tier === 'speciale') slot.classList.add('glow-speciale');
-    if (EDITION_TIERS.includes(card.tier)) slot.classList.add('glow-' + card.tier);
-    if (card.tier === 'legendaire') { slot.classList.add('glow-legendaire'); spawnSparks(slot); }
-  }
-  // la carte en grand doit avoir la hauteur du pack : on calcule le grossissement depuis la taille réelle du pack
-  function setBigScale(){
-    const st = document.getElementById('packStage'); const h = st.getBoundingClientRect().height;
-    if (h > 0) st.style.setProperty('--big-k', (h / 210).toFixed(4));
-  }
-  // pack à 10 cartes : les cartes rangées gardent leur mise en page de 140 px, réduite à la largeur de leur emplacement
-  function setRowScale(){
-    const area = document.getElementById('revealArea'), ph = area.querySelector('.reveal-ph');
-    if (ph && area.classList.contains('many')) { const w = ph.getBoundingClientRect().width; if (w > 0) area.style.setProperty('--k5', (w / 140).toFixed(4)); }
-  }
-  window.addEventListener('resize', () => { if (reveal) { setBigScale(); setRowScale(); } });
-
-  function updateRevealHint(){
-    const hint = document.getElementById('revealHint');
-    if (!reveal) { hint.textContent = ''; hint.classList.remove('live'); return; }
-    const n = reveal.cards.length, i = reveal.index + 1;
-    hint.textContent = reveal.busy ? '' : (i < n ? 'Appuie sur la carte pour continuer (' + i + '/' + n + ')' : 'Appuie sur la carte pour la ranger (' + i + '/' + n + ')');
-    hint.classList.toggle('live', !reveal.busy);
-  }
-
-  // montre la carte i en grand, à la place du pack (la première est au dos du pack ; les suivantes apparaissent sur place)
-  function showBigCard(i, first){
-    const r = reveal, card = r.cards[i], built = buildRevealSlot(card);
-    const host = document.getElementById('bigCardHost'); host.innerHTML = '';
-    const wrap = document.createElement('div'); wrap.className = 'big-scale';
-    built.slot.classList.add('big', 'appear');
-    built.slot.tabIndex = 0; built.slot.setAttribute('role', 'button');
-    built.slot.setAttribute('aria-label', cardDisplayName(card) + ' : appuie pour continuer');
-    wrap.appendChild(built.slot); host.appendChild(wrap);
-    r.big = built;
-    if (first) {
-      built.flip.style.transition = 'none'; built.flip.classList.add('revealed');     // déjà face visible : c'est le pack qui se retourne
-    } else {
-      built.slot.classList.add('pop');                                                 // le dos apparaît, puis la carte se retourne
-      trackTimeout(() => { built.flip.classList.add('revealed'); applyCardEffects(built.slot, card); }, 220);
-      built.slot.focus({ preventScroll: true });                                       // au clavier, la touche Entrée enchaîne
-    }
-  }
-
-  // la carte en grand vient se ranger, en taille normale, dans son emplacement sous le pack (animation « FLIP »)
-  function placeInRow(slot, ph){
-    const from = slot.getBoundingClientRect();                      // où elle est, et sa taille visible (grossie)
-    slot.classList.remove('big', 'pop'); slot.removeAttribute('tabindex'); slot.removeAttribute('role'); slot.removeAttribute('aria-label');
-    const host = ph.querySelector('.ph-scale') || ph;               // (pack à 10 cartes : le conteneur est réduit)
-    host.appendChild(slot);                                         // son nouvel emplacement, en taille normale
-    slot.style.transition = 'none'; slot.style.transformOrigin = 'top left';
-    const to = slot.getBoundingClientRect();
-    const kp = host.offsetWidth ? host.getBoundingClientRect().width / host.offsetWidth : 1;      // réduction du conteneur
-    const dx = (from.left - to.left) / kp, dy = (from.top - to.top) / kp, k = to.width ? from.width / to.width : 1;
-    slot.style.position = 'relative'; slot.style.zIndex = '30';
-    slot.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + k + ')';
-    void slot.offsetWidth;                                          // le navigateur enregistre le point de départ
-    slot.style.transition = 'transform ' + PLACE_MS + 'ms cubic-bezier(.25,.8,.25,1)';
-    slot.style.transform = 'translate(0px,0px) scale(1)';
-    trackTimeout(() => { slot.style.transition = ''; slot.style.transform = ''; slot.style.transformOrigin = ''; slot.style.position = ''; slot.style.zIndex = ''; }, PLACE_MS + 80);
-  }
-
-  // un appui sur la carte : elle se range, et la suivante apparaît (ou, après la dernière, le pack se retourne de nouveau)
-  function advanceReveal(){
-    const r = reveal;
-    if (!r || r.busy || !r.big) return;
-    r.busy = true;
-    const i = r.index;
-    placeInRow(r.big.slot, r.placeholders[i]);
-    if (i < r.cards.length - 1) {
-      r.index = i + 1;
-      updateRevealHint();
-      trackTimeout(() => { showBigCard(r.index, false); trackTimeout(() => { r.busy = false; updateRevealHint(); }, 820); }, NEXT_MS);
-    } else {
-      updateRevealHint();
-      trackTimeout(() => document.getElementById('packFlip').classList.remove('flipped'), 250);   // le pack revient : un nouveau pack à ouvrir
-      trackTimeout(finishReveal, PLACE_MS + 700);
-    }
-  }
-  function finishReveal(){
-    const r = reveal; if (!r) return;
-    document.getElementById('revealSummary').innerHTML = 'Tu as gagné <b>+' + r.result.credits_won + ' crédits</b>.';
-    document.getElementById('bigCardHost').innerHTML = '';
-    reveal = null; opening = false;
-    updateRevealHint();
-    refreshMe();
-    loadCollection();
-  }
-  const bigHost = document.getElementById('bigCardHost');
-  bigHost.addEventListener('click', e => { if (e.target.closest('.card-slot.big')) advanceReveal(); });
-  bigHost.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('.card-slot.big')) { e.preventDefault(); advanceReveal(); } });
-
-  async function openPack(packType){
-    if (opening) return;
-    opening = true;
-    playHowl();            // dans le clic, pour que le navigateur autorise le son
-    // annule tout minuteur laissé par une ouverture précédente interrompue,
-    // pour ne jamais avoir deux séquences d'animation qui se marchent dessus
-    pendingTimers.forEach(clearTimeout);
-    pendingTimers = [];
-    reveal = null;
-
-    const packEl = document.getElementById('packEl'), flipEl = document.getElementById('packFlip');
-    flipEl.classList.remove('flipped');
-    document.getElementById('bigCardHost').innerHTML = '';
-    packEl.classList.add('disabled', 'shaking');
-    document.getElementById('openFreePackBtn').disabled = true;
-    document.querySelectorAll('#bonusPacksEl button').forEach(b => b.disabled = true);
-    document.getElementById('revealSummary').textContent = '';
-    document.getElementById('revealArea').innerHTML = '';
-    document.getElementById('revealArea').classList.remove('many');
-    updateRevealHint();
-
-    const apiPromise = api('/pack/open', { method: 'POST', body: JSON.stringify({ pack_type: packType === 'free' ? null : packType }) });
-
-    try {
-      await new Promise(r => setTimeout(r, SHAKE_MS));              // le pack tremble pendant que la requête part
-      packEl.classList.remove('shaking');
-      const result = await apiPromise;
-      const cards = sortByRarity(result.cards_won);                 // de la moins rare à la plus rare
-
-      const area = document.getElementById('revealArea'), placeholders = [], many = cards.length > 3;
-      area.classList.toggle('many', many);                                    // plus de 3 cartes (pack ultra) : 2 rangées de 5
-      cards.forEach(() => { const ph = document.createElement('div'); ph.className = 'reveal-ph'; if (many) ph.innerHTML = '<div class="ph-scale"></div>'; area.appendChild(ph); placeholders.push(ph); });
-      setRowScale();
-      reveal = { cards, index: 0, busy: true, result, placeholders, big: null };
-      setBigScale();
-      showBigCard(0, true);
-      packEl.classList.remove('disabled');
-      requestAnimationFrame(() => flipEl.classList.add('flipped')); // le pack se retourne et montre au dos la première carte
-      trackTimeout(() => { applyCardEffects(reveal.big.slot, cards[0]); reveal.busy = false; updateRevealHint(); reveal.big.slot.focus({ preventScroll: true }); }, FLIP_MS);
-    } catch(e) {
-      packEl.classList.remove('disabled', 'shaking');
-      flipEl.classList.remove('flipped');
-      reveal = null; opening = false;
-      document.getElementById('revealArea').innerHTML = '';
-      updateRevealHint();
-      refreshMe();
-      toast(e.message);
-    }
-  }
-
-  // ---------- Marché ----------
-  function renderMarketForm(){
-    const offerSel = document.getElementById('offerSelect');
-    const owned = myCollection.filter(c => c.quantity > 0);
-    if (!owned.length){
-      offerSel.innerHTML = '<option value="">Aucune carte disponible — ouvre un pack</option>';
-      offerSel.disabled = true;
-      document.getElementById('createListingBtn').disabled = true;
-    } else {
-      offerSel.disabled = false;
-      document.getElementById('createListingBtn').disabled = false;
-      offerSel.innerHTML = owned.map(c => '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' — ' + tierLabel(c.tier) + ' (×' + c.quantity + ')</option>').join('');
-    }
-  }
-
-  document.getElementById('createListingBtn').addEventListener('click', async () => {
-    const cardId = document.getElementById('offerSelect').value;
-    const price = parseInt(document.getElementById('priceInput').value, 10);
-    if (!cardId || !price || price <= 0) { toast('Choisis une carte et un prix valide'); return; }
-    try {
-      await api('/market/list', { method: 'POST', body: JSON.stringify({ card_id: cardId, price }) });
-      toast('Mise en vente publiée');
-      await loadCollection(); renderMarketForm();
-      loadListings();
-    } catch(e) { toast(e.message); }
-  });
-
-  async function loadListings(){
-    try {
-      const listings = await api('/market/listings');
-      renderListings(listings);
-    } catch(e) { toast(e.message); }
-  }
-
-  function renderListings(listings){
-    const root = document.getElementById('listingsEl');
-    if (!listings.length){
-      root.innerHTML = '<div class="empty-state">Aucune offre pour l\'instant. Sois le premier à proposer un échange.</div>';
-      return;
-    }
-    root.innerHTML = '';
-    const list = document.createElement('div'); list.className = 'listings';
-    listings.forEach(l => {
-      const mine = l.seller_pseudo === myPseudo;
-      const row = document.createElement('div'); row.className = 'listing';
-      row.innerHTML =
-        '<div class="mini-badge tier-' + l.card.tier + '">' + escapeHtml(l.card.player_name.slice(0,2)) + '</div>' +
-        '<div class="listing-text"><b>' + (mine ? 'Toi' : escapeHtml(l.seller_pseudo)) + '</b> vend <b>' + escapeHtml(l.card.player_name) + '</b> (' + tierLabel(l.card.tier) + ') pour <b>' + l.price + ' crédits</b>' +
-        '<div class="listing-meta">' + (l.card.display_note ? ('⭐ ' + l.card.display_note.value) : '🎉 Supporter') + '</div></div>';
-      const btn = document.createElement('button');
-      btn.className = 'btn-small' + (mine ? ' ghost' : '');
-      if (mine) {
-        btn.textContent = 'Annuler';
-        btn.addEventListener('click', () => cancelListing(l.id));
-      } else {
-        btn.textContent = 'Acheter';
-        btn.disabled = !meInfo || meInfo.credits < l.price;
-        btn.addEventListener('click', () => buyListing(l.id));
-      }
-      row.appendChild(btn);
-      list.appendChild(row);
-    });
-    root.appendChild(list);
-  }
-
-  async function cancelListing(id){
-    try {
-      await api('/market/listings/' + id, { method: 'DELETE' });
-      toast('Offre annulée');
-      await loadCollection(); renderMarketForm();
-      loadListings();
-    } catch(e) { toast(e.message); }
-  }
-
-  async function buyListing(id){
-    try {
-      await api('/market/buy/' + id, { method: 'POST' });
-      toast('Échange effectué !');
-      await refreshMe();
-      await loadCollection(); renderMarketForm();
-      loadListings();
-    } catch(e) { toast(e.message); }
-  }
-
-  // ---------- Shop ----------
-  async function loadShop(){
-    try {
-      const items = await api('/shop/items');
-      const root = document.getElementById('shopItemsEl');
-      root.innerHTML = '';
-      items.forEach(item => {
-        const row = document.createElement('div'); row.className = 'shop-item';
-        row.innerHTML = '<div><div class="shop-item-name">' + escapeHtml(item.label) + '</div>' +
-          '<div class="shop-item-desc">' + escapeHtml(item.description) + '</div>' +
-          '<div class="shop-item-price">' + item.price + ' crédits</div></div>';
-        const btn = document.createElement('button'); btn.className = 'btn-small';
-        btn.textContent = item.available ? 'Acheter' : 'Bientôt disponible';
-        btn.disabled = !item.available || !meInfo || meInfo.credits < item.price;
-        btn.addEventListener('click', () => buyShopItem(item, btn));
-        row.appendChild(btn);
-        root.appendChild(row);
-      });
-    } catch(e) { toast(e.message); }
-  }
-
-  async function buyShopItem(item, btn){
-    try {
-      btn.disabled = true;
-      const res = await api('/shop/buy', { method: 'POST', body: JSON.stringify({ item: item.item }) });
-      toast(item.label + ' acheté — à ouvrir dans l\'onglet Packs');
-      await refreshMe();
-      loadShop();
-    } catch(e) { toast(e.message); btn.disabled = false; }
-  }
-
-  // ---------- Classement ----------
-  async function loadLeaderboard(){
-    try {
-      const rows = await api('/leaderboard');
-      const root = document.getElementById('leaderboardEl');
-      if (!rows.length) { root.innerHTML = '<div class="empty-state">Personne n\'a encore de collection.</div>'; return; }
-      let html = '<table class="leaderboard"><thead><tr><th></th><th>Pseudo</th><th>Collection</th><th>Crédits</th></tr></thead><tbody>';
-      rows.forEach((r, i) => {
-        const mine = r.pseudo === myPseudo;
-        html += '<tr class="' + (mine ? 'me' : '') + '"><td><span class="rank-num">#' + (i+1) + '</span></td>' +
-          '<td><button class="pseudo-link" data-pseudo="' + escapeHtml(r.pseudo) + '">' + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') + '</button></td>' +
-          '<td>' + r.completion_pct + '%</td><td>' + r.credits + '</td></tr>';
-      });
-      html += '</tbody></table>';
-      root.innerHTML = html;
-      root.querySelectorAll('.pseudo-link').forEach(btn => {
-        btn.addEventListener('click', () => openUserCollection(btn.dataset.pseudo));
-      });
-    } catch(e) { toast(e.message); }
-  }
-
-  // ---------- Actualité ----------
-  // une date AAAA-MM-JJ lue comme jour LOCAL (évite le décalage d'un jour selon le fuseau horaire)
-  function localDay(iso){ const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); }
-
-  async function loadNews(){
-    await Promise.all([loadUpcoming(), loadPlayerStats(), loadMatches()]);
-  }
-
-  async function loadUpcoming(){
-    try {
-      const rows = await fetch(API_BASE + '/matches/upcoming').then(r => r.json());
-      const root = byId('upcomingEl');
-      if (!rows.length){ root.innerHTML = '<div class="empty-state">Aucun match prévu pour l\'instant.</div>'; return; }
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      root.innerHTML = rows.map(u => {
-        const d = localDay(u.date);
-        const past = d < today, isToday = d.getTime() === today.getTime();
-        const meta = [d.toLocaleDateString('fr-FR', { weekday: 'long' }), u.time, u.location].filter(Boolean).map(escapeHtml).join(' · ');
-        const badge = isToday ? '<span class="upcoming-badge">Aujourd\'hui</span>' : (past ? '<span class="upcoming-badge" style="background:var(--bg-sunk);color:var(--text-muted);">Résultat à venir</span>' : '');
-        return '<div class="upcoming-row"><div class="upcoming-date"><b>' + d.getDate() + '</b><span>' + d.toLocaleDateString('fr-FR', { month: 'short' }) + '</span></div>' +
-          '<div class="upcoming-main"><b>FC IPSA V — ' + escapeHtml(u.opponent) + '</b>' + badge + '<div class="upcoming-meta">' + meta + '</div></div></div>';
-      }).join('');
-    } catch(e) { toast(e.message); }
-  }
-
-  async function loadPlayerStats(){
-    try {
-      const rows = await fetch(API_BASE + '/players/stats').then(r => r.json());
-      const root = byId('playerStatsEl');
-      if (!rows.length){ root.innerHTML = '<div class="empty-state">Aucun joueur.</div>'; return; }
-      const cell = n => '<td class="num' + (n ? '' : ' zero') + '">' + n + '</td>';
-      root.innerHTML = '<table class="pstats"><thead><tr><th>Joueur</th><th class="num" title="Matchs joués">M</th><th class="num" title="Buts">⚽</th>' +
-        '<th class="num" title="Passes décisives">PD</th><th class="num" title="Homme du match">🏅</th></tr></thead><tbody>' +
-        rows.map(r => '<tr><td><span class="pname" data-name="' + escapeHtml(r.name) + '">' + escapeHtml(r.name) + '</span> <span class="poste">' + escapeHtml(r.poste) + '</span></td>' +
-          cell(r.matches_joues) + cell(r.buts) + cell(r.passes_decisives) + cell(r.homme_du_match_count) + '</tr>').join('') + '</tbody></table>';
-      root.querySelectorAll('.pname').forEach(el => el.addEventListener('click', () => openPlayerDetail(el.dataset.name, 'commune')));
-    } catch(e) { toast(e.message); }
-  }
-
-  async function loadMatches(){
-    try {
-      const matches = await fetch(API_BASE + '/matches').then(r => r.json());
-      const root = document.getElementById('matchesEl');
-      if (!matches.length){ root.innerHTML = '<div class="empty-state">Aucun match enregistré pour l\'instant.</div>'; return; }
-      root.innerHTML = matches.map(m => {
-        const dateStr = localDay(m.date).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
-        const stadeHTML = m.stade ? '<div class="match-row">📍 <b>Stade :</b> ' + escapeHtml(m.stade) + '</div>' : '';
-        const momentsHTML = (m.moments && m.moments.length)
-          ? '<div class="match-row">🌟 <b>Moments mémorables :</b> ' + m.moments.map(x => escapeHtml(x.action) + ' (' + escapeHtml(x.player) + ')').join(', ') + '</div>' : '';
-        const scorersHTML = m.buteurs.length
-          ? '<div class="match-row">⚽ <b>Buteurs :</b> ' + m.buteurs.map(b => escapeHtml(b.player_name) + (b.count > 1 ? ' (×' + b.count + ')' : '')).join(', ') + '</div>'
-          : '';
-        const assistsHTML = m.passeurs.length
-          ? '<div class="match-row">🎯 <b>Passeurs décisifs :</b> ' + m.passeurs.map(a => escapeHtml(a.player_name) + (a.count > 1 ? ' (×' + a.count + ')' : '')).join(', ') + '</div>'
-          : '';
-        const motmHTML = m.homme_du_match ? '<div class="match-motm">🏅 Homme du match : ' + escapeHtml(m.homme_du_match) + '</div>' : '';
-        return '<div class="match-card">' +
-          '<div class="match-header"><div><div class="match-score">FC IPSA V ' + m.score_us + ' — ' + m.score_them + ' ' + escapeHtml(m.opponent) + '</div></div><div class="match-date">' + dateStr + '</div></div>' +
-          stadeHTML + scorersHTML + assistsHTML + momentsHTML + motmHTML +
-        '</div>';
-      }).join('');
-    } catch(e) { toast(e.message); }
-  }
-
-  // ---------- Matchs 1v1 (5 contre 5) ----------
-  let duelConfig = null;
-  const SLOT_ORDER = ['GB', 'DEF', 'MC', 'ATT'];
-  const SLOT_ICON = { GB: '🧤', DEF: '🛡️', MC: '🎯', ATT: '⚽' };
-  const byId = id => document.getElementById(id);
-  const duelSleep = ms => new Promise(r => setTimeout(r, ms));
-
-  async function loadDuelConfig(){
-    if (!duelConfig) duelConfig = await fetch(API_BASE + '/duel/config').then(r => r.json());
-    return duelConfig;
-  }
-  function formatDuelDate(iso){
-    const d = new Date(/(Z|[+-]\d\d:?\d\d)$/.test(iso) ? iso : iso + 'Z');
-    return d.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-  }
-  function signed(n){ return (n > 0 ? '+' : '') + n; }
-
-  async function loadDuelsTab(){
-    try { await loadDuelConfig(); } catch(e) { toast('Impossible de charger les règles du 1v1'); return; }
-    await Promise.all([loadDuelBoard(), loadDuelHistory(), loadDuelProposals(), loadDuelStars()]);
-  }
-
-  // ---- cellule 1 : profils et classement Elo
-  async function loadDuelBoard(){
-    try {
-      const rows = await fetch(API_BASE + '/duel/board').then(r => r.json());
-      const root = byId('duelBoardEl');
-      if (!rows.length){ root.innerHTML = '<div class="empty-state">Personne n\'a encore joué. Propose le premier match !</div>'; return; }
-      let html = '<table class="duel-table"><thead><tr><th></th><th>Joueur</th><th class="num">Elo</th>' +
-        '<th class="num" title="Matchs joués">M</th><th class="num" title="Victoires">V</th><th class="num" title="Défaites">D</th><th class="num" title="Nuls">N</th><th class="num" title="Différence de buts : buts marqués moins buts encaissés">Diff</th></tr></thead><tbody>';
-      rows.forEach((r, i) => {
-        const mine = r.pseudo === myPseudo;
-        html += '<tr class="' + (mine ? 'me' : '') + '"><td><span class="rank-num">#' + (i + 1) + '</span></td><td>' + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') +
-          '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.played + '</td><td class="num">' + r.wins + '</td><td class="num">' + r.losses + '</td><td class="num">' + r.draws + '</td>' +
-          '<td class="num"><b class="' + (r.goal_diff > 0 ? 'diff-pos' : r.goal_diff < 0 ? 'diff-neg' : '') + '">' + (r.goal_diff > 0 ? '+' + r.goal_diff : r.goal_diff < 0 ? '−' + Math.abs(r.goal_diff) : '0') + '</b></td></tr>';
-      });
-      root.innerHTML = html + '</tbody></table>';
-    } catch(e) { toast(e.message); }
-  }
-
-  // ---- cellule : cartes stars (les plus utilisées, les plus décisives)
-  // Affiche un classement de cartes stars (les plus utilisées, les plus décisives en buts et en passes).
-  // weekly = true : classement de la semaine, où le n°1 de chaque catégorie recevra une carte spéciale vendredi.
-  function renderStars(root, data, weekly){
-    const medals = ['🥇', '🥈', '🥉', '4e', '5e'];
-    const plural = (n, one, many) => n + ' ' + (n > 1 ? many : one);
-    if (!data.most_used.length) {
-      root.innerHTML = '<div class="empty-state">' + (weekly ? 'Aucun match 1v1 cette semaine : joue pour entrer au classement !' : 'Pas encore de statistiques : jouez des matchs !') + '</div>';
-      return;
-    }
-    const blocks = [
-      ['Les plus utilisées', data.most_used, n => plural(n, 'match', 'matchs')],
-      ['Les plus décisives en buts', data.top_scorers, n => plural(n, 'but', 'buts')],
-      ['Les plus décisives en passes', data.top_assisters, n => plural(n, 'passe décisive', 'passes décisives')],
-    ];
-    root.innerHTML = '';
-    blocks.forEach(([title, list, caption]) => {
-      const block = document.createElement('div'); block.className = 'stars-block';
-      const h = document.createElement('h3'); h.textContent = title; block.appendChild(h);
-      const row = document.createElement('div'); row.className = 'stars-row';
-      if (!list.length) { row.innerHTML = '<span class="duel-hint" style="margin:0;">Aucune pour l\'instant.</span>'; }
-      list.forEach((entry, i) => {
-        const item = document.createElement('div'); item.className = 'star-item';
-        item.appendChild(makeMiniCard(entry.card, { hideCount: true }));
-        const cap = document.createElement('div'); cap.className = 'star-caption';
-        cap.textContent = medals[i] + ' ' + caption(entry.count) + (weekly && i === 0 ? ' ✨' : '');
-        if (weekly && i === 0) cap.title = 'Recevra sa carte spéciale vendredi à 17h';
-        item.appendChild(cap); row.appendChild(item);
-      });
-      block.appendChild(row); root.appendChild(block);
-    });
-  }
-  // « dans 3 j 4 h », « dans 5 h 12 min »...
-  function untilText(isoUtc){
-    const ms = new Date(isoUtc + 'Z').getTime() - Date.now();
-    if (ms <= 60000) return 'dans moins d\'une minute';
-    const min = Math.floor(ms / 60000), d = Math.floor(min / 1440), h = Math.floor((min % 1440) / 60), m = min % 60;
-    return 'dans ' + (d ? d + ' j ' + h + ' h' : h ? h + ' h ' + m + ' min' : m + ' min');
-  }
-  async function loadDuelStars(){
-    try {
-      const [all, week] = await Promise.all([
-        fetch(API_BASE + '/duel/card-stats?limit=5').then(r => r.json()),
-        fetch(API_BASE + '/duel/card-stats?limit=5&scope=week').then(r => r.json()),
-      ]);
-      renderStars(byId('duelStarsEl'), all, false);
-      renderStars(byId('duelWeekEl'), week, true);
-      byId('duelWeekHint').innerHTML = 'Remis à zéro <b>vendredi à 17h</b> (' + untilText(week.resets_at) + '). À ce moment, le n°1 de chaque catégorie ✨ reçoit sa <b>carte spéciale</b>.';
-    } catch(e) { toast(e.message); }
-  }
-
-  // ---- cellule 2 : derniers matchs
-  async function loadDuelHistory(){
-    try {
-      const rows = await fetch(API_BASE + '/duel/history?limit=15').then(r => r.json());
-      const root = byId('duelHistoryEl');
-      if (!rows.length){ root.innerHTML = '<div class="empty-state">Aucun match joué pour l\'instant.</div>'; return; }
-      root.innerHTML = '';
-      rows.forEach(h => {
-        const row = document.createElement('div'); row.className = 'history-row';
-        const outcome = h.winner ? '🏆 ' + escapeHtml(h.winner) : '🤝 match nul';
-        row.innerHTML = '<div class="history-main"><b>' + escapeHtml(h.challenger) + '</b><span class="history-score">' + h.score_challenger + ' – ' + h.score_defender +
-          '</span><b>' + escapeHtml(h.defender) + '</b><div class="history-meta">' + formatDuelDate(h.date) + ' · mise ' + h.stake + ' cr. · ' + outcome + '</div></div>';
-        const btn = document.createElement('button'); btn.className = 'btn-small ghost'; btn.textContent = 'Voir le match';
-        btn.addEventListener('click', () => openHistoryMatch(h.id));
-        row.appendChild(btn); root.appendChild(row);
-      });
-    } catch(e) { toast(e.message); }
-  }
-  async function openHistoryMatch(id){
-    try {
-      const res = await fetch(API_BASE + '/duel/history/' + encodeURIComponent(id));
-      if (!res.ok) throw new Error('Match introuvable');
-      showMatch(await res.json(), { isNew: false, animate: false });
-    } catch(e) { toast(e.message); }
-  }
-
-  // ---- cellule 3 : défis ouverts
-  async function loadDuelProposals(){
-    try {
-      const rows = await fetch(API_BASE + '/duel/proposals').then(r => r.json());
-      const root = byId('duelProposalsEl');
-      if (!rows.length){ root.innerHTML = '<div class="empty-state">Aucun défi ouvert. Propose le premier match !</div>'; return; }
-      root.innerHTML = '';
-      rows.forEach(pr => {
-        const mine = pr.creator === myPseudo;
-        const row = document.createElement('div'); row.className = 'proposal-row';
-        const label = duelConfig && duelConfig.formation_labels[pr.formation] ? ' (' + duelConfig.formation_labels[pr.formation] + ')' : '';
-        row.innerHTML = '<div class="proposal-main"><b>' + escapeHtml(pr.creator) + '</b>' + (mine ? ' (toi)' : '') + ' · Elo ' + pr.creator_elo +
-          '<div class="proposal-meta">Disposition ' + escapeHtml(pr.formation) + label + (pr.has_fan ? ' · avec un Fan' : '') + (pr.has_mascot ? ' · avec le Loup' : '') + (pr.equipment_count ? ' · ' + pr.equipment_count + ' équipement' + (pr.equipment_count > 1 ? 's' : '') : '') + ' · mise <b>' + pr.stake + ' crédits</b> · tactique secrète</div></div>';
-        const btn = document.createElement('button'); btn.className = 'btn-small' + (mine ? ' ghost' : '');
-        if (mine) { btn.textContent = 'Annuler'; btn.addEventListener('click', () => cancelProposal(pr.id, btn)); }
-        else { btn.textContent = 'Jouer le match'; btn.addEventListener('click', () => openTeamModal('play', pr)); }
-        row.appendChild(btn); root.appendChild(row);
-      });
-    } catch(e) { toast(e.message); }
-  }
-  async function cancelProposal(id, btn){
-    try {
-      btn.disabled = true;
-      await api('/duel/proposals/' + id, { method: 'DELETE' });
-      toast('Défi annulé, ta mise t\'est rendue');
-      await refreshMe(); loadDuelProposals(); loadDuelBoard();
-    } catch(e) { toast(e.message); btn.disabled = false; }
-  }
-  byId('proposeMatchBtn').addEventListener('click', () => openTeamModal('propose', null));
-
-  // ---- constructeur d'équipe (pour proposer un défi OU jouer celui d'un autre)
-  const tm = { mode: null, proposal: null, owned: [], byId: {}, refConfirmed: null };
-  // texte du bouton principal du formulaire, selon le mode (propose / joue)
-  // Dernière équipe jouée : gardée sur cet appareil, séparément pour chaque compte, puis rechargée à l'ouverture du formulaire.
-  function lastTeamKey(){ return 'fca5_lastteam_' + (myPseudo || ''); }
-  function loadLastTeam(){ try { const t = JSON.parse(localStorage.getItem(lastTeamKey())); return t && t.v === 1 && Array.isArray(t.slots) ? t : null; } catch(e) { return null; } }
-  function saveLastTeam(body, stake){
-    try {
-      const old = loadLastTeam() || {};
-      localStorage.setItem(lastTeamKey(), JSON.stringify({ v: 1, formation: body.formation, tactic: body.tactic, slots: body.slots, captain: body.captain_card_id || '',
-        fan: body.fan_card_id || '', mascot: body.mascot_card_id || '', equip: body.equipment_card_ids || [], stake: stake != null ? stake : old.stake }));
-    } catch(e) { /* stockage plein ou refusé : tant pis, on ne bloque jamais le match */ }
-  }
-  function tmSubmitLabel(){ return tm.mode === 'propose' ? 'Publier mon défi' : 'Lancer le match (' + tm.proposal.stake + ' crédits)'; }
-  const tmSelects = () => [...document.querySelectorAll('#tmSlots select')];
-
-  async function openTeamModal(mode, proposal){
-    try { await loadDuelConfig(); await loadCollection(); } catch(e) { toast('Chargement impossible, réessaie'); return; }
-    const cfg = duelConfig;
-    tm.mode = mode; tm.proposal = proposal;
-    tm.byId = Object.fromEntries(myCollection.map(c => [c.id, c]));
-    tm.owned = myCollection.filter(c => c.quantity > 0 && cardKind(c) === 'joueur' && c.display_note)
-      .sort((a, b) => b.display_note.value - a.display_note.value || a.player_name.localeCompare(b.player_name, 'fr'));
-
-    const rules = 'Une carte hors de son vrai poste perd ' + Math.round(cfg.out_of_position_malus * 100) + ' %. Le capitaine gagne ' + Math.round(cfg.captain_bonus * 100) + ' %. Tu ne peux pas mettre deux fois la même carte.';
-    if (mode === 'propose') {
-      byId('tmTitle').textContent = 'Proposer un match';
-      byId('tmIntro').textContent = 'Compose ton équipe : ta mise (et ton enveloppe pour l\'arbitre, si tu en mets une) est bloquée tant que le défi est ouvert, puis rendue si tu l\'annules. ' + rules;
-      byId('tmSubmit').textContent = 'Publier mon défi';
-    } else {
-      byId('tmTitle').textContent = 'Jouer contre ' + proposal.creator;
-      byId('tmIntro').textContent = proposal.creator + ' (Elo ' + proposal.creator_elo + ') joue en ' + proposal.formation + '. Mise : ' + proposal.stake + ' crédits, prélevée au coup d\'envoi. Sa tactique est secrète : à toi de la deviner ! ' + rules;
-      byId('tmSubmit').textContent = 'Lancer le match (' + proposal.stake + ' crédits)';
-      tm.proposal = proposal;
-    }
-    byId('tmStakeRow').style.display = mode === 'propose' ? '' : 'none';
-    byId('tmReferee').value = 0; tm.refConfirmed = null;
-    byId('tmRefHint').innerHTML = 'Celui qui met le plus gagne <b>+' + Math.round(cfg.referee_bonus * 100) + ' %</b> dans le match (égalité : personne). Les <b>deux</b> enveloppes sont <b>dépensées</b>, même celle de celui qui perd l\'enchère. ' + (mode === 'propose' ? 'Ton adversaire ne verra pas ton montant avant la fin du match.' : proposal.creator + ' a déjà glissé son enveloppe : tu ne vois pas son montant.');
-    byId('tmStake').min = cfg.stake_min; byId('tmStake').max = cfg.stake_max;
-
-    byId('tmFormation').innerHTML = Object.keys(cfg.formations).map(f => '<option value="' + f + '">' + f + ' · ' + cfg.formation_labels[f] + '</option>').join('');
-    byId('tmFormation').value = '1-2-1';
-    byId('tmTactic').innerHTML = Object.entries(cfg.tactics).map(([k, t]) => '<option value="' + k + '">' + escapeHtml(t.label) + '</option>').join('');
-    byId('tmTacticHint').textContent = Object.values(cfg.tactics).map(t => t.label + ' bat ' + cfg.tactics[t.beats].label.toLowerCase()).join(' · ') +
-      ' (+' + Math.round(cfg.tactic_bonus * 100) + ' % pour toute l\'équipe).';
-    byId('tmCaptainLabel').textContent = 'Capitaine (+' + Math.round(cfg.captain_bonus * 100) + ' % sur sa note)';
-    byId('tmCaptain').dataset.touched = '';
-
-    const fans = myCollection.filter(c => c.quantity > 0 && cardKind(c) === 'fan');
-    byId('tmFan').innerHTML = '<option value="">— aucun —</option>' + fans.map(c =>
-      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', +' + Math.round((cfg.fan_bonus[c.tier] || 0) * 100) + ' %)</option>').join('');
-
-    // équipements : jusqu'à cfg.max_equipment, tous différents, leur bonus s'ajoute à celui du Fan
-    tm.equip = myCollection.filter(c => c.quantity > 0 && cardKind(c) === 'equipement')
-      .sort((a, b) => (cfg.equipment_bonus[b.tier] || 0) - (cfg.equipment_bonus[a.tier] || 0) || a.player_name.localeCompare(b.player_name, 'fr'));
-    byId('tmEquipLabel').textContent = cfg.max_equipment > 1 ? 'Équipement (optionnel, ' + cfg.max_equipment + ' au maximum)' : 'Équipement (optionnel, un seul)';
-    const mascots = myCollection.filter(c => c.quantity > 0 && cardKind(c) === 'mascotte');
-    byId('tmMascot').innerHTML = '<option value="">— aucun —</option>' + mascots.map(c =>
-      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', +' + Math.round((cfg.mascot_bonus[c.tier] || 0) * 100) + ' %)</option>').join('');
-    const equipOptions = '<option value="">— aucun —</option>' + tm.equip.map(c =>
-      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', +' + Math.round((cfg.equipment_bonus[c.tier] || 0) * 100) + ' %)</option>').join('');
-    byId('tmEquip').innerHTML = tm.equip.length ? Array.from({ length: cfg.max_equipment }, () => '<select>' + equipOptions + '</select>').join('') : '';
-    refreshTeamBonus();
-
-    renderTmSlots('1-2-1', null);
-    applyLastTeam(cfg);
-    const err = byId('tmError');
-    err.textContent = tm.owned.length < cfg.team_size ? 'Il te faut au moins ' + cfg.team_size + ' cartes de joueurs (hors supporters) pour jouer : ouvre des packs !' : '';
-    byId('tmSubmit').disabled = tm.owned.length < cfg.team_size;
-    byId('teamModal').style.display = 'flex';
-  }
-  // recharge la dernière équipe : seules les cartes que tu possèdes encore sont remises, les autres cases restent vides
-  function applyLastTeam(cfg){
-    const box = byId('tmRestored'); box.style.display = 'none'; box.innerHTML = '';
-    const last = loadLastTeam(); if (!last || !cfg.formations[last.formation]) return;
-    const owned = new Set(tm.owned.map(c => c.id)), req = cfg.formations[last.formation];
-    const prev = {}; let kept = 0, lost = 0;
-    last.slots.forEach(sl => { if (owned.has(sl.card_id) && req[sl.slot_category] != null) { (prev[sl.slot_category] = prev[sl.slot_category] || []).push(sl.card_id); kept++; } else lost++; });
-    byId('tmFormation').value = last.formation;
-    renderTmSlots(last.formation, prev);
-    const setIf = (sel, v) => { if (v && sel && [...sel.options].some(o => o.value === v)) { sel.value = v; return true; } return false; };
-    setIf(byId('tmTactic'), last.tactic);
-    let extras = 0; if (setIf(byId('tmFan'), last.fan)) extras++; if (setIf(byId('tmMascot'), last.mascot)) extras++;
-    const eqSels = [...document.querySelectorAll('#tmEquip select')]; (last.equip || []).forEach((id, i) => { if (setIf(eqSels[i], id)) extras++; });
-    if (last.captain === '') { byId('tmCaptain').dataset.touched = '1'; byId('tmCaptain').value = ''; } else setIf(byId('tmCaptain'), last.captain);
-    if (tm.mode === 'propose' && last.stake >= cfg.stake_min && last.stake <= cfg.stake_max) byId('tmStake').value = last.stake;
-    refreshTeamBonus();
-    box.innerHTML = '<span>✅ Ta dernière équipe est rechargée' + (kept ? ' (' + kept + ' joueur' + (kept > 1 ? 's' : '') + (extras ? ' + ' + extras + ' bonus' : '') + ')' : '') + '. Change ce que tu veux.' +
-      (lost ? ' <b>' + lost + ' carte' + (lost > 1 ? 's ne sont plus' : ' n\'est plus') + ' dans ta collection</b> : complète ' + (lost > 1 ? 'les cases vides' : 'la case vide') + '.' : '') + '</span>' +
-      '<button class="btn-small ghost" type="button" id="tmClear">Repartir de zéro</button>';
-    box.style.display = '';
-    byId('tmClear').addEventListener('click', clearTeam);
-  }
-  function clearTeam(){
-    byId('tmFormation').value = '1-2-1'; byId('tmCaptain').dataset.touched = '';
-    renderTmSlots('1-2-1', null);
-    byId('tmTactic').selectedIndex = 0; byId('tmFan').value = ''; byId('tmMascot').value = '';
-    document.querySelectorAll('#tmEquip select').forEach(sel => { sel.value = ''; });
-    byId('tmStake').value = 2; byId('tmRestored').style.display = 'none'; byId('tmError').textContent = '';
-    refreshTeamBonus();
-  }
-  // total du bonus d'équipe (Fan + équipements) et équipements déjà choisis grisés dans les autres listes
-  function refreshTeamBonus(){
-    const cfg = duelConfig, sels = [...document.querySelectorAll('#tmEquip select')];
-    const used = new Set(sels.map(s => s.value).filter(Boolean));
-    sels.forEach(sel => [...sel.options].forEach(o => { o.disabled = !!o.value && used.has(o.value) && o.value !== sel.value; }));
-    const fan = tm.byId[byId('tmFan').value], fanPct = fan ? Math.round((cfg.fan_bonus[fan.tier] || 0) * 100) : 0;
-    const mascot = tm.byId[byId('tmMascot').value], mascotPct = mascot ? Math.round((cfg.mascot_bonus[mascot.tier] || 0) * 100) : 0;
-    const eqPct = sels.reduce((sum, s) => { const c = tm.byId[s.value]; return sum + (c ? Math.round((cfg.equipment_bonus[c.tier] || 0) * 100) : 0); }, 0);
-    const parts = [];
-    if (fan) parts.push('Fan +' + fanPct + ' %');
-    if (mascot) parts.push('Loup +' + mascotPct + ' %');
-    if (eqPct) parts.push('Équipement +' + eqPct + ' %');
-    byId('tmEquipHint').textContent = !tm.equip.length && !parts.length
-      ? 'Tu n\'as pas encore d\'équipement : ils sortent dans les packs.'
-      : (parts.length ? 'Bonus d\'équipe : ' + parts.join(' · ') + (parts.length > 1 ? ' = +' + (fanPct + mascotPct + eqPct) + ' %' : '') : 'Aucun bonus d\'équipe pour l\'instant.');
-  }
-  byId('tmEquip').addEventListener('change', refreshTeamBonus);
-  byId('tmFan').addEventListener('change', refreshTeamBonus);
-  byId('tmMascot').addEventListener('change', refreshTeamBonus);
-  function closeTeamModal(){ byId('teamModal').style.display = 'none'; }
-  byId('tmClose').addEventListener('click', closeTeamModal);
-  byId('teamModal').addEventListener('click', e => { if (e.target.id === 'teamModal') closeTeamModal(); });
-
-  // Liste des cartes proposées pour une case (ex. « Milieu ») : triée par POSTE puis par NOTE.
-  //   1. les cartes du poste de la case, de la meilleure note à la moins bonne ;
-  //   2. les cartes sans poste défini (« X ») : jamais pénalisées ;
-  //   3. les autres postes (hors poste = pénalité), un groupe par poste, chacun de la meilleure note à la moins bonne.
-  const POSTE_GROUPES = { GB: 'Gardiens', DEF: 'Défenseurs', MC: 'Milieux', ATT: 'Attaquants' };
-  function slotOptionsHTML(cat){
-    const cfg = duelConfig, malus = Math.round(cfg.out_of_position_malus * 100);
-    const naturalOf = c => cfg.poste_category[(c.poste || '').toUpperCase()] || null;
-    const byNote = (a, b) => b.display_note.value - a.display_note.value || a.player_name.localeCompare(b.player_name, 'fr') || a.tier.localeCompare(b.tier);
-    const option = c => {
-      const off = naturalOf(c) && naturalOf(c) !== cat;
-      return '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' · ⭐' + c.display_note.value + ' · ' + escapeHtml(c.poste) + ' · ' + tierLabel(c.tier) + (off ? ' · ⚠ −' + malus + ' %' : '') + '</option>';
-    };
-    const groups = [];
-    groups.push([POSTE_GROUPES[cat] || cat, tm.owned.filter(c => naturalOf(c) === cat).sort(byNote)]);
-    groups.push(['Poste non défini (jamais pénalisés)', tm.owned.filter(c => !naturalOf(c)).sort(byNote)]);
-    SLOT_ORDER.filter(p => p !== cat).forEach(p => groups.push([POSTE_GROUPES[p] + ' (hors poste, −' + malus + ' %)', tm.owned.filter(c => naturalOf(c) === p).sort(byNote)]));
-    return '<option value="">— choisir une carte —</option>' + groups.filter(g => g[1].length).map(g => '<optgroup label="' + escapeHtml(g[0]) + '">' + g[1].map(option).join('') + '</optgroup>').join('');
-  }
-  function renderTmSlots(formation, previous){
-    const cfg = duelConfig, req = cfg.formations[formation], root = byId('tmSlots');
-    root.innerHTML = '';
-    SLOT_ORDER.forEach(cat => {
-      for (let i = 0; i < req[cat]; i++) {
-        const row = document.createElement('div'); row.className = 'form-row';
-        const label = document.createElement('label'); label.textContent = SLOT_ICON[cat] + ' ' + cfg.slot_labels[cat] + (req[cat] > 1 ? ' ' + (i + 1) : '');
-        const sel = document.createElement('select'); sel.dataset.category = cat; sel.innerHTML = slotOptionsHTML(cat);
-        const wanted = previous && previous[cat] && previous[cat][i];
-        if (wanted && [...sel.options].some(o => o.value === wanted)) sel.value = wanted;
-        sel.addEventListener('change', onTmChange);
-        row.appendChild(label); row.appendChild(sel); root.appendChild(row);
-      }
-    });
-    onTmChange();
-  }
-  byId('tmFormation').addEventListener('change', () => {
-    const prev = {};
-    tmSelects().forEach(s => { if (s.value) (prev[s.dataset.category] = prev[s.dataset.category] || []).push(s.value); });
-    renderTmSlots(byId('tmFormation').value, prev);
-  });
-  function onTmChange(){
-    const sels = tmSelects();
-    const used = new Set(sels.map(s => s.value).filter(Boolean));
-    sels.forEach(sel => [...sel.options].forEach(o => { o.disabled = !!o.value && used.has(o.value) && o.value !== sel.value; }));
-    refreshCaptain(sels);
-  }
-  byId('tmCaptain').addEventListener('change', () => { byId('tmCaptain').dataset.touched = '1'; });
-  byId('tmReferee').addEventListener('input', () => { tm.refConfirmed = null; if (tm.mode) byId('tmSubmit').textContent = tmSubmitLabel(); byId('tmError').textContent = ''; });      // changer le montant annule la confirmation
-  function refreshCaptain(sels){
-    const sel = byId('tmCaptain'), prev = sel.value;
-    const chosen = sels.filter(s => s.value).map(s => ({ id: s.value, cat: s.dataset.category, card: tm.byId[s.value] }));
-    sel.innerHTML = '<option value="">Pas de capitaine</option>' + chosen.map(c =>
-      '<option value="' + c.id + '">' + escapeHtml(c.card.player_name) + ' (' + duelConfig.slot_labels[c.cat].toLowerCase() + ')</option>').join('');
-    if (chosen.some(c => c.id === prev)) sel.value = prev;
-    else if (sel.dataset.touched === '1') sel.value = '';
-    else if (chosen.length) sel.value = chosen.slice().sort((a, b) => b.card.display_note.value - a.card.display_note.value)[0].id;
-  }
-
-  byId('tmSubmit').addEventListener('click', async () => {
-    const cfg = duelConfig, err = byId('tmError'), btn = byId('tmSubmit');
-    err.textContent = '';
-    const sels = tmSelects();
-    if (sels.some(s => !s.value)) { err.textContent = 'Choisis une carte pour chaque poste.'; return; }
-    const body = {
-      formation: byId('tmFormation').value, tactic: byId('tmTactic').value,
-      slots: sels.map(s => ({ card_id: s.value, slot_category: s.dataset.category })),
-      captain_card_id: byId('tmCaptain').value || null, fan_card_id: byId('tmFan').value || null,
-      equipment_card_ids: [...document.querySelectorAll('#tmEquip select')].map(s => s.value).filter(Boolean),
-      mascot_card_id: byId('tmMascot').value || null,
-    };
-    const bidRaw = byId('tmReferee').value.trim(), referee_bid = bidRaw === '' ? 0 : Number(bidRaw);
-    if (!Number.isInteger(referee_bid) || referee_bid < 0) { err.textContent = 'L\'enveloppe de l\'arbitre doit être un nombre entier de crédits (0 ou plus).'; return; }
-    const needed = (tm.mode === 'propose' ? parseInt(byId('tmStake').value, 10) || 0 : tm.proposal.stake) + referee_bid;
-    if (meInfo && needed > meInfo.credits) { err.textContent = 'Il te faut ' + needed + ' crédits (mise + enveloppe) : tu en as ' + meInfo.credits + '.'; return; }
-    if (referee_bid > 0 && tm.refConfirmed !== referee_bid) {         // deuxième appui nécessaire : cet argent ne revient jamais
-      tm.refConfirmed = referee_bid;
-      btn.textContent = 'Confirmer : ' + referee_bid + ' crédit' + (referee_bid > 1 ? 's' : '') + ' pour l\'arbitre';
-      err.textContent = 'Les enveloppes sont dépensées pour de bon, même si tu perds l\'enchère ou le match. Appuie encore pour confirmer.';
-      return;
-    }
-    body.referee_bid = referee_bid;
-    btn.disabled = true;
-    try {
-      if (tm.mode === 'propose') {
-        const stake = parseInt(byId('tmStake').value, 10);
-        if (!(stake >= cfg.stake_min && stake <= cfg.stake_max)) { err.textContent = 'La mise doit être comprise entre ' + cfg.stake_min + ' et ' + cfg.stake_max + ' crédits.'; return; }
-        saveLastTeam(body, stake);
-        await api('/duel/proposals', { method: 'POST', body: JSON.stringify({ ...body, stake }) });
-        closeTeamModal();
-        toast('Défi publié : ta mise est bloquée jusqu\'à ce qu\'il soit joué');
-        await refreshMe(); loadDuelProposals(); loadDuelBoard();
-      } else {
-        saveLastTeam(body, null);
-        const result = await api('/duel/proposals/' + tm.proposal.id + '/play', { method: 'POST', body: JSON.stringify(body) });
-        closeTeamModal();
-        await refreshMe();
-        showMatch(result, { isNew: true, animate: true });
-        loadDuelBoard(); loadDuelHistory(); loadDuelProposals();
-      }
-    } catch(e) {
-      if (e.message !== 'unauthorized') err.textContent = e.message;
-      if (tm.mode === 'play') loadDuelProposals();   // le défi a pu être annulé ou joué entre-temps
-    } finally { btn.disabled = tm.owned.length < cfg.team_size; tm.refConfirmed = null; btn.textContent = tmSubmitLabel(); }
-  });
-
-  // ---- match raconté (animation minute par minute)
-  const matchState = { token: 0, recap: null, isNew: false };
-  function closeMatchModal(){ matchState.token++; byId('matchModal').style.display = 'none'; }
-  byId('msClose').addEventListener('click', closeMatchModal);
-  byId('msDone').addEventListener('click', closeMatchModal);
-  byId('matchModal').addEventListener('click', e => { if (e.target.id === 'matchModal') closeMatchModal(); });
-
-  function setMatchScore(a, b, flash){
-    const el = byId('msScore'); el.textContent = a + ' - ' + b;
-    if (flash) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
-  }
-  function appendMatchEvent(ev){
-    const tl = byId('msTimeline');
-    const row = document.createElement('div');
-    const sys = ['kickoff', 'tactic', 'half', 'full'].includes(ev.kind);
-    row.className = 'ev' + (ev.kind === 'goal' ? ' goal' : '') + (ev.side ? ' side-' + ev.side : '') + (sys ? ' sys' : '');
-    const min = document.createElement('span'); min.className = 'min'; min.textContent = ev.minute + "'";
-    const text = document.createElement('span'); text.textContent = ev.text;
-    row.appendChild(min); row.appendChild(text); tl.appendChild(row);
-    tl.scrollTop = tl.scrollHeight;
-  }
-  const eventDelay = ev => ({ kickoff: 900, tactic: 2000, goal: 1800, chance: 1100, half: 1400, full: 300 })[ev.kind] || 1000;
-
-  function renderLineups(lineups){
-    const root = byId('msLineups'); root.innerHTML = '';
-    if (!lineups) return;
-    const cfg = duelConfig;
-    ['challenger', 'defender'].forEach(side => {
-      const t = lineups[side];
-      const players = t.players.slice().sort((a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot));
-      const tacticLabel = cfg && cfg.tactics[t.tactic] ? cfg.tactics[t.tactic].label : t.tactic;
-      const box = document.createElement('div'); box.className = 'lineup';
-      let html = '<h4>' + escapeHtml(t.pseudo) + '</h4><div class="lu-sub">' + escapeHtml(t.formation) + ' · ' + escapeHtml(tacticLabel || '') +
-        (t.fan ? ' · Fan ' + escapeHtml(t.fan.player) + ' (+' + t.fan.bonus_pct + ' %)' : '') +
-        (t.mascot ? ' · Loup ' + escapeHtml(t.mascot.player) + ' (+' + t.mascot.bonus_pct + ' %)' : '') +
-        (t.referee_bonus_pct ? ' · Arbitre +' + t.referee_bonus_pct + ' %' : '') +
-        (t.equipment && t.equipment.length ? ' · Équipement ' + t.equipment.map(e => escapeHtml(e.player)).join(', ') + ' (+' + t.equipment.reduce((n, e) => n + e.bonus_pct, 0) + ' %)' : '') + '</div>';
-      players.forEach(p => {
-        html += '<div class="lu-row"><span>' + SLOT_ICON[p.slot] + ' ' + escapeHtml(p.player) + (p.captain ? ' <span class="lu-flag" title="Capitaine">©</span>' : '') +
-          (p.out_of_position ? ' <span class="lu-flag" title="Hors de son poste">⚠</span>' : '') + '</span><span>' + Math.round(p.effective_note) + '</span></div>';
-      });
-      box.innerHTML = html; root.appendChild(box);
-    });
-  }
-  // la ligne « arbitre » du résultat : les deux enveloppes, enfin révélées
-  function refereeLine(recap, isNew){
-    const ref = recap.referee || (recap.lineups && recap.lineups.referee);
-    if (!ref || (!ref.challenger && !ref.defender)) return '';
-    const who = ref.winner === 'challenger' ? (isNew ? 'tu as eu' : escapeHtml(recap.challenger) + ' a eu') + ' le bonus de l\'arbitre (+' + ref.bonus_pct + ' %)'
-      : ref.winner === 'defender' ? escapeHtml(recap.defender) + ' a eu le bonus de l\'arbitre (+' + ref.bonus_pct + ' %)'
-      : 'l\'arbitre a empoché les deux enveloppes sans favoriser personne';
-    const names = isNew ? 'toi ' + ref.challenger + ' · ' + escapeHtml(recap.defender) + ' ' + ref.defender : escapeHtml(recap.challenger) + ' ' + ref.challenger + ' · ' + escapeHtml(recap.defender) + ' ' + ref.defender;
-    return '<br>🧧 Enveloppes pour l\'arbitre : ' + names + ' → ' + who + '.';
-  }
-  function renderMatchResult(recap, isNew){
-    const root = byId('msResult');
-    const sa = recap.score_challenger, sb = recap.score_defender;
-    let html;
-    if (isNew) {
-      const head = recap.result === 'victoire' ? '🏆 Victoire !' : (recap.result === 'défaite' ? '😔 Défaite' : '🤝 Match nul');
-      const money = recap.result === 'victoire' ? signed(recap.stake) + ' crédits' : (recap.result === 'défaite' ? signed(-recap.stake) + ' crédits' : 'mises rendues');
-      html = '<div class="big">' + head + '</div>' + escapeHtml(money) + ' · Elo ' + recap.elo_challenger_before + ' → ' + recap.elo_challenger_after +
-        ' (' + signed(recap.elo_challenger_after - recap.elo_challenger_before) + ')' + refereeLine(recap, true);
-      if (recap.pack_match_won) html += '<br>🎁 Tu gagnes un <b>pack match</b> !<br><button class="btn-small" id="msGoPacks" style="margin-top:6px;">Aller l\'ouvrir</button>';
-      else if (recap.result === 'défaite') html += '<br>🎁 Le pack match revient à ' + escapeHtml(recap.defender) + '.';
-      if (recap.pack_classique_won) html += '<br>🎁 Tu reçois un <b>pack classique</b> ' + (recap.result === 'nul' ? '(match nul : chacun en reçoit un) !' : 'en consolation !') + '<br><button class="btn-small" id="msGoPacks" style="margin-top:6px;">Aller l\'ouvrir</button>';
-    } else {
-      const winner = sa > sb ? recap.challenger : (sb > sa ? recap.defender : null);
-      html = '<div class="big">' + (winner ? '🏆 ' + escapeHtml(winner) : '🤝 Match nul') + '</div>mise ' + recap.stake + ' crédits · Elo ' +
-        escapeHtml(recap.challenger) + ' ' + recap.elo_challenger_before + ' → ' + recap.elo_challenger_after + ' · ' +
-        escapeHtml(recap.defender) + ' ' + recap.elo_defender_before + ' → ' + recap.elo_defender_after + refereeLine(recap, false);
-    }
-    root.innerHTML = '<div class="match-result">' + html + '</div>';
-    const go = byId('msGoPacks');
-    if (go) go.addEventListener('click', () => { closeMatchModal(); document.querySelector('.tab[data-tab="pack"]').click(); });
-  }
-  function finishMatch(){
-    byId('msSkip').style.display = 'none';
-    byId('msReplay').style.display = '';
-    renderMatchResult(matchState.recap, matchState.isNew);
-    renderLineups(matchState.recap.lineups);
-  }
-  function showMatchInstantly(){
-    const recap = matchState.recap;
-    byId('msTimeline').innerHTML = '';
-    recap.events.forEach(appendMatchEvent);
-    setMatchScore(recap.score_challenger, recap.score_defender, false);
-    byId('msClock').textContent = "40'";
-    finishMatch();
-  }
-  async function showMatch(recap, opts){
-    matchState.recap = recap; matchState.isNew = !!opts.isNew;
-    const token = ++matchState.token;
-    byId('msTitle').textContent = opts.isNew ? 'Match en direct' : 'Récap du match';
-    byId('msNameA').textContent = recap.challenger; byId('msNameB').textContent = recap.defender;
-    byId('msTimeline').innerHTML = ''; byId('msResult').innerHTML = ''; byId('msLineups').innerHTML = '';
-    setMatchScore(0, 0, false); byId('msClock').textContent = "0'";
-    byId('msReplay').style.display = 'none';
-    byId('msSkip').style.display = opts.animate ? '' : 'none';
-    byId('matchModal').style.display = 'flex';
-    if (!recap.events || !recap.events.length) {
-      byId('msTimeline').innerHTML = '<div class="ev sys">Ce match a été joué avec l\'ancien système : pas de récit disponible.</div>';
-      setMatchScore(recap.score_challenger, recap.score_defender, false);
-      byId('msSkip').style.display = 'none';
-      renderMatchResult(recap, false);
-      return;
-    }
-    if (!opts.animate) { showMatchInstantly(); return; }
-    for (const ev of recap.events) {
-      if (token !== matchState.token) return;           // fermé, passé ou relancé entre-temps
-      appendMatchEvent(ev);
-      byId('msClock').textContent = ev.minute + "'";
-      if (ev.kind === 'goal') setMatchScore(ev.score[0], ev.score[1], true);
-      await duelSleep(eventDelay(ev));
-    }
-    if (token === matchState.token) finishMatch();
-  }
-  byId('msSkip').addEventListener('click', () => { matchState.token++; showMatchInstantly(); });
-  byId('msReplay').addEventListener('click', () => showMatch(matchState.recap, { isNew: matchState.isNew, animate: true }));
-
-  // ---------- Notifications push ----------
-  // Le joueur active les notifications sur CET appareil. Le navigateur nous donne une « adresse » chiffrée que
-  // le serveur utilise pour le prévenir (pack prêt, nouvelle carte, défi joué, carte vendue), site fermé.
-  const TAB_KEYS = ['pack', 'collection', 'marche', 'shop', 'classement', 'actualite', 'duels'];
-  const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-  const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isStandalone = () => (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
-  let pushConfig = null;
-  const PUSH_LABELS = [
-    ['packs', 'Un pack gratuit est prêt'],
-    ['cards', 'Une nouvelle carte arrive (épique, gold, spéciale, stade…)'],
-    ['duels', 'Mon défi 1v1 a été joué (avec le résultat)'],
-    ['market', 'Une de mes cartes est vendue au marché'],
-  ];
-  function b64uToBytes(str){
-    const raw = atob((str + '='.repeat((4 - str.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/'));
-    return Uint8Array.from(raw, c => c.charCodeAt(0));
-  }
-  async function loadPushConfig(){
-    if (!pushConfig) pushConfig = await fetch(API_BASE + '/push/config').then(r => r.json());
-    return pushConfig;
-  }
-  async function currentPushSub(){
-    if (!pushSupported()) return null;
-    const reg = await navigator.serviceWorker.getRegistration('/');
-    return reg ? reg.pushManager.getSubscription() : null;
-  }
-  async function refreshNotifBtn(){
-    const btn = document.getElementById('notifBtn');
-    let on = false;
-    try { on = pushSupported() && Notification.permission === 'granted' && !!(await currentPushSub()); } catch(e) {}
-    btn.textContent = on ? '🔔' : '🔕';
-    btn.title = on ? 'Notifications activées' : 'Activer les notifications';
-    btn.setAttribute('aria-label', btn.title);
-  }
-  async function renderNotif(){
-    const body = document.getElementById('notifBody');
-    if (isIOS() && !isStandalone()) {
-      body.innerHTML = '<p>Sur iPhone et iPad, les notifications fonctionnent une fois le site <b>ajouté à l\'écran d\'accueil</b> (iOS 16.4 ou plus récent) :</p>' +
-        '<ol class="notif-steps"><li>Dans Safari, touche le bouton <b>Partager</b> (le carré avec une flèche).</li><li>Choisis <b>Sur l\'écran d\'accueil</b>, puis <b>Ajouter</b>.</li>' +
-        '<li>Ouvre le site <b>depuis la nouvelle icône</b> du loup, puis reviens ici et touche 🔔.</li></ol>';
-      return;
-    }
-    if (!pushSupported()) { body.innerHTML = '<p>Ton navigateur ne gère pas les notifications. Essaie avec une version récente de Chrome, Edge, Firefox ou Safari.</p>'; return; }
-    body.innerHTML = '<p class="help-note">Chargement…</p>';
-    let cfg, sub = null, status = null;
-    try { cfg = await loadPushConfig(); sub = await currentPushSub(); if (sub) status = await api('/push/status'); }
-    catch(e) { body.innerHTML = '<p>Impossible de charger les notifications pour le moment.</p>'; return; }
-    if (!cfg.available) { body.innerHTML = '<p>Les notifications ne sont pas encore disponibles sur le serveur du club.</p>'; return; }
-    const quiet = 'Pas de notification entre ' + cfg.quiet_start + ' h et ' + cfg.quiet_end + ' h (elles arrivent le matin), et ' + cfg.max_per_day + ' par jour au maximum.';
-    if (Notification.permission === 'denied' && !sub) {
-      body.innerHTML = '<p>Les notifications sont <b>bloquées</b> pour ce site dans ton navigateur. Pour les activer : touche le cadenas (ou les réglages du site) à côté de l\'adresse, autorise les <b>Notifications</b>, puis reviens ici.</p>';
-      return;
-    }
-    if (!sub) {
-      body.innerHTML = '<h3>Reste au courant, même site fermé</h3><p>Active les notifications sur cet appareil pour être prévenu quand :</p><ul>' +
-        PUSH_LABELS.map(l => '<li>' + l[1].toLowerCase().replace(/^./, c => c.toUpperCase()) + '</li>').join('') + '</ul><p class="help-note">' + quiet +
-        ' Tu pourras choisir lesquelles recevoir et les couper à tout moment.</p><div class="notif-actions"><button class="btn-primary" id="notifOn" type="button">Activer les notifications</button></div>';
-      document.getElementById('notifOn').addEventListener('click', e => enablePush(e.currentTarget));
-      return;
-    }
-    body.innerHTML = '<p><span class="notif-ok">✅ Activées sur cet appareil</span></p><h3>Prévenez-moi quand…</h3>' +
-      PUSH_LABELS.map(l => '<label class="notif-row"><input type="checkbox" data-pref="' + l[0] + '"' + (status.prefs[l[0]] ? ' checked' : '') + '><span>' + l[1] + '</span></label>').join('') +
-      '<p class="help-note">' + quiet + '</p><div class="notif-actions"><button class="btn-secondary" id="notifTest" type="button">Envoyer un test</button>' +
-      '<button class="btn-small ghost" id="notifOff" type="button">Désactiver sur cet appareil</button></div>';
-    body.querySelectorAll('input[data-pref]').forEach(box => box.addEventListener('change', async () => {
-      try { await api('/push/prefs', { method: 'POST', body: JSON.stringify({ [box.dataset.pref]: box.checked }) }); toast(box.checked ? 'Notification activée' : 'Notification coupée'); }
-      catch(e) { box.checked = !box.checked; toast(e.message); }
-    }));
-    document.getElementById('notifTest').addEventListener('click', async e => {
-      e.currentTarget.disabled = true;
-      try { const r = await api('/push/test', { method: 'POST' }); toast(r.sent ? 'Test envoyé : regarde ton appareil' : 'Aucun appareil n\'a répondu'); }
-      catch(err) { toast(err.message); }
-      setTimeout(() => { const b = document.getElementById('notifTest'); if (b) b.disabled = false; }, 4000);
-    });
-    document.getElementById('notifOff').addEventListener('click', disablePush);
-  }
-  async function enablePush(btn){
-    btn.disabled = true;
-    try {
-      const cfg = await loadPushConfig();
-      if (await Notification.requestPermission() !== 'granted') { await renderNotif(); return; }
-      const reg = await navigator.serviceWorker.register('/sw.js');
-      await navigator.serviceWorker.ready;
-      const key = b64uToBytes(cfg.public_key);
-      let sub = await reg.pushManager.getSubscription();
-      const sameKey = sub && sub.options && sub.options.applicationServerKey && new Uint8Array(sub.options.applicationServerKey).join() === key.join();
-      if (sub && !sameKey) { await sub.unsubscribe(); sub = null; }          // abonnement fait avec une autre clé : on recommence
-      if (!sub) {
-        const options = { userVisibleOnly: true, applicationServerKey: key };
-        try { sub = await reg.pushManager.subscribe(options); }
-        catch(err) {                                                           // un ancien abonnement gêne (autre clé) : on l'enlève et on réessaie une fois
-          if (!err || err.name !== 'InvalidStateError') throw err;
-          const old = await reg.pushManager.getSubscription();
-          if (old) await old.unsubscribe();
-          sub = await reg.pushManager.subscribe(options);
-        }
-      }
-      await api('/push/subscribe', { method: 'POST', body: JSON.stringify(sub.toJSON()) });
-      toast('Notifications activées');
-      api('/push/test', { method: 'POST' }).catch(() => {});                 // notification de bienvenue
-      await renderNotif(); refreshNotifBtn();
-    } catch(e) { toast(e.message || 'Impossible d\'activer les notifications'); btn.disabled = false; }
-  }
-  async function disablePush(){
-    try {
-      const sub = await currentPushSub();
-      if (sub) { const endpoint = sub.endpoint; await sub.unsubscribe(); await api('/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) }); }
-      toast('Notifications désactivées sur cet appareil');
-    } catch(e) { toast(e.message); }
-    await renderNotif(); refreshNotifBtn();
-  }
-  function openNotif(){
-    document.getElementById('notifModal').style.display = 'flex';
-    document.getElementById('notifClose').focus();
-    renderNotif();
-  }
-  function closeNotif(){ document.getElementById('notifModal').style.display = 'none'; refreshNotifBtn(); document.getElementById('notifBtn').focus(); }
-  document.getElementById('notifBtn').addEventListener('click', openNotif);
-  document.getElementById('notifClose').addEventListener('click', closeNotif);
-  document.getElementById('notifModal').addEventListener('click', e => { if (e.target.id === 'notifModal') closeNotif(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('notifModal').style.display === 'flex') closeNotif(); });
-
-  // toucher une notification ouvre le site directement sur le bon onglet
-  function openTab(key){ const b = document.querySelector('.tab[data-tab="' + key + '"]'); if (b) b.click(); }
-  function applyDeepLink(){ const h = location.hash.replace('#', ''); if (TAB_KEYS.includes(h)) openTab(h); }
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'open-tab' && TAB_KEYS.includes(e.data.tab)) openTab(e.data.tab); });
-  }
-  // au démarrage : on garde le serveur à jour avec l'abonnement de cet appareil, et on invite une seule fois à activer
-  async function setupPushAfterLogin(){
-    try {
-      if (pushSupported() && Notification.permission === 'granted') {
-        const sub = await currentPushSub();
-        if (sub) await api('/push/subscribe', { method: 'POST', body: JSON.stringify(sub.toJSON()) });
-      } else if (pushSupported() && Notification.permission === 'default' && !localStorage.getItem('fca5_notif_hint')) {
-        localStorage.setItem('fca5_notif_hint', '1');
-        setTimeout(() => toast('Touche 🔕 en haut pour être prévenu quand ton pack est prêt'), 2500);
-      }
-    } catch(e) { /* les notifications ne doivent jamais gêner le démarrage */ }
-    refreshNotifBtn();
-  }
-
-  // ---------- Boot ----------
-  async function startApp(){
-    document.getElementById('gate').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    await refreshMe();
-    await loadEditions();
-    await loadCollection();
-    setInterval(refreshMe, 30000);
-    applyDeepLink();
-    setupPushAfterLogin();
-  }
-
-  if (token) {
-    startApp().catch(() => showGate('login'));
-  } else {
-    showGate('register');
-  }
-})();
-</script>
-</body>
-</html>
+def duel_card_stats(db: Session):
+    """Compte, sur tous les matchs 1v1 joués, les utilisations, buts et passes décisives par carte
+    (un joueur + une rareté). Retourne trois Counter indexés par (nom du joueur, rareté)."""
+    used, goals, assists = Counter(), Counter(), Counter()
+    for d in db.query(Duel).filter(Duel.lineups_json.isnot(None)).all():
+        try:
+            lineups = json.loads(d.lineups_json)
+            events = json.loads(d.events_json or "[]")
+        except ValueError:
+            continue
+        for side in ("challenger", "defender"):
+            for p in lineups.get(side, {}).get("players", []):
+                used[(p["player"], p["tier"])] += 1
+
+        def tier_of(side, name, hint):
+            if hint:                       # matchs récents : la rareté est dans l'événement
+                return hint
+            for p in lineups.get(side, {}).get("players", []):   # anciens matchs : on la retrouve via la composition
+                if p["player"] == name:
+                    return p["tier"]
+            return None
+
+        for ev in events:
+            if ev.get("kind") != "goal":
+                continue
+            tier = tier_of(ev["side"], ev["scorer"], ev.get("scorer_tier"))
+            if tier:
+                goals[(ev["scorer"], tier)] += 1
+            if ev.get("assist"):
+                tier = tier_of(ev["side"], ev["assist"], ev.get("assist_tier"))
+                if tier:
+                    assists[(ev["assist"], tier)] += 1
+    return used, goals, assists
+
+
+def list_proposals(db: Session) -> list:
+    rows = db.query(MatchProposal).order_by(MatchProposal.created_at.desc()).all()
+    return [{
+        "id": p.id, "creator": p.creator.pseudo, "creator_elo": p.creator.elo,
+        "formation": p.formation, "stake": p.stake, "created_at": p.created_at.isoformat(),
+        "has_fan": bool(p.fan_card_id), "has_mascot": bool(p.mascot_card_id), "equipment_count": len(p.equipment),
+    } for p in rows]
+
+
+# ------------------------------------------------------------ Ménage : effacer des matchs 1v1 ----
+
+ELO_START = 1000
+
+
+def _replay_elo(user_ids, duels):
+    """Rejoue les matchs dans l'ordre à partir de 1000 : retourne (elo final par joueur, [(avant, après) par match])."""
+    elos = {uid: ELO_START for uid in user_ids}
+    steps = []
+    for d in duels:
+        a, b = elos.get(d.challenger_id, ELO_START), elos.get(d.defender_id, ELO_START)
+        result = 1.0 if d.score_challenger > d.score_defender else (0.0 if d.score_challenger < d.score_defender else 0.5)
+        na, nb = elo_update(a, b, result)
+        steps.append((a, b, na, nb))
+        elos[d.challenger_id], elos[d.defender_id] = na, nb
+    return elos, steps
+
+
+def reset_duels(db: Session, scope: str, recompute_elo: bool, dry_run: bool) -> dict:
+    """Efface des matchs 1v1 puis recalcule l'Elo de tout le monde à partir des matchs qui restent.
+    scope : "test" (les matchs où au moins un compte de test a joué), "all" (tous), "none" (rien : Elo seulement)."""
+    users = {u.id: u for u in db.query(User).all()}
+    duels = db.query(Duel).order_by(Duel.created_at, Duel.id).all()
+
+    def involves_test(d):
+        return any(users[i].is_test for i in (d.challenger_id, d.defender_id) if i in users)
+    doomed = duels if scope == "all" else ([d for d in duels if involves_test(d)] if scope == "test" else [])
+    doomed_ids = {d.id for d in doomed}
+    kept = [d for d in duels if d.id not in doomed_ids]
+
+    elos, steps = _replay_elo(list(users), kept) if recompute_elo else ({uid: u.elo for uid, u in users.items()}, [])
+    changes = [{"pseudo": u.pseudo, "test": bool(u.is_test), "elo_avant": u.elo, "elo_apres": elos[uid]}
+               for uid, u in sorted(users.items(), key=lambda kv: kv[1].pseudo) if elos[uid] != u.elo]
+    report = {"dry_run": dry_run, "scope": scope, "matchs_1v1_total": len(duels), "matchs_supprimes": len(doomed),
+              "matchs_conserves": len(kept), "elo_modifies": changes}
+    if dry_run:
+        return report
+    for d in doomed:
+        db.delete(d)
+    if recompute_elo:
+        for uid, u in users.items():
+            u.elo = elos[uid]
+        for d, (ba, bb, na, nb) in zip(kept, steps):
+            d.elo_challenger_before, d.elo_defender_before, d.elo_challenger_after, d.elo_defender_after = ba, bb, na, nb
+    db.commit()
+    return report
