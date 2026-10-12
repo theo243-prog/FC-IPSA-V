@@ -554,7 +554,7 @@ def create_duel_proposal(payload: schemas.CreateProposalRequest, user: User = De
                          db: Session = Depends(get_db)):
     slots = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in payload.slots]
     proposal = duel_call(duel_engine.create_proposal, db, user, payload.formation, payload.tactic, payload.stake,
-                         slots, payload.captain_card_id, payload.fan_card_id, payload.equipment_card_ids, payload.mascot_card_id)
+                         slots, payload.captain_card_id, payload.fan_card_id, payload.equipment_card_ids, payload.mascot_card_id, payload.referee_bid)
     return {"id": proposal.id, "credits": user.credits}
 
 
@@ -573,7 +573,7 @@ def play_duel_proposal(proposal_id: str, payload: schemas.TeamPayload, user: Use
                        db: Session = Depends(get_db)):
     slots = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in payload.slots]
     result = duel_call(duel_engine.play_proposal, db, user, proposal_id, payload.formation, payload.tactic, slots,
-                       payload.captain_card_id, payload.fan_card_id, payload.equipment_card_ids, payload.mascot_card_id)
+                       payload.captain_card_id, payload.fan_card_id, payload.equipment_card_ids, payload.mascot_card_id, payload.referee_bid)
     push.safe(db, push.notify_duel_played, result)          # prévient le créateur du défi (jamais bloquant)
     return result
 
@@ -624,6 +624,7 @@ def shop_buy(payload: schemas.BuyShopItemRequest, user: User = Depends(get_curre
 @app.get("/leaderboard")
 def leaderboard(db: Session = Depends(get_db)):
     total_cards = db.query(Card).count()      # 100 % = TOUTES les cartes du jeu, sans exception (éditions limitées et secrètes comprises)
+    reserved = duel_engine.reserved_credits(db)   # crédits séquestrés dans les défis ouverts : comptés dans le total public (le montant d'une enveloppe reste secret)
     users = db.query(User).filter_by(is_test=False).all()
     rows = []
     for u in users:
@@ -633,7 +634,7 @@ def leaderboard(db: Session = Depends(get_db)):
             .count()
         )
         completion = round(100 * owned_count / total_cards, 1) if total_cards else 0.0
-        rows.append({"pseudo": u.pseudo, "completion_pct": completion, "credits": u.credits})
+        rows.append({"pseudo": u.pseudo, "completion_pct": completion, "credits": u.credits + reserved.get(u.id, 0)})
     rows.sort(key=lambda r: (-r["completion_pct"], -r["credits"]))
     return rows
 
