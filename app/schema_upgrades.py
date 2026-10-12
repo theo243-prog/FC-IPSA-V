@@ -13,6 +13,8 @@ NEW_TIER_VALUES = ["halloween", "noel"]
 
 # (table, colonne, type SQL)
 NEW_COLUMNS = [
+    ("players", "surnom", "VARCHAR"),        # surnom affiché sur la carte secrète
+    ("players", "numero", "VARCHAR"),        # numéro de maillot
     ("players", "tier_photos", "TEXT"),      # photos propres à une rareté (JSON)
     ("pack_states", "ultra_pack_tokens", "INTEGER NOT NULL DEFAULT 0"),      # jetons du pack ultra
 ]
