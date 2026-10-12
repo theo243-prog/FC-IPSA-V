@@ -584,6 +584,8 @@
   .proposal-main{flex:1;min-width:170px;font-size:13.5px;}
   .proposal-meta{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
   .tm-intro{font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.45;}
+  .tm-restored{background:rgba(255,224,138,.28);border:1px dashed var(--border);border-radius:10px;padding:8px 10px;font-size:12.5px;margin:0 0 12px;display:flex;gap:10px;align-items:center;justify-content:space-between;}
+  .tm-restored span{flex:1;}
   .tm-hint{font-size:11.5px;color:var(--text-muted);margin-top:4px;}
   .tm-section{font-family:var(--font-head);font-size:17px;margin:14px 0 6px;}
   .tm-error{color:#C0392B;font-size:13px;margin:8px 0;min-height:18px;}
@@ -800,9 +802,11 @@
   <div class="modal-box">
     <div class="modal-header"><h2 id="tmTitle">Mon équipe</h2><button class="modal-close" id="tmClose">✕</button></div>
     <div class="tm-intro" id="tmIntro"></div>
+    <div class="tm-restored" id="tmRestored" style="display:none;"></div>
     <div class="form-row"><label>Disposition</label><select id="tmFormation"></select></div>
     <div class="form-row"><label>Tactique (secrète jusqu'au coup d'envoi)</label><select id="tmTactic"></select><div class="tm-hint" id="tmTacticHint"></div></div>
     <div class="form-row" id="tmStakeRow"><label>Mise (1 à 10 crédits)</label><input id="tmStake" type="number" min="1" max="10" value="2"></div>
+    <div class="form-row" id="tmRefRow"><label>Enveloppe pour l'arbitre (crédits, 0 = aucune)</label><input id="tmReferee" type="number" min="0" step="1" value="0"><div class="tm-hint" id="tmRefHint"></div></div>
     <div class="tm-section">Les 5 joueurs</div>
     <div id="tmSlots"></div>
     <div class="form-row"><label id="tmCaptainLabel">Capitaine</label><select id="tmCaptain"></select></div>
@@ -1543,6 +1547,10 @@
         '<li><b>' + cfg.max_equipment + ' Équipement</b> : ' + range(cfg.equipment_bonus, ['commune', 'rare', 'epique', 'legendaire']) + ' %.</li></ul>' +
         '<h3>Mises, packs et classement</h3><ul>' +
         '<li><b>Mise</b> de ' + cfg.stake_min + ' à ' + cfg.stake_max + ' crédits, bloquée tant que le défi est ouvert. Le gagnant prend les deux mises <b>et un pack match</b> ; le perdant reçoit <b>un pack classique</b>. En cas de <b>nul</b>, chacun récupère sa mise <b>et reçoit un pack classique</b>. Il n\'y a aucune limite de packs gagnés par jour.</li>' +
+        '<li><b>Enveloppe pour l\'arbitre</b> (facultative, sans plafond) : tu glisses des crédits à l\'arbitre en plus de ta mise. <b>Celui qui met le plus gagne +' + Math.round(cfg.referee_bonus * 100) + ' %</b> dans le match, comme un bonus d\'équipe ; en cas d\'égalité, personne ne l\'a. '
+        + 'Les <b>deux</b> enveloppes sont dépensées, même celle du joueur qui a mis le moins, et même si le match est perdu ou nul. '
+        + 'Les montants sont <b>secrets</b> : celui qui accepte un défi ne voit pas l\'enveloppe de son adversaire, et ne les découvre tous les deux qu\'à la fin du match. '
+        + 'Si tu annules ton défi, ton enveloppe t\'est rendue. Astuce : ce bonus vaut environ <b>14 points</b> d\'écart entre victoires et défaites, soit moins de 2 crédits en moyenne : inutile de mettre une fortune.</li>' +
         '<li>Tu peux avoir ' + cfg.max_open_proposals + ' défis ouverts au maximum. Aucun délai : tu peux rejouer tout de suite contre le même adversaire.</li>' +
         '<li><b>Classement</b> : par Elo. M = matchs, V = victoires, D = défaites, N = nuls, <b>Diff</b> = buts marqués moins buts encaissés.</li></ul>' +
         '<h3>Les cartes stars</h3><p>Deux classements, avec les 5 cartes les plus utilisées et les 5 plus décisives en buts et en passes :</p><ul>' +
@@ -2155,7 +2163,19 @@
   byId('proposeMatchBtn').addEventListener('click', () => openTeamModal('propose', null));
 
   // ---- constructeur d'équipe (pour proposer un défi OU jouer celui d'un autre)
-  const tm = { mode: null, proposal: null, owned: [], byId: {} };
+  const tm = { mode: null, proposal: null, owned: [], byId: {}, refConfirmed: null };
+  // texte du bouton principal du formulaire, selon le mode (propose / joue)
+  // Dernière équipe jouée : gardée sur cet appareil, séparément pour chaque compte, puis rechargée à l'ouverture du formulaire.
+  function lastTeamKey(){ return 'fca5_lastteam_' + (myPseudo || ''); }
+  function loadLastTeam(){ try { const t = JSON.parse(localStorage.getItem(lastTeamKey())); return t && t.v === 1 && Array.isArray(t.slots) ? t : null; } catch(e) { return null; } }
+  function saveLastTeam(body, stake){
+    try {
+      const old = loadLastTeam() || {};
+      localStorage.setItem(lastTeamKey(), JSON.stringify({ v: 1, formation: body.formation, tactic: body.tactic, slots: body.slots, captain: body.captain_card_id || '',
+        fan: body.fan_card_id || '', mascot: body.mascot_card_id || '', equip: body.equipment_card_ids || [], stake: stake != null ? stake : old.stake }));
+    } catch(e) { /* stockage plein ou refusé : tant pis, on ne bloque jamais le match */ }
+  }
+  function tmSubmitLabel(){ return tm.mode === 'propose' ? 'Publier mon défi' : 'Lancer le match (' + tm.proposal.stake + ' crédits)'; }
   const tmSelects = () => [...document.querySelectorAll('#tmSlots select')];
 
   async function openTeamModal(mode, proposal){
@@ -2169,14 +2189,17 @@
     const rules = 'Une carte hors de son vrai poste perd ' + Math.round(cfg.out_of_position_malus * 100) + ' %. Le capitaine gagne ' + Math.round(cfg.captain_bonus * 100) + ' %. Tu ne peux pas mettre deux fois la même carte.';
     if (mode === 'propose') {
       byId('tmTitle').textContent = 'Proposer un match';
-      byId('tmIntro').textContent = 'Compose ton équipe : ta mise est bloquée tant que le défi est ouvert, puis rendue si tu l\'annules. ' + rules;
+      byId('tmIntro').textContent = 'Compose ton équipe : ta mise (et ton enveloppe pour l\'arbitre, si tu en mets une) est bloquée tant que le défi est ouvert, puis rendue si tu l\'annules. ' + rules;
       byId('tmSubmit').textContent = 'Publier mon défi';
     } else {
       byId('tmTitle').textContent = 'Jouer contre ' + proposal.creator;
       byId('tmIntro').textContent = proposal.creator + ' (Elo ' + proposal.creator_elo + ') joue en ' + proposal.formation + '. Mise : ' + proposal.stake + ' crédits, prélevée au coup d\'envoi. Sa tactique est secrète : à toi de la deviner ! ' + rules;
       byId('tmSubmit').textContent = 'Lancer le match (' + proposal.stake + ' crédits)';
+      tm.proposal = proposal;
     }
     byId('tmStakeRow').style.display = mode === 'propose' ? '' : 'none';
+    byId('tmReferee').value = 0; tm.refConfirmed = null;
+    byId('tmRefHint').innerHTML = 'Celui qui met le plus gagne <b>+' + Math.round(cfg.referee_bonus * 100) + ' %</b> dans le match (égalité : personne). Les <b>deux</b> enveloppes sont <b>dépensées</b>, même celle de celui qui perd l\'enchère. ' + (mode === 'propose' ? 'Ton adversaire ne verra pas ton montant avant la fin du match.' : proposal.creator + ' a déjà glissé son enveloppe : tu ne vois pas son montant.');
     byId('tmStake').min = cfg.stake_min; byId('tmStake').max = cfg.stake_max;
 
     byId('tmFormation').innerHTML = Object.keys(cfg.formations).map(f => '<option value="' + f + '">' + f + ' · ' + cfg.formation_labels[f] + '</option>').join('');
@@ -2204,10 +2227,41 @@
     refreshTeamBonus();
 
     renderTmSlots('1-2-1', null);
+    applyLastTeam(cfg);
     const err = byId('tmError');
     err.textContent = tm.owned.length < cfg.team_size ? 'Il te faut au moins ' + cfg.team_size + ' cartes de joueurs (hors supporters) pour jouer : ouvre des packs !' : '';
     byId('tmSubmit').disabled = tm.owned.length < cfg.team_size;
     byId('teamModal').style.display = 'flex';
+  }
+  // recharge la dernière équipe : seules les cartes que tu possèdes encore sont remises, les autres cases restent vides
+  function applyLastTeam(cfg){
+    const box = byId('tmRestored'); box.style.display = 'none'; box.innerHTML = '';
+    const last = loadLastTeam(); if (!last || !cfg.formations[last.formation]) return;
+    const owned = new Set(tm.owned.map(c => c.id)), req = cfg.formations[last.formation];
+    const prev = {}; let kept = 0, lost = 0;
+    last.slots.forEach(sl => { if (owned.has(sl.card_id) && req[sl.slot_category] != null) { (prev[sl.slot_category] = prev[sl.slot_category] || []).push(sl.card_id); kept++; } else lost++; });
+    byId('tmFormation').value = last.formation;
+    renderTmSlots(last.formation, prev);
+    const setIf = (sel, v) => { if (v && sel && [...sel.options].some(o => o.value === v)) { sel.value = v; return true; } return false; };
+    setIf(byId('tmTactic'), last.tactic);
+    let extras = 0; if (setIf(byId('tmFan'), last.fan)) extras++; if (setIf(byId('tmMascot'), last.mascot)) extras++;
+    const eqSels = [...document.querySelectorAll('#tmEquip select')]; (last.equip || []).forEach((id, i) => { if (setIf(eqSels[i], id)) extras++; });
+    if (last.captain === '') { byId('tmCaptain').dataset.touched = '1'; byId('tmCaptain').value = ''; } else setIf(byId('tmCaptain'), last.captain);
+    if (tm.mode === 'propose' && last.stake >= cfg.stake_min && last.stake <= cfg.stake_max) byId('tmStake').value = last.stake;
+    refreshTeamBonus();
+    box.innerHTML = '<span>✅ Ta dernière équipe est rechargée' + (kept ? ' (' + kept + ' joueur' + (kept > 1 ? 's' : '') + (extras ? ' + ' + extras + ' bonus' : '') + ')' : '') + '. Change ce que tu veux.' +
+      (lost ? ' <b>' + lost + ' carte' + (lost > 1 ? 's ne sont plus' : ' n\'est plus') + ' dans ta collection</b> : complète ' + (lost > 1 ? 'les cases vides' : 'la case vide') + '.' : '') + '</span>' +
+      '<button class="btn-small ghost" type="button" id="tmClear">Repartir de zéro</button>';
+    box.style.display = '';
+    byId('tmClear').addEventListener('click', clearTeam);
+  }
+  function clearTeam(){
+    byId('tmFormation').value = '1-2-1'; byId('tmCaptain').dataset.touched = '';
+    renderTmSlots('1-2-1', null);
+    byId('tmTactic').selectedIndex = 0; byId('tmFan').value = ''; byId('tmMascot').value = '';
+    document.querySelectorAll('#tmEquip select').forEach(sel => { sel.value = ''; });
+    byId('tmStake').value = 2; byId('tmRestored').style.display = 'none'; byId('tmError').textContent = '';
+    refreshTeamBonus();
   }
   // total du bonus d'équipe (Fan + équipements) et équipements déjà choisis grisés dans les autres listes
   function refreshTeamBonus(){
@@ -2279,6 +2333,7 @@
     refreshCaptain(sels);
   }
   byId('tmCaptain').addEventListener('change', () => { byId('tmCaptain').dataset.touched = '1'; });
+  byId('tmReferee').addEventListener('input', () => { tm.refConfirmed = null; if (tm.mode) byId('tmSubmit').textContent = tmSubmitLabel(); byId('tmError').textContent = ''; });      // changer le montant annule la confirmation
   function refreshCaptain(sels){
     const sel = byId('tmCaptain'), prev = sel.value;
     const chosen = sels.filter(s => s.value).map(s => ({ id: s.value, cat: s.dataset.category, card: tm.byId[s.value] }));
@@ -2301,16 +2356,29 @@
       equipment_card_ids: [...document.querySelectorAll('#tmEquip select')].map(s => s.value).filter(Boolean),
       mascot_card_id: byId('tmMascot').value || null,
     };
+    const bidRaw = byId('tmReferee').value.trim(), referee_bid = bidRaw === '' ? 0 : Number(bidRaw);
+    if (!Number.isInteger(referee_bid) || referee_bid < 0) { err.textContent = 'L\'enveloppe de l\'arbitre doit être un nombre entier de crédits (0 ou plus).'; return; }
+    const needed = (tm.mode === 'propose' ? parseInt(byId('tmStake').value, 10) || 0 : tm.proposal.stake) + referee_bid;
+    if (meInfo && needed > meInfo.credits) { err.textContent = 'Il te faut ' + needed + ' crédits (mise + enveloppe) : tu en as ' + meInfo.credits + '.'; return; }
+    if (referee_bid > 0 && tm.refConfirmed !== referee_bid) {         // deuxième appui nécessaire : cet argent ne revient jamais
+      tm.refConfirmed = referee_bid;
+      btn.textContent = 'Confirmer : ' + referee_bid + ' crédit' + (referee_bid > 1 ? 's' : '') + ' pour l\'arbitre';
+      err.textContent = 'Les enveloppes sont dépensées pour de bon, même si tu perds l\'enchère ou le match. Appuie encore pour confirmer.';
+      return;
+    }
+    body.referee_bid = referee_bid;
     btn.disabled = true;
     try {
       if (tm.mode === 'propose') {
         const stake = parseInt(byId('tmStake').value, 10);
         if (!(stake >= cfg.stake_min && stake <= cfg.stake_max)) { err.textContent = 'La mise doit être comprise entre ' + cfg.stake_min + ' et ' + cfg.stake_max + ' crédits.'; return; }
+        saveLastTeam(body, stake);
         await api('/duel/proposals', { method: 'POST', body: JSON.stringify({ ...body, stake }) });
         closeTeamModal();
         toast('Défi publié : ta mise est bloquée jusqu\'à ce qu\'il soit joué');
         await refreshMe(); loadDuelProposals(); loadDuelBoard();
       } else {
+        saveLastTeam(body, null);
         const result = await api('/duel/proposals/' + tm.proposal.id + '/play', { method: 'POST', body: JSON.stringify(body) });
         closeTeamModal();
         await refreshMe();
@@ -2320,7 +2388,7 @@
     } catch(e) {
       if (e.message !== 'unauthorized') err.textContent = e.message;
       if (tm.mode === 'play') loadDuelProposals();   // le défi a pu être annulé ou joué entre-temps
-    } finally { btn.disabled = tm.owned.length < cfg.team_size; }
+    } finally { btn.disabled = tm.owned.length < cfg.team_size; tm.refConfirmed = null; btn.textContent = tmSubmitLabel(); }
   });
 
   // ---- match raconté (animation minute par minute)
@@ -2358,6 +2426,7 @@
       let html = '<h4>' + escapeHtml(t.pseudo) + '</h4><div class="lu-sub">' + escapeHtml(t.formation) + ' · ' + escapeHtml(tacticLabel || '') +
         (t.fan ? ' · Fan ' + escapeHtml(t.fan.player) + ' (+' + t.fan.bonus_pct + ' %)' : '') +
         (t.mascot ? ' · Loup ' + escapeHtml(t.mascot.player) + ' (+' + t.mascot.bonus_pct + ' %)' : '') +
+        (t.referee_bonus_pct ? ' · Arbitre +' + t.referee_bonus_pct + ' %' : '') +
         (t.equipment && t.equipment.length ? ' · Équipement ' + t.equipment.map(e => escapeHtml(e.player)).join(', ') + ' (+' + t.equipment.reduce((n, e) => n + e.bonus_pct, 0) + ' %)' : '') + '</div>';
       players.forEach(p => {
         html += '<div class="lu-row"><span>' + SLOT_ICON[p.slot] + ' ' + escapeHtml(p.player) + (p.captain ? ' <span class="lu-flag" title="Capitaine">©</span>' : '') +
@@ -2365,6 +2434,16 @@
       });
       box.innerHTML = html; root.appendChild(box);
     });
+  }
+  // la ligne « arbitre » du résultat : les deux enveloppes, enfin révélées
+  function refereeLine(recap, isNew){
+    const ref = recap.referee || (recap.lineups && recap.lineups.referee);
+    if (!ref || (!ref.challenger && !ref.defender)) return '';
+    const who = ref.winner === 'challenger' ? (isNew ? 'tu as eu' : escapeHtml(recap.challenger) + ' a eu') + ' le bonus de l\'arbitre (+' + ref.bonus_pct + ' %)'
+      : ref.winner === 'defender' ? escapeHtml(recap.defender) + ' a eu le bonus de l\'arbitre (+' + ref.bonus_pct + ' %)'
+      : 'l\'arbitre a empoché les deux enveloppes sans favoriser personne';
+    const names = isNew ? 'toi ' + ref.challenger + ' · ' + escapeHtml(recap.defender) + ' ' + ref.defender : escapeHtml(recap.challenger) + ' ' + ref.challenger + ' · ' + escapeHtml(recap.defender) + ' ' + ref.defender;
+    return '<br>🧧 Enveloppes pour l\'arbitre : ' + names + ' → ' + who + '.';
   }
   function renderMatchResult(recap, isNew){
     const root = byId('msResult');
@@ -2374,7 +2453,7 @@
       const head = recap.result === 'victoire' ? '🏆 Victoire !' : (recap.result === 'défaite' ? '😔 Défaite' : '🤝 Match nul');
       const money = recap.result === 'victoire' ? signed(recap.stake) + ' crédits' : (recap.result === 'défaite' ? signed(-recap.stake) + ' crédits' : 'mises rendues');
       html = '<div class="big">' + head + '</div>' + escapeHtml(money) + ' · Elo ' + recap.elo_challenger_before + ' → ' + recap.elo_challenger_after +
-        ' (' + signed(recap.elo_challenger_after - recap.elo_challenger_before) + ')';
+        ' (' + signed(recap.elo_challenger_after - recap.elo_challenger_before) + ')' + refereeLine(recap, true);
       if (recap.pack_match_won) html += '<br>🎁 Tu gagnes un <b>pack match</b> !<br><button class="btn-small" id="msGoPacks" style="margin-top:6px;">Aller l\'ouvrir</button>';
       else if (recap.result === 'défaite') html += '<br>🎁 Le pack match revient à ' + escapeHtml(recap.defender) + '.';
       if (recap.pack_classique_won) html += '<br>🎁 Tu reçois un <b>pack classique</b> ' + (recap.result === 'nul' ? '(match nul : chacun en reçoit un) !' : 'en consolation !') + '<br><button class="btn-small" id="msGoPacks" style="margin-top:6px;">Aller l\'ouvrir</button>';
@@ -2382,7 +2461,7 @@
       const winner = sa > sb ? recap.challenger : (sb > sa ? recap.defender : null);
       html = '<div class="big">' + (winner ? '🏆 ' + escapeHtml(winner) : '🤝 Match nul') + '</div>mise ' + recap.stake + ' crédits · Elo ' +
         escapeHtml(recap.challenger) + ' ' + recap.elo_challenger_before + ' → ' + recap.elo_challenger_after + ' · ' +
-        escapeHtml(recap.defender) + ' ' + recap.elo_defender_before + ' → ' + recap.elo_defender_after;
+        escapeHtml(recap.defender) + ' ' + recap.elo_defender_before + ' → ' + recap.elo_defender_after + refereeLine(recap, false);
     }
     root.innerHTML = '<div class="match-result">' + html + '</div>';
     const go = byId('msGoPacks');
