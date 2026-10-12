@@ -8,6 +8,7 @@ Puis ouvrir http://127.0.0.1:8000/docs pour tester chaque route.
 import asyncio
 import json
 import os
+import re
 from typing import Optional
 from datetime import datetime, timedelta
 
@@ -65,6 +66,8 @@ def card_out(card: Card) -> dict:
         "tier": card.tier.value,
         "vitesse": card.vitesse,
         "tir": card.tir,
+        "surnom": card.player.surnom,       # (affichés sur la carte secrète)
+        "numero": card.player.numero,
     }
 
 
@@ -246,6 +249,8 @@ def player_detail(player_name: str, tier: str = "commune", db: Session = Depends
         "homme_du_match_count": player.homme_du_match_count,
         "tier": tier,
         "display_note": game_logic.get_display_note(player, tier, card),
+        "surnom": player.surnom,
+        "numero": player.numero,
     }
 
 
@@ -767,6 +772,49 @@ def admin_set_edition_dates(payload: schemas.AdminSetEditionDatesRequest, db: Se
     return {"status": "ok", "edition": game_logic.edition_info(db, payload.edition)}
 
 
+def _clean_numero(value: str) -> str:
+    v = (value or "").strip()
+    if not re.fullmatch(r"[0-9]{1,3}", v):
+        raise ValueError("Le numéro de maillot doit faire 1 à 3 chiffres (« 10 », « 007 »…) : « %s » n'est pas valide" % v)
+    return v
+
+
+def _clean_surnom(value: str) -> str:
+    v = " ".join((value or "").split())
+    if not v or len(v) > 30 or any(ord(ch) < 32 for ch in v):
+        raise ValueError("Le surnom doit faire entre 1 et 30 caractères")
+    return v
+
+
+@app.post("/admin/set-player-info", dependencies=[Depends(require_admin)])
+def admin_set_player_info(payload: schemas.AdminSetPlayerInfoRequest, db: Session = Depends(get_db)):
+    """Enregistre le numéro de maillot et/ou le surnom de joueurs et de fans, plusieurs d'un coup. Le prénom est reconnu même
+    avec des majuscules, des accents en plus ou en moins, ou un espace en trop. Ce qui est reconnu est enregistré ; le reste
+    est listé dans la réponse (introuvables, ambigus, refusés), sans rien bloquer."""
+    people = [p for p in db.query(Player).all() if game_logic.card_kind(p) in ("joueur", "fan")]
+    done, missing, ambiguous, refused = [], [], [], []
+    for item in payload.players:
+        wanted = " ".join((item.name or "").split())
+        found = [p for p in people if p.name == wanted] or [p for p in people if p.name.casefold() == wanted.casefold()] \
+            or [p for p in people if _plain(p.name) == _plain(wanted)]
+        if not found:
+            missing.append(wanted); continue
+        if len(found) > 1:
+            ambiguous.append({"name": wanted, "possibles": sorted(p.name for p in found)}); continue
+        p = found[0]
+        try:
+            new_num = p.numero if item.numero is None else (None if item.numero.strip() == "" else _clean_numero(item.numero))
+            new_sur = p.surnom if item.surnom is None else (None if item.surnom.strip() == "" else _clean_surnom(item.surnom))
+        except ValueError as e:
+            refused.append({"name": p.name, "raison": str(e)}); continue
+        if not payload.dry_run:
+            p.numero, p.surnom = new_num, new_sur
+        done.append({"name": p.name, "numero": new_num, "surnom": new_sur})
+    if not payload.dry_run:
+        db.commit()
+    return {"status": "ok", "dry_run": payload.dry_run, "mis_a_jour": done, "introuvables": missing, "ambigus": ambiguous, "refuses": refused}
+
+
 @app.post("/admin/create-player", dependencies=[Depends(require_admin)])
 def admin_create_player(payload: schemas.AdminCreatePlayerRequest, db: Session = Depends(get_db)):
     """Ajoute un joueur ou un fan à l'effectif : ses cartes (commune, rare si demandé, et sa carte secrète) apparaissent
@@ -794,7 +842,13 @@ def admin_create_player(payload: schemas.AdminCreatePlayerRequest, db: Session =
 
     is_fan = poste.startswith("FAN")
     with_rare = payload.with_rare if payload.with_rare is not None else (not is_fan)
-    player = Player(name=name, poste=poste, photo_url=(payload.photo_url or None))
+    numero, surnom = None, None
+    try:
+        if payload.numero not in (None, ""): numero = _clean_numero(payload.numero)
+        if payload.surnom not in (None, ""): surnom = _clean_surnom(payload.surnom)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    player = Player(name=name, poste=poste, photo_url=(payload.photo_url or None), numero=numero, surnom=surnom)
     db.add(player)
     db.flush()
     tiers = [Tier.commune] + ([Tier.rare] if with_rare else [])
@@ -826,7 +880,7 @@ def admin_list_players(kind: str = None, db: Session = Depends(get_db)):
         k = game_logic.card_kind(p)
         if kind and k != kind:
             continue
-        rows.append({"name": p.name, "type": k, "poste": p.poste, "photo": p.photo_url,
+        rows.append({"name": p.name, "type": k, "poste": p.poste, "numero": p.numero, "surnom": p.surnom, "photo": p.photo_url,
                      "photos_par_rarete": game_logic.tier_photos(p),
                      "raretes": ", ".join(sorted((c.tier.value for c in p.cards), key=lambda t: order.get(t, 99))),
                      "buts": p.buts, "passes": p.passes_decisives, "matchs": p.matches_joues})
