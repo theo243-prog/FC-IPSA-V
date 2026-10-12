@@ -319,6 +319,11 @@ def notify_duel_played(db: Session, result: dict):
         title, body = "%s a joué ton défi : défaite %d–%d" % (who, mine, theirs), "Tu perds ta mise de %d crédits mais tu reçois un pack classique. Une revanche ?" % stake
     else:
         title, body = "%s a joué ton défi : match nul %d–%d" % (who, mine, theirs), "Ta mise de %d crédits t'est rendue et tu reçois un pack classique." % stake
+    ref = result.get("referee") or {}
+    if ref.get("challenger") or ref.get("defender"):        # des enveloppes ont été mises : on les révèle maintenant
+        mine_bid, their_bid = ref.get("defender", 0), ref.get("challenger", 0)
+        who_wins = {"defender": "tu as eu le bonus de l'arbitre (+5 %)", "challenger": "le bonus de l'arbitre (+5 %) est allé à " + who, None: "l'arbitre a empoché les deux enveloppes sans favoriser personne"}[ref.get("winner")]
+        body += " Enveloppe pour l'arbitre : toi " + str(mine_bid) + ", " + who + " " + str(their_bid) + " : " + who_wins + "."
     enqueue(db, creator.id, "duels", title, body, url="/#duels", tag="duels")
 
 
