@@ -313,6 +313,8 @@
   .ball-fallback{font-size:38px;display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));}
   .card-name{position:relative;z-index:1;font-family:var(--font-head);font-size:19px;font-weight:600;line-height:1.05;text-shadow:0 1px 1px rgba(255,255,255,0.3);}
   .card-stats{position:relative;z-index:1;display:flex;gap:6px;font-size:10px;font-weight:800;margin-top:4px;}
+  .tier-secrete .card-stats span{white-space:nowrap;}
+  .card-stats .card-num{margin-left:auto;background:rgba(22,17,43,.82);color:#FFE08A;border:1px solid rgba(255,224,138,.6);letter-spacing:.3px;}   /* numéro de maillot (carte secrète) */
   .card-stats span{background:rgba(0,0,0,0.14);padding:2px 6px;border-radius:6px;}
   .card-watermark{position:absolute;bottom:6px;right:7px;z-index:1;width:13px;height:15px;opacity:.38;}
   .card-count{position:absolute;top:50%;right:6px;transform:translateY(-50%);background:var(--accent);color:var(--accent-text);font-size:11px;font-weight:800;border-radius:20px;padding:1px 7px;z-index:4;box-shadow:0 2px 6px rgba(0,0,0,0.25);}
@@ -623,6 +625,7 @@
   .gate-toggle button{background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;font-size:12.5px;}
 
   @media (max-width:480px){.titles h1{font-size:30px;} .brand-wolf{width:44px;height:51px;} .card{width:108px;} .reveal-area{gap:10px;}
+    .card.tier-secrete .card-stats{gap:3px;} .card.tier-secrete .card-stats span{padding-left:4px;padding-right:4px;} .card .card-stats .card-num{font-size:9px;}
     /* sur une petite carte, l'étiquette « LIMITÉE » et la citrouille se marcheraient dessus : on garde la citrouille et le bandeau du thème */
     .card .card-stats .tag-limitee,.card-slot:not(.big) .card-stats .tag-limitee{display:none;}}
   :focus-visible{outline:3px solid var(--focus);outline-offset:2px;}
@@ -1005,7 +1008,9 @@
     if (i < 0) return { action: name, who: '' };
     return { action: name.slice(0, i), who: name.slice(i + 3).replace(/ \(\d\d\/\d\d\)\+*$/, '').replace(/\++$/, '') };
   }
-  function cardDisplayName(card){ return cardKind(card) === 'moment' ? momentParts(card.player_name).action : card.player_name; }
+  // Sur une carte SECRÈTE, c'est le surnom du joueur qui s'écrit (à défaut, son prénom) ; son numéro de maillot est dans la ligne du bas.
+  function cardDisplayName(card){ if (cardKind(card) === 'moment') return momentParts(card.player_name).action; return (card.tier === 'secrete' && card.surnom) ? card.surnom : card.player_name; }
+  function numChip(card){ return (card.tier === 'secrete' && card.numero != null && card.numero !== '') ? '<span class="card-num" title="Numéro de maillot">#' + escapeHtml(String(card.numero)) + '</span>' : ''; }
   const EQUIP_BONUS_PCT = { commune: 1, rare: 2, epique: 3, legendaire: 5 };
   const ITEM_ICONS = {
     'gourde': '💧', 'ballon du match': '⚽', 'protege-tibias': '🦵', 'chasuble': '🦺', 'chaussettes trouees': '🧦',
@@ -1059,10 +1064,10 @@
       statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🐺 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span></div>';
       posteLabel = '🐺';
     } else if (kind === 'fan') {
-      statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🎉 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span>' + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '</div>';
+      statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🎉 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span>' + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
       posteLabel = '🎉';
     } else {
-      statsRow = '<div class="card-stats"><span>⭐ ' + (card.display_note ? card.display_note.value : '') + '</span>' + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '</div>';
+      statsRow = '<div class="card-stats"><span>⭐ ' + (card.display_note ? card.display_note.value : '') + '</span>' + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
       posteLabel = escapeHtml(card.poste);
     }
     const bgPhoto = usesBgPhoto(card) ? '<img class="card-bgphoto" src="' + escapeHtml(card.player_photo_url) + '" alt="">' : '';
@@ -1189,6 +1194,7 @@
             statBox(p.cartons_jaunes, 'Cartons jaunes') +
             statBox(p.cartons_rouges, 'Cartons rouges') +
           '</div>';
+        if (p.tier === 'secrete' && (p.surnom || (p.numero != null && p.numero !== ''))) inner += '<p class="tm-hint" style="text-align:center;">' + (p.surnom ? 'Surnom : <b>' + escapeHtml(p.surnom) + '</b>' : '') + (p.surnom && p.numero != null && p.numero !== '' ? ' · ' : '') + (p.numero != null && p.numero !== '' ? 'Maillot n° <b>' + escapeHtml(String(p.numero)) + '</b>' : '') + '</p>';
         if (p.edition) inner += '<p class="tm-hint" style="text-align:center;">' + p.edition.icon + ' <b>Édition limitée ' + escapeHtml(p.edition.label) + '</b> : ' + (p.edition.status === 'active' ? 'ses cartes sortent des packs jusqu\'au ' + formatDay(p.edition.end) + ' inclus.' : p.edition.status === 'ended' ? 'terminée le ' + formatDay(p.edition.end) + '. Elle ne sort plus des packs : seuls les joueurs qui l\'ont déjà peuvent l\'échanger.' : 'à partir du ' + formatDay(p.edition.start) + '.') + '</p>';
         if (p.tier === 'speciale') inner += '<p class="tm-hint" style="text-align:center;">Carte spéciale : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine. Elle ne sort que des packs gagnés en 1v1.</p>';
         if (p.tier === 'secrete') inner += '<p class="tm-hint" style="text-align:center;">Carte secrète : elle ne sort jamais des packs. On la débloque en fusionnant 100 points de doublons (commune = 1, rare = 5).</p>';
@@ -1418,7 +1424,7 @@
     btn.disabled = true;
     try {
       const res = await api('/collection/unlock-secret', { method: 'POST', body: JSON.stringify({ card_id: cardId }) });
-      toast('Carte secrète débloquée : ' + res.player + ' !');
+      toast('Carte secrète débloquée : ' + (res.surnom || res.player) + ' !');
       await loadCollection();
       await refreshMe();
     } catch(e) { toast(e.message); btn.disabled = false; }
