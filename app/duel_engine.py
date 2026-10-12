@@ -62,6 +62,7 @@ OUT_OF_POSITION_MALUS = 0.10
 CAPTAIN_BONUS = 0.10
 TACTIC_BONUS = 0.06
 
+REFEREE_BONUS = 0.05     # bonus d'équipe (+5 %) donné par l'arbitre à celui qui a mis la plus grosse enveloppe
 STAKE_MIN, STAKE_MAX = 1, 10
 MAX_OPEN_PROPOSALS = 3
 ELO_K = 32
@@ -113,6 +114,7 @@ def get_config() -> dict:
         "mascot_bonus": TIER_MASCOT_BONUS,
         "equipment_bonus": TIER_EQUIPMENT_BONUS,
         "max_equipment": MAX_EQUIPMENT,
+        "referee_bonus": REFEREE_BONUS,
     }
 
 
@@ -252,7 +254,7 @@ def equipment_bonus_total(equipment_cards) -> float:
     return sum(TIER_EQUIPMENT_BONUS.get(c.tier.value, 0.0) for c in (equipment_cards or []))
 
 
-def team_powers(members, fan_card, tactic_multiplier=1.0, equipment_cards=(), mascot_card=None):
+def team_powers(members, fan_card, tactic_multiplier=1.0, equipment_cards=(), mascot_card=None, referee_bonus=0.0):
     units_att = sum(ATTACK_WEIGHT[m["slot"]] for m in members)
     units_def = sum(DEFENSE_WEIGHT[m["slot"]] for m in members)
     attack_avg = sum(ATTACK_WEIGHT[m["slot"]] * m["effective"] for m in members) / units_att
@@ -261,7 +263,7 @@ def team_powers(members, fan_card, tactic_multiplier=1.0, equipment_cards=(), ma
     fan_bonus = TIER_FAN_BONUS.get(fan_card.tier.value, 0.0) if fan_card else 0.0
     equipment_bonus = equipment_bonus_total(equipment_cards)
     mascot_bonus = TIER_MASCOT_BONUS.get(mascot_card.tier.value, 0.0) if mascot_card else 0.0
-    mult = (1 + fan_bonus + mascot_bonus + equipment_bonus) * tactic_multiplier      # Fan, Loup et équipement s'additionnent
+    mult = (1 + fan_bonus + mascot_bonus + equipment_bonus + referee_bonus) * tactic_multiplier      # Fan, Loup, équipement et arbitre s'additionnent
     return attack_avg * style * mult, defense_avg / style * mult, fan_bonus, equipment_bonus, mascot_bonus
 
 
@@ -393,8 +395,9 @@ def build_events(side_a, side_b, score_a, score_b, xg_a, xg_b, tactic_winner):
     return events
 
 
-def _lineup_snapshot(side, fan_card, equipment_cards=(), mascot_card=None):
+def _lineup_snapshot(side, fan_card, equipment_cards=(), mascot_card=None, referee_bonus=0.0):
     return {
+        "referee_bonus_pct": round(referee_bonus * 100),
         "pseudo": side["pseudo"], "formation": side["formation"], "tactic": side["tactic"],
         "players": [{
             "slot": m["slot"], "player": m["player"], "tier": m["tier"], "poste": m["poste"],
@@ -413,8 +416,8 @@ def _lineup_snapshot(side, fan_card, equipment_cards=(), mascot_card=None):
 # ----------------------------------------------------------------- Défis ----
 
 def cancel_proposal(db: Session, proposal: MatchProposal):
-    """Supprime un défi et rend la mise séquestrée à son créateur (l'appelant fait le commit)."""
-    proposal.creator.credits += proposal.stake
+    """Supprime un défi et rend à son créateur sa mise ET son enveloppe, séquestrées (l'appelant fait le commit)."""
+    proposal.creator.credits += proposal.stake + (proposal.referee_bid or 0)
     db.delete(proposal)
 
 
@@ -438,19 +441,40 @@ def purge_card_references(db: Session, card_ids: list):
     db.flush()   # les défis (et leurs emplacements) doivent disparaître avant la carte elle-même
 
 
+def reserved_credits(db: Session) -> dict:
+    """Crédits séquestrés dans les défis ouverts, par joueur (mise + enveloppe). Le classement public les compte dans le
+    total de leur propriétaire : ainsi, voir ses crédits baisser ne révèle rien du montant de son enveloppe."""
+    out = {}
+    for creator_id, stake, bid in db.query(MatchProposal.creator_id, MatchProposal.stake, MatchProposal.referee_bid).all():
+        out[creator_id] = out.get(creator_id, 0) + stake + (bid or 0)
+    return out
+
+
+def referee_winner(bid_challenger: int, bid_defender: int):
+    """Qui gagne le bonus de l'arbitre : celui qui a mis le PLUS (« challenger » ou « defender »), personne si égalité."""
+    if bid_challenger > bid_defender:
+        return "challenger"
+    if bid_defender > bid_challenger:
+        return "defender"
+    return None
+
+
 def create_proposal(db: Session, user: User, formation, tactic, stake, slots, captain_card_id, fan_card_id,
-                    equipment_card_ids=None, mascot_card_id=None):
+                    equipment_card_ids=None, mascot_card_id=None, referee_bid=0):
     if not (STAKE_MIN <= stake <= STAKE_MAX):
         raise DuelError("La mise doit être comprise entre %d et %d crédits" % (STAKE_MIN, STAKE_MAX))
     open_count = db.query(MatchProposal).filter_by(creator_id=user.id).count()
     if open_count >= MAX_OPEN_PROPOSALS:
         raise DuelError("Tu as déjà %d défis ouverts : annule-en un ou attends qu'il soit joué" % MAX_OPEN_PROPOSALS)
-    if user.credits < stake:
-        raise DuelError("Pas assez de crédits pour miser %d" % stake)
+    referee_bid = int(referee_bid or 0)
+    if referee_bid < 0:
+        raise DuelError("L'enveloppe de l'arbitre ne peut pas être négative")
+    if user.credits < stake + referee_bid:
+        raise DuelError("Pas assez de crédits : mise %d%s" % (stake, (" + enveloppe de l'arbitre %d = %d" % (referee_bid, stake + referee_bid)) if referee_bid else ""))
     validate_team(db, user, formation, tactic, slots, captain_card_id, fan_card_id, equipment_card_ids, mascot_card_id)
 
-    user.credits -= stake   # séquestre : rendu si le défi est annulé, joué ensuite
-    proposal = MatchProposal(creator_id=user.id, stake=stake, formation=formation, tactic=tactic,
+    user.credits -= stake + referee_bid   # séquestre : rendu si le défi est annulé ; la mise est jouée, l'enveloppe est dépensée
+    proposal = MatchProposal(creator_id=user.id, stake=stake, referee_bid=referee_bid, formation=formation, tactic=tactic,
                              captain_card_id=captain_card_id or None, fan_card_id=fan_card_id or None,
                              mascot_card_id=mascot_card_id or None)
     db.add(proposal)
@@ -464,7 +488,7 @@ def create_proposal(db: Session, user: User, formation, tactic, stake, slots, ca
 
 
 def play_proposal(db: Session, challenger: User, proposal_id: str, formation, tactic, slots,
-                  captain_card_id, fan_card_id, equipment_card_ids=None, mascot_card_id=None) -> dict:
+                  captain_card_id, fan_card_id, equipment_card_ids=None, mascot_card_id=None, referee_bid=0) -> dict:
     # verrou : si deux joueurs cliquent en même temps, un seul passe, l'autre voit "n'existe plus"
     proposal = db.query(MatchProposal).filter_by(id=proposal_id).with_for_update().first()
     if not proposal:
@@ -476,8 +500,11 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     # (aucun délai entre deux matchs des mêmes joueurs : on peut rejouer tout de suite)
 
     stake = proposal.stake
-    if challenger.credits < stake:
-        raise DuelError("Pas assez de crédits pour cette mise (%d)" % stake)
+    referee_bid = int(referee_bid or 0)
+    if referee_bid < 0:
+        raise DuelError("L'enveloppe de l'arbitre ne peut pas être négative")
+    if challenger.credits < stake + referee_bid:
+        raise DuelError("Pas assez de crédits pour cette mise (%d)%s" % (stake, (" et cette enveloppe pour l'arbitre (%d)" % referee_bid) if referee_bid else ""))
 
     cards_c, captain_c, fan_c, equip_c, mascot_c = validate_team(db, challenger, formation, tactic, slots, captain_card_id,
                                                                  fan_card_id, equipment_card_ids, mascot_card_id)
@@ -501,8 +528,12 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     winner_tactic = tactic_advantage(tactic, proposal.tactic)          # 'a' = challenger, 'b' = créateur
     mult_c = 1 + TACTIC_BONUS if winner_tactic == "a" else 1.0
     mult_d = 1 + TACTIC_BONUS if winner_tactic == "b" else 1.0
-    att_c, def_c, _, _, _ = team_powers(side_c["members"], fan_c, mult_c, equip_c, mascot_c)
-    att_d, def_d, _, _, _ = team_powers(side_d["members"], fan_d, mult_d, equip_d, mascot_d)
+    bid_d = proposal.referee_bid or 0                                   # l'enveloppe du créateur (secrète jusqu'ici)
+    ref_winner = referee_winner(referee_bid, bid_d)                     # l'arbitre favorise celui qui a mis le plus, personne si égalité
+    ref_c = REFEREE_BONUS if ref_winner == "challenger" else 0.0
+    ref_d = REFEREE_BONUS if ref_winner == "defender" else 0.0
+    att_c, def_c, _, _, _ = team_powers(side_c["members"], fan_c, mult_c, equip_c, mascot_c, ref_c)
+    att_d, def_d, _, _, _ = team_powers(side_d["members"], fan_d, mult_d, equip_d, mascot_d, ref_d)
 
     xg_c = expected_goals(att_c, def_d)
     xg_d = expected_goals(att_d, def_c)
@@ -518,8 +549,9 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     elo_c_before, elo_d_before = challenger.elo, creator.elo
     challenger.elo, creator.elo = elo_update(elo_c_before, elo_d_before, result_c)
 
-    # crédits : la mise du créateur est déjà séquestrée, celle du challenger est prélevée maintenant
-    challenger.credits -= stake
+    # crédits : la mise et l'enveloppe du créateur sont déjà séquestrées, celles du challenger sont prélevées maintenant.
+    # Les DEUX enveloppes sont dépensées (celle de l'arbitre n'est jamais rendue, même au joueur qui a mis le moins)
+    challenger.credits -= stake + referee_bid
     pot = 2 * stake
     pack_winner = None
     if outcome == "victoire":
@@ -538,7 +570,9 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
         pack_winner.pack_state.match_pack_tokens += 1         # le gagnant : un pack match
     for player in classic_to:
         player.pack_state.shop_pack_tokens += 1               # perdant ou nul : un pack classique (aucune limite par jour)
-    lineups = {"challenger": _lineup_snapshot(side_c, fan_c, equip_c, mascot_c), "defender": _lineup_snapshot(side_d, fan_d, equip_d, mascot_d)}
+    referee = {"challenger": referee_bid, "defender": bid_d, "winner": ref_winner, "bonus_pct": round(REFEREE_BONUS * 100) if ref_winner else 0}
+    lineups = {"challenger": _lineup_snapshot(side_c, fan_c, equip_c, mascot_c, ref_c), "defender": _lineup_snapshot(side_d, fan_d, equip_d, mascot_d, ref_d),
+               "referee": referee}                                      # (enregistré avec la composition : visible dans le récap APRÈS le match)
     duel = Duel(
         challenger_id=challenger.id, defender_id=creator.id, stake=stake,
         formation_challenger=formation, formation_defender=proposal.formation,
@@ -567,6 +601,7 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
         "pack_classique_to": [p.pseudo for p in classic_to],
         "tactics": {"challenger": tactic, "defender": proposal.tactic,
                     "advantage": {"a": "challenger", "b": "defender"}.get(winner_tactic)},
+        "referee": referee,
         "events": events, "lineups": lineups,
     }
 
