@@ -338,6 +338,7 @@ class MatchProposal(Base):
     captain_card_id = Column(String, ForeignKey("cards.id"), nullable=True)
     fan_card_id = Column(String, ForeignKey("cards.id"), nullable=True)
     mascot_card_id = Column(String, ForeignKey("cards.id"), nullable=True)
+    referee_bid = Column(Integer, nullable=False, default=0)   # enveloppe SECRÈTE pour l'arbitre (séquestrée comme la mise ; jamais rendue au joueur qui perd l'enchère)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     creator = relationship("User")
