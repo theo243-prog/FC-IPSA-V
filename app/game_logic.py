@@ -484,7 +484,7 @@ def unlock_secret(db: Session, user: User, card_id: str) -> dict:
         o.quantity -= take; used["rare"] = take; need = 0
     owned_secret.quantity = 1
     db.commit()
-    return {"card_id": card.id, "player": card.player.name, "used": used}
+    return {"card_id": card.id, "player": card.player.name, "surnom": card.player.surnom, "numero": card.player.numero, "used": used}
 
 
 # ---------------------------------------------------------------------
