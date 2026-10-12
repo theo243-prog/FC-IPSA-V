@@ -13,6 +13,7 @@ NEW_TIER_VALUES = ["halloween", "noel"]
 
 # (table, colonne, type SQL)
 NEW_COLUMNS = [
+    ("match_proposals", "referee_bid", "INTEGER NOT NULL DEFAULT 0"),      # enveloppe secrète pour l'arbitre (1v1)
     ("players", "surnom", "VARCHAR"),        # surnom affiché sur la carte secrète
     ("players", "numero", "VARCHAR"),        # numéro de maillot
     ("players", "tier_photos", "TEXT"),      # photos propres à une rareté (JSON)
