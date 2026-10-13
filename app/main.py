@@ -13,11 +13,12 @@ from typing import Optional
 from datetime import datetime, timedelta
 
 from fastapi import FastAPI, Depends, Header, HTTPException
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, weekly, push, schema_upgrades
+from . import game_logic, duel_engine, schemas, weekly, push, schema_upgrades, missions
 from sqlalchemy import or_
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting)
@@ -140,6 +141,23 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
 
 # --------------------------------------------------------------- Packs ----
 
+@app.get("/missions")
+def get_missions(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Série de connexion, 3 missions du jour et bonus, avec leur avancement."""
+    return missions.state_out(db, user)
+
+
+@app.post("/missions/claim")
+def claim_mission_reward(payload: missions.ClaimRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Récupère la récompense de la série (kind=streak), d'une mission (kind=mission + mission_id) ou le bonus du jour (kind=bonus)."""
+    try:
+        gained = missions.claim(db, user, payload.kind, payload.mission_id)
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    return {**gained, "state": missions.state_out(db, user)}
+
+
 @app.post("/pack/open")
 def open_pack(
     payload: schemas.OpenPackRequest,
@@ -156,6 +174,8 @@ def open_pack(
             raise HTTPException(status_code=400, detail="Type de pack inconnu")
         raise HTTPException(status_code=400, detail="Aucun pack disponible pour le moment")
 
+    missions.safe_record(db, user, "open_packs")
+    missions.safe_record(db, user, "new_card", sum(1 for flag in result["new_flags"] if flag))
     return {
         "credits_won": result["credits_won"],
         "cards_won": [{**card_out(c), "is_new": flag} for c, flag in zip(result["cards_won"], result["new_flags"])],
@@ -214,6 +234,7 @@ def sell_duplicate(
         credits_gained = game_logic.sell_duplicate(db, user, payload.card_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Pas de doublon à vendre pour cette carte")
+    missions.safe_record(db, user, "sell_dupes")
     return {"credits_gained": credits_gained, "credits_total": user.credits}
 
 
@@ -430,6 +451,7 @@ def create_listing(
     listing = Listing(seller_id=user.id, card_id=payload.card_id, price=payload.price)
     db.add(listing)
     db.commit()
+    missions.safe_record(db, user, "market_list")
     return {"id": listing.id}
 
 
@@ -452,6 +474,7 @@ def buy_listing(listing_id: str, user: User = Depends(get_current_user), db: Ses
     db.delete(listing)
     db.commit()
     push.safe(db, push.notify_listing_sold, seller_id, user.pseudo, sold_card, sold_price)     # prévient le vendeur
+    missions.safe_record(db, user, "market_buy")
     return {"status": "ok"}
 
 
@@ -555,6 +578,7 @@ def create_duel_proposal(payload: schemas.CreateProposalRequest, user: User = De
     slots = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in payload.slots]
     proposal = duel_call(duel_engine.create_proposal, db, user, payload.formation, payload.tactic, payload.stake,
                          slots, payload.captain_card_id, payload.fan_card_id, payload.equipment_card_ids, payload.mascot_card_id, payload.referee_bid)
+    missions.safe_record(db, user, "propose_duel")
     return {"id": proposal.id, "credits": user.credits}
 
 
@@ -575,6 +599,14 @@ def play_duel_proposal(proposal_id: str, payload: schemas.TeamPayload, user: Use
     result = duel_call(duel_engine.play_proposal, db, user, proposal_id, payload.formation, payload.tactic, slots,
                        payload.captain_card_id, payload.fan_card_id, payload.equipment_card_ids, payload.mascot_card_id, payload.referee_bid)
     push.safe(db, push.notify_duel_played, result)          # prévient le créateur du défi (jamais bloquant)
+    missions.safe_record(db, user, "play_duel")             # missions : le joueur qui joue, et le créateur dont le défi vient d'être joué
+    creator = db.query(User).filter_by(pseudo=result["defender"]).first()
+    if creator is not None:
+        missions.safe_record(db, creator, "play_duel")
+    if result["result"] == "victoire":
+        missions.safe_record(db, user, "win_duel")
+    elif result["result"] == "défaite" and creator is not None:
+        missions.safe_record(db, creator, "win_duel")
     return result
 
 
@@ -665,6 +697,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     db.query(NotifPref).filter_by(user_id=user.id).delete()
     db.query(NotifState).filter_by(user_id=user.id).delete()
     db.query(PushOutbox).filter_by(user_id=user.id).delete()
+    db.query(missions.UserDaily).filter_by(user_id=user.id).delete()      # sa série et ses missions du jour
     db.query(Listing).filter_by(seller_id=user.id).delete()
     for proposal in db.query(MatchProposal).filter_by(creator_id=user.id).all():
         db.delete(proposal)          # ses défis ouverts (le compte est supprimé, pas de remboursement utile)
@@ -1510,6 +1543,23 @@ def admin_grant_legendary(payload: schemas.AdminGrantLegendaryRequest, db: Sessi
 
     db.commit()
     return {"status": "ok", "card_id": legend.id, "granted_to": granted_to}
+
+
+class AdminResetMissionsRequest(BaseModel):
+    pseudo: str
+
+
+@app.post("/admin/reset-missions", dependencies=[Depends(require_admin)])
+def admin_reset_missions(payload: AdminResetMissionsRequest, db: Session = Depends(get_db)):
+    """Remet à zéro la série de connexion et les missions du jour d'un joueur (pour tes essais). Ne touche ni à ses crédits ni à ses packs."""
+    user = db.query(User).filter_by(pseudo=payload.pseudo).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    row = db.query(missions.UserDaily).filter_by(user_id=user.id).first()
+    if row:
+        db.delete(row)
+        db.commit()
+    return {"status": "ok", "pseudo": user.pseudo}
 
 
 @app.post("/admin/grant-credits", dependencies=[Depends(require_admin)])
