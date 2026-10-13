@@ -38,7 +38,7 @@ ADMIN_HTML = r"""<!doctype html>
   header h1{font-size:20px;margin:0;} header .ver{font-size:12px;color:var(--muted);}
   .keybox{display:flex;gap:8px;margin-left:auto;align-items:center;flex-wrap:wrap;} .keybox input[type=password]{width:230px;}
   input,select,textarea,button{font:inherit;color:var(--text);background:#1F0C30;border:1px solid var(--line);border-radius:8px;padding:8px 10px;}
-  textarea{width:100%;min-height:84px;resize:vertical;font-family:ui-monospace,Consolas,monospace;font-size:13px;} select,input[type=text],input[type=number],input[type=password],input[type=date]{width:100%;}
+  textarea{width:100%;min-height:84px;resize:vertical;font-family:ui-monospace,Consolas,monospace;font-size:13px;} select,input[type=text],input[type=number],input[type=password],input[type=date]{width:100%;} input[type=color]{width:100%;height:42px;padding:3px;}
   button{cursor:pointer;background:var(--accent);color:#2A0F3D;font-weight:700;border:none;} button.ghost{background:transparent;color:var(--text);border:1px solid var(--line);} button.danger{background:var(--bad);color:#33060B;} button:disabled{opacity:.5;cursor:default;}
   nav{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5;}
   nav button{background:transparent;color:var(--muted);border:1px solid var(--line);} nav button.on{background:var(--accent);color:#2A0F3D;border-color:var(--accent);}
@@ -66,7 +66,7 @@ ADMIN_HTML = r"""<!doctype html>
   "use strict";
   var $ = function(s, r){ return (r || document).querySelector(s); };
   var KEY_STORE = 'fca5_admin_key', keyInput = $('#key');
-  var TIERS = ['commune','rare','halloween','noel','gold','secrete','speciale','epique','saison','legendaire'];
+  var TIERS = ['commune','rare','halloween','noel','ed1','ed2','ed3','ed4','ed5','ed6','gold','secrete','speciale','epique','saison','legendaire'];
   var PACKS = ['classique','rare','epique','legendaire','ultra','match'];
   function lines(v){ return String(v || '').split(/\r?\n/).map(function(x){ return x.trim(); }).filter(Boolean); }
   function pairs(v){ return lines(v).map(function(l){ return l.split(';').map(function(x){ return x.trim(); }); }); }
@@ -95,6 +95,9 @@ ADMIN_HTML = r"""<!doctype html>
    {tab:'Cartes', id:'delete-player', title:'⚠ Supprimer un joueur', desc:'Supprime le joueur et toutes ses cartes.', path:'/admin/delete-player', f:[{n:'player_name',l:'Joueur',t:'text',req:1}], danger:1},
 
    {tab:'Éditions', id:'editions', title:'Voir les éditions limitées', desc:'Dates, état et joueurs de chaque édition.', method:'GET', path:'/admin/editions', f:[], go:'Afficher'},
+   {tab:'Éditions', id:'define-edition', title:'Créer une nouvelle édition (nouveau thème)', desc:'Ex. Saint-Valentin 💘, Pâques 🐣, Été ☀️… Tu choisis le nom, un emoji, deux couleurs (une foncée, une claire) et les dates. L\'édition prend le premier emplacement libre (6 au total : ed1 à ed6). Ensuite, crée ses cartes avec « Créer les cartes d\'une édition ». Tant qu\'elle n\'a aucune carte, tu peux la relancer pour changer son nom, ses couleurs ou ses dates.', path:'/admin/define-edition', build:function(v){ return {label:v.label.trim(), icon:v.icon.trim(), color1:v.color1, color2:v.color2, start:v.start, end:v.end, slot:v.slot}; }, after:true, f:[{n:'label',l:'Nom (24 caractères maximum)',t:'text',req:1,ph:'Saint-Valentin'},{n:'icon',l:'Emoji',t:'text',req:1,d:'🎁'},{n:'color1',l:'Couleur foncée',t:'color',d:'#B0124F'},{n:'color2',l:'Couleur claire',t:'color',d:'#FF6FA5'},{n:'start',l:'Premier jour',t:'date',req:1},{n:'end',l:'Dernier jour',t:'date',req:1},{n:'slot',l:'Emplacement',t:'select',o:['auto','ed1','ed2','ed3','ed4','ed5','ed6'],d:'auto'}]},
+   {tab:'Éditions', id:'edition-slots', title:'Voir les 6 emplacements d\'éditions libres', desc:'Lesquels sont pris (nom, emoji, état, nombre de cartes) et lesquels sont libres.', method:'GET', path:'/admin/edition-slots', table:true, f:[], go:'Afficher'},
+   {tab:'Éditions', id:'remove-edition', title:'⚠ Supprimer une édition libre', desc:'Seulement si elle n\'a plus aucune carte (supprime-les d\'abord avec « Supprimer une carte », rareté = l\'emplacement). Halloween et Noël ne se suppriment pas.', path:'/admin/remove-edition', after:true, f:[{n:'edition',l:'Emplacement',t:'select',o:['ed1','ed2','ed3','ed4','ed5','ed6'],req:1}], danger:1},
    {tab:'Éditions', id:'edition-dates', title:'Dates d\'une édition', desc:'Laisse vide pour ne pas changer ; « revenir aux dates d\'origine » efface les dates choisies.', path:'/admin/set-edition-dates', f:[{n:'edition',l:'Édition',t:'select',o:['halloween','noel'],req:1},{n:'start',l:'Premier jour',t:'date'},{n:'end',l:'Dernier jour',t:'date'},{n:'reset',l:'Revenir aux dates d\'origine',t:'bool'}]},
    {tab:'Éditions', id:'edition-cards', title:'Créer les cartes d\'une édition', desc:'Un prénom par ligne. Le site cache ces cartes jusqu\'au premier jour.', path:'/admin/create-edition-cards', f:[{n:'edition',l:'Édition',t:'select',o:['halloween','noel'],req:1},{n:'players',l:'Joueurs et fans (un par ligne)',t:'lines',req:1,ph:'Léo\nMathis\nNathalie'},{n:'grant_to_pseudo',l:'Offrir à (pseudo)',t:'text'}]},
 
@@ -125,7 +128,7 @@ ADMIN_HTML = r"""<!doctype html>
     h += '<label for="' + id + '">' + f.l + (f.req ? ' *' : '') + '</label>';
     if (f.t === 'select') h += '<select id="' + id + '">' + f.o.map(function(o){ return '<option value="' + o + '"' + (o === v ? ' selected' : '') + '>' + (o || '— tous —') + '</option>'; }).join('') + '</select>';
     else if (f.t === 'lines' || f.t === 'json' || f.t === 'area') h += '<textarea id="' + id + '" placeholder="' + (f.ph || '').replace(/"/g, '&quot;') + '"></textarea>';
-    else h += '<input id="' + id + '" type="' + (f.t === 'int' ? 'number' : f.t === 'date' ? 'date' : 'text') + '" value="' + String(v).replace(/"/g, '&quot;') + '">';
+    else h += '<input id="' + id + '" type="' + (f.t === 'int' ? 'number' : f.t === 'date' ? 'date' : f.t === 'color' ? 'color' : 'text') + '" value="' + String(v).replace(/"/g, '&quot;') + '">';
     return h + '</div>';
   }
   A.forEach(function(a){
@@ -190,16 +193,30 @@ ADMIN_HTML = r"""<!doctype html>
       else { init.method = 'POST'; init.body = JSON.stringify(payloadOf(a, v)); }
       var r = await fetch(url, init), data = null; try { data = await r.json(); } catch (e) { data = null; }
       show_result(a, r.status, data);
+      if (a.after && r.ok) refreshEditionSelects();
     } catch (e) { out.innerHTML = '<div class="st bad">❌ ' + escapeHtml(e.message) + '</div>'; }
   }
   main.addEventListener('click', function(e){ var b = e.target.closest('button[data-run]'); if (b) { var a = A.filter(function(x){ return x.id === b.dataset.run; })[0]; run(a); } });
+
+  // ---- les listes « Édition » (dates, cartes) proposent Halloween, Noël et toutes les éditions déjà créées ----
+  async function refreshEditionSelects(){
+    try {
+      var r = await fetch('/admin/editions', {headers: headers()}); if (!r.ok) return; var list = await r.json();
+      ['edition-dates__edition', 'edition-cards__edition'].forEach(function(id){
+        var sel = document.getElementById(id); if (!sel) return; var cur = sel.value;
+        sel.innerHTML = list.map(function(e){ return '<option value="' + e.key + '">' + escapeHtml((e.icon || '') + ' ' + e.label + ' (' + e.key + ')') + '</option>'; }).join('');
+        if (list.some(function(e){ return e.key === cur; })) sel.value = cur;
+      });
+    } catch (e) { /* les listes de départ restent */ }
+  }
+  window.__admin_refresh = refreshEditionSelects;
 
   // ---- connexion ----
   async function login(){
     var k = keyInput.value.trim(); $('#loginMsg').textContent = '…';
     try {
       var r = await fetch('/admin/users', {headers: headers()});
-      if (r.ok) { sessionStorage.setItem(KEY_STORE, k); document.body.classList.remove('locked'); $('#loginMsg').textContent = '✅ connecté'; }
+      if (r.ok) { sessionStorage.setItem(KEY_STORE, k); document.body.classList.remove('locked'); $('#loginMsg').textContent = '✅ connecté'; refreshEditionSelects(); }
       else { document.body.classList.add('locked'); $('#loginMsg').textContent = '❌ clé refusée'; }
     } catch (e) { $('#loginMsg').textContent = '❌ serveur injoignable'; }
   }
