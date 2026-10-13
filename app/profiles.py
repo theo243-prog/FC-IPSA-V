@@ -49,7 +49,7 @@ LADDERS = [
 ]
 SHOWCASE_MAX = 3
 # Pour la vitrine automatique : les raretés de la plus précieuse à la plus commune.
-TIER_VALUE_ORDER = ["legendaire", "secrete", "speciale", "epique", "halloween", "noel", "gold", "rare", "commune"]
+TIER_VALUE_ORDER = ["saison", "legendaire", "secrete", "speciale", "epique", "halloween", "noel", "gold", "rare", "commune"]
 
 
 # ------------------------------------------------------------------ base de données
@@ -103,11 +103,12 @@ def _counter(db, user_id: str, key: str) -> int:
 
 # ------------------------------------------------------------------ mesures
 def _tier_counts(db, user_id: str):
-    """(cartes possédées par rareté, cartes existantes par rareté)."""
-    total = {t.value: n for t, n in db.query(Card.tier, func.count(Card.id)).group_by(Card.tier).all()}
+    """(cartes possédées par rareté, cartes existantes par rareté). Les cartes « Saison » (récompense du podium) ne comptent pas :
+    elles ne peuvent pas se collectionner, donc elles n'entrent ni dans le pourcentage ni dans les séries complètes."""
+    total = {t.value: n for t, n in db.query(Card.tier, func.count(Card.id)).group_by(Card.tier).all() if t.value != "saison"}
     owned = {t.value: n for t, n in db.query(Card.tier, func.count(Card.id))
              .join(OwnedCard, OwnedCard.card_id == Card.id)
-             .filter(OwnedCard.user_id == user_id, OwnedCard.quantity > 0).group_by(Card.tier).all()}
+             .filter(OwnedCard.user_id == user_id, OwnedCard.quantity > 0).group_by(Card.tier).all() if t.value != "saison"}
     return owned, total
 
 
