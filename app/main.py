@@ -74,6 +74,7 @@ def card_out(card: Card) -> dict:
         "tir": card.tir,
         "surnom": card.player.surnom,       # (affichés sur la carte secrète)
         "numero": card.player.numero,
+        "trophy": seasons.trophy_info(card.player) if card.tier == Tier.saison else None,       # trophée de saison : rang, titre et mois
     }
 
 
@@ -234,6 +235,8 @@ def get_collection(user: User = Depends(get_current_user), db: Session = Depends
     for c in all_cards:
         if c.tier.value in upcoming and not owned_rows.get(c.id, 0):
             continue                                   # édition pas encore commencée : ses cartes restent une surprise
+        if c.tier == Tier.saison and not owned_rows.get(c.id, 0) and not reveal:
+            continue                                   # un trophée de saison n'est visible que de ceux qui l'ont gagné
         qty = owned_rows.get(c.id, 0)
         row = {**(card_out(c) if (qty > 0 or reveal) else locked_out(c)), "quantity": qty}
         if c.tier == Tier.secrete:
@@ -451,6 +454,8 @@ def get_user_collection(pseudo: str, db: Session = Depends(get_db), x_admin_key:
         qty = owned_rows.get(c.id, 0)
         if c.tier.value in upcoming and not qty and not reveal:
             continue                                   # une édition pas encore commencée reste une surprise pour tout le monde
+        if c.tier == Tier.saison and not qty and not reveal:
+            continue                                   # un trophée de saison n'est visible que de ceux qui l'ont gagné
         out.append({**(card_out(c) if (qty > 0 or reveal) else locked_out(c)), "quantity": qty})
     return out
 
@@ -480,6 +485,8 @@ def create_listing(
     owned = db.query(OwnedCard).filter_by(user_id=user.id, card_id=payload.card_id).first()
     if not owned or owned.quantity < 1:
         raise HTTPException(status_code=400, detail="Tu ne possèdes pas cette carte")
+    if owned.card.tier == Tier.saison:
+        raise HTTPException(status_code=400, detail="Un trophée de saison ne se vend pas : c'est un souvenir")
     owned.quantity -= 1  # la carte est réservée tant que l'annonce est ouverte
     listing = Listing(seller_id=user.id, card_id=payload.card_id, price=payload.price)
     db.add(listing)
@@ -609,6 +616,7 @@ def duel_proposals(db: Session = Depends(get_db), viewer: Optional[User] = Depen
 def create_duel_proposal(payload: challenges.TargetedCreateRequest, user: User = Depends(get_current_user),
                          db: Session = Depends(get_db)):
     target = challenges.resolve_target(db, user, payload.target)          # défi adressé à un joueur précis (facultatif)
+    challenges.check_no_trophy(db, payload.slots)                          # un trophée de saison ne joue pas
     slots = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in payload.slots]
     proposal = duel_call(duel_engine.create_proposal, db, user, payload.formation, payload.tactic, payload.stake,
                          slots, payload.captain_card_id, payload.fan_card_id, payload.equipment_card_ids, payload.mascot_card_id, payload.referee_bid)
@@ -633,6 +641,7 @@ def cancel_duel_proposal(proposal_id: str, user: User = Depends(get_current_user
 def play_duel_proposal(proposal_id: str, payload: schemas.TeamPayload, user: User = Depends(get_current_user),
                        db: Session = Depends(get_db)):
     challenges.check_can_play(db, user, proposal_id)          # un défi privé ne se joue que par le joueur défié
+    challenges.check_no_trophy(db, payload.slots)             # un trophée de saison ne joue pas
     slots = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in payload.slots]
     result = duel_call(duel_engine.play_proposal, db, user, proposal_id, payload.formation, payload.tactic, slots,
                        payload.captain_card_id, payload.fan_card_id, payload.equipment_card_ids, payload.mascot_card_id, payload.referee_bid)
@@ -739,7 +748,6 @@ def purge_card_rows(db: Session, card_ids: list):
         return
     duel_engine.purge_card_references(db, card_ids)
     offers.refund_for_cards(db, card_ids)          # offres d'achat visant ces cartes : annulées et remboursées
-    seasons.forget_cards(db, card_ids)             # ces cartes ne sont plus des prix de saison
     db.query(Listing).filter(Listing.card_id.in_(card_ids)).delete(synchronize_session=False)
     db.query(OwnedCard).filter(OwnedCard.card_id.in_(card_ids)).delete(synchronize_session=False)
     db.query(TeamSlot).filter(TeamSlot.card_id.in_(card_ids)).delete(synchronize_session=False)      # ancien 1v1
@@ -798,7 +806,7 @@ def admin_list_editions(db: Session = Depends(get_db)):
 
 @app.get("/admin/edition-slots", dependencies=[Depends(require_admin)])
 def admin_edition_slots(db: Session = Depends(get_db)):
-    """Les 6 emplacements d'éditions libres : lesquels sont déjà créés, lesquels sont libres."""
+    """Les 12 emplacements d'éditions libres : lesquels sont déjà créés, lesquels sont libres."""
     return [{"slot": k, "free": not game_logic.edition_configured(db, k), **{x: v for x, v in game_logic.edition_info(db, k).items() if x in ("label", "icon", "status", "cards")}}
             for k in game_logic.CUSTOM_EDITION_SLOTS]
 
@@ -827,7 +835,7 @@ def admin_define_edition(payload: schemas_social.DefineEditionRequest, db: Sessi
     if slot == "auto":
         slot = next((k for k in game_logic.CUSTOM_EDITION_SLOTS if not game_logic.edition_configured(db, k)), None)
         if slot is None:
-            raise HTTPException(status_code=400, detail="Les 6 emplacements sont pris : supprime une ancienne édition (sans carte) avant d'en créer une autre")
+            raise HTTPException(status_code=400, detail="Les 12 emplacements sont pris : supprime une ancienne édition (sans carte) avant d'en créer une autre")
     elif slot not in game_logic.CUSTOM_EDITION_SLOTS:
         raise HTTPException(status_code=400, detail="L'emplacement doit être auto, " + ", ".join(game_logic.CUSTOM_EDITION_SLOTS))
     if db.query(Card).filter_by(tier=Tier(slot)).count() > 0:
@@ -1450,6 +1458,8 @@ def admin_create_card(payload: schemas.AdminCreateCardRequest, db: Session = Dep
     player = db.query(Player).filter_by(name=payload.player_name).first()
     if not player:
         raise HTTPException(status_code=404, detail="Joueur introuvable")
+    if (game_logic.card_kind(player) == "trophee") != (tier == Tier.saison):
+        raise HTTPException(status_code=400, detail="La rareté « saison » est réservée aux trophées de saison (créés automatiquement à la clôture d'une saison), et un trophée n'existe qu'en rareté « saison »")
     card = db.query(Card).filter_by(player_id=player.id, tier=tier).first()
     created = False
     if not card:
