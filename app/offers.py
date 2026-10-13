@@ -81,6 +81,8 @@ def create_offer(payload: CreateOfferRequest, user: User = Depends(get_current_u
     card = db.query(Card).filter_by(id=payload.card_id).first()
     if card is None:
         raise HTTPException(status_code=404, detail="Cette carte n'existe pas")
+    if card.tier.value == "saison":
+        raise HTTPException(status_code=400, detail="Un trophée de saison ne s'achète pas : seul son gagnant l'a")
     if db.query(BuyOffer).filter_by(buyer_id=user.id).count() >= MAX_OPEN_OFFERS:
         raise HTTPException(status_code=400, detail="Tu as déjà %d offres d'achat ouvertes : annule-en une avant d'en faire une autre" % MAX_OPEN_OFFERS)
     if db.query(BuyOffer).filter_by(buyer_id=user.id, card_id=card.id).first():
