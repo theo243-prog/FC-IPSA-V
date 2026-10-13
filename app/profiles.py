@@ -49,7 +49,7 @@ LADDERS = [
 ]
 SHOWCASE_MAX = 3
 # Pour la vitrine automatique : les raretés de la plus précieuse à la plus commune.
-TIER_VALUE_ORDER = ["saison", "legendaire", "secrete", "speciale", "epique", "halloween", "noel", "gold", "rare", "commune"]
+TIER_VALUE_ORDER = ["saison", "legendaire", "secrete", "speciale", "epique", "ed6", "ed5", "ed4", "ed3", "ed2", "ed1", "halloween", "noel", "gold", "rare", "commune"]
 
 
 # ------------------------------------------------------------------ base de données
