@@ -31,7 +31,8 @@ DUPLICATE_SELL_VALUE = {"commune": 1, "rare": 3, "halloween": 5, "noel": 5, "gol
 
 # Ordre de rareté, de la plus commune à la plus rare.
 TIER_ORDER = ["commune", "rare", "halloween", "noel", "gold", "secrete", "speciale", "epique", "saison", "legendaire"]
-EDITION_TIERS = ("halloween", "noel")      # les éditions limitées : plus rares que la rare, moins que les autres
+CUSTOM_EDITION_SLOTS = ("ed1", "ed2", "ed3", "ed4", "ed5", "ed6")       # emplacements libres : tu les nommes toi-même (voir define_edition)
+EDITION_TIERS = ("halloween", "noel") + CUSTOM_EDITION_SLOTS      # les éditions limitées : plus rares que la rare, moins que les autres
 
 # Types de packs. "guaranteed" = raretés garanties ; les autres cartes (jusqu'à 3) suivent les probas classiques.
 PACK_TYPES = {
@@ -134,6 +135,8 @@ EDITIONS = {
     "halloween": {"label": "Halloween", "icon": "🎃", "start": "2026-10-08", "end": "2026-11-30"},
     "noel": {"label": "Noël", "icon": "❄️", "start": "2026-12-01", "end": "2026-12-31"},
 }
+for _slot in CUSTOM_EDITION_SLOTS:       # un emplacement pas encore configuré : jamais « en cours » (dates très lointaines) et sans carte
+    EDITIONS[_slot] = {"label": "Édition libre " + _slot[2:], "icon": "🎁", "start": "2100-01-01", "end": "2100-01-01", "custom": True}
 EDITION_SHARE = {"classique": 0.08, "match": 0.10}      # part des cartes tirées qui sont de l'édition en cours (8 % / 10 %)
 
 
@@ -147,10 +150,63 @@ def _parse_day(text: str):
     return datetime.strptime(text, "%Y-%m-%d").date()
 
 
+def _edition_defs(db: Session) -> dict:
+    """Les éditions libres déjà configurées : {emplacement: nom, emoji, 2 couleurs, dates}."""
+    import json
+    row = db.get(AppSetting, "edition_defs")
+    try:
+        data = json.loads(row.value) if row is not None else {}
+    except ValueError:
+        data = {}
+    return data if isinstance(data, dict) else {}
+
+
+def edition_spec(db: Session, key: str) -> dict:
+    """Nom, emoji, couleurs et dates de départ d'une édition (pour une édition libre : ceux que tu as choisis)."""
+    spec = dict(EDITIONS[key])
+    spec.update({k: v for k, v in _edition_defs(db).get(key, {}).items() if k in ("label", "icon", "c1", "c2", "start", "end")})
+    return spec
+
+
+def edition_configured(db: Session, key: str) -> bool:
+    """Halloween et Noël existent toujours ; un emplacement libre n'existe qu'une fois configuré."""
+    return key in EDITIONS and (not EDITIONS[key].get("custom") or key in _edition_defs(db))
+
+
+def define_edition(db: Session, key: str, label: str, icon: str, c1: str, c2: str, start: str, end: str) -> None:
+    """Configure (ou reconfigure) un emplacement libre. Le contrôle des valeurs est fait par la route d'administration."""
+    import json
+    defs = _edition_defs(db)
+    defs[key] = {"label": label, "icon": icon, "c1": c1, "c2": c2, "start": start, "end": end}
+    row = db.get(AppSetting, "edition_defs")
+    if row is None:
+        db.add(AppSetting(key="edition_defs", value=json.dumps(defs)))
+    else:
+        row.value = json.dumps(defs)
+
+
+def remove_edition(db: Session, key: str) -> None:
+    """Libère un emplacement : il redevient « Édition libre N » (seulement possible s'il n'a plus aucune carte)."""
+    import json
+    defs = _edition_defs(db)
+    defs.pop(key, None)
+    row = db.get(AppSetting, "edition_defs")
+    if row is not None:
+        row.value = json.dumps(defs)
+    dates = db.get(AppSetting, "edition_dates")
+    if dates is not None:
+        try:
+            d = json.loads(dates.value)
+            d.pop(key, None)
+            dates.value = json.dumps(d)
+        except ValueError:
+            pass
+
+
 def edition_window(db: Session, key: str):
     """(début, fin) d'une édition, fin comprise : les dates changées par commande priment sur celles de départ."""
     import json
-    spec = EDITIONS[key]; start, end = spec["start"], spec["end"]
+    spec = edition_spec(db, key); start, end = spec["start"], spec["end"]
     row = db.get(AppSetting, "edition_dates")
     if row is not None:
         try:
@@ -171,8 +227,9 @@ def edition_status(db: Session, key: str, today=None) -> str:
 def edition_info(db: Session, key: str, today=None) -> dict:
     start, end = edition_window(db, key)
     n = db.query(Card).filter_by(tier=Tier(key)).count()
-    return {"key": key, "label": EDITIONS[key]["label"], "icon": EDITIONS[key]["icon"], "start": start.isoformat(), "end": end.isoformat(),
-            "status": edition_status(db, key, today), "cards": n}
+    spec = edition_spec(db, key)
+    return {"key": key, "label": spec["label"], "icon": spec["icon"], "c1": spec.get("c1"), "c2": spec.get("c2"), "custom": bool(spec.get("custom")),
+            "configured": edition_configured(db, key), "start": start.isoformat(), "end": end.isoformat(), "status": edition_status(db, key, today), "cards": n}
 
 
 def weights_with_editions(db: Session, base_weights: dict, kind: str, counts: dict, today=None) -> dict:
@@ -209,8 +266,8 @@ def classic_tier_weights(counts: dict, base_weights: dict = None) -> dict:
 # secrètes (fusion seulement) ne sortent jamais d'un pack à vendre.
 SLOT_RULES = {
     "toutes": None,
-    "rare_plus": {"rare", "halloween", "noel", "gold", "epique", "legendaire"},          # pas de commune
-    "edition_min": {"halloween", "noel", "gold", "epique", "legendaire"},                # édition limitée ou mieux : pas de commune ni de rare
+    "rare_plus": {"rare", "gold", "epique", "legendaire"} | set(EDITION_TIERS),          # pas de commune
+    "edition_min": {"gold", "epique", "legendaire"} | set(EDITION_TIERS),                # édition limitée ou mieux : pas de commune ni de rare
     "epique_legendaire": {"epique", "legendaire"},
 }
 
@@ -519,7 +576,7 @@ def pack_odds(db: Session) -> dict:
     return {"counts": counts, "packs": packs, "never_in_packs": ["secrete"],
             "sell_values": DUPLICATE_SELL_VALUE, "secret_fusion": {"cost": SECRET_FUSION_COST, "rare_value": RARE_FUSION_VALUE},
             "tier_order": TIER_ORDER, "free_packs_max": MAX_STORED_PACKS, "free_pack_hours": PACK_REGEN_SECONDS // 3600,
-            "editions": [edition_info(db, k) for k in EDITIONS]}
+            "editions": [edition_info(db, k) for k in EDITIONS if edition_configured(db, k)]}
 
 
 # ---------------------------------------------------------------------
@@ -574,3 +631,15 @@ def set_tier_photo(player, tier: str, url: str) -> None:
     else:
         data.pop(tier, None)
     player.tier_photos = json.dumps(data, ensure_ascii=False) if data else None
+
+
+# ---------------------------------------------------------------------
+# Les 6 emplacements d'édition libres (ed1 à ed6) suivent exactement les mêmes règles qu'Halloween et Noël :
+# même note, même bonus de fan, même prix de revente d'un doublon, même place dans l'ordre des raretés.
+# ---------------------------------------------------------------------
+for _slot in CUSTOM_EDITION_SLOTS:
+    TIER_REF_COUNT[_slot] = TIER_REF_COUNT["halloween"]
+    DUPLICATE_SELL_VALUE[_slot] = DUPLICATE_SELL_VALUE["halloween"]
+    CARD_NOTE[_slot] = CARD_NOTE["halloween"]
+    TIER_FAN_BONUS[_slot] = TIER_FAN_BONUS["halloween"]
+TIER_ORDER[TIER_ORDER.index("noel") + 1:TIER_ORDER.index("noel") + 1] = list(CUSTOM_EDITION_SLOTS)
