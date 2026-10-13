@@ -40,6 +40,12 @@ class Tier(str, enum.Enum):
     secrete = "secrete"      # jamais dans les packs : se débloque par fusion de doublons
     speciale = "speciale"    # créée chaque vendredi 17h pour les stars du 1v1 ; packs gagnés en 1v1 uniquement
     epique = "epique"
+    ed1 = "ed1"      # ÉDITIONS LIBRES : 6 emplacements que tu nommes toi-même (page d'administration > Éditions)
+    ed2 = "ed2"
+    ed3 = "ed3"
+    ed4 = "ed4"
+    ed5 = "ed5"
+    ed6 = "ed6"
     saison = "saison"      # carte EXCLUSIVE du podium d'une saison 1v1 : jamais dans les packs (voir seasons.py)
     legendaire = "legendaire"
 
