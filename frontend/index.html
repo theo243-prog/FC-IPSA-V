@@ -187,6 +187,7 @@
   .tier-saison .card-name,.tier-saison.has-photo .card-name{color:#FFF6D9;text-shadow:0 0 6px rgba(0,0,0,.85),0 1px 2px rgba(0,0,0,.9);}
   .tier-saison .card-stats span{background:rgba(0,0,0,.4);color:#FFE9A8;}
   .card-deco-emoji{line-height:1;pointer-events:none;z-index:1;}
+  .trophy-medal{font-size:1em;}
   .card-deco-trophy{top:30px;right:6px;font-size:28px;line-height:1;z-index:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.55));}
   .tab.active::after{content:"";position:absolute;left:10px;right:10px;bottom:3px;height:9px;background:linear-gradient(to bottom,var(--stripe) 0,var(--stripe) 3px,transparent 3px,transparent 5px,var(--stripe) 5px,var(--stripe) 9px);}
   .tab-panel{display:none;}
@@ -635,9 +636,23 @@
   .star-item{display:flex;flex-direction:column;align-items:center;gap:6px;}
   .star-caption{font-size:12px;font-weight:700;color:var(--text-muted);}
   /* ---- 1v1 ---- */
-  .duel-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+  .duel-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch;}
   .duel-grid .panel-box{margin-bottom:0;}
-  .duel-grid .duel-proposals{grid-column:1 / -1;}
+  .duel-grid .duel-proposals{grid-column:1 / -1;border-top:5px solid var(--accent);}
+  .duel-grid .duel-proposals h2{font-size:26px;}
+  .duel-grid #duelWeekBox{grid-column:auto;}
+  /* cellules à hauteur fixe : le contenu défile à l'intérieur (comme les stats des joueurs) */
+  /* cellules à hauteur FIXE : ce qui dépasse défile À L'INTÉRIEUR de la cellule (comme « Stats des joueurs »). Ordre : Défis (la plus haute, tout en haut), puis 2 par 2. */
+  .duel-grid{align-items:start;}
+  .duel-grid .cell{display:flex;flex-direction:column;height:490px;overflow:hidden;}
+  .duel-grid .cell>h2,.duel-grid .cell>.duel-hint,.duel-grid .cell>.duel-proposals-head,.duel-grid .cell>.season-prizes{flex:none;}
+  .duel-grid .cell .cell-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
+  .duel-grid .duel-proposals.cell{height:540px;box-shadow:0 6px 22px rgba(0,0,0,.12);}
+  .duel-grid .season-prizes{flex-wrap:nowrap;gap:8px;margin:10px 0 4px;}
+  .duel-grid .season-prizes .prize{flex:1 1 0;min-width:0;padding:6px 3px;}
+  .duel-grid .season-prizes .card{zoom:.8;}
+  .duel-grid .season-prizes .p-credits{font-size:12px;margin:2px 0 4px;}
+  table.duel-table th{position:sticky;top:0;background:var(--bg-elevated);z-index:1;}
   @media (max-width:760px){.duel-grid{grid-template-columns:1fr;}}
   .duel-proposals-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
   .duel-proposals-head h2{margin:0;}
@@ -852,38 +867,39 @@
     <section id="tab-duels" class="tab-panel">
       <div class="help-row"><button class="help-btn" type="button" data-help="duels"><span class="help-q">?</span> Aide</button></div>
       <div class="duel-grid">
-        <div class="panel-box season-box" id="seasonBox" hidden>
+        <div class="panel-box duel-proposals cell">
+          <div class="duel-proposals-head">
+            <h2>⚔️ Défis</h2>
+            <button class="btn-primary" id="proposeMatchBtn">⚔️ Proposer un match</button>
+          </div>
+          <p class="duel-hint">Un défi bloque ta mise le temps qu'il est ouvert. Le gagnant d'un match remporte les deux mises et un pack match (un peu meilleur que le classique) ; le perdant reçoit un pack classique, et en cas de nul chacun reçoit le sien. Pas de limite de packs : joue autant que tu veux. Les tactiques restent secrètes jusqu'au coup d'envoi.</p>
+          <div class="cell-scroll" id="duelProposalsEl"></div>
+        </div>
+        <div class="panel-box season-box cell" id="seasonBox" hidden>
           <h2 id="seasonTitle">🏆 Saison</h2>
           <p class="duel-hint" id="seasonHint"></p>
-          <div id="seasonStandings"></div>
+          <div class="cell-scroll" id="seasonStandings"></div>
           <div class="season-prizes" id="seasonPrizes"></div>
           <p class="duel-hint" id="seasonLast" style="margin-top:10px;"></p>
         </div>
-        <div class="panel-box">
+        <div class="panel-box cell duel-grid-board">
           <h2>Profils & classement Elo</h2>
-          <div id="duelBoardEl"></div>
+          <div class="cell-scroll" id="duelBoardEl"></div>
         </div>
-        <div class="panel-box">
+        <div class="panel-box cell">
           <h2>Derniers matchs</h2>
-          <div id="duelHistoryEl"></div>
+          <p class="duel-hint">Les plus récents d'abord : fais défiler la liste pour voir les anciens.</p>
+          <div class="cell-scroll" id="duelHistoryEl"></div>
         </div>
-        <div class="panel-box duel-proposals">
-          <div class="duel-proposals-head">
-            <h2>Défis</h2>
-            <button class="btn-primary" id="proposeMatchBtn">Proposer un match</button>
-          </div>
-          <p class="duel-hint">Un défi bloque ta mise le temps qu'il est ouvert. Le gagnant d'un match remporte les deux mises et un pack match (un peu meilleur que le classique) ; le perdant reçoit un pack classique, et en cas de nul chacun reçoit le sien. Pas de limite de packs : joue autant que tu veux. Les tactiques restent secrètes jusqu'au coup d'envoi.</p>
-          <div id="duelProposalsEl"></div>
-        </div>
-        <div class="panel-box duel-stars" id="duelWeekBox">
+        <div class="panel-box duel-stars cell" id="duelWeekBox">
           <h2>Cartes stars de la semaine</h2>
           <p class="duel-hint" id="duelWeekHint" style="margin-bottom:12px;"></p>
-          <div id="duelWeekEl"></div>
+          <div class="cell-scroll" id="duelWeekEl"></div>
         </div>
-        <div class="panel-box duel-stars">
+        <div class="panel-box duel-stars cell">
           <h2>Cartes stars de tous les temps</h2>
           <p class="duel-hint" style="margin-bottom:12px;">L'historique complet des matchs 1v1, depuis le début.</p>
-          <div id="duelStarsEl"></div>
+          <div class="cell-scroll" id="duelStarsEl"></div>
         </div>
       </div>
     </section>
@@ -1061,7 +1077,7 @@
       if (btn.dataset.tab === 'shop') loadShop();
       if (btn.dataset.tab === 'classement') loadLeaderboard();
       if (btn.dataset.tab === 'actualite') loadNews();
-      if (btn.dataset.tab === 'duels') loadDuelsTab();
+      if (btn.dataset.tab === 'duels') { loadDuelsTab(); setTimeout(fitDuelCells, 600); setTimeout(fitDuelCells, 1800); }
     });
   });
 
@@ -1108,8 +1124,17 @@
     if (poste === 'EQUIPEMENT') return 'equipement';
     if (poste === 'STADE') return 'stade';
     if (poste === 'MOMENT') return 'moment';
+    if (poste === 'TROPHEE') return 'trophee';
     return 'joueur';
   }
+  // un trophée de saison s'appelle « Vainqueur de saison (octobre 2026) » : le titre en grand, le mois dessous
+  const TROPHY_MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
+  function trophyParts(card){
+    if (card.trophy) return card.trophy;
+    const m = /^(.*) \((.*)\)$/.exec(card.player_name || ''); const title = m ? m[1] : (card.player_name || '');
+    return { title, label: m ? m[2] : '', rank: /^Vainqueur/.test(title) ? 1 : /^Deuxi/.test(title) ? 2 : 3, season: null };
+  }
+  function trophyMedalHTML(card){ return '<div class="item-medal trophy-medal"><span class="item-icon" aria-hidden="true">' + TROPHY_MEDALS[trophyParts(card).rank] + '</span></div>'; }
   // une carte gold s'appelle « Petit pont — Mathis » : l'action en titre, le joueur en dessous
   function momentParts(name){
     const i = name.indexOf(' — ');
@@ -1117,7 +1142,7 @@
     return { action: name.slice(0, i), who: name.slice(i + 3).replace(/ \(\d\d\/\d\d\)\+*$/, '').replace(/\++$/, '') };
   }
   // Sur une carte SECRÈTE, c'est le surnom du joueur qui s'écrit (à défaut, son prénom) ; son numéro de maillot est dans la ligne du bas.
-  function cardDisplayName(card){ if (cardKind(card) === 'moment') return momentParts(card.player_name).action; return (card.tier === 'secrete' && card.surnom) ? card.surnom : card.player_name; }
+  function cardDisplayName(card){ if (cardKind(card) === 'trophee') return trophyParts(card).title; if (cardKind(card) === 'moment') return momentParts(card.player_name).action; return (card.tier === 'secrete' && card.surnom) ? card.surnom : card.player_name; }
   function numChip(card){ return (card.tier === 'secrete' && card.numero != null && card.numero !== '') ? '<span class="card-num" title="Numéro de maillot">#' + escapeHtml(String(card.numero)) + '</span>' : ''; }
   const EQUIP_BONUS_PCT = { commune: 1, rare: 2, epique: 3, legendaire: 5 };
   const ITEM_ICONS = {
@@ -1142,8 +1167,12 @@
   }
 
   // bonus d'équipe (en %) apporté par une carte Fan en match 1v1, selon sa rareté
-  const FAN_BONUS_PCT = { ed1: 11, ed2: 11, ed3: 11, ed4: 11, ed5: 11, ed6: 11, commune: 5, rare: 10, halloween: 11, noel: 11, epique: 12, secrete: 13, saison: 14, legendaire: 15 };
-  const EDITION_TIERS = ['halloween', 'noel', 'ed1', 'ed2', 'ed3', 'ed4', 'ed5', 'ed6'];          // les éditions limitées : un thème, des dates (ed1 à ed6 = éditions libres créées depuis l'administration)
+  const FAN_BONUS_PCT = { commune: 5, rare: 10, halloween: 11, noel: 11, epique: 12, secrete: 13, saison: 14, legendaire: 15 };
+  const ED_SLOTS = Array.from({ length: 12 }, (_, i) => 'ed' + (i + 1));          // 12 emplacements d'éditions libres, créés depuis l'administration
+  // Une édition libre reçoit automatiquement un style à 2 couleurs. Pour lui donner un habillage dessiné à la main (comme les toiles d'Halloween
+  // ou les flocons de Noël), on écrit son CSS dans cette page et on ajoute ici sa clé (ex. 'ed3') : le style automatique s'efface alors pour elle.
+  const DESIGNED_EDITIONS = new Set();
+  const EDITION_TIERS = ['halloween', 'noel', ...ED_SLOTS];          // les éditions limitées : un thème, des dates (ed1 à ed6 = éditions libres créées depuis l'administration)
   let editionsInfo = {};                                 // {halloween: {label, icon, start, end, status, cards}} (lu sur le serveur)
   function isMascot(card){ return cardKind(card) === 'mascotte'; }
   // le médaillon de la mascotte : le blason du loup (ou, en légendaire, un loup holographique animé)
@@ -1168,6 +1197,9 @@
     } else if (kind === 'moment') {
       statsRow = '<div class="card-stats" title="Moment mémorable d\'un match"><span>🌟 ' + escapeHtml(momentParts(card.player_name).who) + '</span></div>';
       posteLabel = '🌟';
+    } else if (kind === 'trophee') {
+      statsRow = '<div class="card-stats" title="Trophée de saison : un souvenir"><span>🏆 ' + escapeHtml(trophyParts(card).label) + '</span></div>';
+      posteLabel = TROPHY_MEDALS[trophyParts(card).rank];
     } else if (kind === 'mascotte') {
       statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🐺 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span></div>';
       posteLabel = '🐺';
@@ -1180,10 +1212,11 @@
     }
     const bgPhoto = usesBgPhoto(card) ? '<img class="card-bgphoto" src="' + escapeHtml(card.player_photo_url) + '" alt="">' : '';
     if (kind === 'mascotte') midHTML = mascotMedalHTML(card.tier);
+    else if (kind === 'trophee') midHTML = trophyMedalHTML(card);
     else if (bgPhoto) midHTML = '';
     else if (kind === 'equipement' || kind === 'stade' || kind === 'moment') midHTML = itemMedalHTML(card);
     else midHTML = '<span class="ball-fallback">⚽</span>';
-    return bgPhoto + editionDecor(card.tier) + '<div class="card-top"><span class="card-tier-label">'+tierLabel(card.tier)+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
+    return bgPhoto + (kind === 'trophee' ? '' : editionDecor(card.tier)) + '<div class="card-top"><span class="card-tier-label">'+tierLabel(card.tier)+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
       '<div class="card-mid">'+midHTML+'</div>'+
       '<div><div class="card-name"></div>'+statsRow+'</div>'+
       crestIco('card-watermark');
@@ -1224,7 +1257,7 @@
     if (tier === 'noel') return FLAKES.map(f => '<svg class="card-deco card-deco-flake" aria-hidden="true" style="left:' + f[0] + '%;top:' + f[1] + '%;width:' + f[2] + 'px;height:' + f[2] + 'px;opacity:' + f[3] + '"><use href="#flake" width="100%" height="100%"/></svg>').join('') + '<svg class="card-deco card-deco-snow" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 8C12 3 22 4 33 7S54 11 66 6 88 3 100 7V40H0z" fill="#fff"/><path d="M0 8C12 3 22 4 33 7S54 11 66 6 88 3 100 7" fill="none" stroke="#D4E3F2" stroke-width="1.1"/></svg>';
     if (tier === 'secrete') return '<div class="card-deco card-deco-saturn" aria-hidden="true"></div>';
     if (tier === 'saison') return '<div class="card-deco card-deco-trophy" aria-hidden="true">🏆</div>';
-    if (EDITION_TIERS.includes(tier)) { const ic = editionsInfo[tier] ? editionsInfo[tier].icon : '🎁'; return FLAKES.slice(0, 8).map(f => '<span class="card-deco card-deco-emoji" aria-hidden="true" style="left:' + f[0] + '%;top:' + f[1] + '%;font-size:' + (f[2] + 5) + 'px;opacity:' + (f[3] * 0.75).toFixed(2) + '">' + ic + '</span>').join(''); }       // édition libre : son emoji, semé sur la carte
+    if (EDITION_TIERS.includes(tier) && !DESIGNED_EDITIONS.has(tier)) { const ic = editionsInfo[tier] ? editionsInfo[tier].icon : '🎁'; return FLAKES.slice(0, 8).map(f => '<span class="card-deco card-deco-emoji" aria-hidden="true" style="left:' + f[0] + '%;top:' + f[1] + '%;font-size:' + (f[2] + 5) + 'px;opacity:' + (f[3] * 0.75).toFixed(2) + '">' + ic + '</span>').join(''); }       // édition libre : son emoji, semé sur la carte
     return '';
   }
   function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -1249,7 +1282,7 @@
     if (locked) return makeLockedCard(card);
     const el = document.createElement('div');
     el.className = 'card tier-' + card.tier;
-    el.style.background = EDITION_TIERS.includes(card.tier) ? '' : 'linear-gradient(160deg, var(--' + (card.tier === 'legendaire' ? 'legend-2' : card.tier + '-2') + '), var(--' + (card.tier === 'legendaire' ? 'legend-1' : card.tier + '-1') + '))';
+    el.style.background = (EDITION_TIERS.includes(card.tier) || card.tier === 'saison') ? '' : 'linear-gradient(160deg, var(--' + (card.tier === 'legendaire' ? 'legend-2' : card.tier + '-2') + '), var(--' + (card.tier === 'legendaire' ? 'legend-1' : card.tier + '-1') + '))';
     el.innerHTML = cardFrontHTML(card);
     markPhotoCard(el, card);
     setCardName(el, cardDisplayName(card));
@@ -1261,8 +1294,19 @@
       el.appendChild(badge);
     }
     el.style.cursor = 'pointer';
-    el.addEventListener('click', () => openPlayerDetail(card.player_name, card.tier, card));
+    el.addEventListener('click', () => cardKind(card) === 'trophee' ? openTrophySheet(card) : openPlayerDetail(card.player_name, card.tier, card));
     return el;
+  }
+  function openTrophySheet(card){
+    const t = trophyParts(card), preview = String(card.id || '').startsWith('trophy-');
+    document.getElementById('modalTitle').textContent = card.player_name;
+    const body = document.getElementById('modalBody');
+    body.innerHTML = '<div style="text-align:center;font-size:64px;line-height:1.1;margin:6px 0;">' + TROPHY_MEDALS[t.rank] + '</div><p style="text-align:center;font-weight:700;">' + (preview ? 'Cette carte sera remise à la fin de la saison de ' + escapeHtml(t.label) + '.' : 'Trophée de la saison de ' + escapeHtml(t.label) + '.') + '</p><p class="muted" style="text-align:center;">Un trophée n\'est qu\'un souvenir : il n\'a ni note ni bonus, ne joue pas de match, ne se vend pas et ne s\'échange pas. Il ne compte pas dans le pourcentage de collection.</p>';
+    if (!preview && card.quantity > 0 && !card._viewing) {
+      body.insertAdjacentHTML('beforeend', '<div class="share-actions" style="margin-top:14px;"><button class="btn-secondary" type="button" id="shareCardBtn">📤 Partager ce trophée</button></div>');
+      document.getElementById('shareCardBtn').addEventListener('click', () => openShareCard(card));
+    }
+    document.getElementById('userCollectionModal').style.display = 'flex';
   }
 
   // ---------- Fiche détaillée d'un joueur ----------
@@ -1460,7 +1504,7 @@
     const box = document.getElementById('profShowcaseEditor');
     try {
       const all = (await api('/collection')).filter(c => c.quantity > 0);
-      const order = ['saison', 'legendaire', 'secrete', 'speciale', 'epique', 'halloween', 'noel', 'gold', 'rare', 'commune'];
+      const order = ['saison', 'legendaire', 'secrete', 'speciale', 'epique', ...ED_SLOTS.slice().reverse(), 'halloween', 'noel', 'gold', 'rare', 'commune'];
       all.sort((a, b) => (order.indexOf(a.tier) - order.indexOf(b.tier)) || cardDisplayName(a).localeCompare(cardDisplayName(b), 'fr'));
       const cur = p.showcase_auto ? [] : p.showcase.map(c => c.id);
       const opts = '<option value="">— aucune —</option>' + all.map(c => '<option value="' + c.id + '">' + escapeHtml(cardDisplayName(c)) + ' · ' + escapeHtml(tierLabel(c.tier)) + '</option>').join('');
@@ -1483,7 +1527,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.13.4';
+  const SITE_VERSION = '2026.10.13.5';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -1504,7 +1548,7 @@
         return '<tr class="' + (r.pseudo === myPseudo ? 'me' : '') + (r.eligible ? '' : ' dim') + '"><td><span class="rank-num">' + medal + '</span></td><td>' + escapeHtml(r.pseudo) + (r.pseudo === myPseudo ? ' (toi)' : '') + '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.matches + '</td><td class="num">' + r.wins + '</td></tr>';
       }).join('') + '</tbody></table>' : '<div class="empty-state">Personne n\'a encore joué ce mois-ci : sois le premier !</div>';
       const me = s.me ? '<div class="season-me">Ta place : n°' + s.me.rank + ' · Elo ' + s.me.elo + ' · ' + s.me.matches + ' match' + (s.me.matches > 1 ? 's' : '') + (s.me.eligible ? ' · tu peux monter sur le podium 🎯' : ' · encore ' + (s.min_matches - s.me.matches) + ' match' + (s.min_matches - s.me.matches > 1 ? 's' : '') + ' pour être éligible') + '</div>' : (token ? '<div class="season-me">Joue un match pour entrer au classement du mois.</div>' : '');
-      byId('seasonStandings').innerHTML = table + me;
+      byId('seasonStandings').innerHTML = '<div class="season-scroll">' + table + '</div>' + me;
       const prizes = byId('seasonPrizes'); prizes.innerHTML = '';
       s.prizes.forEach(p => {
         const d = document.createElement('div'); d.className = 'prize'; d.innerHTML = '<div class="p-medal">' + p.medal + '</div><div class="p-credits">+' + p.credits + ' crédits</div>';
@@ -1758,7 +1802,7 @@
   // Les éditions libres (ed1 à ed6) n'ont pas de style écrit d'avance : leurs couleurs viennent du serveur (celles choisies dans l'administration).
   function applyEditionStyles(){
     let st = document.getElementById('edStyles'); if (!st) { st = document.createElement('style'); st.id = 'edStyles'; document.head.appendChild(st); }
-    const eds = Object.values(editionsInfo).filter(e => e.custom && e.c1 && e.c2 && /^#[0-9A-Fa-f]{6}$/.test(e.c1) && /^#[0-9A-Fa-f]{6}$/.test(e.c2));
+    const eds = Object.values(editionsInfo).filter(e => e.custom && !DESIGNED_EDITIONS.has(e.key) && e.c1 && e.c2 && /^#[0-9A-Fa-f]{6}$/.test(e.c1) && /^#[0-9A-Fa-f]{6}$/.test(e.c2));
     st.textContent = eds.map(e => {
       const k = e.key, c1 = e.c1, c2 = e.c2;
       return '.card-front.tier-' + k + ',.card.tier-' + k + ':not(.locked){background:radial-gradient(90% 60% at 30% 0%,rgba(255,255,255,.28),rgba(255,255,255,0) 60%),linear-gradient(172deg,' + c2 + ' 0%,' + c1 + ' 100%);color:#fff;box-shadow:var(--shadow),inset 0 0 0 2px ' + c2 + ',inset 0 0 14px rgba(255,255,255,.4);}' +
@@ -1770,15 +1814,16 @@
   }
   function buildTierGroups(cards, withSell){
     const frag = document.createDocumentFragment();
-    ['saison','legendaire','epique','speciale','secrete','gold','ed6','ed5','ed4','ed3','ed2','ed1','noel','halloween','rare','commune'].forEach(tier => {
+    ['saison','legendaire','epique','speciale','secrete','gold', ...ED_SLOTS.slice().reverse(), 'noel','halloween','rare','commune'].forEach(tier => {
       const cardsOfTier = cards.filter(c => c.tier === tier)
         .sort((a, b) => (!!b.quantity - !!a.quantity) || (a.quantity ? a.player_name.localeCompare(b.player_name, 'fr') : a.id - b.id));   // d'abord celles qu'on a ; les inconnues ensuite, sans indice
       if (!cardsOfTier.length) return;
       const owned = cardsOfTier.filter(c => c.quantity > 0).length;
+      if (tier === 'saison') cardsOfTier.sort((a, b) => String((trophyParts(b).season) || '').localeCompare(String(trophyParts(a).season || '')) || trophyParts(a).rank - trophyParts(b).rank);      // les plus récents d'abord
       const group = document.createElement('div'); group.className = 'tier-group' + (EDITION_TIERS.includes(tier) ? ' edition-group' : '');
       const ed = editionsInfo[tier];
       const edNote = ed ? '<span class="edition-note">' + ed.icon + ' Édition limitée · ' + (ed.status === 'active' ? 'dans les packs jusqu\'au ' + formatDay(ed.end) : ed.status === 'ended' ? 'terminée le ' + formatDay(ed.end) : 'à partir du ' + formatDay(ed.start)) + '</span>' : '';
-      group.innerHTML = '<h3>' + tierLabel(tier) + ' <span style="color:var(--text-muted);font-size:14px;font-family:var(--font-body);">' + owned + '/' + cardsOfTier.length + '</span>' + edNote + '</h3>';
+      group.innerHTML = '<h3>' + (tier === 'saison' ? 'Trophées de saison' : tierLabel(tier)) + (tier === 'saison' ? '' : ' <span style="color:var(--text-muted);font-size:14px;font-family:var(--font-body);">' + owned + '/' + cardsOfTier.length + '</span>') + edNote + '</h3>';
       const grid = document.createElement('div'); grid.className = 'collection-grid';
       cardsOfTier.forEach(card => {
         const wrap = document.createElement('div'); wrap.className = 'card-wrap';
@@ -1858,8 +1903,10 @@
 
   // ---------- Aide : un bouton « ? Aide » par onglet ----------
   // Les pourcentages de tirage et les chiffres du 1v1 viennent du serveur : l'aide ne peut pas être en retard sur les règles.
+  ED_SLOTS.forEach(k => { FAN_BONUS_PCT[k] = 11; });
   const TIER_COLORS = { saison: '#0F7A93', commune: '#C9965F', rare: '#B8C2C8', halloween: '#FF8A1F', noel: '#C8202C', gold: '#E0A21B', secrete: '#4B3FA0', speciale: '#2FA45E', epique: '#7A3FC9', legendaire: '#F0C84B' };
-  const TIER_NAMES_PL = { ed1: 'Édition libre 1', ed2: 'Édition libre 2', ed3: 'Édition libre 3', ed4: 'Édition libre 4', ed5: 'Édition libre 5', ed6: 'Édition libre 6', saison: 'Saison (podium)', commune: 'Commune', rare: 'Rare', halloween: 'Halloween (édition limitée)', noel: 'Noël (édition limitée)', gold: 'Gold', secrete: 'Secrète', speciale: 'Spéciale', epique: 'Épique', legendaire: 'Légendaire' };
+  const TIER_NAMES_PL = { saison: 'Saison (podium)', commune: 'Commune', rare: 'Rare', halloween: 'Halloween (édition limitée)', noel: 'Noël (édition limitée)', gold: 'Gold', secrete: 'Secrète', speciale: 'Spéciale', epique: 'Épique', legendaire: 'Légendaire' };
+  ED_SLOTS.forEach((k, n) => { TIER_NAMES_PL[k] = 'Édition libre ' + (n + 1); });
   let gameRules = null;
   async function getGameRules(){
     if (!gameRules) gameRules = await fetch(API_BASE + '/game/rules').then(r => r.json());
@@ -1967,7 +2014,7 @@
         '<li><b>1 Fan</b> : ' + range(cfg.fan_bonus, ['commune', 'rare', 'epique', 'secrete', 'legendaire']) + ' %, édition limitée +' + Math.round(cfg.fan_bonus.halloween * 100) + ' %.</li>' +
         '<li><b>1 Loup</b> (la mascotte) : mêmes bonus que le Fan.</li>' +
         '<li><b>' + cfg.max_equipment + ' Équipement</b> : ' + range(cfg.equipment_bonus, ['commune', 'rare', 'epique', 'legendaire']) + ' %.</li></ul>' +
-        '<h3>Les saisons</h3><p>Chaque mois est une <b>saison</b> : le 1er à minuit (heure de Paris), l\'Elo de tout le monde repart à <b>1000</b>. Il faut avoir joué au moins <b>5 matchs</b> dans le mois pour monter sur le podium. Les <b>3 premiers</b> gagnent des crédits (100, 60, 30) et une <b>carte exclusive « Saison »</b>, qui ne sort jamais d\'un pack. Le classement du mois, les récompenses et le podium précédent sont en haut de l\'onglet. Les cartes « Saison » ne comptent pas dans le pourcentage de collection.</p>' +
+        '<h3>Les saisons</h3><p>Chaque mois est une <b>saison</b> : le 1er à minuit (heure de Paris), l\'Elo de tout le monde repart à <b>1000</b>. Il faut avoir joué au moins <b>5 matchs</b> dans le mois pour monter sur le podium. Les <b>3 premiers</b> gagnent des crédits (100, 60, 30) et un <b>trophée</b> : une carte « Vainqueur de saison (mois) », « Deuxième de la saison (mois) » ou « Troisième de la saison (mois) ». Il y a un trophée par saison : être premier deux fois donne deux cartes différentes, jamais un doublon. Un trophée n\'est qu\'un <b>souvenir</b> : il ne sort d\'aucun pack, n\'a ni note ni bonus, ne joue pas de match, ne se vend pas, ne s\'achète pas et ne compte pas dans le pourcentage de collection. Il se range dans « Trophées de saison », dans ta collection.</p>' +
         '<h3>Mises, packs et classement</h3><ul>' +
         '<li><b>Mise</b> de ' + cfg.stake_min + ' à ' + cfg.stake_max + ' crédits, bloquée tant que le défi est ouvert. Le gagnant prend les deux mises <b>et un pack match</b> ; le perdant reçoit <b>un pack classique</b>. En cas de <b>nul</b>, chacun récupère sa mise <b>et reçoit un pack classique</b>. Il n\'y a aucune limite de packs gagnés par jour.</li>' +
         '<li><b>Enveloppe pour l\'arbitre</b> (facultative, sans plafond) : tu glisses des crédits à l\'arbitre en plus de ta mise. <b>Celui qui met le plus gagne +' + Math.round(cfg.referee_bonus * 100) + ' %</b> dans le match, comme un bonus d\'équipe ; en cas d\'égalité, personne ne l\'a. '
@@ -2013,7 +2060,7 @@
   const PLACE_MS = 520;        // la carte vient se ranger sous le pack
   const NEXT_MS = 380;         // pause avant que la carte suivante apparaisse
   // du moins rare au plus rare : la meilleure carte est toujours la dernière
-  const TIER_RANK = ['commune', 'rare', 'halloween', 'noel', 'ed1', 'ed2', 'ed3', 'ed4', 'ed5', 'ed6', 'gold', 'secrete', 'speciale', 'epique', 'legendaire'];
+  const TIER_RANK = ['commune', 'rare', 'halloween', 'noel', ...ED_SLOTS, 'gold', 'secrete', 'speciale', 'epique', 'legendaire'];
   const rarityRank = card => { const i = TIER_RANK.indexOf(card.tier); return i < 0 ? TIER_RANK.length : i; };
   const noteOf = card => (card.display_note && card.display_note.value) || 0;
   function sortByRarity(cards){
@@ -2463,6 +2510,16 @@
   }
 
   // ---- cellule 1 : profils et classement Elo
+  // la cellule montre exactement `n` lignes : les autres se voient en faisant défiler (souris ou doigt)
+  function fitRows(root, sel, n){
+    root.style.maxHeight = ''; return;               // (les cellules du 1v1 ont maintenant une hauteur fixe : la liste défile dedans)
+    const rows = root.querySelectorAll(sel);
+    if (rows.length <= n) { root.style.maxHeight = ''; return; }
+    const first = rows[0], last = rows[n - 1];
+    if (!first.offsetHeight) return;                 // onglet pas affiché : on garde la hauteur de départ (CSS), puis on réajuste à l'ouverture
+    root.style.maxHeight = (last.offsetTop + last.offsetHeight - first.offsetTop) + 'px';
+  }
+  function fitDuelCells(){ fitRows(byId('duelHistoryEl'), '.history-row', 5); fitRows(byId('duelProposalsEl'), '.proposal-row', 5); }
   async function loadDuelBoard(){
     loadSeason();
     try {
@@ -2535,7 +2592,7 @@
   // ---- cellule 2 : derniers matchs
   async function loadDuelHistory(){
     try {
-      const rows = await fetch(API_BASE + '/duel/history?limit=15').then(r => r.json());
+      const rows = await fetch(API_BASE + '/duel/history?limit=50').then(r => r.json());
       const root = byId('duelHistoryEl');
       if (!rows.length){ root.innerHTML = '<div class="empty-state">Aucun match joué pour l\'instant.</div>'; return; }
       root.innerHTML = '';
@@ -2548,6 +2605,7 @@
         btn.addEventListener('click', () => openHistoryMatch(h.id));
         row.appendChild(btn); root.appendChild(row);
       });
+      fitRows(root, '.history-row', 5);
     } catch(e) { toast(e.message); }
   }
   async function openHistoryMatch(id){
@@ -2577,6 +2635,7 @@
         else { btn.textContent = 'Jouer le match'; btn.addEventListener('click', () => openTeamModal('play', pr)); }
         row.appendChild(btn); root.appendChild(row);
       });
+      fitRows(root, '.proposal-row', 5);
     } catch(e) { toast(e.message); }
   }
   async function cancelProposal(id, btn){
