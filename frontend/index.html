@@ -186,6 +186,7 @@
   .tier-saison .card-poste{background:rgba(0,0,0,.35);color:#FFE9A8;}
   .tier-saison .card-name,.tier-saison.has-photo .card-name{color:#FFF6D9;text-shadow:0 0 6px rgba(0,0,0,.85),0 1px 2px rgba(0,0,0,.9);}
   .tier-saison .card-stats span{background:rgba(0,0,0,.4);color:#FFE9A8;}
+  .card-deco-emoji{line-height:1;pointer-events:none;z-index:1;}
   .card-deco-trophy{top:30px;right:6px;font-size:28px;line-height:1;z-index:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.55));}
   .tab.active::after{content:"";position:absolute;left:10px;right:10px;bottom:3px;height:9px;background:linear-gradient(to bottom,var(--stripe) 0,var(--stripe) 3px,transparent 3px,transparent 5px,var(--stripe) 5px,var(--stripe) 9px);}
   .tab-panel{display:none;}
@@ -1141,8 +1142,8 @@
   }
 
   // bonus d'équipe (en %) apporté par une carte Fan en match 1v1, selon sa rareté
-  const FAN_BONUS_PCT = { commune: 5, rare: 10, halloween: 11, noel: 11, epique: 12, secrete: 13, saison: 14, legendaire: 15 };
-  const EDITION_TIERS = ['halloween', 'noel'];          // les éditions limitées : un thème, des dates
+  const FAN_BONUS_PCT = { ed1: 11, ed2: 11, ed3: 11, ed4: 11, ed5: 11, ed6: 11, commune: 5, rare: 10, halloween: 11, noel: 11, epique: 12, secrete: 13, saison: 14, legendaire: 15 };
+  const EDITION_TIERS = ['halloween', 'noel', 'ed1', 'ed2', 'ed3', 'ed4', 'ed5', 'ed6'];          // les éditions limitées : un thème, des dates (ed1 à ed6 = éditions libres créées depuis l'administration)
   let editionsInfo = {};                                 // {halloween: {label, icon, start, end, status, cards}} (lu sur le serveur)
   function isMascot(card){ return cardKind(card) === 'mascotte'; }
   // le médaillon de la mascotte : le blason du loup (ou, en légendaire, un loup holographique animé)
@@ -1215,7 +1216,7 @@
       img.replaceWith(span);
     }, { once: true });
   }
-  function tierLabel(t){ return ({saison:'Saison', legendaire:'Légendaire', epique:'Épique', speciale:'Spéciale', secrete:'Secrète', gold:'Gold', halloween:'Halloween', noel:'Noël', rare:'Rare', commune:'Commune'})[t] || t; }
+  function tierLabel(t){ if (editionsInfo[t] && editionsInfo[t].label && !['halloween', 'noel'].includes(t)) return editionsInfo[t].label; return ({saison:'Saison', legendaire:'Légendaire', epique:'Épique', speciale:'Spéciale', secrete:'Secrète', gold:'Gold', halloween:'Halloween', noel:'Noël', rare:'Rare', commune:'Commune'})[t] || t; }
   // décor propre à une édition limitée (toiles et citrouille d'Halloween ; neige et flocons de Noël)
   const FLAKES = [[4,12,12,.85],[86,10,10,.7],[90,30,14,.9],[6,34,9,.6],[10,52,13,.8],[84,52,10,.75],[47,6,8,.6],[70,17,9,.55],[24,19,8,.5],[92,62,11,.8],[3,63,9,.7]];
   function editionDecor(tier){
@@ -1223,6 +1224,7 @@
     if (tier === 'noel') return FLAKES.map(f => '<svg class="card-deco card-deco-flake" aria-hidden="true" style="left:' + f[0] + '%;top:' + f[1] + '%;width:' + f[2] + 'px;height:' + f[2] + 'px;opacity:' + f[3] + '"><use href="#flake" width="100%" height="100%"/></svg>').join('') + '<svg class="card-deco card-deco-snow" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 8C12 3 22 4 33 7S54 11 66 6 88 3 100 7V40H0z" fill="#fff"/><path d="M0 8C12 3 22 4 33 7S54 11 66 6 88 3 100 7" fill="none" stroke="#D4E3F2" stroke-width="1.1"/></svg>';
     if (tier === 'secrete') return '<div class="card-deco card-deco-saturn" aria-hidden="true"></div>';
     if (tier === 'saison') return '<div class="card-deco card-deco-trophy" aria-hidden="true">🏆</div>';
+    if (EDITION_TIERS.includes(tier)) { const ic = editionsInfo[tier] ? editionsInfo[tier].icon : '🎁'; return FLAKES.slice(0, 8).map(f => '<span class="card-deco card-deco-emoji" aria-hidden="true" style="left:' + f[0] + '%;top:' + f[1] + '%;font-size:' + (f[2] + 5) + 'px;opacity:' + (f[3] * 0.75).toFixed(2) + '">' + ic + '</span>').join(''); }       // édition libre : son emoji, semé sur la carte
     return '';
   }
   function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -1330,6 +1332,7 @@
     const v = n => cssVar(n);
     if (tier === 'halloween') return { c1: '#2B1424', c2: '#0C0910', label: '#FF8A1F', labelText: '#1A0B00', border: '#FF8A1F', glow: '#FF8A1F' };
     if (tier === 'noel') return { c1: '#8E0A14', c2: '#D3202E', label: '#FFFFFF', labelText: '#B3121D', border: '#FFFFFF', glow: '#FF5C66' };
+    if (editionsInfo[tier] && editionsInfo[tier].custom && editionsInfo[tier].c1) return { c1: editionsInfo[tier].c1, c2: editionsInfo[tier].c2, label: '#FFFFFF', labelText: editionsInfo[tier].c1, border: '#FFFFFF', glow: editionsInfo[tier].c2 };
     if (tier === 'saison') return { c1: '#06243A', c2: '#0F5E73', label: '#F6D56B', labelText: '#3A2500', border: '#E9C46A', glow: '#2BB3C9' };
     const key = tier === 'legendaire' ? 'legend' : tier;
     const c1 = v('--' + key + '-1') || '#9C6B3E', c2 = v('--' + key + '-2') || '#D3A874';
@@ -1480,7 +1483,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.13.3';
+  const SITE_VERSION = '2026.10.13.4';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -1750,10 +1753,24 @@
   function formatDay(iso){ const [y, m, d] = iso.split('-').map(Number); return d + (d === 1 ? 'er ' : ' ') + ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'][m - 1]; }
   async function loadEditions(){
     try { const list = await fetch(API_BASE + '/game/editions').then(r => r.json()); editionsInfo = Object.fromEntries(list.map(e => [e.key, e])); } catch(e) { editionsInfo = {}; }
+    applyEditionStyles();
+  }
+  // Les éditions libres (ed1 à ed6) n'ont pas de style écrit d'avance : leurs couleurs viennent du serveur (celles choisies dans l'administration).
+  function applyEditionStyles(){
+    let st = document.getElementById('edStyles'); if (!st) { st = document.createElement('style'); st.id = 'edStyles'; document.head.appendChild(st); }
+    const eds = Object.values(editionsInfo).filter(e => e.custom && e.c1 && e.c2 && /^#[0-9A-Fa-f]{6}$/.test(e.c1) && /^#[0-9A-Fa-f]{6}$/.test(e.c2));
+    st.textContent = eds.map(e => {
+      const k = e.key, c1 = e.c1, c2 = e.c2;
+      return '.card-front.tier-' + k + ',.card.tier-' + k + ':not(.locked){background:radial-gradient(90% 60% at 30% 0%,rgba(255,255,255,.28),rgba(255,255,255,0) 60%),linear-gradient(172deg,' + c2 + ' 0%,' + c1 + ' 100%);color:#fff;box-shadow:var(--shadow),inset 0 0 0 2px ' + c2 + ',inset 0 0 14px rgba(255,255,255,.4);}' +
+        '.tier-' + k + ' .card-tier-label{background:#fff;color:' + c1 + ';font-size:.78em;letter-spacing:0;line-height:1.05;}.tier-' + k + ' .card-poste{background:rgba(0,0,0,.3);color:#fff;}.tier-' + k + ' .card-name,.tier-' + k + '.has-photo .card-name{color:#fff;text-shadow:0 0 6px rgba(0,0,0,.85),0 1px 2px rgba(0,0,0,.9);}' +
+        '.tier-' + k + ' .card-stats span{background:rgba(0,0,0,.35);color:#fff;}.tier-' + k + ' .card-stats .tag-limitee{background:' + c1 + ';color:#fff;}' +
+        '.card-slot.glow-' + k + ' .card-front{animation:glowEd_' + k + ' 1.3s ease-in-out infinite;}@keyframes glowEd_' + k + '{0%,100%{box-shadow:0 0 14px ' + c2 + '}50%{box-shadow:0 0 30px ' + c2 + '}}';
+    }).join('');
+    eds.forEach(e => { TIER_COLORS[e.key] = e.c1; TIER_NAMES_PL[e.key] = e.label; });
   }
   function buildTierGroups(cards, withSell){
     const frag = document.createDocumentFragment();
-    ['saison','legendaire','epique','speciale','secrete','gold','noel','halloween','rare','commune'].forEach(tier => {
+    ['saison','legendaire','epique','speciale','secrete','gold','ed6','ed5','ed4','ed3','ed2','ed1','noel','halloween','rare','commune'].forEach(tier => {
       const cardsOfTier = cards.filter(c => c.tier === tier)
         .sort((a, b) => (!!b.quantity - !!a.quantity) || (a.quantity ? a.player_name.localeCompare(b.player_name, 'fr') : a.id - b.id));   // d'abord celles qu'on a ; les inconnues ensuite, sans indice
       if (!cardsOfTier.length) return;
@@ -1842,7 +1859,7 @@
   // ---------- Aide : un bouton « ? Aide » par onglet ----------
   // Les pourcentages de tirage et les chiffres du 1v1 viennent du serveur : l'aide ne peut pas être en retard sur les règles.
   const TIER_COLORS = { saison: '#0F7A93', commune: '#C9965F', rare: '#B8C2C8', halloween: '#FF8A1F', noel: '#C8202C', gold: '#E0A21B', secrete: '#4B3FA0', speciale: '#2FA45E', epique: '#7A3FC9', legendaire: '#F0C84B' };
-  const TIER_NAMES_PL = { saison: 'Saison (podium)', commune: 'Commune', rare: 'Rare', halloween: 'Halloween (édition limitée)', noel: 'Noël (édition limitée)', gold: 'Gold', secrete: 'Secrète', speciale: 'Spéciale', epique: 'Épique', legendaire: 'Légendaire' };
+  const TIER_NAMES_PL = { ed1: 'Édition libre 1', ed2: 'Édition libre 2', ed3: 'Édition libre 3', ed4: 'Édition libre 4', ed5: 'Édition libre 5', ed6: 'Édition libre 6', saison: 'Saison (podium)', commune: 'Commune', rare: 'Rare', halloween: 'Halloween (édition limitée)', noel: 'Noël (édition limitée)', gold: 'Gold', secrete: 'Secrète', speciale: 'Spéciale', epique: 'Épique', legendaire: 'Légendaire' };
   let gameRules = null;
   async function getGameRules(){
     if (!gameRules) gameRules = await fetch(API_BASE + '/game/rules').then(r => r.json());
@@ -1996,7 +2013,7 @@
   const PLACE_MS = 520;        // la carte vient se ranger sous le pack
   const NEXT_MS = 380;         // pause avant que la carte suivante apparaisse
   // du moins rare au plus rare : la meilleure carte est toujours la dernière
-  const TIER_RANK = ['commune', 'rare', 'halloween', 'noel', 'gold', 'secrete', 'speciale', 'epique', 'legendaire'];
+  const TIER_RANK = ['commune', 'rare', 'halloween', 'noel', 'ed1', 'ed2', 'ed3', 'ed4', 'ed5', 'ed6', 'gold', 'secrete', 'speciale', 'epique', 'legendaire'];
   const rarityRank = card => { const i = TIER_RANK.indexOf(card.tier); return i < 0 ? TIER_RANK.length : i; };
   const noteOf = card => (card.display_note && card.display_note.value) || 0;
   function sortByRarity(cards){
