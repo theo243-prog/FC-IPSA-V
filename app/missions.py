@@ -21,7 +21,7 @@ from pydantic import BaseModel
 from sqlalchemy import Column, ForeignKey, Integer, String, Text
 
 from .database import Base
-from . import game_logic, weekly
+from . import game_logic, weekly, profiles
 
 # ------------------------------------------------------------------ réglages
 # Récompense du jour n°1 à n°7 de la série (puis ça recommence). "pack" = un pack de ce type offert en plus.
@@ -43,6 +43,9 @@ MISSION_GROUPS = [
      ("propose_duel", "Lance 1 défi 1v1", 1, 2)],
 ]
 BONUS_PACK = "classique"      # offert quand les 3 missions du jour sont récupérées
+
+
+LIFETIME_EVENTS = {"open_packs", "sell_dupes", "market_buy", "market_list"}      # aussi comptés à vie, pour les succès
 
 
 # ------------------------------------------------------------------ base de données
@@ -103,6 +106,8 @@ def record(db, user, event: str, n: int = 1) -> None:
     p = _load(r.progress, {})
     p[event] = int(p.get(event, 0)) + int(n)
     r.progress = json.dumps(p)
+    if event in LIFETIME_EVENTS:
+        profiles.bump(db, user, event, n)
     db.commit()
 
 
@@ -185,6 +190,7 @@ def claim(db, user, kind: str, mission_id: Optional[str] = None) -> dict:
         new_streak = eff + 1
         reward = dict(STREAK_REWARDS[(new_streak - 1) % STREAK_CYCLE])
         r.streak, r.last_claim = new_streak, today.isoformat()
+        profiles.bump(db, user, "best_streak", new_streak, maximum=True)
         info = {"streak": new_streak}
     elif kind == "mission":
         mission = next((m for m in todays_missions(user.id, today) if m["id"] == mission_id), None)
@@ -205,6 +211,7 @@ def claim(db, user, kind: str, mission_id: Optional[str] = None) -> dict:
         if not all(m["id"] in claimed for m in missions):
             raise ValueError("Récupère d'abord les 3 missions du jour pour avoir le bonus")
         reward = {"pack": BONUS_PACK}
+        profiles.bump(db, user, "bonus_days")
         claimed.append("bonus")
         r.claimed = json.dumps(claimed)
         info = {}
