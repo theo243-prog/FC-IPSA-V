@@ -136,6 +136,39 @@
   .m-item.claimed .m-label{text-decoration:line-through;color:var(--text-muted);}
   .m-ok{font-weight:800;color:#256B3B;font-size:13px;white-space:nowrap;}
   .missions-box .btn-small{white-space:nowrap;}
+  /* profil public, succès, vitrine */
+  .profile-head{display:flex;gap:12px;align-items:center;margin-bottom:10px;}
+  .profile-avatar{width:56px;height:56px;border-radius:50%;background:var(--accent);color:var(--accent-text);display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:800;font-size:30px;flex:none;}
+  .profile-meta{font-size:12.5px;color:var(--text-muted);line-height:1.4;}
+  .profile-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 4px;}
+  .profile-tile{background:var(--bg-sunk);border:1px solid var(--border);border-radius:12px;padding:10px 4px;text-align:center;}
+  .profile-tile b{display:block;font-family:var(--font-head);font-size:25px;line-height:1.05;}
+  .profile-tile span{font-size:11px;color:var(--text-muted);}
+  .profile-section{font-family:var(--font-head);font-size:20px;font-weight:800;margin:18px 0 8px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+  .profile-section small{font-family:var(--font-body);font-size:11.5px;font-weight:600;color:var(--text-muted);}
+  .showcase-row{display:flex;gap:8px;justify-content:center;flex-wrap:nowrap;}
+  .showcase-row .card{flex:none;width:min(108px,calc((100% - 16px) / 3));}
+  .showcase-edit{display:grid;gap:8px;margin-top:10px;}
+  .badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;}
+  .badge-tile{border:1px solid var(--border);border-radius:12px;padding:9px 6px 8px;text-align:center;background:var(--bg-sunk);}
+  .badge-tile .b-ico{font-size:28px;line-height:1;}
+  .badge-tile .b-title{font-weight:800;font-size:12.5px;margin-top:4px;line-height:1.15;}
+  .badge-tile.locked{opacity:.6;}
+  .badge-tile.locked .b-ico{filter:grayscale(1);}
+  .badge-lvl{display:inline-block;font-size:10.5px;font-weight:800;border-radius:999px;padding:1px 9px;margin-top:5px;}
+  .lvl-Bronze{background:#E7C9A5;color:#5A3A16;} .lvl-Argent{background:#E3E8EC;color:#3A4750;} .lvl-Or{background:#FFE08A;color:#6A4A00;}
+  .lvl-Diamant{background:#BFE9FF;color:#0B4C6E;} .lvl-Légende{background:linear-gradient(90deg,#C7A2F5,#FFD45C);color:#2A0F3D;}
+  .b-bar{height:5px;background:var(--bg-elevated);border-radius:5px;overflow:hidden;margin-top:6px;}
+  .b-bar>i{display:block;height:100%;background:var(--accent);border-radius:5px;}
+  .b-prog{font-size:10.5px;color:var(--text-muted);margin-top:3px;line-height:1.2;}
+  .tier-bars .tb{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:12px;}
+  .tier-bars .tb-name{width:96px;font-weight:700;flex:none;}
+  .tier-bars .tb-bar{flex:1;height:8px;background:var(--bg-sunk);border-radius:8px;overflow:hidden;}
+  .tier-bars .tb-bar>i{display:block;height:100%;border-radius:8px;}
+  .tier-bars .tb-n{width:46px;text-align:right;color:var(--text-muted);flex:none;}
+  .share-img{width:100%;max-width:400px;display:block;margin:0 auto 14px;border-radius:12px;box-shadow:var(--shadow);}
+  .share-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .chip-pseudo-link{cursor:pointer;}
   .tab.active::after{content:"";position:absolute;left:10px;right:10px;bottom:3px;height:9px;background:linear-gradient(to bottom,var(--stripe) 0,var(--stripe) 3px,transparent 3px,transparent 5px,var(--stripe) 5px,var(--stripe) 9px);}
   .tab-panel{display:none;}
   .diff-pos{color:#1B7F3B;} .diff-neg{color:#B3261E;}
@@ -882,6 +915,15 @@
     <div id="modalBody"></div>
   </div>
 </div>
+<div class="modal-overlay" id="shareModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Partager ma carte</h2>
+      <button class="modal-close" id="shareClose" type="button">✕</button>
+    </div>
+    <div id="shareBody"></div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1178,12 +1220,12 @@
       el.appendChild(badge);
     }
     el.style.cursor = 'pointer';
-    el.addEventListener('click', () => openPlayerDetail(card.player_name, card.tier));
+    el.addEventListener('click', () => openPlayerDetail(card.player_name, card.tier, card));
     return el;
   }
 
   // ---------- Fiche détaillée d'un joueur ----------
-  async function openPlayerDetail(playerName, tier){
+  async function openPlayerDetail(playerName, tier, card){
     try {
       const res = await fetch(API_BASE + '/players/' + encodeURIComponent(playerName) + '/detail?tier=' + encodeURIComponent(tier || 'commune'));
       if (!res.ok) throw new Error('Impossible de charger ce joueur');
@@ -1227,6 +1269,10 @@
         if (p.tier === 'secrete') inner += '<p class="tm-hint" style="text-align:center;">Carte secrète : elle ne sort jamais des packs. On la débloque en fusionnant 100 points de doublons (commune = 1, rare = 5).</p>';
       }
       body.innerHTML = photoHTML + '<div class="player-detail-poste">' + escapeHtml(posteText) + ' · ' + tierLabel(p.tier) + '</div>' + inner;
+      if (card && card.quantity > 0 && !card._viewing) {          // une carte que JE possède : on peut la partager en image
+        body.insertAdjacentHTML('beforeend', '<div class="share-actions" style="margin-top:16px;"><button class="btn-secondary" type="button" id="shareCardBtn">📤 Partager cette carte</button></div>');
+        document.getElementById('shareCardBtn').addEventListener('click', () => openShareCard(card));
+      }
       document.getElementById('userCollectionModal').style.display = 'flex';
     } catch(e) { toast(e.message); }
   }
@@ -1235,6 +1281,160 @@
   }
 
   // ---------- /me ----------
+  // ---------- Image de la carte à partager (dessinée dans le navigateur, aucun fichier à envoyer) ----------
+  const SHARE_W = 1080, SHARE_H = 1350;
+  function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  function loadImg(src, cross){ return new Promise(res => { const i = new Image(); if (cross) i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
+  function roundRect(g, x, y, w, h, r){ g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+  function tierPalette(tier){
+    const v = n => cssVar(n);
+    if (tier === 'halloween') return { c1: '#2B1424', c2: '#0C0910', label: '#FF8A1F', labelText: '#1A0B00', border: '#FF8A1F', glow: '#FF8A1F' };
+    if (tier === 'noel') return { c1: '#8E0A14', c2: '#D3202E', label: '#FFFFFF', labelText: '#B3121D', border: '#FFFFFF', glow: '#FF5C66' };
+    const key = tier === 'legendaire' ? 'legend' : tier;
+    const c1 = v('--' + key + '-1') || '#9C6B3E', c2 = v('--' + key + '-2') || '#D3A874';
+    return { c1, c2, label: 'rgba(255,255,255,.88)', labelText: v('--' + key + '-text') || '#222', border: 'rgba(255,255,255,.8)', glow: c2 };
+  }
+  async function renderShareImage(card){
+    const el = makeMiniCard(card, { hideCount: true });               // on lit les textes de la vraie carte : mêmes noms, notes, bonus
+    const label = ((el.querySelector('.card-tier-label') || {}).textContent || tierLabel(card.tier)).trim();
+    const poste = ((el.querySelector('.card-poste') || {}).textContent || '').trim();
+    const name = ((el.querySelector('.card-name') || {}).textContent || card.player_name).trim();
+    const chips = [...el.querySelectorAll('.card-stats span')].map(s => s.textContent.trim()).filter(Boolean);
+    const mid = ((el.querySelector('.card-mid') || {}).textContent || '').trim() || '⚽';
+    const photoUrl = usesBgPhoto(card) ? card.player_photo_url : null;
+    const pal = tierPalette(card.tier), secret = card.tier === 'secrete', fontHead = cssVar('--font-head') || 'Arial Narrow, sans-serif', fontBody = cssVar('--font-body') || 'sans-serif';
+    try { await Promise.all([document.fonts.load('800 80px ' + fontHead), document.fonts.load('700 30px ' + fontBody)]); } catch(e) { /* polices par défaut */ }
+    const cv = document.createElement('canvas'); cv.width = SHARE_W; cv.height = SHARE_H; const g = cv.getContext('2d');
+    // --- fond de page : violet du club, halo de la couleur de la carte, loup en filigrane
+    const bg = g.createLinearGradient(0, 0, SHARE_W * 0.4, SHARE_H); bg.addColorStop(0, '#34124F'); bg.addColorStop(1, '#10061F'); g.fillStyle = bg; g.fillRect(0, 0, SHARE_W, SHARE_H);
+    const halo = g.createRadialGradient(SHARE_W / 2, 700, 80, SHARE_W / 2, 700, 720); halo.addColorStop(0, pal.glow + 'AA'); halo.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = halo; g.fillRect(0, 0, SHARE_W, SHARE_H);
+    const crest = document.getElementById('wolf-crest');
+    if (crest) {
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 723 833" width="723" height="833" fill="#FCC2E2">' + crest.innerHTML + '</svg>';
+      const wolf = await loadImg('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
+      if (wolf) { g.globalAlpha = 0.07; g.drawImage(wolf, 560, 640, 640, 737); g.globalAlpha = 1; g.drawImage(wolf, 62, 54, 78, 90); }
+    }
+    g.textBaseline = 'alphabetic'; g.fillStyle = '#FCE6F2'; g.font = '800 62px ' + fontHead; g.fillText('FC IPSA V', 160, 112);
+    g.fillStyle = '#C79ABA'; g.font = '700 26px ' + fontBody; g.fillText('Carte officielle du club', 162, 146);
+    // --- la carte
+    const x0 = 190, y0 = 190, w = 700, h = 1000, r = 44;
+    g.save(); g.shadowColor = 'rgba(0,0,0,.65)'; g.shadowBlur = 70; g.shadowOffsetY = 24;
+    const body = g.createLinearGradient(x0, y0, x0 + w * 0.5, y0 + h); body.addColorStop(0, pal.c2); body.addColorStop(1, pal.c1); roundRect(g, x0, y0, w, h, r); g.fillStyle = body; g.fill(); g.restore();
+    g.save(); roundRect(g, x0, y0, w, h, r); g.clip();
+    if (photoUrl) {
+      const cross = (() => { try { return new URL(photoUrl, location.href).origin !== location.origin; } catch(e) { return false; } })();
+      const img = await loadImg(photoUrl, cross);
+      if (img) { const k = Math.max(w / img.width, h / img.height), iw = img.width * k, ih = img.height * k; g.drawImage(img, x0 + (w - iw) / 2, y0 + Math.min(0, (h - ih) * 0.12), iw, ih); }
+      else { g.font = '300px sans-serif'; g.textAlign = 'center'; g.fillText(mid, x0 + w / 2, y0 + 520); g.textAlign = 'left'; }
+    } else { g.font = '340px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#fff'; g.fillText(mid, x0 + w / 2, y0 + 560); g.textAlign = 'left'; }
+    const fade = g.createLinearGradient(0, y0 + h * 0.5, 0, y0 + h); fade.addColorStop(0, 'rgba(0,0,0,0)'); fade.addColorStop(1, secret ? 'rgba(10,6,30,.92)' : 'rgba(0,0,0,.78)'); g.fillStyle = fade; g.fillRect(x0, y0 + h * 0.5, w, h * 0.5);
+    g.restore();
+    const lgd = card.tier === 'legendaire'; g.save(); roundRect(g, x0, y0, w, h, r); g.lineWidth = 12; g.strokeStyle = lgd ? '#FFD45C' : pal.border; if (lgd) { g.shadowColor = '#FFD45C'; g.shadowBlur = 40; } g.stroke(); g.restore();
+    // --- Saturne (carte secrète), sous les pastilles comme dans le jeu
+    if (secret) { const sat = cssVar('--saturn').match(/url\(["']?(.*?)["']?\)\s*$/); const si = sat ? await loadImg(sat[1]) : null; if (si) g.drawImage(si, x0 + w - 270, y0 - 56, 330, 330); }
+    // --- pastilles du haut : rareté à gauche, poste à droite
+    const chip = (text, x, y, bgc, fg, align) => {
+      g.font = '800 34px ' + fontHead; const tw = g.measureText(text).width, cw = tw + 44, cx = align === 'right' ? x - cw : x;
+      roundRect(g, cx, y, cw, 62, 31); g.fillStyle = bgc; g.fill(); g.fillStyle = fg; g.textBaseline = 'middle'; g.fillText(text, cx + 22, y + 33); g.textBaseline = 'alphabetic'; return cw;
+    };
+    chip(label.toUpperCase(), x0 + 36, y0 + 36, secret ? 'rgba(22,17,43,.85)' : pal.label, secret ? '#ECE8FF' : pal.labelText, 'left');
+    if (poste) chip(poste, x0 + w - 36, y0 + 36, 'rgba(0,0,0,.45)', '#fff', 'right');
+    // --- nom (réduit si trop long) et pastilles de stats
+    let size = 128; g.font = '800 ' + size + 'px ' + fontHead; while (g.measureText(name).width > w - 80 && size > 44) { size -= 4; g.font = '800 ' + size + 'px ' + fontHead; }
+    g.fillStyle = '#fff'; g.shadowColor = 'rgba(0,0,0,.85)'; g.shadowBlur = 14; g.fillText(name, x0 + 40, y0 + h - 150); g.shadowBlur = 0;
+    let cx = x0 + 40; chips.forEach(t => { g.font = '800 40px ' + fontHead; const cw = g.measureText(t).width + 40; if (cx + cw > x0 + w - 30) return; const isNum = t.startsWith('#'), isTag = t === 'LIMITÉE'; roundRect(g, cx, y0 + h - 118, cw, 70, 35); g.fillStyle = isNum ? 'rgba(22,17,43,.88)' : 'rgba(0,0,0,.5)'; g.fill(); if (isNum || isTag) { g.lineWidth = 3; g.strokeStyle = isNum ? 'rgba(255,224,138,.8)' : pal.border; g.stroke(); } g.fillStyle = isNum ? '#FFE08A' : '#fff'; g.textBaseline = 'middle'; g.fillText(t, cx + 20, y0 + h - 82); g.textBaseline = 'alphabetic'; cx += cw + 12; });
+    // --- pied de page
+    g.fillStyle = '#FCE6F2'; g.textAlign = 'center'; g.font = '800 44px ' + fontHead; g.fillText((meInfo ? meInfo.pseudo : 'Un joueur') + ' a cette carte', SHARE_W / 2, 1262);
+    g.fillStyle = '#C79ABA'; g.font = '700 28px ' + fontBody; g.fillText(location.host, SHARE_W / 2, 1306); g.textAlign = 'left';
+    return await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('image vide')), 'image/png'));
+  }
+  async function openShareCard(card){
+    const modal = document.getElementById('shareModal'), body = document.getElementById('shareBody');
+    body.innerHTML = '<p class="muted" style="text-align:center;">Création de l\'image…</p>'; modal.style.display = 'flex';
+    try {
+      const blob = await renderShareImage(card), url = URL.createObjectURL(blob), name = cardDisplayName(card);
+      const file = new File([blob], 'carte-' + name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.png', { type: 'image/png' });
+      const canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+      body.innerHTML = '<img class="share-img" id="sharePreview" alt="Aperçu de la carte à partager" src="' + url + '"><div class="share-actions">' +
+        (canShare ? '<button class="btn-primary" type="button" id="shareSend">📤 Partager</button>' : '') + '<a class="btn-secondary" id="shareDownload" download="' + escapeHtml(file.name) + '" href="' + url + '">⬇️ Télécharger l\'image</a></div>' +
+        '<p class="tm-hint" style="text-align:center;margin-top:10px;">Image 1080 × 1350, idéale pour un post Instagram.</p>';
+      if (canShare) document.getElementById('shareSend').addEventListener('click', async () => {
+        try { await navigator.share({ files: [file], title: 'Ma carte FC IPSA V', text: 'Ma carte ' + name + ' (' + tierLabel(card.tier) + ') sur FC IPSA V ⚽' }); } catch(e) { /* annulé par le joueur */ }
+      });
+    } catch(e) { body.innerHTML = '<p class="muted" style="text-align:center;">Impossible de créer l\'image de cette carte.</p>'; }
+  }
+
+  // ---------- Profil public, succès et vitrine ----------
+  async function openProfile(pseudo){
+    try {
+      const res = await fetch(API_BASE + '/users/' + encodeURIComponent(pseudo) + '/profile');
+      if (!res.ok) throw new Error('Impossible de charger ce profil');
+      const p = await res.json(), mine = !!(meInfo && meInfo.pseudo === pseudo);
+      let badges = null; if (mine) { try { badges = await api('/badges'); } catch(e) { badges = null; } }
+      document.getElementById('modalTitle').textContent = mine ? 'Mon profil' : 'Profil de ' + p.pseudo;
+      renderProfile(p, badges, mine);
+      document.getElementById('userCollectionModal').style.display = 'flex';
+    } catch(e) { toast(e.message); }
+  }
+  function badgeTileHTML(b, full){
+    const got = b.level > 0, lvl = got ? '<span class="badge-lvl lvl-' + b.level_name + '">' + b.level_name + '</span>' : '';
+    let prog = '';
+    if (full && b.next_goal !== null && b.next_goal !== undefined) {
+      const pct = Math.max(0, Math.min(100, Math.round(100 * b.value / b.next_goal)));
+      prog = '<div class="b-bar"><i style="width:' + pct + '%"></i></div><div class="b-prog">' + (Number.isInteger(b.value) ? b.value : b.value.toFixed(1).replace('.', ',')) + ' / ' + b.next_goal + ' ' + escapeHtml(b.unit) + '</div>';
+    } else if (full) prog = '<div class="b-prog">Niveau maximum 🎉</div>';
+    return '<div class="badge-tile' + (got ? '' : ' locked') + '" title="' + escapeHtml(b.desc || b.title) + '"><div class="b-ico">' + b.icon + '</div><div class="b-title">' + escapeHtml(b.title) + '</div>' + lvl + prog + '</div>';
+  }
+  function renderProfile(p, badges, mine){
+    const body = document.getElementById('modalBody'), d = p.duels;
+    const since = p.member_since ? 'Membre depuis le ' + p.member_since.split('-').reverse().join('/') : '';
+    const tiersHTML = p.tiers.map(t => '<div class="tb"><span class="tb-name">' + escapeHtml(tierLabel(t.tier)) + '</span><span class="tb-bar"><i style="width:' + Math.round(100 * t.owned / t.total) + '%;background:' + (TIER_COLORS[t.tier] || '#999') + '"></i></span><span class="tb-n">' + t.owned + '/' + t.total + '</span></div>').join('');
+    const badgeHTML = mine && badges ? '<div class="badge-grid">' + badges.map(b => badgeTileHTML(b, true)).join('') + '</div>'
+      : (p.badges.top.length ? '<div class="badge-grid">' + p.badges.top.map(b => badgeTileHTML(b, false)).join('') + '</div>' : '<p class="muted">Aucun succès pour l\'instant.</p>');
+    body.innerHTML = '<div class="profile-head"><div class="profile-avatar">' + escapeHtml(p.pseudo.charAt(0).toUpperCase()) + '</div><div><div style="font-weight:800;font-size:17px;">' + escapeHtml(p.pseudo) + '</div><div class="profile-meta">' + since +
+      (p.rank ? '<br>Classement : n°' + p.rank + ' sur ' + p.players_ranked : '') + '</div></div></div>' +
+      '<div class="profile-tiles"><div class="profile-tile"><b>' + String(p.completion_pct).replace('.', ',') + ' %</b><span>collection (' + p.cards_owned + '/' + p.cards_total + ')</span></div>' +
+      '<div class="profile-tile"><b>' + d.played + '</b><span>matchs 1v1' + (d.played ? ' · ' + d.won + 'V ' + d.drawn + 'N ' + d.lost + 'D' : '') + '</span></div>' +
+      '<div class="profile-tile"><b>' + p.elo + '</b><span>Elo' + (d.win_rate !== null ? ' · ' + d.win_rate + ' % de victoires' : '') + '</span></div></div>' +
+      '<div class="profile-section">Vitrine' + (mine ? ' <button class="btn-small ghost" type="button" id="profShowcaseEdit">Modifier</button>' : '<small>' + (p.showcase_auto ? 'ses cartes les plus rares' : 'ses cartes préférées') + '</small>') + '</div>' +
+      '<div class="showcase-row" id="profShowcase"></div><div id="profShowcaseEditor"></div>' +
+      '<div class="profile-section">Succès<small>' + p.badges.earned + ' niveau' + (p.badges.earned > 1 ? 'x' : '') + ' sur ' + p.badges.total + '</small></div>' + badgeHTML +
+      '<div class="profile-section">Raretés<small>packs ouverts : ' + p.packs_opened + (p.best_streak ? ' · meilleure série : ' + p.best_streak + ' j' : '') + '</small></div><div class="tier-bars">' + tiersHTML + '</div>' +
+      '<div class="share-actions" style="margin-top:18px;"><button class="btn-secondary" type="button" id="profCollection">' + (mine ? 'Voir ma collection' : 'Voir sa collection') + '</button></div>';
+    const row = document.getElementById('profShowcase');
+    if (!p.showcase.length) row.innerHTML = '<p class="muted">Aucune carte pour l\'instant.</p>';
+    p.showcase.forEach(c => { const el = makeMiniCard(c, { hideCount: true }); el.style.cursor = 'default'; row.appendChild(el); });
+    document.getElementById('profCollection').addEventListener('click', () => {
+      if (mine) { document.getElementById('userCollectionModal').style.display = 'none'; document.querySelector('.tab[data-tab="collection"]').click(); } else openUserCollection(p.pseudo);
+    });
+    if (mine) document.getElementById('profShowcaseEdit').addEventListener('click', () => editShowcase(p));
+  }
+  async function editShowcase(p){
+    const box = document.getElementById('profShowcaseEditor');
+    try {
+      const all = (await api('/collection')).filter(c => c.quantity > 0);
+      const order = ['legendaire', 'secrete', 'speciale', 'epique', 'halloween', 'noel', 'gold', 'rare', 'commune'];
+      all.sort((a, b) => (order.indexOf(a.tier) - order.indexOf(b.tier)) || cardDisplayName(a).localeCompare(cardDisplayName(b), 'fr'));
+      const cur = p.showcase_auto ? [] : p.showcase.map(c => c.id);
+      const opts = '<option value="">— aucune —</option>' + all.map(c => '<option value="' + c.id + '">' + escapeHtml(cardDisplayName(c)) + ' · ' + escapeHtml(tierLabel(c.tier)) + '</option>').join('');
+      box.innerHTML = '<div class="showcase-edit"><select class="sc-sel">' + opts + '</select><select class="sc-sel">' + opts + '</select><select class="sc-sel">' + opts + '</select>' +
+        '<div class="share-actions"><button class="btn-primary" type="button" id="scSave">Enregistrer ma vitrine</button><button class="btn-secondary" type="button" id="scAuto">Vitrine automatique</button></div></div>';
+      box.querySelectorAll('.sc-sel').forEach((s, i) => { s.value = cur[i] || ''; });
+      const save = async ids => { try { await api('/profile/showcase', { method: 'POST', body: JSON.stringify({ card_ids: ids }) }); toast('Vitrine enregistrée ✅'); openProfile(p.pseudo); } catch(e) { toast(e.message); } };
+      document.getElementById('scSave').addEventListener('click', () => save([...box.querySelectorAll('.sc-sel')].map(s => s.value).filter(Boolean)));
+      document.getElementById('scAuto').addEventListener('click', () => save([]));
+    } catch(e) { toast(e.message); }
+  }
+  // annonce des nouveaux succès (le serveur les a déjà crédités)
+  let announcingBadges = false;
+  function announceBadges(list){
+    if (announcingBadges || !list || !list.length) return;
+    announcingBadges = true;
+    const gain = list.reduce((a, b) => a + b.reward, 0);
+    toast(list.length === 1 ? '🏅 Succès : ' + list[0].title + ' · ' + list[0].level_name + ' (+' + gain + ' crédits)' : '🏅 ' + list.length + ' nouveaux succès ! (+' + gain + ' crédits) · touche ton pseudo pour les voir');
+    api('/badges/seen', { method: 'POST' }).catch(() => {}).then(() => { announcingBadges = false; });
+  }
+
   // ---------- Missions du jour et série de connexion ----------
   let missionsState = null;
   async function loadMissions(){
@@ -1272,6 +1472,7 @@
   async function refreshMe(skipMissions){
     try {
       meInfo = await api('/me');
+      announceBadges(meInfo.unseen_badges);
       document.getElementById('chipCredits').textContent = meInfo.credits;
       const bonusTotal = Object.values(meInfo.pack_tokens || {}).reduce((a, b) => a + b, 0);
       document.getElementById('chipPacks').textContent = meInfo.stored_packs + '/3' + (bonusTotal ? (' +' + bonusTotal + ' bonus') : '');
@@ -1469,11 +1670,17 @@
   function closeUserCollectionModal(){
     document.getElementById('userCollectionModal').style.display = 'none';
   }
+  // fenêtre de partage d'une carte, et accès à mon profil depuis mon pseudo
+  function closeShareModal(){ const m = document.getElementById('shareModal'); m.style.display = 'none'; const i = document.getElementById('sharePreview'); if (i && i.src.startsWith('blob:')) URL.revokeObjectURL(i.src); }
+  document.getElementById('shareClose').addEventListener('click', closeShareModal);
+  document.getElementById('shareModal').addEventListener('click', (e) => { if (e.target.id === 'shareModal') closeShareModal(); });
+  (function(){ const chip = document.getElementById('chipPseudo'); chip.classList.add('chip-pseudo-link'); chip.title = 'Mon profil et mes succès'; chip.addEventListener('click', () => { if (meInfo) openProfile(meInfo.pseudo); }); })();
   async function openUserCollection(pseudo){
     try {
       const res = await fetch(API_BASE + '/users/' + encodeURIComponent(pseudo) + '/collection');
       if (!res.ok) throw new Error('Impossible de charger cette collection');
       const cards = await res.json();
+      cards.forEach(c => { c._viewing = pseudo; });
       document.getElementById('modalTitle').textContent = 'Collection de ' + pseudo;
       const body = document.getElementById('modalBody');
       body.innerHTML = '';
@@ -1551,6 +1758,7 @@
     collection: { title: 'Ta collection', async html(){
       const r = await getGameRules(), sv = r.sell_values;
       return '<h3>Tes cartes</h3><p>Les cartes sont rangées de la plus rare à la plus commune. Une carte grisée avec un « ? » n\'est pas encore à toi. Clique sur une carte pour voir sa fiche.</p>' +
+        '<h3>Partager une carte</h3><p>Sur la fiche d\'une carte que tu possèdes, le bouton « 📤 Partager cette carte » crée une <b>image</b> (format post Instagram) avec ton pseudo. Sur téléphone, tu peux l\'envoyer directement à une appli ; sinon, télécharge-la.</p>' +
         '<h3>Les raretés, de la plus commune à la plus rare</h3><ul>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.commune + '"></span><b>Commune</b> et <span class="help-tier" style="background:' + TIER_COLORS.rare + '"></span><b>Rare</b> : les cartes de base de chaque joueur.</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.halloween + '"></span><b>Édition limitée</b> (Halloween, Noël…) : quelques cartes par thème, <b>disponibles dans les packs seulement pendant leurs dates</b>. Ensuite elles restent à ceux qui les ont, et ne s\'obtiennent plus qu\'en échange. Note 88 (un petit bonus), ou +11 % pour un fan.</li>' +
@@ -1579,7 +1787,8 @@
     } },
     classement: { title: 'Le classement', html(){
       return '<h3>Qui a la plus belle collection ?</h3><p>Les joueurs sont classés par <b>pourcentage de collection</b> : le nombre de cartes différentes que tu possèdes divisé par le nombre de cartes qui existent dans le jeu, <b>sans exception</b> (cartes secrètes et éditions limitées comprises, même terminées). En cas d\'égalité, c\'est le nombre de crédits qui départage.</p>' +
-        '<ul><li>Clique sur un joueur pour voir sa collection.</li><li>Les comptes de test ne sont pas classés.</li></ul>';
+        '<ul><li>Clique sur un joueur pour ouvrir son <b>profil</b> : sa collection en %, ses matchs 1v1, sa vitrine de cartes et ses succès. Le bouton « Voir sa collection » ouvre ses cartes.</li><li>Touche ton propre pseudo, en haut de la page, pour voir <b>ton profil</b> et choisir ta vitrine.</li><li>Les comptes de test ne sont pas classés.</li></ul>' +
+        '<h3>Les succès</h3><p>Chaque joueur gagne des <b>succès</b> en jouant : collection, packs ouverts, cartes secrètes, matchs 1v1, séries de connexion, marché… Chaque succès a plusieurs niveaux (Bronze, Argent, Or, Diamant, Légende). Un niveau obtenu est gardé pour toujours et rapporte quelques <b>crédits</b>. Tu retrouves ta progression dans ton profil.</p>';
     } },
     actualite: { title: 'L\'actualité du club', html(){
       return '<h3>Ce que tu vois ici</h3><ul>' +
@@ -2006,7 +2215,7 @@
       html += '</tbody></table>';
       root.innerHTML = html;
       root.querySelectorAll('.pseudo-link').forEach(btn => {
-        btn.addEventListener('click', () => openUserCollection(btn.dataset.pseudo));
+        btn.addEventListener('click', () => openProfile(btn.dataset.pseudo));
       });
     } catch(e) { toast(e.message); }
   }
