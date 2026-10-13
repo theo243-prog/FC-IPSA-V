@@ -14,11 +14,12 @@ from datetime import datetime, timedelta
 
 from fastapi import FastAPI, Depends, Header, HTTPException
 from pydantic import BaseModel
+from .common import optional_user
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, weekly, push, schema_upgrades, missions, profiles
+from . import game_logic, duel_engine, schemas, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page
 from sqlalchemy import or_
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting)
@@ -37,6 +38,10 @@ Base.metadata.create_all(bind=engine)
 schema_upgrades.ensure_schema(engine)      # ajoute les colonnes apparues depuis la création de la base (sans toucher aux données)
 
 app = FastAPI(title="FC IPSA V — API")
+app.include_router(challenges.router)      # défis privés, revanche, annulation d'un défi par l'admin
+app.include_router(offers.router)          # offres d'achat au marché
+app.include_router(seasons.router)         # saisons mensuelles du 1v1
+app.include_router(admin_page.router)      # la page d'administration (/admin-panel) et le numéro de version (/version)
 
 app.add_middleware(
     CORSMiddleware,
@@ -596,18 +601,22 @@ def duel_card_stats(limit: int = 5, scope: str = "all", db: Session = Depends(ge
 
 
 @app.get("/duel/proposals")
-def duel_proposals(db: Session = Depends(get_db)):
-    return duel_engine.list_proposals(db)
+def duel_proposals(db: Session = Depends(get_db), viewer: Optional[User] = Depends(optional_user)):
+    return challenges.filter_proposals(db, duel_engine.list_proposals(db), viewer)
 
 
 @app.post("/duel/proposals")
-def create_duel_proposal(payload: schemas.CreateProposalRequest, user: User = Depends(get_current_user),
+def create_duel_proposal(payload: challenges.TargetedCreateRequest, user: User = Depends(get_current_user),
                          db: Session = Depends(get_db)):
+    target = challenges.resolve_target(db, user, payload.target)          # défi adressé à un joueur précis (facultatif)
     slots = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in payload.slots]
     proposal = duel_call(duel_engine.create_proposal, db, user, payload.formation, payload.tactic, payload.stake,
                          slots, payload.captain_card_id, payload.fan_card_id, payload.equipment_card_ids, payload.mascot_card_id, payload.referee_bid)
+    if target is not None:
+        challenges.attach(db, proposal, target)
+        push.safe(db, challenges.notify, user, target, payload.stake)
     missions.safe_record(db, user, "propose_duel")
-    return {"id": proposal.id, "credits": user.credits}
+    return {"id": proposal.id, "credits": user.credits, "target": target.pseudo if target else None}
 
 
 @app.delete("/duel/proposals/{proposal_id}")
@@ -623,6 +632,7 @@ def cancel_duel_proposal(proposal_id: str, user: User = Depends(get_current_user
 @app.post("/duel/proposals/{proposal_id}/play")
 def play_duel_proposal(proposal_id: str, payload: schemas.TeamPayload, user: User = Depends(get_current_user),
                        db: Session = Depends(get_db)):
+    challenges.check_can_play(db, user, proposal_id)          # un défi privé ne se joue que par le joueur défié
     slots = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in payload.slots]
     result = duel_call(duel_engine.play_proposal, db, user, proposal_id, payload.formation, payload.tactic, slots,
                        payload.captain_card_id, payload.fan_card_id, payload.equipment_card_ids, payload.mascot_card_id, payload.referee_bid)
@@ -692,20 +702,23 @@ def user_profile(pseudo: str, db: Session = Depends(get_db)):
     out = profiles.profile_out(db, user, rank=rank)
     cards, auto = profiles.showcase_cards(db, user)
     out["showcase"], out["showcase_auto"] = [card_out(c) for c in cards], auto
+    out["podiums"] = seasons.podium_counts(db, user.id)
     out["players_ranked"] = len(rows)
     return out
 
 
 @app.get("/leaderboard")
 def leaderboard(db: Session = Depends(get_db)):
-    total_cards = db.query(Card).count()      # 100 % = TOUTES les cartes du jeu, sans exception (éditions limitées et secrètes comprises)
-    reserved = duel_engine.reserved_credits(db)   # crédits séquestrés dans les défis ouverts : comptés dans le total public (le montant d'une enveloppe reste secret)
+    total_cards = db.query(Card).filter(Card.tier != Tier.saison).count()      # 100 % = TOUTES les cartes du jeu, sans exception (éditions limitées et secrètes comprises) ; sauf les cartes « Saison » (podium)
+    reserved = dict(duel_engine.reserved_credits(db))   # crédits séquestrés dans les défis ouverts : comptés dans le total public (le montant d'une enveloppe reste secret)
+    for uid, amount in offers.reserved_credits(db).items():        # … et ceux mis de côté dans les offres d'achat
+        reserved[uid] = reserved.get(uid, 0) + amount
     users = db.query(User).filter_by(is_test=False).all()
     rows = []
     for u in users:
         owned_count = (
-            db.query(OwnedCard)
-            .filter(OwnedCard.user_id == u.id, OwnedCard.quantity > 0)
+            db.query(OwnedCard).join(Card, Card.id == OwnedCard.card_id)
+            .filter(OwnedCard.user_id == u.id, OwnedCard.quantity > 0, Card.tier != Tier.saison)
             .count()
         )
         completion = round(100 * owned_count / total_cards, 1) if total_cards else 0.0
@@ -725,6 +738,8 @@ def purge_card_rows(db: Session, card_ids: list):
     if not card_ids:
         return
     duel_engine.purge_card_references(db, card_ids)
+    offers.refund_for_cards(db, card_ids)          # offres d'achat visant ces cartes : annulées et remboursées
+    seasons.forget_cards(db, card_ids)             # ces cartes ne sont plus des prix de saison
     db.query(Listing).filter(Listing.card_id.in_(card_ids)).delete(synchronize_session=False)
     db.query(OwnedCard).filter(OwnedCard.card_id.in_(card_ids)).delete(synchronize_session=False)
     db.query(TeamSlot).filter(TeamSlot.card_id.in_(card_ids)).delete(synchronize_session=False)      # ancien 1v1
@@ -743,6 +758,8 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     db.query(missions.UserDaily).filter_by(user_id=user.id).delete()      # sa série et ses missions du jour
     for table in (profiles.UserBadge, profiles.UserCounter, profiles.UserProfile):      # ses succès, ses compteurs et sa vitrine
         db.query(table).filter_by(user_id=user.id).delete()
+    db.query(offers.BuyOffer).filter_by(buyer_id=user.id).delete()                       # ses offres d'achat (le compte disparaît avec ses crédits)
+    db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
     db.query(Listing).filter_by(seller_id=user.id).delete()
     for proposal in db.query(MatchProposal).filter_by(creator_id=user.id).all():
         db.delete(proposal)          # ses défis ouverts (le compte est supprimé, pas de remboursement utile)
@@ -1651,6 +1668,7 @@ def _tick(fn):
 
 def _background_tick():
     _tick(weekly.check_and_run)             # cartes spéciales du vendredi 17h
+    _tick(seasons.run_scheduled)            # fin de saison 1v1 (chaque 1er du mois) : podium, récompenses, Elo remis à zéro
     if push.AVAILABLE:
         _tick(push.check_packs)             # packs gratuits prêts
         _tick(push.check_editions)          # annonce d'une édition limitée (début, dernier jour)
