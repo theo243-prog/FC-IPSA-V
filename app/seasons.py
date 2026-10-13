@@ -2,24 +2,28 @@
 Saisons du 1v1 : le classement Elo repart à zéro chaque mois (minuit à Paris, le 1er).
 
 À la fin d'un mois, le PODIUM (les 3 meilleurs Elo, parmi les joueurs qui ont joué au moins MIN_MATCHES matchs ce mois-là) gagne
-des crédits et, si tu l'as prévue, une CARTE EXCLUSIVE de rareté « Saison » : elle ne sort jamais d'un pack et n'est donnée
-qu'au podium. Tu choisis les joueurs de ces cartes avec la commande d'admin « Prix de la saison ». Puis l'Elo de tout le monde
-est remis à 1000 et une nouvelle saison commence. L'historique des saisons passées est gardé.
+des crédits et un TROPHÉE : une carte de rareté « Saison » qui s'appelle « Vainqueur de saison (octobre 2026) », « Deuxième de
+la saison (octobre 2026) » ou « Troisième de la saison (octobre 2026) ». Un trophée par saison et par rang : être premier deux
+fois donne DEUX cartes différentes, jamais un doublon.
+
+Un trophée n'est qu'un souvenir : il ne sort d'aucun pack, n'a ni note ni bonus, ne peut pas jouer de match, ne se vend pas, ne
+s'achète pas, ne compte pas dans le pourcentage de collection, et reste invisible pour ceux qui ne l'ont pas. Ces cartes sont créées
+automatiquement à la clôture : il n'y a rien à configurer. Puis l'Elo de tout le monde est remis à 1000 et une nouvelle saison
+commence. L'historique des saisons passées est gardé.
 
 Le classement d'une saison se calcule à partir des matchs eux-mêmes (leur Elo après match), donc il est exact même si le
 serveur redémarre au changement de mois.
 """
+import re
 from datetime import datetime, timedelta
-from typing import List, Optional
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
 from sqlalchemy import Column, DateTime, Integer, String
 from sqlalchemy.orm import Session
 
 from .database import Base, get_db
-from .models import Card, Duel, Player, Tier, User
+from .models import Card, Duel, OwnedCard, Player, Tier, User
 from . import game_logic, push
 from .common import card_out, optional_user, require_admin
 
@@ -39,14 +43,6 @@ class SeasonState(Base):
     current_key = Column(String, nullable=False)
 
 
-class SeasonPrize(Base):
-    """La carte offerte au rang 1, 2 ou 3 d'une saison (season = « AAAA-MM », ou « default » pour toutes les saisons sans prix propre)."""
-    __tablename__ = "season_prizes"
-    season = Column(String, primary_key=True)
-    rank = Column(Integer, primary_key=True)
-    card_id = Column(String, nullable=False)
-
-
 class SeasonResult(Base):
     """Le podium d'une saison terminée (gardé pour l'historique ; sans clés étrangères : il survit à la suppression d'un compte)."""
     __tablename__ = "season_results"
@@ -62,14 +58,47 @@ class SeasonResult(Base):
     closed_at = Column(DateTime, default=datetime.utcnow)
 
 
-class PrizeEntry(BaseModel):
-    rank: int
-    player_name: str
+# ------------------------------------------------------------------ trophées
+RANK_TITLES = {1: "Vainqueur de saison", 2: "Deuxième de la saison", 3: "Troisième de la saison"}
+TROPHY_RE = re.compile(r"^(Vainqueur de saison|Deuxième de la saison|Troisième de la saison) \((.+)\)$")
 
 
-class SetSeasonPrizesRequest(BaseModel):
-    season: str = "default"          # « AAAA-MM » pour une saison précise, « default » pour toutes les autres
-    prizes: List[PrizeEntry]
+def trophy_name(key: str, rank: int) -> str:
+    return "%s (%s)" % (RANK_TITLES[rank], label_of(key))
+
+
+def key_from_label(label: str):
+    """« octobre 2026 » -> « 2026-10 » (None si le texte n'est pas un mois)."""
+    try:
+        month, year = label.rsplit(" ", 1)
+        return "%d-%02d" % (int(year), MONTHS.index(month) + 1)
+    except (ValueError, IndexError):
+        return None
+
+
+def trophy_info(player):
+    """Pour une carte-trophée : son rang, sa saison (« 2026-10 ») et le mois écrit ; None pour toute autre carte."""
+    m = TROPHY_RE.match(player.name or "") if (player.poste or "").upper() == "TROPHEE" else None
+    if not m:
+        return None
+    rank = next(r for r, t in RANK_TITLES.items() if t == m.group(1))
+    return {"rank": rank, "title": m.group(1), "label": m.group(2), "season": key_from_label(m.group(2))}
+
+
+def get_or_create_trophy(db: Session, key: str, rank: int) -> Card:
+    """Le trophée « rang `rank` de la saison `key` » (créé la première fois : un par saison et par rang)."""
+    name = trophy_name(key, rank)
+    player = db.query(Player).filter_by(name=name).first()
+    if player is None:
+        player = Player(name=name, poste="TROPHEE")
+        db.add(player)
+        db.flush()
+    card = db.query(Card).filter_by(player_id=player.id, tier=Tier.saison).first()
+    if card is None:
+        card = Card(player_id=player.id, tier=Tier.saison, vitesse=0, tir=0)
+        db.add(card)
+        db.flush()
+    return card
 
 
 # ------------------------------------------------------------------ dates
@@ -130,15 +159,6 @@ def podium_of(rows: list) -> list:
     return top
 
 
-def prizes_for(db: Session, key: str) -> dict:
-    """{rang: id de la carte} : les prix propres à cette saison, à défaut les prix « default »."""
-    out = {}
-    for season in ("default", key):
-        for p in db.query(SeasonPrize).filter_by(season=season).all():
-            out[p.rank] = p.card_id
-    return out
-
-
 def podium_counts(db: Session, user_id: str) -> dict:
     out = {1: 0, 2: 0, 3: 0}
     for r in db.query(SeasonResult).filter_by(user_id=user_id).all():
@@ -146,30 +166,24 @@ def podium_counts(db: Session, user_id: str) -> dict:
     return out
 
 
-def forget_cards(db: Session, card_ids: list) -> None:
-    """Une carte disparaît du jeu : elle n'est plus un prix de saison."""
-    db.query(SeasonPrize).filter(SeasonPrize.card_id.in_(card_ids)).delete(synchronize_session=False)
-
-
 # ------------------------------------------------------------------ fin de saison
 def close_season(db: Session, key: str) -> dict:
     """Termine la saison `key` : podium, récompenses, annonces, puis Elo de tout le monde remis à 1000."""
     rows = standings(db, key)
     podium = podium_of(rows)
-    prizes = prizes_for(db, key)
     results = []
     for r in podium:
         user = db.query(User).filter_by(id=r["user_id"]).first()
-        card = db.query(Card).filter_by(id=prizes[r["rank"]]).first() if r["rank"] in prizes else None
+        card = get_or_create_trophy(db, key, r["rank"])
         credits = PODIUM_CREDITS.get(r["rank"], 0)
         user.credits += credits
-        if card is not None:
-            game_logic.get_or_create_owned(db, user, card).quantity += 1
+        owned = game_logic.get_or_create_owned(db, user, card)
+        owned.quantity = 1                      # un trophée par saison et par rang : jamais de doublon
         db.merge(SeasonResult(season=key, rank=r["rank"], user_id=user.id, pseudo=user.pseudo, elo=r["elo"], matches=r["matches"], wins=r["wins"],
-                              card_id=card.id if card else None, credits=credits, closed_at=datetime.utcnow()))
-        results.append({"rank": r["rank"], "pseudo": user.pseudo, "elo": r["elo"], "card": card.player.name if card else None, "credits": credits})
+                              card_id=card.id, credits=credits, closed_at=datetime.utcnow()))
+        results.append({"rank": r["rank"], "pseudo": user.pseudo, "elo": r["elo"], "card": card.player.name, "credits": credits})
         push.enqueue(db, user.id, "duels", "%s Podium de la saison de %s !" % (MEDALS[r["rank"]], label_of(key)),
-                     "Tu finis n°%d (Elo %d) : +%d crédits%s." % (r["rank"], r["elo"], credits, " et une carte exclusive « Saison »" if card else ""), url="/#duels", tag="season-podium")
+                     "Tu finis n°%d (Elo %d) : +%d crédits et ton trophée « %s »." % (r["rank"], r["elo"], credits, card.player.name), url="/#duels", tag="season-podium")
     db.query(User).update({User.elo: ELO_START}, synchronize_session=False)
     nxt = label_of(next_key(key))
     for u in db.query(User).filter(User.is_test == False).all():          # noqa: E712
@@ -196,9 +210,11 @@ def run_scheduled(db: Session) -> list:
 
 # ------------------------------------------------------------------ pages publiques
 def _prize_rows(db: Session, key: str) -> list:
-    prizes = prizes_for(db, key)
-    cards = {c.id: c for c in db.query(Card).filter(Card.id.in_(list(prizes.values()))).all()} if prizes else {}
-    return [{"rank": r, "medal": MEDALS[r], "credits": PODIUM_CREDITS[r], "card": card_out(cards[prizes[r]]) if prizes.get(r) in cards else None} for r in (1, 2, 3)]
+    """Les 3 récompenses de la saison `key` : les crédits et un aperçu du trophée (la carte est créée à la clôture)."""
+    return [{"rank": r, "medal": MEDALS[r], "credits": PODIUM_CREDITS[r], "title": RANK_TITLES[r],
+             "card": {"id": "trophy-%s-%d" % (key, r), "tier": "saison", "player_name": trophy_name(key, r), "poste": "TROPHEE", "player_photo_url": None,
+                      "display_note": None, "vitesse": 0, "tir": 0, "surnom": None, "numero": None,
+                      "trophy": {"rank": r, "title": RANK_TITLES[r], "label": label_of(key), "season": key}}} for r in (1, 2, 3)]
 
 
 @router.get("/duel/season")
@@ -232,46 +248,12 @@ def past_seasons(db: Session = Depends(get_db)):
 # ------------------------------------------------------------------ administration
 @router.get("/admin/seasons", dependencies=[Depends(require_admin)])
 def admin_seasons(db: Session = Depends(get_db)):
-    """La saison en cours (classement complet, ce que gagneraient les 3 premiers) et les prix définis."""
+    """La saison en cours : le classement complet et ce que gagneraient les 3 premiers (aucun réglage à faire : les trophées se créent seuls)."""
     key = current_key()
     rows = standings(db, key)
-    prizes = prizes_for(db, key)
-    cards = {c.id: c for c in db.query(Card).filter(Card.id.in_(list(prizes.values()))).all()} if prizes else {}
     return {
         "current": key, "label": label_of(key), "min_matches": MIN_MATCHES, "podium_credits": PODIUM_CREDITS,
         "standings": [{k: v for k, v in r.items() if k != "user_id"} for r in rows],
-        "would_win": [{"rank": r["rank"], "pseudo": r["pseudo"], "card": cards[prizes[r["rank"]]].player.name if prizes.get(r["rank"]) in cards else None} for r in podium_of(rows)],
-        "prizes": {"default": {p.rank: (db.query(Card).filter_by(id=p.card_id).first().player.name if db.query(Card).filter_by(id=p.card_id).first() else None)
-                               for p in db.query(SeasonPrize).filter_by(season="default").all()},
-                   key: {p.rank: (db.query(Card).filter_by(id=p.card_id).first().player.name if db.query(Card).filter_by(id=p.card_id).first() else None)
-                         for p in db.query(SeasonPrize).filter_by(season=key).all()}},
+        "would_win": [{"rank": r["rank"], "pseudo": r["pseudo"], "trophy": trophy_name(key, r["rank"]), "credits": PODIUM_CREDITS[r["rank"]]} for r in podium_of(rows)],
         "state": (db.query(SeasonState).first().current_key if db.query(SeasonState).first() else None),
     }
-
-
-@router.post("/admin/set-season-prizes", dependencies=[Depends(require_admin)])
-def admin_set_season_prizes(payload: SetSeasonPrizesRequest, db: Session = Depends(get_db)):
-    """Choisit les joueurs dont la carte « Saison » est offerte au rang 1, 2, 3. La carte est créée si elle n'existe pas encore."""
-    season = payload.season.strip() or "default"
-    if season != "default":
-        try:
-            y, m = map(int, season.split("-"))
-            assert 1 <= m <= 12 and 2000 <= y <= 2100
-        except Exception:
-            raise HTTPException(status_code=400, detail="La saison doit être « default » ou un mois au format AAAA-MM (ex. 2026-11)")
-    done = []
-    for e in payload.prizes:
-        if e.rank not in (1, 2, 3):
-            raise HTTPException(status_code=400, detail="Le rang doit être 1, 2 ou 3")
-        player = db.query(Player).filter_by(name=e.player_name.strip()).first()
-        if player is None:
-            raise HTTPException(status_code=404, detail="Joueur introuvable : « %s »" % e.player_name)
-        card = db.query(Card).filter_by(player_id=player.id, tier=Tier.saison).first()
-        if card is None:
-            card = Card(player_id=player.id, tier=Tier.saison, vitesse=0, tir=0)
-            db.add(card)
-            db.flush()
-        db.merge(SeasonPrize(season=season, rank=e.rank, card_id=card.id))
-        done.append({"rank": e.rank, "player": player.name, "card_id": card.id})
-    db.commit()
-    return {"status": "ok", "season": season, "prizes": done}
