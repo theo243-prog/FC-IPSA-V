@@ -342,9 +342,10 @@ def check_editions(db: Session, now: datetime = None) -> int:
     now = now or datetime.utcnow()
     today = game_logic.today_paris(now)
     sent = 0
-    for key, spec in game_logic.EDITIONS.items():
-        if db.query(game_logic.Card).filter_by(tier=game_logic.Tier(key)).count() == 0:
+    for key in game_logic.EDITIONS:
+        if not game_logic.edition_configured(db, key) or db.query(game_logic.Card).filter_by(tier=game_logic.Tier(key)).count() == 0:
             continue
+        spec = game_logic.edition_spec(db, key)
         if game_logic.edition_status(db, key, today) != "active":
             continue
         start, end = game_logic.edition_window(db, key)
