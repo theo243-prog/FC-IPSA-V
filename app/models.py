@@ -46,6 +46,12 @@ class Tier(str, enum.Enum):
     ed4 = "ed4"
     ed5 = "ed5"
     ed6 = "ed6"
+    ed7 = "ed7"
+    ed8 = "ed8"
+    ed9 = "ed9"
+    ed10 = "ed10"
+    ed11 = "ed11"
+    ed12 = "ed12"
     saison = "saison"      # carte EXCLUSIVE du podium d'une saison 1v1 : jamais dans les packs (voir seasons.py)
     legendaire = "legendaire"
 
