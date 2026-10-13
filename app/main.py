@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page
 from sqlalchemy import or_
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting)
@@ -341,7 +341,7 @@ def list_upcoming_matches(db: Session = Depends(get_db)):
 @app.get("/game/editions")
 def game_editions(db: Session = Depends(get_db)):
     """Les éditions limitées : dates, état (à venir / en cours / terminée) et nombre de cartes."""
-    return [game_logic.edition_info(db, k) for k in game_logic.EDITIONS]
+    return [game_logic.edition_info(db, k) for k in game_logic.EDITIONS if game_logic.edition_configured(db, k)]
 
 
 @app.get("/game/rules")
@@ -785,6 +785,8 @@ def admin_list_editions(db: Session = Depends(get_db)):
     """Les éditions limitées : dates, état, et la liste des joueurs et fans qui ont une carte dans chacune."""
     out = []
     for key in game_logic.EDITIONS:
+        if not game_logic.edition_configured(db, key):
+            continue                                       # un emplacement libre pas encore créé n'est pas listé (voir « free_slots » ci-dessous)
         info = game_logic.edition_info(db, key)
         cards = db.query(Card).filter_by(tier=Tier(key)).all()
         info["joueurs"] = sorted(c.player.name for c in cards)
@@ -794,12 +796,70 @@ def admin_list_editions(db: Session = Depends(get_db)):
     return out
 
 
+@app.get("/admin/edition-slots", dependencies=[Depends(require_admin)])
+def admin_edition_slots(db: Session = Depends(get_db)):
+    """Les 6 emplacements d'éditions libres : lesquels sont déjà créés, lesquels sont libres."""
+    return [{"slot": k, "free": not game_logic.edition_configured(db, k), **{x: v for x, v in game_logic.edition_info(db, k).items() if x in ("label", "icon", "status", "cards")}}
+            for k in game_logic.CUSTOM_EDITION_SLOTS]
+
+
+@app.post("/admin/define-edition", dependencies=[Depends(require_admin)])
+def admin_define_edition(payload: schemas_social.DefineEditionRequest, db: Session = Depends(get_db)):
+    """Crée une nouvelle édition limitée (ex. Saint-Valentin, Pâques, Été…) dans un emplacement libre : nom, emoji, 2 couleurs, dates.
+    Relançable : sur une édition qui n'a encore aucune carte, elle change le nom, l'emoji, les couleurs et les dates.
+    Ensuite : « Créer les cartes d'une édition » avec l'emplacement obtenu (ed1…ed6)."""
+    import re
+    label, icon = " ".join(payload.label.split()), payload.icon.strip()
+    if not (1 <= len(label) <= 24):
+        raise HTTPException(status_code=400, detail="Le nom doit faire entre 1 et 24 caractères")
+    if not (1 <= len(icon) <= 8):
+        raise HTTPException(status_code=400, detail="L'emoji doit être un seul symbole (ex. 💘)")
+    if not (re.fullmatch(r"#[0-9A-Fa-f]{6}", payload.color1) and re.fullmatch(r"#[0-9A-Fa-f]{6}", payload.color2)):
+        raise HTTPException(status_code=400, detail="Les couleurs s'écrivent #RRGGBB (ex. #D6336C)")
+    try:
+        s_day, e_day = game_logic._parse_day(payload.start), game_logic._parse_day(payload.end)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Les dates s'écrivent AAAA-MM-JJ (ex. 2027-02-14)")
+    if e_day < s_day:
+        raise HTTPException(status_code=400, detail="La date de fin ne peut pas être avant la date de début")
+    taken = {game_logic.edition_spec(db, k)["label"].lower() for k in game_logic.EDITIONS if game_logic.edition_configured(db, k)}
+    slot = (payload.slot or "auto").strip().lower()
+    if slot == "auto":
+        slot = next((k for k in game_logic.CUSTOM_EDITION_SLOTS if not game_logic.edition_configured(db, k)), None)
+        if slot is None:
+            raise HTTPException(status_code=400, detail="Les 6 emplacements sont pris : supprime une ancienne édition (sans carte) avant d'en créer une autre")
+    elif slot not in game_logic.CUSTOM_EDITION_SLOTS:
+        raise HTTPException(status_code=400, detail="L'emplacement doit être auto, " + ", ".join(game_logic.CUSTOM_EDITION_SLOTS))
+    if db.query(Card).filter_by(tier=Tier(slot)).count() > 0:
+        raise HTTPException(status_code=400, detail="Cet emplacement a déjà des cartes : on ne change plus son nom. Choisis un autre emplacement (ou supprime d'abord ses cartes)")
+    if label.lower() in taken - ({game_logic.edition_spec(db, slot)["label"].lower()} if game_logic.edition_configured(db, slot) else set()):
+        raise HTTPException(status_code=400, detail="Une édition porte déjà ce nom")
+    game_logic.define_edition(db, slot, label, icon, payload.color1.upper(), payload.color2.upper(), s_day.isoformat(), e_day.isoformat())
+    db.commit()
+    return {"status": "ok", "slot": slot, "edition": game_logic.edition_info(db, slot),
+            "suite": "Crée maintenant ses cartes : « Créer les cartes d'une édition » avec l'édition « %s »." % slot}
+
+
+@app.post("/admin/remove-edition", dependencies=[Depends(require_admin)])
+def admin_remove_edition(payload: schemas_social.RemoveEditionRequest, db: Session = Depends(get_db)):
+    """Supprime une édition libre qui n'a aucune carte (l'emplacement redevient libre). Halloween et Noël ne se suppriment pas."""
+    slot = payload.edition.strip().lower()
+    if slot not in game_logic.CUSTOM_EDITION_SLOTS or not game_logic.edition_configured(db, slot):
+        raise HTTPException(status_code=404, detail="Aucune édition libre créée à cet emplacement")
+    n = db.query(Card).filter_by(tier=Tier(slot)).count()
+    if n:
+        raise HTTPException(status_code=400, detail="Cette édition a encore %d carte(s) : supprime-les d'abord (« Supprimer une carte »)" % n)
+    game_logic.remove_edition(db, slot)
+    db.commit()
+    return {"status": "ok", "slot": slot}
+
+
 @app.post("/admin/create-edition-cards", dependencies=[Depends(require_admin)])
 def admin_create_edition_cards(payload: schemas.AdminCreateEditionCardsRequest, db: Session = Depends(get_db)):
     """Crée les cartes d'une édition limitée pour la liste de joueurs et fans donnée (une carte par personne).
     Relançable sans risque : une carte qui existe déjà n'est pas recréée."""
-    if payload.edition not in game_logic.EDITIONS:
-        raise HTTPException(status_code=400, detail="edition doit être : " + ", ".join(game_logic.EDITIONS))
+    if payload.edition not in game_logic.EDITIONS or not game_logic.edition_configured(db, payload.edition):
+        raise HTTPException(status_code=400, detail="edition doit être une édition existante : " + ", ".join(k for k in game_logic.EDITIONS if game_logic.edition_configured(db, k)) + " (pour une nouvelle, utilise d'abord « Créer une édition »)")
     names = list(dict.fromkeys(" ".join(n.split()) for n in payload.players if n and n.strip()))
     if not names:
         raise HTTPException(status_code=400, detail="La liste des joueurs est vide")
@@ -838,8 +898,8 @@ def admin_create_edition_cards(payload: schemas.AdminCreateEditionCardsRequest, 
 def admin_set_edition_dates(payload: schemas.AdminSetEditionDatesRequest, db: Session = Depends(get_db)):
     """Change les dates d'une édition (prolonger, raccourcir, décaler, ou terminer tout de suite). reset: true = dates d'origine."""
     import json
-    if payload.edition not in game_logic.EDITIONS:
-        raise HTTPException(status_code=400, detail="edition doit être : " + ", ".join(game_logic.EDITIONS))
+    if payload.edition not in game_logic.EDITIONS or not game_logic.edition_configured(db, payload.edition):
+        raise HTTPException(status_code=400, detail="edition doit être une édition existante : " + ", ".join(k for k in game_logic.EDITIONS if game_logic.edition_configured(db, k)))
     row = db.get(AppSetting, "edition_dates")
     data = {}
     if row is not None:
