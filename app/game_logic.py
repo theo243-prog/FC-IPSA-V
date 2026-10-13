@@ -31,7 +31,7 @@ DUPLICATE_SELL_VALUE = {"commune": 1, "rare": 3, "halloween": 5, "noel": 5, "gol
 
 # Ordre de rareté, de la plus commune à la plus rare.
 TIER_ORDER = ["commune", "rare", "halloween", "noel", "gold", "secrete", "speciale", "epique", "saison", "legendaire"]
-CUSTOM_EDITION_SLOTS = ("ed1", "ed2", "ed3", "ed4", "ed5", "ed6")       # emplacements libres : tu les nommes toi-même (voir define_edition)
+CUSTOM_EDITION_SLOTS = tuple("ed%d" % i for i in range(1, 13))       # 12 emplacements libres : tu les nommes toi-même (voir define_edition)
 EDITION_TIERS = ("halloween", "noel") + CUSTOM_EDITION_SLOTS      # les éditions limitées : plus rares que la rare, moins que les autres
 
 # Types de packs. "guaranteed" = raretés garanties ; les autres cartes (jusqu'à 3) suivent les probas classiques.
@@ -411,6 +411,8 @@ def card_kind(player) -> str:
         return "stade"
     if poste == "MOMENT":
         return "moment"
+    if poste == "TROPHEE":
+        return "trophee"                  # trophée de saison : ni note, ni bonus, ni match, ni échange
     return "joueur"
 
 
@@ -469,7 +471,7 @@ def get_display_note(player: Player, tier: str = "commune", card=None):
 def sell_duplicate(db: Session, user: User, card_id: str) -> int:
     """Vend UN exemplaire en doublon d'une carte contre des crédits. Lève ValueError si pas de doublon."""
     owned = db.query(OwnedCard).filter_by(user_id=user.id, card_id=card_id).first()
-    if not owned or owned.quantity <= 1:
+    if not owned or owned.quantity <= 1 or owned.card.tier == Tier.saison:      # (un trophée de saison ne se vend jamais)
         raise ValueError("no_duplicate")
     value = DUPLICATE_SELL_VALUE[owned.card.tier.value]
     owned.quantity -= 1
@@ -634,7 +636,7 @@ def set_tier_photo(player, tier: str, url: str) -> None:
 
 
 # ---------------------------------------------------------------------
-# Les 6 emplacements d'édition libres (ed1 à ed6) suivent exactement les mêmes règles qu'Halloween et Noël :
+# Les 12 emplacements d'édition libres (ed1 à ed12) suivent exactement les mêmes règles qu'Halloween et Noël :
 # même note, même bonus de fan, même prix de revente d'un doublon, même place dans l'ordre des raretés.
 # ---------------------------------------------------------------------
 for _slot in CUSTOM_EDITION_SLOTS:
