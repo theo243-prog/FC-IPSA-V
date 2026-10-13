@@ -85,6 +85,14 @@ def filter_proposals(db: Session, rows: list, viewer) -> list:
     return out
 
 
+def check_no_trophy(db: Session, slots) -> None:
+    """Un trophée de saison n'est qu'un souvenir : il ne peut jouer aucun match."""
+    from .models import Card, Tier
+    ids = [s.card_id for s in slots if getattr(s, "card_id", None)]
+    if ids and db.query(Card).filter(Card.id.in_(ids), Card.tier == Tier.saison).first() is not None:
+        raise HTTPException(status_code=400, detail="Un trophée de saison ne peut pas jouer de match : c'est un souvenir")
+
+
 def check_can_play(db: Session, user: User, proposal_id: str) -> None:
     """Refuse de jouer un défi réservé à quelqu'un d'autre."""
     d = db.query(DirectChallenge).filter_by(proposal_id=proposal_id).first()
