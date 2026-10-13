@@ -9,7 +9,7 @@ Aucune commande à lancer et aucun changement de « Start Command » dans Railwa
 from sqlalchemy import inspect, text
 
 # valeurs ajoutées à l'énumération des raretés (cartes.tier) : les éditions limitées
-NEW_TIER_VALUES = ["halloween", "noel"]
+NEW_TIER_VALUES = ["halloween", "noel", "saison"]
 
 # (table, colonne, type SQL)
 NEW_COLUMNS = [
