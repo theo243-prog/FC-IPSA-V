@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, weekly, push, schema_upgrades, missions
+from . import game_logic, duel_engine, schemas, weekly, push, schema_upgrades, missions, profiles
 from sqlalchemy import or_
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting)
@@ -116,6 +116,7 @@ def pack_tokens_out(user: User) -> dict:
 def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     game_logic.regen_user_packs(db, user)
     db.refresh(user.pack_state)
+    unseen_badges = profiles.safe_unseen(db, user)       # succès gagnés depuis la dernière visite (les crédits sont déjà ajoutés ci-dessous)
     tokens = pack_tokens_out(user)
     if user.is_test:
         # affichage clair pour un compte de test : pas de cap, pas d'attente
@@ -127,6 +128,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "pack_tokens": tokens,
             "seconds_until_next_pack": None,
             "is_test": True,
+            "unseen_badges": unseen_badges,
         }
     return {
         "pseudo": user.pseudo,
@@ -136,10 +138,36 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         "pack_tokens": tokens,
         "seconds_until_next_pack": game_logic.seconds_until_next_pack(user),
         "is_test": False,
+        "unseen_badges": unseen_badges,
     }
 
 
 # --------------------------------------------------------------- Packs ----
+
+@app.get("/badges")
+def get_badges(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Tous mes succès, avec les niveaux déjà gagnés et la progression vers le suivant."""
+    return profiles.badges_out(db, user)
+
+
+@app.post("/badges/seen")
+def badges_seen(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """J'ai vu les annonces de nouveaux succès : elles ne sont plus répétées."""
+    profiles.mark_seen(db, user)
+    return {"status": "ok"}
+
+
+@app.post("/profile/showcase")
+def set_my_showcase(payload: profiles.ShowcaseRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Choisit jusqu'à 3 cartes (que je possède) pour ma vitrine. Liste vide : retour à la vitrine automatique (mes cartes les plus rares)."""
+    try:
+        profiles.set_showcase(db, user, payload.card_ids)
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    cards, auto = profiles.showcase_cards(db, user)
+    return {"showcase": [card_out(c) for c in cards], "showcase_auto": auto}
+
 
 @app.get("/missions")
 def get_missions(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -653,6 +681,21 @@ def shop_buy(payload: schemas.BuyShopItemRequest, user: User = Depends(get_curre
 
 # --------------------------------------------------------- Classement -----
 
+@app.get("/users/{pseudo}/profile")
+def user_profile(pseudo: str, db: Session = Depends(get_db)):
+    """Profil PUBLIC d'un joueur : collection en %, matchs 1v1, succès, vitrine. Ni crédits, ni nom de carte qu'il n'a pas."""
+    user = db.query(User).filter_by(pseudo=pseudo).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    rows = leaderboard(db)
+    rank = next((i + 1 for i, r in enumerate(rows) if r["pseudo"] == user.pseudo), None)       # (aucun rang pour un compte de test)
+    out = profiles.profile_out(db, user, rank=rank)
+    cards, auto = profiles.showcase_cards(db, user)
+    out["showcase"], out["showcase_auto"] = [card_out(c) for c in cards], auto
+    out["players_ranked"] = len(rows)
+    return out
+
+
 @app.get("/leaderboard")
 def leaderboard(db: Session = Depends(get_db)):
     total_cards = db.query(Card).count()      # 100 % = TOUTES les cartes du jeu, sans exception (éditions limitées et secrètes comprises)
@@ -698,6 +741,8 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     db.query(NotifState).filter_by(user_id=user.id).delete()
     db.query(PushOutbox).filter_by(user_id=user.id).delete()
     db.query(missions.UserDaily).filter_by(user_id=user.id).delete()      # sa série et ses missions du jour
+    for table in (profiles.UserBadge, profiles.UserCounter, profiles.UserProfile):      # ses succès, ses compteurs et sa vitrine
+        db.query(table).filter_by(user_id=user.id).delete()
     db.query(Listing).filter_by(seller_id=user.id).delete()
     for proposal in db.query(MatchProposal).filter_by(creator_id=user.id).all():
         db.delete(proposal)          # ses défis ouverts (le compte est supprimé, pas de remboursement utile)
