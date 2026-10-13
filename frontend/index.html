@@ -169,6 +169,24 @@
   .share-img{width:100%;max-width:400px;display:block;margin:0 auto 14px;border-radius:12px;box-shadow:var(--shadow);}
   .share-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
   .chip-pseudo-link{cursor:pointer;}
+  /* version, saisons, offres d'achat, défis privés, rareté « Saison » */
+  .site-footer{text-align:center;font-size:11.5px;color:var(--text-muted);padding:22px 12px 34px;}
+  .season-box h2{margin-bottom:6px;}
+  .season-me{font-size:13px;margin:8px 0;font-weight:700;}
+  .duel-table tr.dim{opacity:.55;}
+  .season-prizes{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 4px;}
+  .season-prizes .prize{flex:1 1 130px;min-width:120px;background:var(--bg-sunk);border:1px solid var(--border);border-radius:12px;padding:8px;text-align:center;}
+  .season-prizes .p-medal{font-size:26px;line-height:1;} .season-prizes .p-credits{font-weight:800;font-size:13px;margin:3px 0 6px;} .season-prizes .p-none{font-size:11.5px;color:var(--text-muted);}
+  .season-prizes .card{margin:0 auto;cursor:default;}
+  .offer-row{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px dashed var(--border);}
+  .offer-row .card{flex:none;cursor:default;width:84px;} .offer-info{flex:1;min-width:0;font-size:13.5px;line-height:1.4;} .offer-info small{color:var(--text-muted);}
+  .offer-form{margin-top:16px;border-top:1px dashed var(--border);padding-top:12px;} .offer-form .share-actions{margin-top:8px;}
+  .card-front.tier-saison,.card.tier-saison:not(.locked){background:radial-gradient(110% 70% at 50% 0%,rgba(255,224,138,.38),rgba(255,224,138,0) 60%),linear-gradient(170deg,#0F5E73 0%,#0A3A52 55%,#06243A 100%);color:#E9FBFF;box-shadow:var(--shadow),inset 0 0 0 2px #E9C46A,inset 0 0 14px rgba(233,196,106,.5);}
+  .tier-saison .card-tier-label{background:linear-gradient(90deg,#F6D56B,#E9A93B);color:#3A2500;}
+  .tier-saison .card-poste{background:rgba(0,0,0,.35);color:#FFE9A8;}
+  .tier-saison .card-name,.tier-saison.has-photo .card-name{color:#FFF6D9;text-shadow:0 0 6px rgba(0,0,0,.85),0 1px 2px rgba(0,0,0,.9);}
+  .tier-saison .card-stats span{background:rgba(0,0,0,.4);color:#FFE9A8;}
+  .card-deco-trophy{top:30px;right:6px;font-size:28px;line-height:1;z-index:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.55));}
   .tab.active::after{content:"";position:absolute;left:10px;right:10px;bottom:3px;height:9px;background:linear-gradient(to bottom,var(--stripe) 0,var(--stripe) 3px,transparent 3px,transparent 5px,var(--stripe) 5px,var(--stripe) 9px);}
   .tab-panel{display:none;}
   .diff-pos{color:#1B7F3B;} .diff-neg{color:#B3261E;}
@@ -791,6 +809,16 @@
         <button id="createListingBtn" class="btn-secondary">Mettre en vente</button>
       </div>
       <div id="listingsEl"></div>
+      <div class="panel-box" id="offersForMeBox">
+        <h2>Offres d'achat pour tes cartes</h2>
+        <p class="duel-hint">Des joueurs proposent d'acheter une carte que tu possèdes. Vends-la en direct au prix proposé.</p>
+        <div id="offersForMeEl"></div>
+      </div>
+      <div class="panel-box" id="myOffersBox">
+        <h2>Mes offres d'achat</h2>
+        <p class="duel-hint">Tu veux une carte ? Ouvre le profil d'un joueur qui l'a (depuis le classement), « Voir sa collection », touche la carte et propose un prix. Tes crédits sont mis de côté jusqu'à ce qu'un joueur accepte ou que tu annules.</p>
+        <div id="myOffersEl"></div>
+      </div>
     </section>
 
     <section id="tab-shop" class="tab-panel">
@@ -823,6 +851,13 @@
     <section id="tab-duels" class="tab-panel">
       <div class="help-row"><button class="help-btn" type="button" data-help="duels"><span class="help-q">?</span> Aide</button></div>
       <div class="duel-grid">
+        <div class="panel-box season-box" id="seasonBox" hidden>
+          <h2 id="seasonTitle">🏆 Saison</h2>
+          <p class="duel-hint" id="seasonHint"></p>
+          <div id="seasonStandings"></div>
+          <div class="season-prizes" id="seasonPrizes"></div>
+          <p class="duel-hint" id="seasonLast" style="margin-top:10px;"></p>
+        </div>
         <div class="panel-box">
           <h2>Profils & classement Elo</h2>
           <div id="duelBoardEl"></div>
@@ -852,6 +887,7 @@
       </div>
     </section>
   </main>
+  <footer class="site-footer" id="siteFooter"><span id="siteVersionText">…</span></footer>
   </div>
 </div>
 <div class="modal-overlay" id="teamModal">
@@ -861,6 +897,7 @@
     <div class="tm-restored" id="tmRestored" style="display:none;"></div>
     <div class="form-row"><label>Disposition</label><select id="tmFormation"></select></div>
     <div class="form-row"><label>Tactique (secrète jusqu'au coup d'envoi)</label><select id="tmTactic"></select><div class="tm-hint" id="tmTacticHint"></div></div>
+    <div class="form-row" id="tmTargetRow"><label>Défier un joueur en particulier (facultatif)</label><select id="tmTarget"><option value="">— n'importe qui (défi public) —</option></select><div class="tm-hint">Seul ce joueur verra ton défi, et il sera prévenu par notification.</div></div>
     <div class="form-row" id="tmStakeRow"><label>Mise (1 à 10 crédits)</label><input id="tmStake" type="number" min="1" max="10" value="2"></div>
     <div class="form-row" id="tmRefRow"><label>Enveloppe pour l'arbitre (crédits, 0 = aucune)</label><input id="tmReferee" type="number" min="0" step="1" value="0"><div class="tm-hint" id="tmRefHint"></div></div>
     <div class="tm-section">Les 5 joueurs</div>
@@ -884,6 +921,7 @@
     <div class="match-actions">
       <button class="btn-secondary" id="msSkip">Passer l'animation</button>
       <button class="btn-secondary" id="msReplay" style="display:none;">Rejouer l'animation</button>
+      <button class="btn-secondary" id="msRematch" style="display:none;">⚔️ Revanche</button>
       <button class="btn-primary" id="msDone">Fermer</button>
     </div>
   </div>
@@ -1018,7 +1056,7 @@
       btn.classList.add('active');
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
       if (btn.dataset.tab === 'collection') loadCollection();
-      if (btn.dataset.tab === 'marche') { loadCollection().then(renderMarketForm); loadListings(); }
+      if (btn.dataset.tab === 'marche') { loadCollection().then(renderMarketForm); loadListings(); loadOffers(); }
       if (btn.dataset.tab === 'shop') loadShop();
       if (btn.dataset.tab === 'classement') loadLeaderboard();
       if (btn.dataset.tab === 'actualite') loadNews();
@@ -1103,7 +1141,7 @@
   }
 
   // bonus d'équipe (en %) apporté par une carte Fan en match 1v1, selon sa rareté
-  const FAN_BONUS_PCT = { commune: 5, rare: 10, halloween: 11, noel: 11, epique: 12, secrete: 13, legendaire: 15 };
+  const FAN_BONUS_PCT = { commune: 5, rare: 10, halloween: 11, noel: 11, epique: 12, secrete: 13, saison: 14, legendaire: 15 };
   const EDITION_TIERS = ['halloween', 'noel'];          // les éditions limitées : un thème, des dates
   let editionsInfo = {};                                 // {halloween: {label, icon, start, end, status, cards}} (lu sur le serveur)
   function isMascot(card){ return cardKind(card) === 'mascotte'; }
@@ -1177,13 +1215,14 @@
       img.replaceWith(span);
     }, { once: true });
   }
-  function tierLabel(t){ return ({legendaire:'Légendaire', epique:'Épique', speciale:'Spéciale', secrete:'Secrète', gold:'Gold', halloween:'Halloween', noel:'Noël', rare:'Rare', commune:'Commune'})[t] || t; }
+  function tierLabel(t){ return ({saison:'Saison', legendaire:'Légendaire', epique:'Épique', speciale:'Spéciale', secrete:'Secrète', gold:'Gold', halloween:'Halloween', noel:'Noël', rare:'Rare', commune:'Commune'})[t] || t; }
   // décor propre à une édition limitée (toiles et citrouille d'Halloween ; neige et flocons de Noël)
   const FLAKES = [[4,12,12,.85],[86,10,10,.7],[90,30,14,.9],[6,34,9,.6],[10,52,13,.8],[84,52,10,.75],[47,6,8,.6],[70,17,9,.55],[24,19,8,.5],[92,62,11,.8],[3,63,9,.7]];
   function editionDecor(tier){
     if (tier === 'halloween') return '<svg class="card-deco card-deco-web tl" aria-hidden="true"><use href="#web-corner" width="100%" height="100%"/></svg><svg class="card-deco card-deco-web tr" aria-hidden="true"><use href="#web-corner" width="100%" height="100%"/></svg><svg class="card-deco card-deco-pk" aria-hidden="true"><use href="#pumpkin" width="100%" height="100%"/></svg>';
     if (tier === 'noel') return FLAKES.map(f => '<svg class="card-deco card-deco-flake" aria-hidden="true" style="left:' + f[0] + '%;top:' + f[1] + '%;width:' + f[2] + 'px;height:' + f[2] + 'px;opacity:' + f[3] + '"><use href="#flake" width="100%" height="100%"/></svg>').join('') + '<svg class="card-deco card-deco-snow" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 8C12 3 22 4 33 7S54 11 66 6 88 3 100 7V40H0z" fill="#fff"/><path d="M0 8C12 3 22 4 33 7S54 11 66 6 88 3 100 7" fill="none" stroke="#D4E3F2" stroke-width="1.1"/></svg>';
     if (tier === 'secrete') return '<div class="card-deco card-deco-saturn" aria-hidden="true"></div>';
+    if (tier === 'saison') return '<div class="card-deco card-deco-trophy" aria-hidden="true">🏆</div>';
     return '';
   }
   function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -1269,6 +1308,7 @@
         if (p.tier === 'secrete') inner += '<p class="tm-hint" style="text-align:center;">Carte secrète : elle ne sort jamais des packs. On la débloque en fusionnant 100 points de doublons (commune = 1, rare = 5).</p>';
       }
       body.innerHTML = photoHTML + '<div class="player-detail-poste">' + escapeHtml(posteText) + ' · ' + tierLabel(p.tier) + '</div>' + inner;
+      if (card && card._viewing && card.id) addOfferForm(body, card);          // la carte d'un autre joueur : on peut proposer de l'acheter
       if (card && card.quantity > 0 && !card._viewing) {          // une carte que JE possède : on peut la partager en image
         body.insertAdjacentHTML('beforeend', '<div class="share-actions" style="margin-top:16px;"><button class="btn-secondary" type="button" id="shareCardBtn">📤 Partager cette carte</button></div>');
         document.getElementById('shareCardBtn').addEventListener('click', () => openShareCard(card));
@@ -1290,6 +1330,7 @@
     const v = n => cssVar(n);
     if (tier === 'halloween') return { c1: '#2B1424', c2: '#0C0910', label: '#FF8A1F', labelText: '#1A0B00', border: '#FF8A1F', glow: '#FF8A1F' };
     if (tier === 'noel') return { c1: '#8E0A14', c2: '#D3202E', label: '#FFFFFF', labelText: '#B3121D', border: '#FFFFFF', glow: '#FF5C66' };
+    if (tier === 'saison') return { c1: '#06243A', c2: '#0F5E73', label: '#F6D56B', labelText: '#3A2500', border: '#E9C46A', glow: '#2BB3C9' };
     const key = tier === 'legendaire' ? 'legend' : tier;
     const c1 = v('--' + key + '-1') || '#9C6B3E', c2 = v('--' + key + '-2') || '#D3A874';
     return { c1, c2, label: 'rgba(255,255,255,.88)', labelText: v('--' + key + '-text') || '#222', border: 'rgba(255,255,255,.8)', glow: c2 };
@@ -1339,6 +1380,7 @@
     };
     chip(label.toUpperCase(), x0 + 36, y0 + 36, secret ? 'rgba(22,17,43,.85)' : pal.label, secret ? '#ECE8FF' : pal.labelText, 'left');
     if (poste) chip(poste, x0 + w - 36, y0 + 36, 'rgba(0,0,0,.45)', '#fff', 'right');
+    if (card.tier === 'saison') { g.save(); g.font = '120px sans-serif'; g.textAlign = 'right'; g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 14; g.fillText('🏆', x0 + w - 30, y0 + 230); g.restore(); }      // le trophée de la carte Saison
     // --- nom (réduit si trop long) et pastilles de stats
     let size = 128; g.font = '800 ' + size + 'px ' + fontHead; while (g.measureText(name).width > w - 80 && size > 44) { size -= 4; g.font = '800 ' + size + 'px ' + fontHead; }
     g.fillStyle = '#fff'; g.shadowColor = 'rgba(0,0,0,.85)'; g.shadowBlur = 14; g.fillText(name, x0 + 40, y0 + h - 150); g.shadowBlur = 0;
@@ -1396,11 +1438,12 @@
       '<div class="profile-tiles"><div class="profile-tile"><b>' + String(p.completion_pct).replace('.', ',') + ' %</b><span>collection (' + p.cards_owned + '/' + p.cards_total + ')</span></div>' +
       '<div class="profile-tile"><b>' + d.played + '</b><span>matchs 1v1' + (d.played ? ' · ' + d.won + 'V ' + d.drawn + 'N ' + d.lost + 'D' : '') + '</span></div>' +
       '<div class="profile-tile"><b>' + p.elo + '</b><span>Elo' + (d.win_rate !== null ? ' · ' + d.win_rate + ' % de victoires' : '') + '</span></div></div>' +
+      (p.podiums && (p.podiums[1] || p.podiums[2] || p.podiums[3]) ? '<div class="profile-meta" style="text-align:center;margin:6px 0;">🏆 Podiums de saison : 🥇 ' + (p.podiums[1] || 0) + ' · 🥈 ' + (p.podiums[2] || 0) + ' · 🥉 ' + (p.podiums[3] || 0) + '</div>' : '') +
       '<div class="profile-section">Vitrine' + (mine ? ' <button class="btn-small ghost" type="button" id="profShowcaseEdit">Modifier</button>' : '<small>' + (p.showcase_auto ? 'ses cartes les plus rares' : 'ses cartes préférées') + '</small>') + '</div>' +
       '<div class="showcase-row" id="profShowcase"></div><div id="profShowcaseEditor"></div>' +
       '<div class="profile-section">Succès<small>' + p.badges.earned + ' niveau' + (p.badges.earned > 1 ? 'x' : '') + ' sur ' + p.badges.total + '</small></div>' + badgeHTML +
       '<div class="profile-section">Raretés<small>packs ouverts : ' + p.packs_opened + (p.best_streak ? ' · meilleure série : ' + p.best_streak + ' j' : '') + '</small></div><div class="tier-bars">' + tiersHTML + '</div>' +
-      '<div class="share-actions" style="margin-top:18px;"><button class="btn-secondary" type="button" id="profCollection">' + (mine ? 'Voir ma collection' : 'Voir sa collection') + '</button></div>';
+      '<div class="share-actions" style="margin-top:18px;"><button class="btn-secondary" type="button" id="profCollection">' + (mine ? 'Voir ma collection' : 'Voir sa collection') + '</button>' + (mine ? '' : '<button class="btn-primary" type="button" id="profChallenge">⚔️ Défier ' + escapeHtml(p.pseudo) + '</button>') + '</div>';
     const row = document.getElementById('profShowcase');
     if (!p.showcase.length) row.innerHTML = '<p class="muted">Aucune carte pour l\'instant.</p>';
     p.showcase.forEach(c => { const el = makeMiniCard(c, { hideCount: true }); el.style.cursor = 'default'; row.appendChild(el); });
@@ -1408,12 +1451,13 @@
       if (mine) { document.getElementById('userCollectionModal').style.display = 'none'; document.querySelector('.tab[data-tab="collection"]').click(); } else openUserCollection(p.pseudo);
     });
     if (mine) document.getElementById('profShowcaseEdit').addEventListener('click', () => editShowcase(p));
+    else document.getElementById('profChallenge').addEventListener('click', () => { document.getElementById('userCollectionModal').style.display = 'none'; startChallenge(p.pseudo, null); });
   }
   async function editShowcase(p){
     const box = document.getElementById('profShowcaseEditor');
     try {
       const all = (await api('/collection')).filter(c => c.quantity > 0);
-      const order = ['legendaire', 'secrete', 'speciale', 'epique', 'halloween', 'noel', 'gold', 'rare', 'commune'];
+      const order = ['saison', 'legendaire', 'secrete', 'speciale', 'epique', 'halloween', 'noel', 'gold', 'rare', 'commune'];
       all.sort((a, b) => (order.indexOf(a.tier) - order.indexOf(b.tier)) || cardDisplayName(a).localeCompare(cardDisplayName(b), 'fr'));
       const cur = p.showcase_auto ? [] : p.showcase.map(c => c.id);
       const opts = '<option value="">— aucune —</option>' + all.map(c => '<option value="' + c.id + '">' + escapeHtml(cardDisplayName(c)) + ' · ' + escapeHtml(tierLabel(c.tier)) + '</option>').join('');
@@ -1433,6 +1477,94 @@
     const gain = list.reduce((a, b) => a + b.reward, 0);
     toast(list.length === 1 ? '🏅 Succès : ' + list[0].title + ' · ' + list[0].level_name + ' (+' + gain + ' crédits)' : '🏅 ' + list.length + ' nouveaux succès ! (+' + gain + ' crédits) · touche ton pseudo pour les voir');
     api('/badges/seen', { method: 'POST' }).catch(() => {}).then(() => { announcingBadges = false; });
+  }
+
+  // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
+  const SITE_VERSION = '2026.10.13.3';
+  (async function showVersions(){
+    const el = document.getElementById('siteVersionText'); if (!el) return;
+    let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
+    el.textContent = 'Site v' + SITE_VERSION + ' · Serveur ' + (srv ? 'v' + srv + (srv === SITE_VERSION ? ' ✅' : ' ⚠️ versions différentes : recharge la page, ou attends la fin du déploiement') : 'injoignable');
+  })();
+
+  // ---------- Saison du 1v1 (classement du mois, récompenses, podium précédent) ----------
+  async function loadSeason(){
+    const box = byId('seasonBox'); if (!box) return;
+    try {
+      const s = await fetch(API_BASE + '/duel/season', { headers: token ? { Authorization: 'Bearer ' + token } : {} }).then(r => r.json());
+      const days = Math.floor(s.seconds_left / 86400), hours = Math.floor((s.seconds_left % 86400) / 3600);
+      byId('seasonTitle').textContent = '🏆 Saison de ' + s.label;
+      byId('seasonHint').textContent = 'Fin dans ' + (days ? days + ' j ' : '') + hours + ' h. Il faut avoir joué ' + s.min_matches + ' matchs ce mois-ci pour monter sur le podium. Le 1er du mois, l\'Elo de tout le monde repart à 1000.';
+      let rankE = 0;
+      const table = s.standings.length ? '<table class="duel-table"><thead><tr><th></th><th>Joueur</th><th class="num">Elo</th><th class="num">M</th><th class="num">V</th></tr></thead><tbody>' + s.standings.map(r => {
+        const medal = r.eligible && ++rankE <= 3 ? ['🥇', '🥈', '🥉'][rankE - 1] : '#' + r.rank;
+        return '<tr class="' + (r.pseudo === myPseudo ? 'me' : '') + (r.eligible ? '' : ' dim') + '"><td><span class="rank-num">' + medal + '</span></td><td>' + escapeHtml(r.pseudo) + (r.pseudo === myPseudo ? ' (toi)' : '') + '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.matches + '</td><td class="num">' + r.wins + '</td></tr>';
+      }).join('') + '</tbody></table>' : '<div class="empty-state">Personne n\'a encore joué ce mois-ci : sois le premier !</div>';
+      const me = s.me ? '<div class="season-me">Ta place : n°' + s.me.rank + ' · Elo ' + s.me.elo + ' · ' + s.me.matches + ' match' + (s.me.matches > 1 ? 's' : '') + (s.me.eligible ? ' · tu peux monter sur le podium 🎯' : ' · encore ' + (s.min_matches - s.me.matches) + ' match' + (s.min_matches - s.me.matches > 1 ? 's' : '') + ' pour être éligible') + '</div>' : (token ? '<div class="season-me">Joue un match pour entrer au classement du mois.</div>' : '');
+      byId('seasonStandings').innerHTML = table + me;
+      const prizes = byId('seasonPrizes'); prizes.innerHTML = '';
+      s.prizes.forEach(p => {
+        const d = document.createElement('div'); d.className = 'prize'; d.innerHTML = '<div class="p-medal">' + p.medal + '</div><div class="p-credits">+' + p.credits + ' crédits</div>';
+        if (p.card) { const el = makeMiniCard(p.card, { hideCount: true }); el.style.cursor = 'default'; d.appendChild(el); } else d.insertAdjacentHTML('beforeend', '<div class="p-none">carte « Saison » pas encore choisie</div>');
+        prizes.appendChild(d);
+      });
+      byId('seasonLast').textContent = s.last ? 'Podium de ' + s.last.label + ' : ' + s.last.podium.map(p => p.medal + ' ' + p.pseudo).join(' · ') : '';
+      box.hidden = false;
+    } catch(e) { box.hidden = true; }
+  }
+
+  // ---------- Défi privé : préréglage du formulaire (revanche, ou « Défier » depuis un profil) ----------
+  let pendingChallenge = null;          // { target, stake }
+  async function fillTargets(mode){
+    const row = byId('tmTargetRow'), sel = byId('tmTarget');
+    row.style.display = mode === 'propose' ? '' : 'none';
+    sel.innerHTML = '<option value="">— n\'importe qui (défi public) —</option>';
+    if (mode !== 'propose') { pendingChallenge = null; return; }
+    try { (await api('/duel/opponents')).forEach(o => { const op = document.createElement('option'); op.value = o.pseudo; op.textContent = o.pseudo + ' (Elo ' + o.elo + ')'; sel.appendChild(op); }); } catch(e) { /* liste vide : défi public seulement */ }
+    if (pendingChallenge) {
+      if (![...sel.options].some(o => o.value === pendingChallenge.target)) { const op = document.createElement('option'); op.value = pendingChallenge.target; op.textContent = pendingChallenge.target; sel.appendChild(op); }
+      sel.value = pendingChallenge.target; if (pendingChallenge.stake) byId('tmStake').value = pendingChallenge.stake; pendingChallenge = null;
+    }
+  }
+  function startChallenge(target, stake){ pendingChallenge = { target, stake: stake || null }; openTeamModal('propose', null); }
+
+  // ---------- Offres d'achat au marché ----------
+  async function loadOffers(){
+    try { const [forMe, mine] = await Promise.all([api('/market/offers/for-me'), api('/market/offers/mine')]); renderOffers(forMe, mine); } catch(e) { /* silencieux */ }
+  }
+  function offerRow(o, html, btn){
+    const row = document.createElement('div'); row.className = 'offer-row';
+    const el = makeMiniCard(o.card, { hideCount: true }); el.style.cursor = 'default'; row.appendChild(el);
+    const info = document.createElement('div'); info.className = 'offer-info'; info.innerHTML = html; row.appendChild(info); row.appendChild(btn); return row;
+  }
+  function renderOffers(forMe, mine){
+    const a = byId('offersForMeEl'), b = byId('myOffersEl'); a.innerHTML = ''; b.innerHTML = '';
+    if (!forMe.length) a.innerHTML = '<div class="empty-state">Aucune offre d\'achat pour tes cartes pour l\'instant.</div>';
+    forMe.forEach(o => {
+      const btn = document.createElement('button'); btn.className = 'btn-small'; btn.type = 'button'; btn.textContent = 'Vendre pour ' + o.price + ' crédit' + (o.price > 1 ? 's' : ''); let armed = false;
+      btn.addEventListener('click', async () => {
+        if (o.quantity === 1 && !armed) { armed = true; btn.textContent = 'Confirmer : ta dernière copie'; return; }       // la dernière copie : on demande confirmation
+        btn.disabled = true;
+        try { const r = await api('/market/offers/' + o.id + '/accept', { method: 'POST' }); toast('+' + r.credits_gained + ' crédits : carte vendue à ' + r.buyer + ' 💰'); await refreshMe(); loadCollection(); loadOffers(); }
+        catch(e) { toast(e.message); btn.disabled = false; loadOffers(); }
+      });
+      a.appendChild(offerRow(o, '<b>' + escapeHtml(cardDisplayName(o.card)) + '</b> · ' + escapeHtml(tierLabel(o.card.tier)) + '<br>Offre de <b>' + escapeHtml(o.buyer) + '</b> : <b>' + o.price + ' crédit' + (o.price > 1 ? 's' : '') + '</b><br><small>Tu en as ' + o.quantity + (o.quantity === 1 ? ' (ta dernière copie)' : '') + '</small>', btn));
+    });
+    if (!mine.length) b.innerHTML = '<div class="empty-state">Tu n\'as aucune offre d\'achat ouverte.</div>';
+    mine.forEach(o => {
+      const btn = document.createElement('button'); btn.className = 'btn-small ghost'; btn.type = 'button'; btn.textContent = 'Annuler';
+      btn.addEventListener('click', async () => { btn.disabled = true; try { await api('/market/offers/' + o.id, { method: 'DELETE' }); toast('Offre annulée : tes crédits te sont rendus'); await refreshMe(); loadOffers(); } catch(e) { toast(e.message); btn.disabled = false; } });
+      b.appendChild(offerRow(o, '<b>' + escapeHtml(cardDisplayName(o.card)) + '</b> · ' + escapeHtml(tierLabel(o.card.tier)) + '<br>Ton offre : <b>' + o.price + ' crédit' + (o.price > 1 ? 's' : '') + '</b> <small>(mis de côté)</small>', btn));
+    });
+  }
+  function addOfferForm(body, card){
+    body.insertAdjacentHTML('beforeend', '<div class="offer-form"><label for="offerPrice" style="font-weight:700;font-size:13px;">Offre d\'achat (en crédits)</label><input id="offerPrice" type="number" min="1" value="10"><div class="share-actions"><button class="btn-secondary" type="button" id="offerSend">💰 Faire une offre d\'achat</button></div><div class="tm-hint" style="text-align:center;">Tes crédits sont mis de côté. Si un joueur possède cette carte, il pourra te la vendre à ce prix ; sinon, annule ton offre quand tu veux (dans l\'onglet Marché).</div></div>');
+    document.getElementById('offerSend').addEventListener('click', async (e) => {
+      const price = parseInt(document.getElementById('offerPrice').value, 10); e.target.disabled = true;
+      if (!(price >= 1)) { toast('Mets un prix d\'au moins 1 crédit'); e.target.disabled = false; return; }
+      try { await api('/market/offers', { method: 'POST', body: JSON.stringify({ card_id: card.id, price }) }); toast('Offre envoyée : ' + price + ' crédits mis de côté 💰'); await refreshMe(); closeUserCollectionModal(); }
+      catch(err) { toast(err.message); e.target.disabled = false; }
+    });
   }
 
   // ---------- Missions du jour et série de connexion ----------
@@ -1621,7 +1753,7 @@
   }
   function buildTierGroups(cards, withSell){
     const frag = document.createDocumentFragment();
-    ['legendaire','epique','speciale','secrete','gold','noel','halloween','rare','commune'].forEach(tier => {
+    ['saison','legendaire','epique','speciale','secrete','gold','noel','halloween','rare','commune'].forEach(tier => {
       const cardsOfTier = cards.filter(c => c.tier === tier)
         .sort((a, b) => (!!b.quantity - !!a.quantity) || (a.quantity ? a.player_name.localeCompare(b.player_name, 'fr') : a.id - b.id));   // d'abord celles qu'on a ; les inconnues ensuite, sans indice
       if (!cardsOfTier.length) return;
@@ -1709,8 +1841,8 @@
 
   // ---------- Aide : un bouton « ? Aide » par onglet ----------
   // Les pourcentages de tirage et les chiffres du 1v1 viennent du serveur : l'aide ne peut pas être en retard sur les règles.
-  const TIER_COLORS = { commune: '#C9965F', rare: '#B8C2C8', halloween: '#FF8A1F', noel: '#C8202C', gold: '#E0A21B', secrete: '#4B3FA0', speciale: '#2FA45E', epique: '#7A3FC9', legendaire: '#F0C84B' };
-  const TIER_NAMES_PL = { commune: 'Commune', rare: 'Rare', halloween: 'Halloween (édition limitée)', noel: 'Noël (édition limitée)', gold: 'Gold', secrete: 'Secrète', speciale: 'Spéciale', epique: 'Épique', legendaire: 'Légendaire' };
+  const TIER_COLORS = { saison: '#0F7A93', commune: '#C9965F', rare: '#B8C2C8', halloween: '#FF8A1F', noel: '#C8202C', gold: '#E0A21B', secrete: '#4B3FA0', speciale: '#2FA45E', epique: '#7A3FC9', legendaire: '#F0C84B' };
+  const TIER_NAMES_PL = { saison: 'Saison (podium)', commune: 'Commune', rare: 'Rare', halloween: 'Halloween (édition limitée)', noel: 'Noël (édition limitée)', gold: 'Gold', secrete: 'Secrète', speciale: 'Spéciale', epique: 'Épique', legendaire: 'Légendaire' };
   let gameRules = null;
   async function getGameRules(){
     if (!gameRules) gameRules = await fetch(API_BASE + '/game/rules').then(r => r.json());
@@ -1776,7 +1908,11 @@
         '<li><b>Vendre</b> : choisis une carte que tu possèdes et fixe ton prix en crédits. Elle quitte ta collection tant que l\'annonce est ouverte.</li>' +
         '<li><b>Annuler</b> une de tes annonces te rend la carte.</li>' +
         '<li><b>Acheter</b> : le prix est débité de tes crédits et versé au vendeur. Tu ne peux pas acheter tes propres annonces.</li></ul>' +
-        '<p class="help-note">Pour garder une carte précieuse, vends plutôt tes doublons.</p>';
+        '<p class="help-note">Pour garder une carte précieuse, vends plutôt tes doublons.</p>' +
+        '<h3>Les offres d\'achat</h3><ul>' +
+        '<li><b>Faire une offre</b> : ouvre le profil d\'un joueur (depuis le classement), « Voir sa collection », touche la carte qui t\'intéresse et propose un prix. Tes crédits sont <b>mis de côté</b> tout de suite ; tu peux avoir 5 offres ouvertes.</li>' +
+        '<li><b>Vendre en direct</b> : si tu possèdes une carte qui fait l\'objet d\'une offre, elle apparaît dans « Offres d\'achat pour tes cartes ». Un seul bouton : la carte part, les crédits arrivent. Personne ne voit les offres sur des cartes qu\'il n\'a pas.</li>' +
+        '<li><b>Annuler</b> une offre te rend tes crédits.</li></ul>';
     } },
     shop: { title: 'Le shop', async html(){
       const r = await getGameRules();
@@ -1814,12 +1950,15 @@
         '<li><b>1 Fan</b> : ' + range(cfg.fan_bonus, ['commune', 'rare', 'epique', 'secrete', 'legendaire']) + ' %, édition limitée +' + Math.round(cfg.fan_bonus.halloween * 100) + ' %.</li>' +
         '<li><b>1 Loup</b> (la mascotte) : mêmes bonus que le Fan.</li>' +
         '<li><b>' + cfg.max_equipment + ' Équipement</b> : ' + range(cfg.equipment_bonus, ['commune', 'rare', 'epique', 'legendaire']) + ' %.</li></ul>' +
+        '<h3>Les saisons</h3><p>Chaque mois est une <b>saison</b> : le 1er à minuit (heure de Paris), l\'Elo de tout le monde repart à <b>1000</b>. Il faut avoir joué au moins <b>5 matchs</b> dans le mois pour monter sur le podium. Les <b>3 premiers</b> gagnent des crédits (100, 60, 30) et une <b>carte exclusive « Saison »</b>, qui ne sort jamais d\'un pack. Le classement du mois, les récompenses et le podium précédent sont en haut de l\'onglet. Les cartes « Saison » ne comptent pas dans le pourcentage de collection.</p>' +
         '<h3>Mises, packs et classement</h3><ul>' +
         '<li><b>Mise</b> de ' + cfg.stake_min + ' à ' + cfg.stake_max + ' crédits, bloquée tant que le défi est ouvert. Le gagnant prend les deux mises <b>et un pack match</b> ; le perdant reçoit <b>un pack classique</b>. En cas de <b>nul</b>, chacun récupère sa mise <b>et reçoit un pack classique</b>. Il n\'y a aucune limite de packs gagnés par jour.</li>' +
         '<li><b>Enveloppe pour l\'arbitre</b> (facultative, sans plafond) : tu glisses des crédits à l\'arbitre en plus de ta mise. <b>Celui qui met le plus gagne +' + Math.round(cfg.referee_bonus * 100) + ' %</b> dans le match, comme un bonus d\'équipe ; en cas d\'égalité, personne ne l\'a. '
         + 'Les <b>deux</b> enveloppes sont dépensées, même celle du joueur qui a mis le moins, et même si le match est perdu ou nul. '
         + 'Les montants sont <b>secrets</b> : celui qui accepte un défi ne voit pas l\'enveloppe de son adversaire, et ne les découvre tous les deux qu\'à la fin du match. '
         + 'Si tu annules ton défi, ton enveloppe t\'est rendue. Astuce : ce bonus vaut environ <b>14 points</b> d\'écart entre victoires et défaites, soit moins de 2 crédits en moyenne : inutile de mettre une fortune.</li>' +
+        '<li><b>Défier un joueur en particulier</b> : dans le formulaire, choisis un adversaire (ou touche « Défier » sur son profil). Ton défi n\'est alors visible que de vous deux, il est prévenu par notification, et seul lui peut le jouer. Tu peux l\'annuler quand tu veux.</li>' +
+        '<li><b>Revanche</b> : à la fin d\'un match, le bouton « ⚔️ Revanche » te propose un défi privé au même adversaire, avec la même mise.</li>' +
         '<li>Tu peux avoir ' + cfg.max_open_proposals + ' défis ouverts au maximum. Aucun délai : tu peux rejouer tout de suite contre le même adversaire.</li>' +
         '<li><b>Classement</b> : par Elo. M = matchs, V = victoires, D = défaites, N = nuls, <b>Diff</b> = buts marqués moins buts encaissés.</li></ul>' +
         '<h3>Les cartes stars</h3><p>Deux classements, avec les 5 cartes les plus utilisées et les 5 plus décisives en buts et en passes :</p><ul>' +
@@ -2308,6 +2447,7 @@
 
   // ---- cellule 1 : profils et classement Elo
   async function loadDuelBoard(){
+    loadSeason();
     try {
       const rows = await fetch(API_BASE + '/duel/board').then(r => r.json());
       const root = byId('duelBoardEl');
@@ -2404,7 +2544,7 @@
   // ---- cellule 3 : défis ouverts
   async function loadDuelProposals(){
     try {
-      const rows = await fetch(API_BASE + '/duel/proposals').then(r => r.json());
+      const rows = await fetch(API_BASE + '/duel/proposals', { headers: token ? { Authorization: 'Bearer ' + token } : {} }).then(r => r.json());      // (le jeton permet au serveur de montrer MES défis privés)
       const root = byId('duelProposalsEl');
       if (!rows.length){ root.innerHTML = '<div class="empty-state">Aucun défi ouvert. Propose le premier match !</div>'; return; }
       root.innerHTML = '';
@@ -2414,6 +2554,7 @@
         const label = duelConfig && duelConfig.formation_labels[pr.formation] ? ' (' + duelConfig.formation_labels[pr.formation] + ')' : '';
         row.innerHTML = '<div class="proposal-main"><b>' + escapeHtml(pr.creator) + '</b>' + (mine ? ' (toi)' : '') + ' · Elo ' + pr.creator_elo +
           '<div class="proposal-meta">Disposition ' + escapeHtml(pr.formation) + label + (pr.has_fan ? ' · avec un Fan' : '') + (pr.has_mascot ? ' · avec le Loup' : '') + (pr.equipment_count ? ' · ' + pr.equipment_count + ' équipement' + (pr.equipment_count > 1 ? 's' : '') : '') + ' · mise <b>' + pr.stake + ' crédits</b> · tactique secrète</div></div>';
+        if (pr.target) row.querySelector('.proposal-meta').insertAdjacentHTML('beforeend', '<br>🎯 <b>Défi privé</b> ' + (pr.target_is_me ? 'pour toi' : 'pour ' + escapeHtml(pr.target)));
         const btn = document.createElement('button'); btn.className = 'btn-small' + (mine ? ' ghost' : '');
         if (mine) { btn.textContent = 'Annuler'; btn.addEventListener('click', () => cancelProposal(pr.id, btn)); }
         else { btn.textContent = 'Jouer le match'; btn.addEventListener('click', () => openTeamModal('play', pr)); }
@@ -2497,6 +2638,7 @@
 
     renderTmSlots('1-2-1', null);
     applyLastTeam(cfg);
+    await fillTargets(mode);          // défi privé : la liste des joueurs défiables (et le préréglage d'une revanche)
     const err = byId('tmError');
     err.textContent = tm.owned.length < cfg.team_size ? 'Il te faut au moins ' + cfg.team_size + ' cartes de joueurs (hors supporters) pour jouer : ouvre des packs !' : '';
     byId('tmSubmit').disabled = tm.owned.length < cfg.team_size;
@@ -2642,7 +2784,8 @@
         const stake = parseInt(byId('tmStake').value, 10);
         if (!(stake >= cfg.stake_min && stake <= cfg.stake_max)) { err.textContent = 'La mise doit être comprise entre ' + cfg.stake_min + ' et ' + cfg.stake_max + ' crédits.'; return; }
         saveLastTeam(body, stake);
-        await api('/duel/proposals', { method: 'POST', body: JSON.stringify({ ...body, stake }) });
+        const target = byId('tmTarget').value || null;
+        await api('/duel/proposals', { method: 'POST', body: JSON.stringify({ ...body, stake, target }) });
         closeTeamModal();
         toast('Défi publié : ta mise est bloquée jusqu\'à ce qu\'il soit joué');
         await refreshMe(); loadDuelProposals(); loadDuelBoard();
@@ -2665,6 +2808,7 @@
   function closeMatchModal(){ matchState.token++; byId('matchModal').style.display = 'none'; }
   byId('msClose').addEventListener('click', closeMatchModal);
   byId('msDone').addEventListener('click', closeMatchModal);
+  byId('msRematch').addEventListener('click', () => { const r = matchState.rematch; if (!r) return; closeMatchModal(); startChallenge(r.target, r.stake); });
   byId('matchModal').addEventListener('click', e => { if (e.target.id === 'matchModal') closeMatchModal(); });
 
   function setMatchScore(a, b, flash){
@@ -2739,6 +2883,8 @@
   function finishMatch(){
     byId('msSkip').style.display = 'none';
     byId('msReplay').style.display = '';
+    const rc = matchState.recap, opp = rc.challenger === myPseudo ? rc.defender : (rc.defender === myPseudo ? rc.challenger : null);
+    byId('msRematch').style.display = opp ? '' : 'none'; matchState.rematch = opp ? { target: opp, stake: rc.stake } : null;      // revanche : un défi privé au même adversaire, avec la même mise
     renderMatchResult(matchState.recap, matchState.isNew);
     renderLineups(matchState.recap.lineups);
   }
@@ -2755,7 +2901,7 @@
     const token = ++matchState.token;
     byId('msTitle').textContent = opts.isNew ? 'Match en direct' : 'Récap du match';
     byId('msNameA').textContent = recap.challenger; byId('msNameB').textContent = recap.defender;
-    byId('msTimeline').innerHTML = ''; byId('msResult').innerHTML = ''; byId('msLineups').innerHTML = '';
+    byId('msTimeline').innerHTML = ''; byId('msResult').innerHTML = ''; byId('msLineups').innerHTML = ''; byId('msRematch').style.display = 'none';
     setMatchScore(0, 0, false); byId('msClock').textContent = "0'";
     byId('msReplay').style.display = 'none';
     byId('msSkip').style.display = opts.animate ? '' : 'none';
