@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting)
@@ -41,6 +41,7 @@ app = FastAPI(title="FC IPSA V — API")
 app.include_router(challenges.router)      # défis privés, revanche, annulation d'un défi par l'admin
 app.include_router(offers.router)          # offres d'achat au marché
 app.include_router(seasons.router)         # saisons mensuelles du 1v1
+app.include_router(welcome.router)         # accueil des nouveaux comptes : pop-up de bienvenue et pack ultra offert
 app.include_router(admin_page.router)      # la page d'administration (/admin-panel) et le numéro de version (/version)
 
 app.add_middleware(
@@ -98,7 +99,9 @@ def register(payload: schemas.RegisterRequest, db: Session = Depends(get_db)):
     )
     db.add(user)
     db.flush()
-    db.add(PackState(user_id=user.id, stored_packs=3, last_regen_at=datetime.utcnow(), shop_pack_tokens=0))
+    gift = welcome.take_gift(db)                     # les N prochains comptes reçoivent un pack ultra tout de suite
+    db.add(PackState(user_id=user.id, stored_packs=3, last_regen_at=datetime.utcnow(), shop_pack_tokens=0, ultra_pack_tokens=1 if gift else 0))
+    welcome.mark_new_account(db, user, gift)         # …et ce nouveau compte verra le pop-up de bienvenue une fois
     db.commit()
     return {"token": user.token, "pseudo": user.pseudo}
 
@@ -123,6 +126,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     game_logic.regen_user_packs(db, user)
     db.refresh(user.pack_state)
     unseen_badges = profiles.safe_unseen(db, user)       # succès gagnés depuis la dernière visite (les crédits sont déjà ajoutés ci-dessous)
+    welcome_info = welcome.status(db, user)              # pop-up de bienvenue d'un compte tout neuf (sinon None)
     tokens = pack_tokens_out(user)
     if user.is_test:
         # affichage clair pour un compte de test : pas de cap, pas d'attente
@@ -135,6 +139,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "seconds_until_next_pack": None,
             "is_test": True,
             "unseen_badges": unseen_badges,
+            "welcome": welcome_info,
         }
     return {
         "pseudo": user.pseudo,
@@ -145,6 +150,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         "seconds_until_next_pack": game_logic.seconds_until_next_pack(user),
         "is_test": False,
         "unseen_badges": unseen_badges,
+            "welcome": welcome_info,
     }
 
 
