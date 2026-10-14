@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting)
@@ -41,6 +41,9 @@ app = FastAPI(title="FC IPSA V — API")
 app.include_router(challenges.router)      # défis privés, revanche, annulation d'un défi par l'admin
 app.include_router(offers.router)          # offres d'achat au marché
 app.include_router(seasons.router)         # saisons mensuelles du 1v1
+app.add_middleware(admin_tools.AdminLogMiddleware)       # journal des actions d'administration
+app.include_router(admin_tools.router)         # journal et tableau de bord de l'administration
+app.include_router(collection_tools.router)   # vendre tous les doublons d'un coup
 app.include_router(welcome.router)         # accueil des nouveaux comptes : pop-up de bienvenue et pack ultra offert
 app.include_router(admin_page.router)      # la page d'administration (/admin-panel) et le numéro de version (/version)
 
@@ -102,6 +105,7 @@ def register(payload: schemas.RegisterRequest, db: Session = Depends(get_db)):
     gift = welcome.take_gift(db)                     # les N prochains comptes reçoivent un pack ultra tout de suite
     db.add(PackState(user_id=user.id, stored_packs=3, last_regen_at=datetime.utcnow(), shop_pack_tokens=0, ultra_pack_tokens=1 if gift else 0))
     welcome.mark_new_account(db, user, gift)         # …et ce nouveau compte verra le pop-up de bienvenue une fois
+    sessions.adopt_token(db, user)                   # sa première session
     db.commit()
     return {"token": user.token, "pseudo": user.pseudo}
 
@@ -111,9 +115,18 @@ def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter_by(pseudo=payload.pseudo).first()
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Pseudo ou mot de passe incorrect")
-    user.token = generate_token()
+    token = sessions.open_session(db, user)          # une nouvelle session : les autres appareils restent connectés
     db.commit()
-    return {"token": user.token, "pseudo": user.pseudo}
+    return {"token": token, "pseudo": user.pseudo}
+
+
+@app.post("/auth/logout")
+def logout(authorization: Optional[str] = Header(default=None), db: Session = Depends(get_db)):
+    """Déconnexion de CET appareil seulement (les autres restent connectés). Sans erreur si la session n'existe déjà plus."""
+    if authorization and authorization.startswith("Bearer "):
+        sessions.close_session(db, authorization[len("Bearer "):].strip())
+        db.commit()
+    return {"status": "ok"}
 
 
 def pack_tokens_out(user: User) -> dict:
@@ -777,6 +790,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     for table in (profiles.UserBadge, profiles.UserCounter, profiles.UserProfile):      # ses succès, ses compteurs et sa vitrine
         db.query(table).filter_by(user_id=user.id).delete()
     db.query(offers.BuyOffer).filter_by(buyer_id=user.id).delete()                       # ses offres d'achat (le compte disparaît avec ses crédits)
+    db.query(sessions.UserSession).filter_by(user_id=user.id).delete()                    # ses connexions
     db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
     db.query(Listing).filter_by(seller_id=user.id).delete()
     for proposal in db.query(MatchProposal).filter_by(creator_id=user.id).all():
