@@ -19,7 +19,8 @@ def optional_user(authorization: str | None = Header(default=None), db: Session 
     """Le joueur connecté s'il y en a un, sinon None (pour les pages publiques qui s'adaptent à celui qui regarde)."""
     if not authorization or not authorization.startswith("Bearer "):
         return None
-    return db.query(User).filter(User.token == authorization[len("Bearer "):].strip()).first()
+    from . import sessions
+    return sessions.find_user(db, authorization[len("Bearer "):].strip())
 
 
 def card_out(card):
