@@ -145,6 +145,11 @@ def metrics(db, user) -> dict:
     }
 
 
+def total_levels() -> int:
+    """Le nombre de niveaux de succès qui existent (affiché « x / 47 » dans le classement)."""
+    return sum(len(l["goals"]) for l in LADDERS)
+
+
 def _levels(ladder: dict) -> list:
     names = LEVEL_NAMES[len(ladder["goals"])]
     return [{"n": i + 1, "name": names[i], "goal": g, "reward": LEVEL_REWARD[names[i]]} for i, g in enumerate(ladder["goals"])]
