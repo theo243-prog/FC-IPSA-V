@@ -169,6 +169,26 @@
   .share-img{width:100%;max-width:400px;display:block;margin:0 auto 14px;border-radius:12px;box-shadow:var(--shadow);}
   .share-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
   .chip-pseudo-link{cursor:pointer;}
+  /* pop-up de bienvenue et de remerciements (première connexion d'un compte tout neuf) */
+  .welcome-box{position:relative;max-width:440px;width:calc(100% - 28px);max-height:calc(100vh - 28px);overflow:auto;background:radial-gradient(120% 70% at 50% 0%,rgba(248,180,214,.26),rgba(248,180,214,0) 62%),linear-gradient(170deg,#3B1660 0%,#1B0A2E 100%);border:2px solid #E9C46A;border-radius:22px;padding:26px 22px 22px;color:#FCE6F2;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 0 6px rgba(233,196,106,.15);animation:wlPop .55s cubic-bezier(.2,1.2,.3,1) both;}
+  @keyframes wlPop{from{opacity:0;transform:translateY(24px) scale(.94);}to{opacity:1;transform:none;}}
+  .welcome-box .wl-close{position:absolute;top:10px;right:12px;color:#FCE6F2;}
+  .wl-crest svg{width:64px;height:74px;fill:#FCC2E2;filter:drop-shadow(0 4px 14px rgba(252,194,226,.45));animation:wlFloat 3.2s ease-in-out infinite;}
+  @keyframes wlFloat{50%{transform:translateY(-5px);}}
+  .wl-kicker{margin:6px 0 0;letter-spacing:.28em;font-size:11.5px;font-weight:800;color:#E9C46A;}
+  .welcome-box h2{font-family:var(--font-head);font-size:34px;line-height:1.05;margin:4px 0;color:#fff;text-wrap:balance;}
+  .wl-sub{margin:0 0 14px;font-size:13px;color:#C79ABA;}
+  .wl-credits{display:grid;gap:10px;text-align:left;}
+  .wl-item{display:flex;gap:12px;align-items:center;background:rgba(255,255,255,.07);border:1px solid rgba(252,194,226,.22);border-radius:14px;padding:10px 12px;opacity:0;animation:wlIn .5s ease-out forwards;animation-delay:var(--d,0s);}
+  @keyframes wlIn{from{opacity:0;transform:translateX(-14px);}to{opacity:1;transform:none;}}
+  .wl-ico{font-size:28px;line-height:1;flex:none;}
+  .wl-name{font-family:var(--font-head);font-size:22px;font-weight:800;color:#fff;line-height:1.1;}
+  .wl-role{font-size:12.5px;color:#E7C9DB;line-height:1.35;margin-top:2px;}
+  .wl-gift{margin:14px 0 0;background:linear-gradient(90deg,rgba(233,196,106,.24),rgba(233,196,106,.1));border:1px solid #E9C46A;border-radius:14px;padding:10px 12px;font-size:13.5px;line-height:1.4;color:#FFF3C9;text-align:left;animation:wlIn .5s ease-out 1.05s both;}
+  .wl-gift[hidden]{display:none;}
+  .wl-thanks{margin:14px 0 12px;font-size:13.5px;color:#FCE6F2;}
+  .wl-go{width:100%;font-size:16px;}
+  @media (prefers-reduced-motion:reduce){.welcome-box,.wl-item,.wl-gift,.wl-crest svg{animation:none;opacity:1;}}
   /* flèche pour replier / déplier chaque rareté de la collection */
   .tier-toggle{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:20px;line-height:1;padding:0 6px 0 0;margin-right:2px;transition:transform .15s;}
   .tier-toggle::before{content:'▾';}
@@ -1016,6 +1036,23 @@
     </div>
   </div>
 </div>
+<div class="modal-overlay" id="welcomeModal">
+  <div class="welcome-box" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+    <button class="modal-close wl-close" id="welcomeClose" type="button" aria-label="Fermer">✕</button>
+    <div class="wl-crest"><svg viewBox="0 0 723 833" aria-hidden="true"><use href="#wolf-crest"></use></svg></div>
+    <p class="wl-kicker">FC IPSA V</p>
+    <h2 id="welcomeTitle">Bienvenue dans le club&nbsp;!</h2>
+    <p class="wl-sub">Une petite page de remerciements avant de commencer</p>
+    <div class="wl-credits">
+      <div class="wl-item" style="--d:.2s"><div class="wl-ico">🛠️</div><div><div class="wl-name">Théo</div><div class="wl-role">Créateur du site et manager du projet : conception, développement et gestion, de A à Z</div></div></div>
+      <div class="wl-item" style="--d:.5s"><div class="wl-ico">🧪</div><div><div class="wl-name">Léo &amp; Emrys</div><div class="wl-role">Ont aidé aux tests de développement</div></div></div>
+      <div class="wl-item" style="--d:.8s"><div class="wl-ico">💡</div><div><div class="wl-name">Gaëtan</div><div class="wl-role">Pour ses idées</div></div></div>
+    </div>
+    <div class="wl-gift" id="welcomeGift" hidden>🎁 <b>Cadeau de bienvenue</b> : tu fais partie des tout premiers inscrits ! Un <b>pack ULTRA</b> (10 cartes, dont une épique ou une légendaire) t'attend dans tes <b>packs bonus</b>, sous les boutons d'ouverture.</div>
+    <p class="wl-thanks">Merci d'être là. Bonne collection, et à très vite sur le terrain !</p>
+    <button class="btn-primary wl-go" id="welcomeGo" type="button">C'est parti !</button>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1564,7 +1601,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.13.7';
+  const SITE_VERSION = '2026.10.13.8';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -1652,6 +1689,21 @@
     });
   }
 
+  // ---------- Pop-up de bienvenue (une seule fois, à la première connexion d'un compte tout neuf) ----------
+  let welcomeShown = false;
+  function showWelcome(w){
+    if (welcomeShown) return; welcomeShown = true;
+    byId('welcomeGift').hidden = !(w && w.gift_ultra);
+    byId('welcomeModal').style.display = 'flex';
+  }
+  async function closeWelcome(){
+    byId('welcomeModal').style.display = 'none';
+    try { await api('/welcome/seen', { method: 'POST' }); } catch(e) { /* pas grave : il se rouvrira à la prochaine visite */ }
+  }
+  document.getElementById('welcomeClose').addEventListener('click', closeWelcome);      // (appels directs : « byId » n'est déclaré que plus bas)
+  document.getElementById('welcomeGo').addEventListener('click', closeWelcome);
+  document.getElementById('welcomeModal').addEventListener('click', (e) => { if (e.target.id === 'welcomeModal') closeWelcome(); });
+
   // ---------- Replier / déplier les rarités de la collection (l'état est gardé sur cet appareil, un par compte) ----------
   function collapsedKey(){ return 'fca5_collapsed_' + (myPseudo || ''); }
   function getCollapsed(){ try { return new Set(JSON.parse(localStorage.getItem(collapsedKey()) || '[]')); } catch(e) { return new Set(); } }
@@ -1733,6 +1785,7 @@
     try {
       meInfo = await api('/me');
       announceBadges(meInfo.unseen_badges);
+      if (meInfo.welcome) showWelcome(meInfo.welcome);        // compte tout neuf : pop-up de bienvenue
       document.getElementById('chipCredits').textContent = meInfo.credits;
       const bonusTotal = Object.values(meInfo.pack_tokens || {}).reduce((a, b) => a + b, 0);
       document.getElementById('chipPacks').textContent = meInfo.stored_packs + '/3' + (bonusTotal ? (' +' + bonusTotal + ' bonus') : '');
