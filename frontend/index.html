@@ -657,20 +657,22 @@
   .duel-grid .panel-box{margin-bottom:0;}
   .duel-grid .duel-proposals{grid-column:1 / -1;border-top:5px solid var(--accent);}
   .duel-grid .duel-proposals h2{font-size:26px;}
-  .duel-grid #duelWeekBox{grid-column:auto;}
+  .duel-grid #duelWeekBox,.duel-grid .cell-wide{grid-column:1 / -1;}      /* cartes stars de la semaine et derniers matchs : toute la largeur */
   /* cellules à hauteur fixe : le contenu défile à l'intérieur (comme les stats des joueurs) */
   /* cellules à hauteur FIXE : ce qui dépasse défile À L'INTÉRIEUR de la cellule (comme « Stats des joueurs »). Ordre : Défis (la plus haute, tout en haut), puis 2 par 2. */
   .duel-grid{align-items:start;}
   .duel-grid .cell{display:flex;flex-direction:column;height:490px;overflow:hidden;}
   .duel-grid .cell>h2,.duel-grid .cell>.duel-hint,.duel-grid .cell>.duel-proposals-head,.duel-grid .cell>.season-prizes{flex:none;}
   .duel-grid .cell .cell-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
-  .duel-grid .duel-proposals.cell{height:540px;box-shadow:0 6px 22px rgba(0,0,0,.12);}
+  .duel-grid .duel-proposals.cell{height:620px;box-shadow:0 6px 22px rgba(0,0,0,.12);}
+  .duel-grid .season-box.cell,.duel-grid .duel-grid-board.cell{height:600px;}      /* les deux cellules de classement (saison, Elo) : plus hautes, pour lire plus de lignes d'un coup */
+  .duel-grid .duel-stars.cell{height:520px;}
   .duel-grid .season-prizes{flex-wrap:nowrap;gap:8px;margin:10px 0 4px;}
   .duel-grid .season-prizes .prize{flex:1 1 0;min-width:0;padding:6px 3px;}
   .duel-grid .season-prizes .card{zoom:.8;}
   .duel-grid .season-prizes .p-credits{font-size:12px;margin:2px 0 4px;}
   table.duel-table th{position:sticky;top:0;background:var(--bg-elevated);z-index:1;}
-  @media (max-width:760px){.duel-grid{grid-template-columns:1fr;}}
+  @media (max-width:760px){.duel-grid{grid-template-columns:1fr;} .duel-grid .cell{height:480px;} .duel-grid .duel-proposals.cell{height:600px;} .duel-grid .season-box.cell,.duel-grid .duel-grid-board.cell{height:580px;} .duel-grid .duel-stars.cell{height:520px;}}
   .duel-proposals-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
   .duel-proposals-head h2{margin:0;}
   .duel-hint{font-size:12.5px;color:var(--text-muted);margin:0 0 12px;}
@@ -908,7 +910,7 @@
           <h2>Profils & classement Elo</h2>
           <div class="cell-scroll" id="duelBoardEl"></div>
         </div>
-        <div class="panel-box cell">
+        <div class="panel-box cell cell-wide">
           <h2>Derniers matchs</h2>
           <p class="duel-hint">Les plus récents d'abord : fais défiler la liste pour voir les anciens.</p>
           <div class="cell-scroll" id="duelHistoryEl"></div>
@@ -1562,7 +1564,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.13.6';
+  const SITE_VERSION = '2026.10.13.7';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
