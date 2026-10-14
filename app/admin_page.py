@@ -51,6 +51,8 @@ ADMIN_HTML = r"""<!doctype html>
   pre{background:#14071f;border:1px solid var(--line);border-radius:8px;padding:10px;overflow:auto;max-height:340px;margin:6px 0 0;white-space:pre-wrap;word-break:break-word;font-size:12.5px;}
   .tw{overflow:auto;max-height:380px;margin-top:6px;border:1px solid var(--line);border-radius:8px;} table{border-collapse:collapse;width:100%;font-size:12.5px;} th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;} th{position:sticky;top:0;background:var(--panel2);}
   .tab{display:none;} .tab.on{display:block;} .warn{color:var(--bad);font-size:12.5px;}
+  .stats-sec{margin:12px 0 4px;font-weight:800;font-size:14px;color:var(--accent);} .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;}
+  .tile{background:#14071f;border:1px solid var(--line);border-radius:10px;padding:10px;} .tile b{display:block;font-size:21px;line-height:1.15;word-break:break-word;} .tile span{font-size:12px;color:var(--muted);} .tile small{display:block;margin-top:3px;font-size:11px;color:var(--muted);line-height:1.3;}
 </style>
 </head>
 <body class="locked">
@@ -75,6 +77,8 @@ ADMIN_HTML = r"""<!doctype html>
   // ---- toutes les actions : une carte par commande ----
   // f = champs : n (nom), l (libellé), t (text|int|bool|select|lines|json|date|area), o (options), req, d (valeur par défaut), ph (exemple)
   var A = [
+   {tab:'Tableau de bord', id:'stats', title:'Tableau de bord', desc:'Joueurs, activité, packs, matchs 1v1, marché et crédits en circulation. Les comptes de test ne comptent pas.', method:'GET', path:'/admin/stats', render:'stats', f:[], go:'Actualiser'},
+   {tab:'Tableau de bord', id:'log', title:'Journal des actions de l\'administration', desc:'Qui a fait quoi, quand, et si ça a réussi : toutes les commandes qui modifient quelque chose (la plus récente en premier). Les tentatives sans la bonne clé y figurent aussi.', method:'GET', path:'/admin/log', table:true, cols:['at','action','result'], f:[{n:'limit',l:'Nombre de lignes',t:'int',d:50,q:1},{n:'q',l:'Chercher dans le journal (facultatif)',t:'text',q:1,ph:'cible, crédits, supprimé…'}], go:'Afficher'},
    {tab:'Comptes', id:'users', title:'Voir les comptes', desc:'Pseudos, crédits, packs et nombre de cartes de chaque joueur.', method:'GET', path:'/admin/users', table:true, f:[], go:'Afficher'},
    {tab:'Comptes', id:'credits', title:'Donner ou retirer des crédits', desc:'Un nombre négatif retire des crédits.', path:'/admin/grant-credits', f:[{n:'pseudo',l:'Pseudo',t:'text',req:1},{n:'amount',l:'Crédits (négatif pour en retirer)',t:'int',req:1}]},
    {tab:'Comptes', id:'packs', title:'Offrir des packs', desc:'S\'ajoutent aux packs bonus du joueur.', path:'/admin/grant-packs', f:[{n:'pseudo',l:'Pseudo',t:'text',req:1},{n:'count',l:'Nombre de packs',t:'int',d:1,req:1},{n:'pack_type',l:'Type de pack',t:'select',o:PACKS,d:'classique'}]},
@@ -161,15 +165,23 @@ ADMIN_HTML = r"""<!doctype html>
   }
   function headers(){ return {'Content-Type': 'application/json', 'X-Admin-Key': keyInput.value.trim()}; }
   function escapeHtml(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
-  function tableOf(rows){
+  function fmtAt(v){ var d = new Date(String(v) + 'Z'); return isNaN(d) ? v : d.toLocaleString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit'}); }
+  function tableOf(rows, only){
     if (!rows.length) return '<p class="ver">Aucune ligne.</p>';
-    var cols = Object.keys(rows[0]);
-    return '<div class="tw"><table><thead><tr>' + cols.map(function(c){ return '<th>' + escapeHtml(c) + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function(r){ return '<tr>' + cols.map(function(c){ var x = r[c]; return '<td>' + escapeHtml(x !== null && typeof x === 'object' ? JSON.stringify(x) : (x === null ? '' : x)) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+    var cols = only || Object.keys(rows[0]);
+    return '<div class="tw"><table><thead><tr>' + cols.map(function(c){ return '<th>' + escapeHtml(c) + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function(r){ return '<tr>' + cols.map(function(c){ var x = c === 'at' ? fmtAt(r[c]) : r[c]; return '<td>' + escapeHtml(x !== null && typeof x === 'object' ? JSON.stringify(x) : (x === null ? '' : x)) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
   }
   function show_result(a, status, data){
     var out = $('#out-' + a.id), ok = status >= 200 && status < 300;
     out.innerHTML = '<div class="st ' + (ok ? 'ok' : 'bad') + '">' + (ok ? '✅ ' : '❌ ') + status + (data && data.detail && !ok ? ' · ' + escapeHtml(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail)) : '') + '</div>' +
-      (ok && a.table && Array.isArray(data) ? tableOf(data) : '<pre>' + escapeHtml(JSON.stringify(data, null, 2)) + '</pre>');
+      (ok && a.render === 'stats' && data && data.sections ? statsHTML(data) : ok && a.table && Array.isArray(data) ? tableOf(data, a.cols) : '<pre>' + escapeHtml(JSON.stringify(data, null, 2)) + '</pre>');
+  }
+  function statsHTML(d){
+    return d.sections.map(function(sec){
+      return '<div class="stats-sec">' + escapeHtml(sec.title) + '</div><div class="stats-grid">' + sec.items.map(function(i){
+        return '<div class="tile"><b>' + escapeHtml(i.value) + '</b><span>' + escapeHtml(i.label) + '</span>' + (i.hint ? '<small>' + escapeHtml(i.hint) + '</small>' : '') + '</div>';
+      }).join('') + '</div>';
+    }).join('');
   }
   var CUSTOM = {
     packsAll: async function(a, v){
@@ -217,7 +229,7 @@ ADMIN_HTML = r"""<!doctype html>
     var k = keyInput.value.trim(); $('#loginMsg').textContent = '…';
     try {
       var r = await fetch('/admin/users', {headers: headers()});
-      if (r.ok) { sessionStorage.setItem(KEY_STORE, k); document.body.classList.remove('locked'); $('#loginMsg').textContent = '✅ connecté'; refreshEditionSelects(); }
+      if (r.ok) { sessionStorage.setItem(KEY_STORE, k); document.body.classList.remove('locked'); $('#loginMsg').textContent = '✅ connecté'; refreshEditionSelects(); var st = A.filter(function(x){ return x.id === 'stats'; })[0]; if (st) run(st); }
       else { document.body.classList.add('locked'); $('#loginMsg').textContent = '❌ clé refusée'; }
     } catch (e) { $('#loginMsg').textContent = '❌ serveur injoignable'; }
   }
