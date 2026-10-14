@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 from .database import Base, get_db
 from .models import Card, OwnedCard, User
 from . import game_logic, missions, push
-from .common import card_out
+from .common import card_out, optional_user
 from .security import get_current_user
 
 router = APIRouter()
@@ -35,6 +35,35 @@ class BuyOffer(Base):
     card_id = Column(String, nullable=False)
     price = Column(Integer, nullable=False)           # crédits mis de côté
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Trade(Base):
+    """Un échange entre deux joueurs au marché (annonce achetée, ou offre d'achat acceptée). Les pseudos sont gardés tels quels :
+    l'historique reste lisible même si un compte est supprimé ensuite (volontairement sans clés étrangères)."""
+    __tablename__ = "trades"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    kind = Column(String, nullable=False)              # "annonce" ou "offre"
+    seller_id = Column(String, nullable=False)
+    buyer_id = Column(String, nullable=False)
+    seller_pseudo = Column(String, nullable=False)
+    buyer_pseudo = Column(String, nullable=False)
+    card_id = Column(String, nullable=False)
+    card_tier = Column(String, nullable=False)
+    price = Column(Integer, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+def record_trade(db: Session, kind: str, seller: User, buyer: User, card: Card, price: int) -> None:
+    """Note un échange dans l'historique du marché. Ne fait JAMAIS échouer la vente elle-même."""
+    try:
+        db.add(Trade(kind=kind, seller_id=seller.id, buyer_id=buyer.id, seller_pseudo=seller.pseudo, buyer_pseudo=buyer.pseudo,
+                     card_id=card.id, card_tier=card.tier.value, price=price))
+        db.commit()
+    except Exception:
+        try:
+            db.rollback()
+        except Exception:
+            pass
 
 
 class CreateOfferRequest(BaseModel):
@@ -151,7 +180,27 @@ def accept_offer(offer_id: str, user: User = Depends(get_current_user), db: Sess
     user.credits += price                    # les crédits de l'offreur étaient déjà mis de côté
     db.delete(o)
     db.commit()
+    record_trade(db, "offre", user, buyer, card, price)
     push.safe(db, notify_sold, buyer.id, user.pseudo, card, price)
     missions.safe_record(db, buyer, "market_buy")
     missions.safe_record(db, user, "market_list")
     return {"status": "ok", "credits_gained": price, "credits": user.credits, "buyer": buyer.pseudo}
+
+
+@router.get("/market/history")
+def market_history(limit: int = 100, viewer=Depends(optional_user), db: Session = Depends(get_db)):
+    """Les derniers échanges entre joueurs (du plus récent au plus ancien). Une carte vendue par ANNONCE était déjà visible de tous au
+    marché : elle s'affiche en entier. Une carte échangée par OFFRE D'ACHAT ne l'était pas : son nom n'est montré qu'à ceux qui
+    sont dans l'échange ou qui possèdent cette carte (les autres voient seulement sa rareté), pour garder la surprise des cartes à découvrir."""
+    limit = max(1, min(int(limit), 200))
+    rows = db.query(Trade).order_by(Trade.created_at.desc()).limit(limit).all()
+    cards = {c.id: c for c in db.query(Card).filter(Card.id.in_({t.card_id for t in rows})).all()} if rows else {}
+    mine = {o.card_id for o in db.query(OwnedCard).filter(OwnedCard.user_id == viewer.id, OwnedCard.quantity > 0).all()} if viewer is not None else set()
+    out = []
+    for t in rows:
+        card = cards.get(t.card_id)
+        involved = viewer is not None and viewer.id in (t.seller_id, t.buyer_id)
+        shown = card is not None and (t.kind == "annonce" or involved or t.card_id in mine)
+        out.append({"id": t.id, "kind": t.kind, "created_at": t.created_at.isoformat(), "seller": t.seller_pseudo, "buyer": t.buyer_pseudo, "price": t.price,
+                    "card": card_out(card) if shown else {"masked": True, "tier": t.card_tier, "deleted": card is None}})
+    return out
