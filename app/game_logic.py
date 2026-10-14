@@ -36,21 +36,21 @@ EDITION_TIERS = ("halloween", "noel") + CUSTOM_EDITION_SLOTS      # les édition
 
 # Types de packs. "guaranteed" = raretés garanties ; les autres cartes (jusqu'à 3) suivent les probas classiques.
 PACK_TYPES = {
-    "classique": {"label": "Pack classique", "price": 10, "guaranteed": [],
+    "classique": {"label": "Pack classique", "price": 50, "guaranteed": [],
                   "token_field": "shop_pack_tokens",
                   "description": "3 cartes aux probabilités classiques"},
-    "rare": {"label": "Pack rare", "price": 25, "guaranteed": ["rare", "rare"],
+    "rare": {"label": "Pack rare", "price": 100, "guaranteed": ["rare", "rare"],
              "token_field": "rare_pack_tokens",
              "description": "2 cartes rares garanties + 1 carte aux probabilités classiques"},
-    "epique": {"label": "Pack épique", "price": 75, "guaranteed": ["epique"],
+    "epique": {"label": "Pack épique", "price": 300, "guaranteed": ["epique"],
                "token_field": "epic_pack_tokens",
                "description": "1 carte épique garantie + 2 cartes aux probabilités classiques"},
-    "legendaire": {"label": "Pack légendaire", "price": 150, "guaranteed": ["legendaire"],
+    "legendaire": {"label": "Pack légendaire", "price": 500, "guaranteed": ["legendaire"],
                    "token_field": "legendary_pack_tokens",
                    "description": "1 carte légendaire garantie + 2 cartes aux probabilités classiques"},
     # Le pack ULTRA : 10 cartes, toutes différentes. Pour chaque case, les raretés autorisées gardent les MÊMES rapports que dans
     # un pack classique (voir SLOT_RULES). Les cases sont listées dans l'ordre où on les tire (les plus contraignantes d'abord).
-    "ultra": {"label": "Pack ultra", "price": 150, "guaranteed": [],
+    "ultra": {"label": "Pack ultra", "price": 500, "guaranteed": [],
               "token_field": "ultra_pack_tokens",
               "slots": [(1, "epique_legendaire"), (1, "edition_min"), (2, "rare_plus"), (6, "toutes")],
               "description": "10 cartes : 6 aux probabilités classiques, 2 rares ou mieux, 1 édition limitée ou mieux, 1 épique ou légendaire"},
