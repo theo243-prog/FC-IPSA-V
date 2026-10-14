@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
 from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting)
 from .security import hash_password, verify_password, generate_token, get_current_user
@@ -513,6 +513,7 @@ def buy_listing(listing_id: str, user: User = Depends(get_current_user), db: Ses
     sold_card, sold_price, seller_id = listing.card, listing.price, listing.seller_id
     db.delete(listing)
     db.commit()
+    offers.record_trade(db, "annonce", seller, user, sold_card, sold_price)       # historique des échanges du marché
     push.safe(db, push.notify_listing_sold, seller_id, user.pseudo, sold_card, sold_price)     # prévient le vendeur
     missions.safe_record(db, user, "market_buy")
     return {"status": "ok"}
@@ -723,6 +724,8 @@ def leaderboard(db: Session = Depends(get_db)):
     for uid, amount in offers.reserved_credits(db).items():        # … et ceux mis de côté dans les offres d'achat
         reserved[uid] = reserved.get(uid, 0) + amount
     users = db.query(User).filter_by(is_test=False).all()
+    achieved = dict(db.query(profiles.UserBadge.user_id, func.count()).group_by(profiles.UserBadge.user_id).all())      # niveaux de succès validés, par joueur
+    total_levels = profiles.total_levels()
     rows = []
     for u in users:
         owned_count = (
@@ -731,8 +734,9 @@ def leaderboard(db: Session = Depends(get_db)):
             .count()
         )
         completion = round(100 * owned_count / total_cards, 1) if total_cards else 0.0
-        rows.append({"pseudo": u.pseudo, "completion_pct": completion, "credits": u.credits + reserved.get(u.id, 0)})
-    rows.sort(key=lambda r: (-r["completion_pct"], -r["credits"]))
+        rows.append({"pseudo": u.pseudo, "completion_pct": completion, "achievements": achieved.get(u.id, 0), "achievements_total": total_levels,
+                     "credits": u.credits + reserved.get(u.id, 0)})
+    rows.sort(key=lambda r: (-r["completion_pct"], -r["achievements"], -r["credits"]))      # à égalité de collection, les succès départagent (puis les crédits)
     return rows
 
 
