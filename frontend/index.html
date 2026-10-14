@@ -169,6 +169,23 @@
   .share-img{width:100%;max-width:400px;display:block;margin:0 auto 14px;border-radius:12px;box-shadow:var(--shadow);}
   .share-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
   .chip-pseudo-link{cursor:pointer;}
+  /* flèche pour replier / déplier chaque rareté de la collection */
+  .tier-toggle{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:20px;line-height:1;padding:0 6px 0 0;margin-right:2px;transition:transform .15s;}
+  .tier-toggle::before{content:'▾';}
+  .tier-toggle:hover{color:var(--text);}
+  .tier-group.collapsed .tier-toggle{transform:rotate(-90deg);}
+  .tier-group.collapsed .collection-grid,.tier-group.collapsed .edition-note{display:none;}
+  .tier-group.collapsed{margin-bottom:10px;} .tier-group.collapsed h3{margin-bottom:0;padding-bottom:8px;border-bottom:1px solid var(--border);}
+  /* fenêtre de confirmation, et historique des échanges du marché */
+  .confirm-warn{background:#FFF1E0;border:1px solid #F0B36A;color:#6B3A00;border-radius:10px;padding:10px 12px;font-size:13.5px;margin:12px 0 0;}
+  .trade-box{display:flex;flex-direction:column;height:480px;overflow:hidden;} .trade-box h2,.trade-box .duel-hint{flex:none;}
+  .trade-box .cell-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
+  .trade-row{display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);}
+  .trade-row.mine{background:var(--bg-sunk);border-radius:8px;padding-left:6px;padding-right:6px;}
+  .trade-date{flex:none;width:78px;font-size:11.5px;color:var(--text-muted);line-height:1.25;}
+  .trade-main{flex:1;min-width:0;font-size:13.5px;line-height:1.4;} .trade-main small{color:var(--text-muted);}
+  .trade-kind{display:inline-block;font-size:10.5px;font-weight:800;border-radius:999px;padding:1px 8px;margin-left:6px;background:var(--bg-elevated);border:1px solid var(--border);}
+  .trade-price{flex:none;font-weight:800;font-size:13.5px;white-space:nowrap;}
   /* version, saisons, offres d'achat, défis privés, rareté « Saison » */
   .site-footer{text-align:center;font-size:11.5px;color:var(--text-muted);padding:22px 12px 34px;}
   .season-box h2{margin-bottom:6px;}
@@ -835,6 +852,11 @@
         <p class="duel-hint">Tu veux une carte ? Ouvre le profil d'un joueur qui l'a (depuis le classement), « Voir sa collection », touche la carte et propose un prix. Tes crédits sont mis de côté jusqu'à ce qu'un joueur accepte ou que tu annules.</p>
         <div id="myOffersEl"></div>
       </div>
+      <div class="panel-box trade-box" id="tradeHistoryBox">
+        <h2>Historique des échanges</h2>
+        <p class="duel-hint">Tous les échanges entre joueurs au marché (annonces achetées et offres d'achat acceptées), du plus récent au plus ancien. Fais défiler pour voir les plus anciens.</p>
+        <div class="cell-scroll" id="tradeHistoryEl"></div>
+      </div>
     </section>
 
     <section id="tab-shop" class="tab-panel">
@@ -979,6 +1001,19 @@
     <div id="shareBody"></div>
   </div>
 </div>
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="confirmTitle">Confirmer</h2>
+      <button class="modal-close" id="confirmClose" type="button">✕</button>
+    </div>
+    <div id="confirmBody"></div>
+    <div class="share-actions" style="margin-top:16px;">
+      <button class="btn-secondary" type="button" id="confirmNo">Annuler</button>
+      <button class="btn-primary" type="button" id="confirmYes">Confirmer</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1073,7 +1108,7 @@
       btn.classList.add('active');
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
       if (btn.dataset.tab === 'collection') loadCollection();
-      if (btn.dataset.tab === 'marche') { loadCollection().then(renderMarketForm); loadListings(); loadOffers(); }
+      if (btn.dataset.tab === 'marche') { loadCollection().then(renderMarketForm); loadListings(); loadOffers(); loadTradeHistory(); }
       if (btn.dataset.tab === 'shop') loadShop();
       if (btn.dataset.tab === 'classement') loadLeaderboard();
       if (btn.dataset.tab === 'actualite') loadNews();
@@ -1527,7 +1562,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.13.5';
+  const SITE_VERSION = '2026.10.13.6';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -1577,6 +1612,7 @@
 
   // ---------- Offres d'achat au marché ----------
   async function loadOffers(){
+    loadTradeHistory();
     try { const [forMe, mine] = await Promise.all([api('/market/offers/for-me'), api('/market/offers/mine')]); renderOffers(forMe, mine); } catch(e) { /* silencieux */ }
   }
   function offerRow(o, html, btn){
@@ -1612,6 +1648,49 @@
       try { await api('/market/offers', { method: 'POST', body: JSON.stringify({ card_id: card.id, price }) }); toast('Offre envoyée : ' + price + ' crédits mis de côté 💰'); await refreshMe(); closeUserCollectionModal(); }
       catch(err) { toast(err.message); e.target.disabled = false; }
     });
+  }
+
+  // ---------- Replier / déplier les rarités de la collection (l'état est gardé sur cet appareil, un par compte) ----------
+  function collapsedKey(){ return 'fca5_collapsed_' + (myPseudo || ''); }
+  function getCollapsed(){ try { return new Set(JSON.parse(localStorage.getItem(collapsedKey()) || '[]')); } catch(e) { return new Set(); } }
+  function setCollapsed(set){ try { localStorage.setItem(collapsedKey(), JSON.stringify([...set])); } catch(e) { /* stockage indisponible : l'état ne sera pas gardé */ } }
+
+  // ---------- Fenêtre de confirmation (utilisée avant de vendre un doublon) ----------
+  function confirmDialog(title, html, yesLabel){
+    return new Promise(resolve => {
+      const m = byId('confirmModal'), yes = byId('confirmYes'), no = byId('confirmNo'), x = byId('confirmClose');
+      byId('confirmTitle').textContent = title; byId('confirmBody').innerHTML = html; yes.textContent = yesLabel || 'Confirmer';
+      const done = v => { m.style.display = 'none'; yes.onclick = no.onclick = x.onclick = m.onclick = null; resolve(v); };
+      yes.onclick = () => done(true); no.onclick = () => done(false); x.onclick = () => done(false); m.onclick = e => { if (e.target === m) done(false); };
+      m.style.display = 'flex';
+    });
+  }
+  async function askSellDuplicate(card){
+    let price = 1; try { const r = await getGameRules(); price = (r.sell_values || {})[card.tier] || 1; } catch(e) { /* prix inconnu : le serveur applique le bon */ }
+    const word = n => n + ' crédit' + (n > 1 ? 's' : ''), left = card.quantity - 1;
+    const ok = await confirmDialog('Vendre ce doublon ?',
+      '<p style="margin:0 0 6px;">Tu vas vendre <b>1 exemplaire</b> de <b>' + escapeHtml(cardDisplayName(card)) + '</b> (' + escapeHtml(tierLabel(card.tier)) + ') au prix prévu de <b>' + word(price) + '</b>.</p>' +
+      '<p style="margin:0;">Il te restera ' + left + ' exemplaire' + (left > 1 ? 's' : '') + '.</p>' +
+      '<div class="confirm-warn">⚠️ <b>Vente définitive, sans retour possible</b> : la carte quitte ta collection tout de suite, tu ne pourras ni annuler la vente ni la récupérer.</div>', 'Vendre pour ' + word(price));
+    if (ok) await sellDuplicate(card.id);
+  }
+
+  // ---------- Historique des échanges entre joueurs (bas de l'onglet Marché) ----------
+  async function loadTradeHistory(){
+    const root = byId('tradeHistoryEl'); if (!root) return;
+    try {
+      const rows = await fetch(API_BASE + '/market/history?limit=100', { headers: token ? { Authorization: 'Bearer ' + token } : {} }).then(r => r.json());
+      if (!rows.length) { root.innerHTML = '<div class="empty-state">Aucun échange pour l\'instant. Le prochain achat ou la prochaine offre acceptée apparaîtra ici.</div>'; return; }
+      root.innerHTML = '';
+      rows.forEach(t => {
+        const d = new Date(t.created_at + 'Z'), mine = t.seller === myPseudo || t.buyer === myPseudo;
+        const when = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + '<br>' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        const card = t.card.masked ? 'Une carte <b>' + escapeHtml(tierLabel(t.card.tier)) + '</b> <small>' + (t.card.deleted ? '(supprimée du jeu)' : '(nom masqué : tu ne la possèdes pas encore)') + '</small>' : '<b>' + escapeHtml(cardDisplayName(t.card)) + '</b> · ' + escapeHtml(tierLabel(t.card.tier));
+        const row = document.createElement('div'); row.className = 'trade-row' + (mine ? ' mine' : '');
+        row.innerHTML = '<div class="trade-date">' + when + '</div><div class="trade-main"><b>' + escapeHtml(t.seller) + '</b> → <b>' + escapeHtml(t.buyer) + '</b><span class="trade-kind">' + (t.kind === 'offre' ? 'Offre d\'achat' : 'Annonce') + '</span><br>' + card + '</div><div class="trade-price">' + t.price + ' crédit' + (t.price > 1 ? 's' : '') + '</div>';
+        root.appendChild(row);
+      });
+    } catch(e) { /* silencieux : l'historique est un plus */ }
   }
 
   // ---------- Missions du jour et série de connexion ----------
@@ -1813,7 +1892,7 @@
     eds.forEach(e => { TIER_COLORS[e.key] = e.c1; TIER_NAMES_PL[e.key] = e.label; });
   }
   function buildTierGroups(cards, withSell){
-    const frag = document.createDocumentFragment();
+    const frag = document.createDocumentFragment(), collapsedSet = getCollapsed();
     ['saison','legendaire','epique','speciale','secrete','gold', ...ED_SLOTS.slice().reverse(), 'noel','halloween','rare','commune'].forEach(tier => {
       const cardsOfTier = cards.filter(c => c.tier === tier)
         .sort((a, b) => (!!b.quantity - !!a.quantity) || (a.quantity ? a.player_name.localeCompare(b.player_name, 'fr') : a.id - b.id));   // d'abord celles qu'on a ; les inconnues ensuite, sans indice
@@ -1824,6 +1903,11 @@
       const ed = editionsInfo[tier];
       const edNote = ed ? '<span class="edition-note">' + ed.icon + ' Édition limitée · ' + (ed.status === 'active' ? 'dans les packs jusqu\'au ' + formatDay(ed.end) : ed.status === 'ended' ? 'terminée le ' + formatDay(ed.end) : 'à partir du ' + formatDay(ed.start)) + '</span>' : '';
       group.innerHTML = '<h3>' + (tier === 'saison' ? 'Trophées de saison' : tierLabel(tier)) + (tier === 'saison' ? '' : ' <span style="color:var(--text-muted);font-size:14px;font-family:var(--font-body);">' + owned + '/' + cardsOfTier.length + '</span>') + edNote + '</h3>';
+      const h3 = group.querySelector('h3'), tg = document.createElement('button'), gLabel = (tier === 'saison' ? 'Trophées de saison' : tierLabel(tier));
+      tg.type = 'button'; tg.className = 'tier-toggle'; tg.setAttribute('aria-label', 'Replier ou déplier ' + gLabel);      // (la flèche est dessinée en CSS : elle ne fait pas partie du texte du titre)
+      const applyCollapsed = c => { group.classList.toggle('collapsed', c); tg.setAttribute('aria-expanded', String(!c)); tg.title = (c ? 'Déplier « ' : 'Replier « ') + gLabel + ' »'; };
+      h3.insertBefore(tg, h3.firstChild); applyCollapsed(collapsedSet.has(tier));
+      tg.addEventListener('click', () => { const c = !group.classList.contains('collapsed'); applyCollapsed(c); const st = getCollapsed(); if (c) st.add(tier); else st.delete(tier); setCollapsed(st); });
       const grid = document.createElement('div'); grid.className = 'collection-grid';
       cardsOfTier.forEach(card => {
         const wrap = document.createElement('div'); wrap.className = 'card-wrap';
@@ -1832,7 +1916,7 @@
           const sellBtn = document.createElement('button');
           sellBtn.className = 'btn-small ghost';
           sellBtn.textContent = 'Vendre doublon';
-          sellBtn.addEventListener('click', () => sellDuplicate(card.id));
+          sellBtn.addEventListener('click', () => askSellDuplicate(card));      // une fenêtre demande confirmation : vente définitive
           wrap.appendChild(sellBtn);
         }
         if (withSell && card.tier === 'secrete' && card.fusion && card.fusion.ready) {    // assez de doublons : on peut fusionner
@@ -1953,7 +2037,7 @@
     } },
     collection: { title: 'Ta collection', async html(){
       const r = await getGameRules(), sv = r.sell_values;
-      return '<h3>Tes cartes</h3><p>Les cartes sont rangées de la plus rare à la plus commune. Une carte grisée avec un « ? » n\'est pas encore à toi. Clique sur une carte pour voir sa fiche.</p>' +
+      return '<h3>Tes cartes</h3><p>Les cartes sont rangées de la plus rare à la plus commune. Une carte grisée avec un « ? » n\'est pas encore à toi. Clique sur une carte pour voir sa fiche. La petite flèche ▾ à côté du nom d\'une rareté la <b>replie</b> ou la <b>déplie</b> : replie celles que tu ne veux plus voir, pour te repérer plus vite (ton choix est gardé sur cet appareil).</p>' +
         '<h3>Partager une carte</h3><p>Sur la fiche d\'une carte que tu possèdes, le bouton « 📤 Partager cette carte » crée une <b>image</b> (format post Instagram) avec ton pseudo. Sur téléphone, tu peux l\'envoyer directement à une appli ; sinon, télécharge-la.</p>' +
         '<h3>Les raretés, de la plus commune à la plus rare</h3><ul>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.commune + '"></span><b>Commune</b> et <span class="help-tier" style="background:' + TIER_COLORS.rare + '"></span><b>Rare</b> : les cartes de base de chaque joueur.</li>' +
@@ -1963,7 +2047,7 @@
         '<li><span class="help-tier" style="background:' + TIER_COLORS.speciale + '"></span><b>Spéciale</b> : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine. Elle ne sort que des packs match.</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.epique + '"></span><b>Épique</b> : le joueur qui marque dans un vrai match. Sa note vaut 85 au premier but, puis +2 par but.</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.legendaire + '"></span><b>Légendaire</b> : la plus rare, holographique et animée.</li></ul>' +
-        '<h3>Les doublons</h3><ul><li><b>Les revendre</b> avec « Vendre doublon » : commune ' + sv.commune + ' crédit, rare ' + sv.rare + ', gold ' + sv.gold + ', spéciale ' + sv.speciale + ', épique ' + sv.epique + ', légendaire ' + sv.legendaire + '.</li>' +
+        '<h3>Les doublons</h3><ul><li><b>Les revendre</b> avec « Vendre doublon » (une fenêtre te demande de confirmer : la vente est <b>définitive</b>, sans retour) : commune ' + sv.commune + ' crédit, rare ' + sv.rare + ', gold ' + sv.gold + ', spéciale ' + sv.speciale + ', épique ' + sv.epique + ', légendaire ' + sv.legendaire + '.</li>' +
         '<li><b>Débloquer une carte secrète</b> : la carte secrète d\'un joueur affiche une jauge. Chaque doublon <b>commune</b> de ce joueur vaut <b>1 point</b>, chaque doublon <b>rare</b> vaut <b>' + r.secret_fusion.rare_value + ' points</b>. À <b>' + r.secret_fusion.cost + ' points</b>, le bouton « Débloquer » apparaît : les doublons nécessaires sont consommés (tu gardes toujours ton premier exemplaire de chaque carte).</li></ul>' +
         '<h3>Les autres types de cartes</h3><ul><li><b>Fans</b>, <b>Le Loup</b> (la mascotte) et <b>équipements</b> : pas de note, ils donnent un bonus d\'équipe en 1v1.</li><li><b>Stades</b> et <b>moments gold</b> : des cartes de collection.</li></ul>';
     } },
@@ -1973,6 +2057,7 @@
         '<li><b>Annuler</b> une de tes annonces te rend la carte.</li>' +
         '<li><b>Acheter</b> : le prix est débité de tes crédits et versé au vendeur. Tu ne peux pas acheter tes propres annonces.</li></ul>' +
         '<p class="help-note">Pour garder une carte précieuse, vends plutôt tes doublons.</p>' +
+        '<h3>L\'historique des échanges</h3><p>Tout en bas du marché, la liste des échanges entre joueurs (annonces achetées et offres acceptées), du plus récent au plus ancien : qui a vendu à qui, quelle carte, à quel prix. Le nom d\'une carte échangée par offre d\'achat n\'est montré qu\'aux joueurs de l\'échange et à ceux qui possèdent cette carte.</p>' +
         '<h3>Les offres d\'achat</h3><ul>' +
         '<li><b>Faire une offre</b> : ouvre le profil d\'un joueur (depuis le classement), « Voir sa collection », touche la carte qui t\'intéresse et propose un prix. Tes crédits sont <b>mis de côté</b> tout de suite ; tu peux avoir 5 offres ouvertes.</li>' +
         '<li><b>Vendre en direct</b> : si tu possèdes une carte qui fait l\'objet d\'une offre, elle apparaît dans « Offres d\'achat pour tes cartes ». Un seul bouton : la carte part, les crédits arrivent. Personne ne voit les offres sur des cartes qu\'il n\'a pas.</li>' +
@@ -1986,7 +2071,7 @@
         '<h3>Tes chances de tirage</h3>' + oddsTableHTML(r, ['classique']) + '<p>Pour les packs à carte garantie, les cartes qui ne sont pas garanties suivent ces mêmes chances.</p>' + ultraOddsHTML(r);
     } },
     classement: { title: 'Le classement', html(){
-      return '<h3>Qui a la plus belle collection ?</h3><p>Les joueurs sont classés par <b>pourcentage de collection</b> : le nombre de cartes différentes que tu possèdes divisé par le nombre de cartes qui existent dans le jeu, <b>sans exception</b> (cartes secrètes et éditions limitées comprises, même terminées). En cas d\'égalité, c\'est le nombre de crédits qui départage.</p>' +
+      return '<h3>Qui a la plus belle collection ?</h3><p>Les joueurs sont classés par <b>pourcentage de collection</b> : le nombre de cartes différentes que tu possèdes divisé par le nombre de cartes qui existent dans le jeu, <b>sans exception</b> (cartes secrètes et éditions limitées comprises, même terminées). En cas d\'égalité, ce sont les <b>succès validés</b> (colonne « Succès », sur tous les niveaux de succès qui existent) qui départagent ; si c\'est encore égal, le nombre de crédits tranche.</p>' +
         '<ul><li>Clique sur un joueur pour ouvrir son <b>profil</b> : sa collection en %, ses matchs 1v1, sa vitrine de cartes et ses succès. Le bouton « Voir sa collection » ouvre ses cartes.</li><li>Touche ton propre pseudo, en haut de la page, pour voir <b>ton profil</b> et choisir ta vitrine.</li><li>Les comptes de test ne sont pas classés.</li></ul>' +
         '<h3>Les succès</h3><p>Chaque joueur gagne des <b>succès</b> en jouant : collection, packs ouverts, cartes secrètes, matchs 1v1, séries de connexion, marché… Chaque succès a plusieurs niveaux (Bronze, Argent, Or, Diamant, Légende). Un niveau obtenu est gardé pour toujours et rapporte quelques <b>crédits</b>. Tu retrouves ta progression dans ton profil.</p>';
     } },
@@ -2367,7 +2452,7 @@
       toast('Échange effectué !');
       await refreshMe();
       await loadCollection(); renderMarketForm();
-      loadListings();
+      loadListings(); loadTradeHistory();
     } catch(e) { toast(e.message); }
   }
 
@@ -2408,14 +2493,14 @@
       const rows = await api('/leaderboard');
       const root = document.getElementById('leaderboardEl');
       if (!rows.length) { root.innerHTML = '<div class="empty-state">Personne n\'a encore de collection.</div>'; return; }
-      let html = '<table class="leaderboard"><thead><tr><th></th><th>Pseudo</th><th>Collection</th><th>Crédits</th></tr></thead><tbody>';
+      let html = '<table class="leaderboard"><thead><tr><th></th><th>Pseudo</th><th>Collection</th><th title="Niveaux de succès validés">Succès</th><th>Crédits</th></tr></thead><tbody>';
       rows.forEach((r, i) => {
         const mine = r.pseudo === myPseudo;
         html += '<tr class="' + (mine ? 'me' : '') + '"><td><span class="rank-num">#' + (i+1) + '</span></td>' +
           '<td><button class="pseudo-link" data-pseudo="' + escapeHtml(r.pseudo) + '">' + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') + '</button></td>' +
-          '<td>' + r.completion_pct + '%</td><td>' + r.credits + '</td></tr>';
+          '<td>' + r.completion_pct + '%</td><td title="Niveaux de succès validés">' + (r.achievements || 0) + '/' + (r.achievements_total || 47) + '</td><td>' + r.credits + '</td></tr>';
       });
-      html += '</tbody></table>';
+      html += '</tbody></table><p class="duel-hint" style="margin-top:10px;">À égalité de collection, ce sont les succès validés qui départagent (puis les crédits).</p>';
       root.innerHTML = html;
       root.querySelectorAll('.pseudo-link').forEach(btn => {
         btn.addEventListener('click', () => openProfile(btn.dataset.pseudo));
