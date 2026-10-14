@@ -169,6 +169,20 @@
   .share-img{width:100%;max-width:400px;display:block;margin:0 auto 14px;border-radius:12px;box-shadow:var(--shadow);}
   .share-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
   .chip-pseudo-link{cursor:pointer;}
+  .share-scroll{max-height:62vh;overflow:auto;border-radius:12px;margin:0 0 14px;} .share-scroll .share-img{margin:0 auto;}
+  .duel-grid .cell>.season-actions{flex:none;margin:0 0 8px;}
+  .season-hist{margin:0 0 6px;} .season-hist td button.pseudo-link{background:none;border:none;color:inherit;font:inherit;cursor:pointer;text-decoration:underline;padding:0;}
+  /* barre d'outils de la collection : recherche, tri, filtres, replier, vendre les doublons */
+  .coll-tools{display:grid;gap:8px;margin:0 0 14px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:14px;padding:10px 12px;}
+  .coll-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .coll-tools input[type=search],.coll-tools select{font:inherit;color:var(--text);background:var(--bg-sunk);border:1px solid var(--border);border-radius:10px;padding:8px 10px;min-width:0;}
+  .coll-tools input[type=search]{flex:1 1 180px;}
+  .coll-chips{display:flex;gap:6px;flex-wrap:wrap;}
+  .coll-chips button{font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;color:var(--text-muted);background:var(--bg-sunk);border:1px solid var(--border);border-radius:999px;padding:5px 12px;}
+  .coll-chips button.on{background:var(--accent);color:var(--accent-text);border-color:var(--accent);}
+  .coll-count{font-size:12px;color:var(--text-muted);margin-left:auto;}
+  .sa-keep{display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-size:13px;line-height:1.35;cursor:pointer;}
+  .sa-keep input{margin-top:2px;flex:none;}
   /* pop-up de bienvenue et de remerciements (première connexion d'un compte tout neuf) */
   .welcome-box{position:relative;max-width:440px;width:calc(100% - 28px);max-height:calc(100vh - 28px);overflow:auto;background:radial-gradient(120% 70% at 50% 0%,rgba(248,180,214,.26),rgba(248,180,214,0) 62%),linear-gradient(170deg,#3B1660 0%,#1B0A2E 100%);border:2px solid #E9C46A;border-radius:22px;padding:26px 22px 22px;color:#FCE6F2;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 0 6px rgba(233,196,106,.15);animation:wlPop .55s cubic-bezier(.2,1.2,.3,1) both;}
   @keyframes wlPop{from{opacity:0;transform:translateY(24px) scale(.94);}to{opacity:1;transform:none;}}
@@ -852,6 +866,26 @@
     <section id="tab-collection" class="tab-panel">
       <div class="help-row"><button class="help-btn" type="button" data-help="collection"><span class="help-q">?</span> Aide</button></div>
       <p class="collection-intro">Chaque pack ouvert ajoute des cartes ici. Un doublon peut être revendu contre des crédits, ou servir à remplir la jauge d'une carte secrète.</p>
+      <div class="coll-tools" id="collTools">
+        <div class="coll-row">
+          <input type="search" id="collSearch" placeholder="🔎 Rechercher un joueur…" autocomplete="off" aria-label="Rechercher un joueur dans ma collection">
+          <select id="collSort" aria-label="Trier la collection">
+            <option value="rarete">Tri : rareté</option><option value="nom">Nom A → Z</option><option value="note">Note (haute → basse)</option><option value="quantite">Doublons d'abord</option>
+          </select>
+        </div>
+        <div class="coll-row">
+          <div class="coll-chips" id="collFilters">
+            <button type="button" class="on" data-f="all">Toutes</button><button type="button" data-f="owned">Possédées</button><button type="button" data-f="dups">Doublons</button><button type="button" data-f="missing">Manquantes</button>
+          </div>
+          <span class="coll-count" id="collCount"></span>
+        </div>
+        <div class="coll-row">
+          <button class="btn-small ghost" type="button" id="collFold">Tout replier</button>
+          <button class="btn-small ghost" type="button" id="collUnfold">Tout déplier</button>
+          <button class="btn-small" type="button" id="collSellAll">💰 Vendre tous les doublons</button>
+          <button class="btn-small ghost" type="button" id="collShare">📤 Partager ma collection en image</button>
+        </div>
+      </div>
       <div id="collectionByTier"></div>
     </section>
 
@@ -922,6 +956,7 @@
         <div class="panel-box season-box cell" id="seasonBox" hidden>
           <h2 id="seasonTitle">🏆 Saison</h2>
           <p class="duel-hint" id="seasonHint"></p>
+          <div class="season-actions"><button class="btn-small ghost" type="button" id="seasonHistoryBtn">📜 Historique des saisons</button></div>
           <div class="cell-scroll" id="seasonStandings"></div>
           <div class="season-prizes" id="seasonPrizes"></div>
           <p class="duel-hint" id="seasonLast" style="margin-top:10px;"></p>
@@ -1017,7 +1052,7 @@
 <div class="modal-overlay" id="shareModal">
   <div class="modal-box">
     <div class="modal-header">
-      <h2>Partager ma carte</h2>
+      <h2 id="shareTitle">Partager ma carte</h2>
       <button class="modal-close" id="shareClose" type="button">✕</button>
     </div>
     <div id="shareBody"></div>
@@ -1133,6 +1168,7 @@
   });
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
+    if (token) fetch(API_BASE + '/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});      // ferme la session de CET appareil seulement
     localStorage.removeItem("fca5_token");
     localStorage.removeItem("fca5_pseudo");
     token = null;
@@ -1511,21 +1547,153 @@
     g.fillStyle = '#C79ABA'; g.font = '700 28px ' + fontBody; g.fillText(location.host, SHARE_W / 2, 1306); g.textAlign = 'left';
     return await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('image vide')), 'image/png'));
   }
-  async function openShareCard(card){
+  // --- fenêtre de partage générale : aperçu, « Partager » (menu du téléphone) et « Télécharger »
+  const slugOf = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  async function openShareImage(opt){
     const modal = document.getElementById('shareModal'), body = document.getElementById('shareBody');
+    document.getElementById('shareTitle').textContent = opt.title;
     body.innerHTML = '<p class="muted" style="text-align:center;">Création de l\'image…</p>'; modal.style.display = 'flex';
     try {
-      const blob = await renderShareImage(card), url = URL.createObjectURL(blob), name = cardDisplayName(card);
-      const file = new File([blob], 'carte-' + name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.png', { type: 'image/png' });
+      const blob = await opt.render(), url = URL.createObjectURL(blob);
+      const file = new File([blob], opt.file + '.png', { type: 'image/png' });
       const canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
-      body.innerHTML = '<img class="share-img" id="sharePreview" alt="Aperçu de la carte à partager" src="' + url + '"><div class="share-actions">' +
+      body.innerHTML = '<div class="share-scroll"><img class="share-img" id="sharePreview" alt="Aperçu de l\'image à partager" src="' + url + '"></div><div class="share-actions">' +
         (canShare ? '<button class="btn-primary" type="button" id="shareSend">📤 Partager</button>' : '') + '<a class="btn-secondary" id="shareDownload" download="' + escapeHtml(file.name) + '" href="' + url + '">⬇️ Télécharger l\'image</a></div>' +
-        '<p class="tm-hint" style="text-align:center;margin-top:10px;">Image 1080 × 1350, idéale pour un post Instagram.</p>';
+        '<p class="tm-hint" style="text-align:center;margin-top:10px;">' + opt.hint + '</p>';
       if (canShare) document.getElementById('shareSend').addEventListener('click', async () => {
-        try { await navigator.share({ files: [file], title: 'Ma carte FC IPSA V', text: 'Ma carte ' + name + ' (' + tierLabel(card.tier) + ') sur FC IPSA V ⚽' }); } catch(e) { /* annulé par le joueur */ }
+        try { await navigator.share({ files: [file], title: opt.title, text: opt.text }); } catch(e) { /* annulé par le joueur */ }
       });
-    } catch(e) { body.innerHTML = '<p class="muted" style="text-align:center;">Impossible de créer l\'image de cette carte.</p>'; }
+    } catch(e) { body.innerHTML = '<p class="muted" style="text-align:center;">Impossible de créer cette image.</p>'; }
   }
+  function openShareCard(card){
+    const name = cardDisplayName(card);
+    return openShareImage({ title: 'Partager ma carte', file: 'carte-' + slugOf(name), hint: 'Image 1080 × 1350, idéale pour un post Instagram.', text: 'Ma carte ' + name + ' (' + tierLabel(card.tier) + ') sur FC IPSA V ⚽', render: () => renderShareImage(card) });
+  }
+
+  // --- éléments communs aux images de profil et de collection
+  const crossOf = u => { try { return new URL(u, location.href).origin !== location.origin; } catch(e) { return false; } };
+  async function loadPhotoMap(cards){
+    const urls = [...new Set(cards.filter(usesBgPhoto).map(c => c.player_photo_url))], map = new Map();
+    await Promise.all(urls.map(async u => { map.set(u, await loadImg(u, crossOf(u))); }));
+    return map;
+  }
+  async function shareFonts(){
+    const f = { head: cssVar('--font-head') || 'Arial Narrow, sans-serif', body: cssVar('--font-body') || 'sans-serif' };
+    try { await Promise.all([document.fonts.load('800 80px ' + f.head), document.fonts.load('700 30px ' + f.body)]); } catch(e) { /* polices par défaut */ }
+    return f;
+  }
+  async function paintShareBackground(g, W, H, glow, withHeader, fonts, subtitle){
+    const bg = g.createLinearGradient(0, 0, W * 0.4, H); bg.addColorStop(0, '#34124F'); bg.addColorStop(1, '#10061F'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    if (glow) { const halo = g.createRadialGradient(W / 2, Math.min(H, 1400) * 0.5, 80, W / 2, Math.min(H, 1400) * 0.5, 720); halo.addColorStop(0, glow + '55'); halo.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = halo; g.fillRect(0, 0, W, Math.min(H, 1400)); }
+    const crest = document.getElementById('wolf-crest');
+    if (crest) {
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 723 833" width="723" height="833" fill="#FCC2E2">' + crest.innerHTML + '</svg>';
+      const wolf = await loadImg('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
+      if (wolf) { g.globalAlpha = 0.06; g.drawImage(wolf, W - 520, 40, 560, 645); g.globalAlpha = 1; if (withHeader) g.drawImage(wolf, 62, 54, 78, 90); }
+    }
+    if (withHeader) { g.textBaseline = 'alphabetic'; g.fillStyle = '#FCE6F2'; g.font = '800 62px ' + fonts.head; g.fillText('FC IPSA V', 160, 112); g.fillStyle = '#C79ABA'; g.font = '700 26px ' + fonts.body; g.fillText(subtitle, 162, 146); }
+  }
+  // une carte en miniature (même dégradé, même photo, même nom que dans le jeu) ; `big` ajoute l'étiquette de rareté
+  function drawMiniCard(g, card, x, y, w, photos, fonts, big){
+    const h = Math.round(w * 1.4286), r = Math.max(6, w * 0.063), pal = tierPalette(card.tier), el = makeMiniCard(card, { hideCount: true });
+    const name = ((el.querySelector('.card-name') || {}).textContent || card.player_name).trim(), mid = ((el.querySelector('.card-mid') || {}).textContent || '').trim() || '⚽';
+    const label = ((el.querySelector('.card-tier-label') || {}).textContent || tierLabel(card.tier)).trim();
+    g.textAlign = 'left';                                           // (le dessin de la page peut avoir centré le texte : une carte s'écrit toujours à gauche)
+    g.save(); const body = g.createLinearGradient(x, y, x + w * 0.5, y + h); body.addColorStop(0, pal.c2); body.addColorStop(1, pal.c1);
+    roundRect(g, x, y, w, h, r); g.fillStyle = body; g.fill(); g.clip();
+    const img = usesBgPhoto(card) ? photos.get(card.player_photo_url) : null;
+    if (img) { const k = Math.max(w / img.width, h / img.height), iw = img.width * k, ih = img.height * k; g.drawImage(img, x + (w - iw) / 2, y + Math.min(0, (h - ih) * 0.12), iw, ih); }
+    else { g.font = Math.round(w * 0.46) + 'px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#fff'; g.fillText(mid, x + w / 2, y + h * 0.56); g.textAlign = 'left'; }
+    const fade = g.createLinearGradient(0, y + h * 0.5, 0, y + h); fade.addColorStop(0, 'rgba(0,0,0,0)'); fade.addColorStop(1, card.tier === 'secrete' ? 'rgba(10,6,30,.92)' : 'rgba(0,0,0,.78)'); g.fillStyle = fade; g.fillRect(x, y + h * 0.5, w, h * 0.5);
+    g.restore();
+    g.save(); roundRect(g, x, y, w, h, r); g.lineWidth = Math.max(2, w * 0.017); g.strokeStyle = card.tier === 'legendaire' ? '#FFD45C' : pal.border; g.stroke(); g.restore();
+    let size = Math.round(w * (big ? 0.15 : 0.17)); g.font = '800 ' + size + 'px ' + fonts.head; while (g.measureText(name).width > w * 0.88 && size > 8) { size -= 1; g.font = '800 ' + size + 'px ' + fonts.head; }
+    g.fillStyle = '#fff'; g.shadowColor = 'rgba(0,0,0,.85)'; g.shadowBlur = Math.max(2, w * 0.04); g.textBaseline = 'alphabetic'; g.fillText(name, x + w * 0.06, y + h - w * 0.07); g.shadowBlur = 0;
+    if (big) { g.font = '800 ' + Math.round(w * 0.055) + 'px ' + fonts.head; const t = label.toUpperCase(), tw = g.measureText(t).width + w * 0.08, th = w * 0.095; roundRect(g, x + w * 0.05, y + w * 0.05, tw, th, th / 2); g.fillStyle = card.tier === 'secrete' ? 'rgba(22,17,43,.85)' : pal.label; g.fill(); g.fillStyle = card.tier === 'secrete' ? '#ECE8FF' : pal.labelText; g.textBaseline = 'middle'; g.fillText(t, x + w * 0.09, y + w * 0.05 + th / 2); g.textBaseline = 'alphabetic'; }
+    return h;
+  }
+  function drawMissingTile(g, x, y, w){
+    const h = Math.round(w * 1.4286), r = Math.max(6, w * 0.063);
+    roundRect(g, x, y, w, h, r); g.fillStyle = 'rgba(255,255,255,.07)'; g.fill(); g.save(); g.setLineDash([6, 6]); g.lineWidth = 2; g.strokeStyle = 'rgba(252,194,226,.28)'; g.stroke(); g.restore();
+    g.fillStyle = 'rgba(252,194,226,.35)'; g.font = '800 ' + Math.round(w * 0.5) + 'px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('?', x + w / 2, y + h / 2); g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+    return h;
+  }
+  const fmtPct = n => String(n).replace('.', ',');
+
+  // --- IMAGE DU PROFIL : pseudo, rang, collection, succès, Elo, matchs, podiums et vitrine
+  async function renderProfileImage(p){
+    const fonts = await shareFonts(), W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+    await paintShareBackground(g, W, H, '#B58CFF', true, fonts, 'Profil de joueur');
+    g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+    let size = 130; g.font = '800 ' + size + 'px ' + fonts.head; while (g.measureText(p.pseudo).width > W - 160 && size > 50) { size -= 4; g.font = '800 ' + size + 'px ' + fonts.head; }
+    g.fillStyle = '#fff'; g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 16; g.fillText(p.pseudo, W / 2, 270); g.shadowBlur = 0;
+    g.fillStyle = '#E9C46A'; g.font = '700 32px ' + fonts.body; g.fillText((p.rank ? 'n°' + p.rank + ' sur ' + p.players_ranked + ' au classement' : 'Classement : compte de test') + (p.member_since ? '  ·  membre depuis le ' + p.member_since.split('-').reverse().join('/') : ''), W / 2, 322);
+    const tiles = [[fmtPct(p.completion_pct) + ' %', 'collection (' + p.cards_owned + '/' + p.cards_total + ')'], [p.badges.earned + '/' + p.badges.total, 'succès validés'], [String(p.elo), 'Elo' + (p.duels.win_rate !== null ? ' · ' + p.duels.win_rate + ' % de victoires' : '')]];
+    tiles.forEach((t, i) => {
+      const x = 40 + i * 340; roundRect(g, x, 360, 320, 190, 26); g.fillStyle = 'rgba(255,255,255,.08)'; g.fill(); g.lineWidth = 2; g.strokeStyle = 'rgba(252,194,226,.28)'; g.stroke();
+      g.fillStyle = '#fff'; g.font = '800 82px ' + fonts.head; g.fillText(t[0], x + 160, 470); g.fillStyle = '#C79ABA'; g.font = '700 25px ' + fonts.body; g.fillText(t[1], x + 160, 520);
+    });
+    const d = p.duels, lines = ['⚽ Matchs 1v1 : ' + d.played + ' joués  ·  ' + d.won + ' V  ·  ' + d.drawn + ' N  ·  ' + d.lost + ' D'];
+    if (p.podiums && (p.podiums[1] || p.podiums[2] || p.podiums[3])) lines.push('🏆 Podiums de saison : 🥇 ' + (p.podiums[1] || 0) + '  ·  🥈 ' + (p.podiums[2] || 0) + '  ·  🥉 ' + (p.podiums[3] || 0));
+    if (p.packs_opened || p.best_streak) lines.push((p.packs_opened ? '📦 ' + p.packs_opened + ' packs ouverts' : '') + (p.packs_opened && p.best_streak ? '  ·  ' : '') + (p.best_streak ? '🔥 meilleure série : ' + p.best_streak + ' jour' + (p.best_streak > 1 ? 's' : '') : ''));
+    g.fillStyle = '#FCE6F2'; g.font = '700 33px ' + fonts.body; lines.forEach((t, i) => g.fillText(t, W / 2, 612 + i * 50));
+    g.fillStyle = '#fff'; g.font = '800 46px ' + fonts.head; g.fillText(p.showcase_auto ? 'Mes cartes les plus rares' : 'Ma vitrine', W / 2, 800);
+    const photos = await loadPhotoMap(p.showcase), cw = 300, gap = 30, total = p.showcase.length * cw + (p.showcase.length - 1) * gap;
+    p.showcase.forEach((c, i) => drawMiniCard(g, c, (W - total) / 2 + i * (cw + gap), 830, cw, photos, fonts, true));
+    g.fillStyle = '#C79ABA'; g.font = '700 28px ' + fonts.body; g.fillText(location.host, W / 2, 1306); g.textAlign = 'left';
+    return await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('image vide')), 'image/png'));
+  }
+
+  // --- IMAGE DE LA COLLECTION COMPLÈTE : toutes les cartes, rareté par rareté (les manquantes en « ? »)
+  async function renderCollectionImage(){
+    let prof = null; try { prof = await fetch(API_BASE + '/users/' + encodeURIComponent(meInfo.pseudo) + '/profile').then(r => r.json()); } catch(e) { prof = null; }
+    const fonts = await shareFonts(), W = 1080, M = 36, order = ['saison', 'legendaire', 'epique', 'speciale', 'secrete', 'gold', ...ED_SLOTS.slice().reverse(), 'noel', 'halloween', 'rare', 'commune'];
+    const groups = [];
+    order.forEach(tier => {
+      const all = myCollection.filter(c => c.tier === tier); if (!all.length) return;
+      let list = all.slice().sort((a, b) => (!!b.quantity - !!a.quantity) || (a.quantity ? cardDisplayName(a).localeCompare(cardDisplayName(b), 'fr') : 0));
+      if (tier === 'saison') list = list.filter(c => c.quantity > 0);
+      if (list.length) groups.push({ tier, list, owned: all.filter(c => c.quantity > 0).length, total: all.length });
+    });
+    const layout = cols => { const gap = 10, w = Math.floor((W - 2 * M - (cols - 1) * gap) / cols), h = Math.round(w * 1.4286); return { cols, gap, w, h, H: 360 + groups.reduce((a, gr) => a + 84 + Math.ceil(gr.list.length / cols) * (h + gap) + 14, 0) + 100 }; };
+    let L = layout(8); if (L.H > 14000) L = layout(10); if (L.H > 14000) L = layout(12);
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = L.H; const g = cv.getContext('2d');
+    await paintShareBackground(g, W, L.H, null, true, fonts, 'Collection complète');
+    g.textBaseline = 'alphabetic'; g.fillStyle = '#fff'; let size = 92; g.font = '800 ' + size + 'px ' + fonts.head; while (g.measureText(meInfo.pseudo).width > W - 2 * M - 360 && size > 40) { size -= 4; g.font = '800 ' + size + 'px ' + fonts.head; }
+    g.fillText(meInfo.pseudo, M, 250);
+    const pct = prof ? prof.completion_pct : 0, ownedN = prof ? prof.cards_owned : 0, totalN = prof ? prof.cards_total : 0;
+    g.textAlign = 'right'; g.fillStyle = '#E9C46A'; g.font = '800 100px ' + fonts.head; g.fillText(fmtPct(pct) + ' %', W - M, 250); g.textAlign = 'left';
+    g.fillStyle = '#C79ABA'; g.font = '700 28px ' + fonts.body; g.fillText(ownedN + ' / ' + totalN + ' cartes' + (prof ? '  ·  ' + prof.badges.earned + '/' + prof.badges.total + ' succès' : '') + (prof && prof.rank ? '  ·  n°' + prof.rank + ' au classement' : ''), M, 300);
+    roundRect(g, M, 322, W - 2 * M, 16, 8); g.fillStyle = 'rgba(255,255,255,.12)'; g.fill(); roundRect(g, M, 322, Math.max(16, (W - 2 * M) * Math.min(100, pct) / 100), 16, 8); g.fillStyle = '#E9C46A'; g.fill();
+    const photos = await loadPhotoMap(myCollection.filter(c => c.quantity > 0));
+    let y = 360;
+    for (const gr of groups) {
+      const pal = tierPalette(gr.tier), title = gr.tier === 'saison' ? 'Trophées de saison' : tierLabel(gr.tier);
+      g.fillStyle = '#fff'; g.font = '800 44px ' + fonts.head; g.fillText(title, M, y + 50);
+      if (gr.tier !== 'saison') { g.textAlign = 'right'; g.fillStyle = gr.owned === gr.total ? '#E9C46A' : '#C79ABA'; g.font = '800 38px ' + fonts.head; g.fillText(gr.owned + '/' + gr.total + (gr.owned === gr.total ? ' ✓' : ''), W - M, y + 50); g.textAlign = 'left'; }
+      roundRect(g, M, y + 62, W - 2 * M, 5, 3); g.fillStyle = pal.c2; g.fill();
+      y += 84;
+      gr.list.forEach((c, i) => { const cx = M + (i % L.cols) * (L.w + L.gap), cy = y + Math.floor(i / L.cols) * (L.h + L.gap); if (c.quantity > 0) drawMiniCard(g, c, cx, cy, L.w, photos, fonts, false); else drawMissingTile(g, cx, cy, L.w); });
+      y += Math.ceil(gr.list.length / L.cols) * (L.h + L.gap) + 14;
+    }
+    g.textAlign = 'center'; g.fillStyle = '#C79ABA'; g.font = '700 28px ' + fonts.body; g.fillText(location.host + '  ·  ' + new Date().toLocaleDateString('fr-FR'), W / 2, L.H - 40); g.textAlign = 'left';
+    return await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('image vide')), 'image/png'));
+  }
+  document.getElementById('collShare').addEventListener('click', () => openShareImage({ title: 'Partager ma collection', file: 'collection-' + slugOf(meInfo.pseudo), hint: 'Image 1080 pixels de large, avec toutes tes cartes rareté par rareté.', text: 'Ma collection FC IPSA V ⚽', render: renderCollectionImage }));
+
+  // --- HISTORIQUE DES SAISONS : le podium de chaque saison terminée
+  async function openSeasonHistory(){
+    try {
+      const list = await fetch(API_BASE + '/duel/seasons').then(r => r.json());
+      document.getElementById('modalTitle').textContent = 'Historique des saisons';
+      document.getElementById('modalBody').innerHTML = (list.length ? '<p class="duel-hint">Le podium de chaque saison terminée (il faut avoir joué le nombre de matchs minimum). Les 3 premiers reçoivent un trophée à leur nom. Touche un pseudo pour voir son profil.</p>' + list.map(se => '<div class="profile-section">' + escapeHtml(se.label.charAt(0).toUpperCase() + se.label.slice(1)) + '</div><table class="duel-table season-hist"><thead><tr><th></th><th>Joueur</th><th class="num">Elo</th><th class="num">M</th><th class="num">V</th></tr></thead><tbody>' +
+        se.podium.map(r => '<tr class="' + (r.pseudo === myPseudo ? 'me' : '') + '"><td>' + r.medal + '</td><td><button type="button" class="pseudo-link" data-pseudo="' + escapeHtml(r.pseudo) + '">' + escapeHtml(r.pseudo) + '</button>' + (r.pseudo === myPseudo ? ' (toi)' : '') + '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.matches + '</td><td class="num">' + r.wins + '</td></tr>').join('') + '</tbody></table>').join('')
+        : '<div class="empty-state">Aucune saison terminée pour l\'instant. La première se termine à la fin du mois en cours : le podium et ses trophées apparaîtront ici.</div>');
+      document.querySelectorAll('#modalBody .season-hist .pseudo-link').forEach(b => b.addEventListener('click', () => openProfile(b.dataset.pseudo)));
+      document.getElementById('userCollectionModal').style.display = 'flex';
+    } catch(e) { toast('Impossible de charger l\'historique des saisons'); }
+  }
+  document.getElementById('seasonHistoryBtn').addEventListener('click', openSeasonHistory);
 
   // ---------- Profil public, succès et vitrine ----------
   async function openProfile(pseudo){
@@ -1564,13 +1732,14 @@
       '<div class="showcase-row" id="profShowcase"></div><div id="profShowcaseEditor"></div>' +
       '<div class="profile-section">Succès<small>' + p.badges.earned + ' niveau' + (p.badges.earned > 1 ? 'x' : '') + ' sur ' + p.badges.total + '</small></div>' + badgeHTML +
       '<div class="profile-section">Raretés<small>packs ouverts : ' + p.packs_opened + (p.best_streak ? ' · meilleure série : ' + p.best_streak + ' j' : '') + '</small></div><div class="tier-bars">' + tiersHTML + '</div>' +
-      '<div class="share-actions" style="margin-top:18px;"><button class="btn-secondary" type="button" id="profCollection">' + (mine ? 'Voir ma collection' : 'Voir sa collection') + '</button>' + (mine ? '' : '<button class="btn-primary" type="button" id="profChallenge">⚔️ Défier ' + escapeHtml(p.pseudo) + '</button>') + '</div>';
+      '<div class="share-actions" style="margin-top:18px;"><button class="btn-secondary" type="button" id="profCollection">' + (mine ? 'Voir ma collection' : 'Voir sa collection') + '</button>' + (mine ? '<button class="btn-secondary" type="button" id="profShare">📤 Partager mon profil en image</button>' : '') + (mine ? '' : '<button class="btn-primary" type="button" id="profChallenge">⚔️ Défier ' + escapeHtml(p.pseudo) + '</button>') + '</div>';
     const row = document.getElementById('profShowcase');
     if (!p.showcase.length) row.innerHTML = '<p class="muted">Aucune carte pour l\'instant.</p>';
     p.showcase.forEach(c => { const el = makeMiniCard(c, { hideCount: true }); el.style.cursor = 'default'; row.appendChild(el); });
     document.getElementById('profCollection').addEventListener('click', () => {
       if (mine) { document.getElementById('userCollectionModal').style.display = 'none'; document.querySelector('.tab[data-tab="collection"]').click(); } else openUserCollection(p.pseudo);
     });
+    if (mine) document.getElementById('profShare').addEventListener('click', () => openShareImage({ title: 'Partager mon profil', file: 'profil-' + slugOf(p.pseudo), hint: 'Image 1080 × 1350, idéale pour un post Instagram.', text: 'Mon profil FC IPSA V : ' + fmtPct(p.completion_pct) + ' % de collection, ' + p.badges.earned + ' succès ⚽', render: () => renderProfileImage(p) }));
     if (mine) document.getElementById('profShowcaseEdit').addEventListener('click', () => editShowcase(p));
     else document.getElementById('profChallenge').addEventListener('click', () => { document.getElementById('userCollectionModal').style.display = 'none'; startChallenge(p.pseudo, null); });
   }
@@ -1601,7 +1770,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.13.9';
+  const SITE_VERSION = '2026.10.14.3';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -1710,10 +1879,11 @@
   function setCollapsed(set){ try { localStorage.setItem(collapsedKey(), JSON.stringify([...set])); } catch(e) { /* stockage indisponible : l'état ne sera pas gardé */ } }
 
   // ---------- Fenêtre de confirmation (utilisée avant de vendre un doublon) ----------
-  function confirmDialog(title, html, yesLabel){
+  function confirmDialog(title, html, yesLabel, onRender){
     return new Promise(resolve => {
       const m = byId('confirmModal'), yes = byId('confirmYes'), no = byId('confirmNo'), x = byId('confirmClose');
       byId('confirmTitle').textContent = title; byId('confirmBody').innerHTML = html; yes.textContent = yesLabel || 'Confirmer';
+      if (onRender) onRender(byId('confirmBody'), yes);
       const done = v => { m.style.display = 'none'; yes.onclick = no.onclick = x.onclick = m.onclick = null; resolve(v); };
       yes.onclick = () => done(true); no.onclick = () => done(false); x.onclick = () => done(false); m.onclick = e => { if (e.target === m) done(false); };
       m.style.display = 'flex';
@@ -1727,6 +1897,32 @@
       '<p style="margin:0;">Il te restera ' + left + ' exemplaire' + (left > 1 ? 's' : '') + '.</p>' +
       '<div class="confirm-warn">⚠️ <b>Vente définitive, sans retour possible</b> : la carte quitte ta collection tout de suite, tu ne pourras ni annuler la vente ni la récupérer.</div>', 'Vendre pour ' + word(price));
     if (ok) await sellDuplicate(card.id);
+  }
+
+  async function askSellAll(){
+    let sum, sv = {};
+    try { sum = await api('/collection/duplicates-summary'); } catch(e) { toast(e.message); return; }
+    try { sv = (await getGameRules()).sell_values || {}; } catch(e) { /* prix détaillés indisponibles */ }
+    if (!sum.all.copies) { toast('Tu n\'as aucun doublon à vendre.'); return; }
+    const cr = n => n + ' crédit' + (n > 1 ? 's' : ''), cp = n => n + ' exemplaire' + (n > 1 ? 's' : '');
+    const prix = 'commune ' + (sv.commune || 1) + ', rare ' + (sv.rare || 3) + ', gold et éditions ' + (sv.gold || 5) + ', épique ' + (sv.epique || 10) + ', légendaire ' + (sv.legendaire || 50);
+    const secrets = sum.secrets_locked > 0;
+    let keep = secrets && sum.kept_for_secrets > 0;
+    const html = '<p style="margin:0 0 6px;">Tu vas vendre <b id="saCopies"></b> (<span id="saKinds"></span>) pour <b id="saCredits"></b>.</p>' +
+      '<p style="margin:0;font-size:13px;color:var(--text-muted);">Prix <b>fixes</b> selon la rareté (' + escapeHtml(prix) + '). Tu gardes toujours 1 exemplaire de chaque carte.</p>' +
+      (secrets ? '<div class="confirm-warn">🔮 <b>Attention : tes doublons servent aux cartes secrètes.</b> Une secrète se débloque en fusionnant des doublons du même joueur (<b>' + sum.fusion_cost + ' points</b> : commune = 1, rare = 5). Il te reste <b>' + sum.secrets_locked + ' carte' + (sum.secrets_locked > 1 ? 's' : '') + ' secrète' + (sum.secrets_locked > 1 ? 's' : '') + '</b> à débloquer.' +
+        (sum.kept_for_secrets > 0 ? '<label class="sa-keep"><input type="checkbox" id="saKeep" checked><span>Garder les doublons de communes et de rares <b>utiles aux secrètes encore bloquées</b> (' + cp(sum.kept_for_secrets) + ' gardés)</span></label>' : '<div style="margin-top:6px;">Aucun de tes doublons actuels n\'y sert : tout peut partir.</div>') + '</div>'
+        : '<p style="margin:8px 0 0;font-size:13px;">✅ Toutes les cartes secrètes sont débloquées : tes doublons ne servent plus qu\'à être vendus.</p>') +
+      '<div class="confirm-warn">⚠️ <b>Vente définitive, sans retour possible</b> : les cartes quittent ta collection tout de suite, tu ne pourras ni annuler la vente ni les récupérer.</div>';
+    const ok = await confirmDialog('Vendre tous tes doublons ?', html, 'Vendre', (body, yes) => {
+      const paint = () => { const t = keep ? sum.keep : sum.all; body.querySelector('#saCopies').textContent = cp(t.copies); body.querySelector('#saKinds').textContent = t.kinds + ' carte' + (t.kinds > 1 ? 's' : '') + ' différente' + (t.kinds > 1 ? 's' : ''); body.querySelector('#saCredits').textContent = cr(t.credits); yes.textContent = t.copies ? 'Vendre pour ' + cr(t.credits) : 'Rien à vendre'; yes.disabled = !t.copies; };
+      const box = body.querySelector('#saKeep'); if (box) box.addEventListener('change', () => { keep = box.checked; paint(); }); paint();
+    });
+    if (!ok) return;
+    try {
+      const r = await api('/collection/sell-duplicates', { method: 'POST', body: JSON.stringify({ keep_for_secrets: keep }) });
+      toast('+' + cr(r.credits_gained) + ' : ' + cp(r.sold) + ' vendu' + (r.sold > 1 ? 's' : '') + ' 💰'); await refreshMe(); loadCollection();
+    } catch(e) { toast(e.message); }
   }
 
   // ---------- Historique des échanges entre joueurs (bas de l'onglet Marché) ----------
@@ -1946,18 +2142,42 @@
     }).join('');
     eds.forEach(e => { TIER_COLORS[e.key] = e.c1; TIER_NAMES_PL[e.key] = e.label; });
   }
-  function buildTierGroups(cards, withSell){
+  // ---------- Recherche, tri et filtres de MA collection ----------
+  const collView = { q: '', sort: 'rarete', filter: 'all' };
+  const normTxt = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  function viewCards(list, view){
+    if (!view) view = { q: '', sort: 'rarete', filter: 'all' };
+    const q = normTxt(view.q.trim());
+    let out = list.filter(c => {
+      const has = c.quantity > 0;
+      if (view.filter === 'owned' && !has) return false;
+      if (view.filter === 'dups' && !(c.quantity > 1)) return false;
+      if (view.filter === 'missing' && has) return false;
+      if (q) return has && (normTxt(cardDisplayName(c)).includes(q) || normTxt(c.player_name).includes(q) || normTxt(c.poste).includes(q));     // une carte inconnue n'a pas de nom : elle ne peut pas ressortir
+      return true;
+    });
+    const byName = (a, b) => cardDisplayName(a).localeCompare(cardDisplayName(b), 'fr');
+    const noteOf = c => (c.display_note && c.display_note.value) || 0;
+    if (view.sort === 'nom') out.sort((a, b) => (!!b.quantity - !!a.quantity) || (a.quantity ? byName(a, b) : 0));
+    else if (view.sort === 'note') out.sort((a, b) => (!!b.quantity - !!a.quantity) || (noteOf(b) - noteOf(a)) || byName(a, b));
+    else if (view.sort === 'quantite') out.sort((a, b) => ((b.quantity || 0) - (a.quantity || 0)) || (a.quantity ? byName(a, b) : 0));
+    else out.sort((a, b) => (!!b.quantity - !!a.quantity) || (a.quantity ? a.player_name.localeCompare(b.player_name, 'fr') : a.id - b.id));      // d'abord celles qu'on a ; les inconnues ensuite, sans indice
+    return out;
+  }
+
+  function buildTierGroups(cards, withSell, view){
     const frag = document.createDocumentFragment(), collapsedSet = getCollapsed();
     ['saison','legendaire','epique','speciale','secrete','gold', ...ED_SLOTS.slice().reverse(), 'noel','halloween','rare','commune'].forEach(tier => {
-      const cardsOfTier = cards.filter(c => c.tier === tier)
-        .sort((a, b) => (!!b.quantity - !!a.quantity) || (a.quantity ? a.player_name.localeCompare(b.player_name, 'fr') : a.id - b.id));   // d'abord celles qu'on a ; les inconnues ensuite, sans indice
-      if (!cardsOfTier.length) return;
-      const owned = cardsOfTier.filter(c => c.quantity > 0).length;
-      if (tier === 'saison') cardsOfTier.sort((a, b) => String((trophyParts(b).season) || '').localeCompare(String(trophyParts(a).season || '')) || trophyParts(a).rank - trophyParts(b).rank);      // les plus récents d'abord
-      const group = document.createElement('div'); group.className = 'tier-group' + (EDITION_TIERS.includes(tier) ? ' edition-group' : '');
+      const allOfTier = cards.filter(c => c.tier === tier);
+      if (!allOfTier.length) return;
+      const cardsOfTier = viewCards(allOfTier, view);
+      if (!cardsOfTier.length) return;                            // un filtre actif : on ne montre pas les raretés sans carte correspondante
+      const owned = allOfTier.filter(c => c.quantity > 0).length;
+      if (tier === 'saison' && (!view || view.sort === 'rarete')) cardsOfTier.sort((a, b) => String((trophyParts(b).season) || '').localeCompare(String(trophyParts(a).season || '')) || trophyParts(a).rank - trophyParts(b).rank);      // les plus récents d'abord
+      const group = document.createElement('div'); group.className = 'tier-group' + (EDITION_TIERS.includes(tier) ? ' edition-group' : ''); group.dataset.tier = tier;
       const ed = editionsInfo[tier];
       const edNote = ed ? '<span class="edition-note">' + ed.icon + ' Édition limitée · ' + (ed.status === 'active' ? 'dans les packs jusqu\'au ' + formatDay(ed.end) : ed.status === 'ended' ? 'terminée le ' + formatDay(ed.end) : 'à partir du ' + formatDay(ed.start)) + '</span>' : '';
-      group.innerHTML = '<h3>' + (tier === 'saison' ? 'Trophées de saison' : tierLabel(tier)) + (tier === 'saison' ? '' : ' <span style="color:var(--text-muted);font-size:14px;font-family:var(--font-body);">' + owned + '/' + cardsOfTier.length + '</span>') + edNote + '</h3>';
+      group.innerHTML = '<h3>' + (tier === 'saison' ? 'Trophées de saison' : tierLabel(tier)) + (tier === 'saison' ? '' : ' <span style="color:var(--text-muted);font-size:14px;font-family:var(--font-body);">' + owned + '/' + allOfTier.length + '</span>') + edNote + '</h3>';
       const h3 = group.querySelector('h3'), tg = document.createElement('button'), gLabel = (tier === 'saison' ? 'Trophées de saison' : tierLabel(tier));
       tg.type = 'button'; tg.className = 'tier-toggle'; tg.setAttribute('aria-label', 'Replier ou déplier ' + gLabel);      // (la flèche est dessinée en CSS : elle ne fait pas partie du texte du titre)
       const applyCollapsed = c => { group.classList.toggle('collapsed', c); tg.setAttribute('aria-expanded', String(!c)); tg.title = (c ? 'Déplier « ' : 'Replier « ') + gLabel + ' »'; };
@@ -1992,8 +2212,27 @@
   function renderCollection(){
     const root = document.getElementById('collectionByTier');
     root.innerHTML = '';
-    root.appendChild(buildTierGroups(myCollection, true));
+    const shown = viewCards(myCollection, collView).length;
+    document.getElementById('collCount').textContent = (collView.q || collView.filter !== 'all') ? shown + ' carte' + (shown > 1 ? 's' : '') + ' affichée' + (shown > 1 ? 's' : '') : '';
+    if (!shown && myCollection.length) { root.innerHTML = '<div class="empty-state">Aucune carte ne correspond à ta recherche ou à ton filtre.</div>'; return; }
+    root.appendChild(buildTierGroups(myCollection, true, collView));
   }
+  // — barre d'outils : recherche, tri, filtres, tout replier / déplier
+  let collSearchTimer = null;
+  document.getElementById('collSearch').addEventListener('input', (e) => { clearTimeout(collSearchTimer); collSearchTimer = setTimeout(() => { collView.q = e.target.value; renderCollection(); }, 120); });
+  document.getElementById('collSort').addEventListener('change', (e) => { collView.sort = e.target.value; renderCollection(); });
+  document.getElementById('collFilters').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-f]'); if (!b) return;
+    collView.filter = b.dataset.f; document.querySelectorAll('#collFilters button').forEach(x => x.classList.toggle('on', x === b)); renderCollection();
+  });
+  function setAllCollapsed(c){
+    const groups = [...document.querySelectorAll('#collectionByTier .tier-group')], st = getCollapsed();
+    groups.forEach(g => { g.classList.toggle('collapsed', c); const t = g.querySelector('.tier-toggle'); if (t) t.setAttribute('aria-expanded', String(!c)); if (c) st.add(g.dataset.tier); else st.delete(g.dataset.tier); });
+    setCollapsed(st);
+  }
+  document.getElementById('collFold').addEventListener('click', () => setAllCollapsed(true));
+  document.getElementById('collUnfold').addEventListener('click', () => setAllCollapsed(false));
+  document.getElementById('collSellAll').addEventListener('click', () => askSellAll());
 
   // ---------- Voir la collection d'un autre joueur (depuis le classement) ----------
   document.getElementById('modalCloseBtn').addEventListener('click', closeUserCollectionModal);
@@ -2092,7 +2331,7 @@
     } },
     collection: { title: 'Ta collection', async html(){
       const r = await getGameRules(), sv = r.sell_values;
-      return '<h3>Tes cartes</h3><p>Les cartes sont rangées de la plus rare à la plus commune. Une carte grisée avec un « ? » n\'est pas encore à toi. Clique sur une carte pour voir sa fiche. La petite flèche ▾ à côté du nom d\'une rareté la <b>replie</b> ou la <b>déplie</b> : replie celles que tu ne veux plus voir, pour te repérer plus vite (ton choix est gardé sur cet appareil).</p>' +
+      return '<h3>Tes cartes</h3><p>Les cartes sont rangées de la plus rare à la plus commune. Une carte grisée avec un « ? » n\'est pas encore à toi. Clique sur une carte pour voir sa fiche. La petite flèche ▾ à côté du nom d\'une rareté la <b>replie</b> ou la <b>déplie</b> : replie celles que tu ne veux plus voir, pour te repérer plus vite (ton choix est gardé sur cet appareil). Au-dessus des cartes : une <b>recherche</b>, un <b>tri</b>, des filtres (<b>Possédées</b>, <b>Doublons</b>, <b>Manquantes</b>), « Tout replier / Tout déplier » et « <b>Vendre tous les doublons</b> » (une fenêtre te demande de confirmer ; tu peux garder les doublons qui servent encore aux cartes secrètes).</p>' +
         '<h3>Partager une carte</h3><p>Sur la fiche d\'une carte que tu possèdes, le bouton « 📤 Partager cette carte » crée une <b>image</b> (format post Instagram) avec ton pseudo. Sur téléphone, tu peux l\'envoyer directement à une appli ; sinon, télécharge-la.</p>' +
         '<h3>Les raretés, de la plus commune à la plus rare</h3><ul>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.commune + '"></span><b>Commune</b> et <span class="help-tier" style="background:' + TIER_COLORS.rare + '"></span><b>Rare</b> : les cartes de base de chaque joueur.</li>' +
