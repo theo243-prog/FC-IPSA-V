@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from .database import get_db
 from .models import User
+from . import sessions
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -32,7 +33,7 @@ def get_current_user(authorization: str | None = Header(default=None), db: Sessi
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Authentification requise")
     token = authorization[len("Bearer "):].strip()
-    user = db.query(User).filter(User.token == token).first()
+    user = sessions.find_user(db, token, touch=True)      # plusieurs appareils connectés en même temps
     if not user:
         raise HTTPException(status_code=401, detail="Session invalide, reconnecte-toi")
     return user
