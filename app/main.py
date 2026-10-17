@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting)
@@ -43,6 +43,10 @@ app.include_router(offers.router)          # offres d'achat au marché
 app.include_router(seasons.router)         # saisons mensuelles du 1v1
 app.add_middleware(admin_tools.AdminLogMiddleware)       # journal des actions d'administration
 app.include_router(admin_tools.router)         # journal et tableau de bord de l'administration
+app.include_router(cosmetics.router)         # titres et cadres de profil
+app.include_router(chat.router)              # chat général et fil d'activité
+app.include_router(swaps.router)             # échanges de cartes entre joueurs
+app.include_router(prono.router)             # pronostics sur les vrais matchs
 app.include_router(avatars.router)            # photos de profil
 app.include_router(collection_tools.router)   # vendre tous les doublons d'un coup
 app.include_router(welcome.router)         # accueil des nouveaux comptes : pop-up de bienvenue et pack ultra offert
@@ -108,6 +112,7 @@ def register(payload: schemas.RegisterRequest, db: Session = Depends(get_db)):
     welcome.mark_new_account(db, user, gift)         # …et ce nouveau compte verra le pop-up de bienvenue une fois
     sessions.adopt_token(db, user)                   # sa première session
     db.commit()
+    chat.post_event(db, "👋 %s a rejoint le club !" % user.pseudo, user)
     return {"token": user.token, "pseudo": user.pseudo}
 
 
@@ -154,6 +159,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "is_test": True,
             "unseen_badges": unseen_badges,
             "welcome": welcome_info,
+            "chat_last_id": chat.last_id(db),
         }
     return {
         "pseudo": user.pseudo,
@@ -165,6 +171,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         "is_test": False,
         "unseen_badges": unseen_badges,
             "welcome": welcome_info,
+            "chat_last_id": chat.last_id(db),
     }
 
 
@@ -230,6 +237,9 @@ def open_pack(
 
     missions.safe_record(db, user, "open_packs")
     missions.safe_record(db, user, "new_card", sum(1 for flag in result["new_flags"] if flag))
+    legendary = [c for c in result["cards_won"] if c.tier == Tier.legendaire]
+    if legendary:
+        chat.post_event(db, "👑 %s a ouvert une légendaire : %s !" % (user.pseudo, legendary[0].player.name), user)        # annonce dans le chat
     return {
         "credits_won": result["credits_won"],
         "cards_won": [{**card_out(c), "is_new": flag} for c, flag in zip(result["cards_won"], result["new_flags"])],
@@ -277,6 +287,9 @@ def unlock_secret(payload: schemas.UnlockSecretRequest, user: User = Depends(get
         messages = {"not_secret": "Cette carte n'est pas une carte secrète", "already_owned": "Tu as déjà cette carte secrète",
                     "not_enough": "Pas assez de doublons : il faut %d points (commune = 1, rare = 5)" % game_logic.SECRET_FUSION_COST}
         raise HTTPException(status_code=400, detail=messages.get(str(e), "Fusion impossible"))
+    secret = db.get(Card, payload.card_id)
+    if secret is not None:
+        chat.post_event(db, "🔮 %s a débloqué la carte secrète de %s !" % (user.pseudo, secret.player.name), user)
     return {"status": "ok", **result}
 
 
@@ -734,6 +747,7 @@ def user_profile(pseudo: str, db: Session = Depends(get_db)):
     out["showcase"], out["showcase_auto"] = [card_out(c) for c in cards], auto
     out["podiums"] = seasons.podium_counts(db, user.id)
     out["avatar"] = avatars.user_stamp(db, user.id)
+    out["title"], out["frame"] = cosmetics.user_display(db, user.id)
     out["players_ranked"] = len(rows)
     return out
 
@@ -748,6 +762,7 @@ def leaderboard(db: Session = Depends(get_db)):
     achieved = dict(db.query(profiles.UserBadge.user_id, func.count()).group_by(profiles.UserBadge.user_id).all())      # niveaux de succès validés, par joueur
     total_levels = profiles.total_levels()
     avatar_stamps = avatars.stamps(db)                 # version de la photo de profil de chacun (le site l'affiche à côté du pseudo)
+    cos = cosmetics.display_map(db)                    # titre et cadre choisis par chacun
     rows = []
     for u in users:
         owned_count = (
@@ -756,7 +771,7 @@ def leaderboard(db: Session = Depends(get_db)):
             .count()
         )
         completion = round(100 * owned_count / total_cards, 1) if total_cards else 0.0
-        rows.append({"pseudo": u.pseudo, "completion_pct": completion, "achievements": achieved.get(u.id, 0), "achievements_total": total_levels, "avatar": avatar_stamps.get(u.id),
+        rows.append({"pseudo": u.pseudo, "completion_pct": completion, "achievements": achieved.get(u.id, 0), "achievements_total": total_levels, "avatar": avatar_stamps.get(u.id), "title": cos.get(u.id, (None, None))[0], "frame": cos.get(u.id, (None, None))[1],
                      "credits": u.credits + reserved.get(u.id, 0)})
     rows.sort(key=lambda r: (-r["completion_pct"], -r["achievements"], -r["credits"]))      # à égalité de collection, les succès départagent (puis les crédits)
     return rows
@@ -795,6 +810,11 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     db.query(offers.BuyOffer).filter_by(buyer_id=user.id).delete()                       # ses offres d'achat (le compte disparaît avec ses crédits)
     db.query(sessions.UserSession).filter_by(user_id=user.id).delete()                    # ses connexions
     db.query(avatars.UserAvatar).filter_by(user_id=user.id).delete()                      # sa photo de profil
+    db.query(cosmetics.UserCosmetics).filter_by(user_id=user.id).delete()                 # son titre et son cadre
+    db.query(chat.ChatMessage).filter_by(user_id=user.id).delete()                        # ses messages du chat
+    db.query(chat.ChatMute).filter_by(user_id=user.id).delete()
+    db.query(swaps.CardSwap).filter((swaps.CardSwap.proposer_id == user.id) | (swaps.CardSwap.target_id == user.id)).delete(synchronize_session=False)      # ses échanges de cartes
+    db.query(prono.PronoBet).filter_by(user_id=user.id).delete()                          # ses pronostics
     db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
     db.query(Listing).filter_by(seller_id=user.id).delete()
     for proposal in db.query(MatchProposal).filter_by(creator_id=user.id).all():
@@ -1310,6 +1330,7 @@ def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = D
     removed_upcoming = 0
     for upcoming in db.query(UpcomingMatch).all():
         if upcoming.date.date() == match_date.date() and upcoming.opponent.strip().lower() == payload.opponent.strip().lower():
+            prono.settle(db, upcoming.id, payload.score_us, payload.score_them)      # les pronostics de ce match sont réglés (cagnotte partagée)
             db.delete(upcoming)
             removed_upcoming += 1
 
@@ -1458,6 +1479,7 @@ def admin_delete_upcoming_match(payload: schemas.AdminDeleteUpcomingMatchRequest
     if len(found) > 1:
         raise HTTPException(status_code=400, detail="Plusieurs matchs correspondent : précise la date et l'adversaire")
     label = found[0].opponent + " (" + found[0].date.date().isoformat() + ")"
+    prono.refund_match(db, found[0].id)          # match supprimé sans résultat : les pronostics sont remboursés
     db.delete(found[0])
     db.commit()
     return {"status": "ok", "deleted": label}
