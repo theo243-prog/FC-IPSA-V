@@ -173,6 +173,31 @@
   .share-img{width:100%;max-width:400px;display:block;margin:0 auto 14px;border-radius:12px;box-shadow:var(--shadow);}
   .share-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
   .chip-pseudo-link{cursor:pointer;}
+  /* cadres de profil : un anneau autour de la photo */
+  .fr-bronze{box-shadow:0 0 0 3px #CD7F32;} .fr-argent{box-shadow:0 0 0 3px #C0C7D1;} .fr-or{box-shadow:0 0 0 3px #E9C46A,0 0 8px 1px rgba(233,196,106,.6);}
+  .fr-diamant{box-shadow:0 0 0 3px #5BD6FF,0 0 10px 2px rgba(91,214,255,.65);} .fr-legende{box-shadow:0 0 0 3px #FF4FD8,0 0 12px 3px rgba(255,79,216,.7);} .fr-champion{box-shadow:0 0 0 3px #FFD45C,0 0 14px 4px rgba(255,212,92,.85);}
+  .av[class*=" fr-"]{margin-right:11px;} .lb-name .av[class*=" fr-"]{margin-right:3px;}
+  .lb-who{display:flex;flex-direction:column;min-width:0;} .lb-title,.profile-title{font-size:11.5px;font-weight:800;color:var(--accent);line-height:1.2;} .profile-title{font-size:12.5px;margin-top:1px;}
+  /* chat du club */
+  .chat-list{height:min(58vh,520px);overflow-y:auto;display:flex;flex-direction:column;gap:7px;padding:4px 2px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:8px 0;}
+  .chat-msg{display:flex;gap:8px;align-items:flex-start;} .chat-msg .av{width:32px;height:32px;margin-top:2px;margin-right:0;}
+  .chat-bubble{background:var(--bg-sunk);border-radius:4px 14px 14px 14px;padding:6px 10px;min-width:0;max-width:calc(100% - 44px);} .chat-msg.mine .chat-bubble{background:rgba(155,89,182,.16);}
+  .chat-head{font-size:12px;color:var(--text-muted);display:flex;flex-wrap:wrap;gap:4px;align-items:center;} .chat-head .pseudo-link{background:none;border:none;font:inherit;font-weight:800;color:var(--text);cursor:pointer;padding:0;}
+  .chat-title{font-size:10.5px;font-weight:800;color:var(--accent);} .chat-time{font-size:11px;color:var(--text-muted);opacity:.8;}
+  .chat-del{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:11px;padding:0 2px;} .chat-text{font-size:14.5px;line-height:1.35;overflow-wrap:anywhere;white-space:pre-wrap;}
+  .chat-event{align-self:center;text-align:center;font-size:13px;background:rgba(233,196,106,.18);border:1px solid rgba(233,196,106,.45);border-radius:12px;padding:5px 12px;max-width:94%;overflow-wrap:anywhere;}
+  .chat-day{align-self:center;font-size:11.5px;font-weight:700;color:var(--text-muted);background:var(--bg-sunk);border-radius:999px;padding:2px 10px;margin:4px 0;}
+  .chat-form{display:flex;gap:8px;} .chat-form input{flex:1;min-width:0;font:inherit;color:var(--text);background:var(--bg-sunk);border:1px solid var(--border);border-radius:10px;padding:10px 12px;} .chat-note{font-size:12.5px;color:var(--text-muted);margin:6px 0 0;min-height:1em;}
+  /* pronostics */
+  .prono-line{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-top:6px;font-size:12.5px;} .prono-pot{color:var(--text-muted);} .prono-mine b{font-size:14px;} .prono-closed{color:var(--text-muted);font-style:italic;}
+  .prono-score{display:flex;align-items:flex-end;gap:10px;justify-content:center;margin:6px 0 10px;} .prono-score label,.prono-stake{display:flex;flex-direction:column;font-size:12.5px;font-weight:700;gap:4px;text-align:center;}
+  .prono-score input,.prono-stake input{font:inherit;font-size:20px;font-weight:800;text-align:center;width:84px;color:var(--text);background:var(--bg-sunk);border:1px solid var(--border);border-radius:10px;padding:8px 4px;} .prono-stake{align-items:center;}
+  .prono-res{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13.5px;} .prono-sub{font-weight:800;margin:12px 0 4px;font-size:14px;}
+  /* échanges de cartes */
+  .swap-form{display:grid;gap:8px;margin:8px 0 12px;} .swap-form select{font:inherit;color:var(--text);background:var(--bg-sunk);border:1px solid var(--border);border-radius:10px;padding:9px 10px;min-width:0;width:100%;}
+  .swap-form label{font-size:12.5px;font-weight:700;display:grid;gap:4px;} .swap-row{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13.5px;}
+  .swap-row .swap-btns{display:flex;gap:6px;} .cos-prev{display:flex;justify-content:center;margin:4px 0 14px;} .cos-prev .profile-avatar{width:84px;height:84px;font-size:44px;} .cos-sel{display:grid;gap:4px;margin:0 0 10px;font-size:13px;font-weight:700;}
+  .cos-sel select{font:inherit;color:var(--text);background:var(--bg-sunk);border:1px solid var(--border);border-radius:10px;padding:9px 10px;width:100%;min-width:0;}
   .share-scroll{max-height:62vh;overflow:auto;border-radius:12px;margin:0 0 14px;} .share-scroll .share-img{margin:0 auto;}
   .duel-grid .cell>.season-actions{flex:none;margin:0 0 8px;}
   .season-hist{margin:0 0 6px;} .season-hist td button.pseudo-link{background:none;border:none;color:inherit;font:inherit;cursor:pointer;text-decoration:underline;padding:0;}
@@ -663,6 +688,7 @@
   /* ---- Actualité ---- */
   .news-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;margin-bottom:22px;}
   .news-grid .panel-box{margin-bottom:0;}
+  .news-col{display:grid;gap:16px;align-content:start;min-width:0;}
   @media (max-width:760px){.news-grid{grid-template-columns:1fr;}}
   .news-subtitle{font-family:var(--font-head);font-size:22px;font-weight:600;margin:6px 0 12px;}
   .upcoming-row{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
@@ -840,6 +866,7 @@
     <button class="tab" data-tab="classement">Classement</button>
     <button class="tab" data-tab="actualite">Actualité</button>
     <button class="tab" data-tab="duels">Matchs 1v1</button>
+    <button class="tab" data-tab="chat">Chat<span class="tab-dot" id="chatDot" hidden></span></button>
   </nav>
 
   <main>
@@ -912,6 +939,11 @@
         <p class="duel-hint">Tu veux une carte ? Ouvre le profil d'un joueur qui l'a (depuis le classement), « Voir sa collection », touche la carte et propose un prix. Tes crédits sont mis de côté jusqu'à ce qu'un joueur accepte ou que tu annules.</p>
         <div id="myOffersEl"></div>
       </div>
+      <div class="panel-box" id="swapsBox">
+        <h2>🔁 Échanges de cartes</h2>
+        <p class="duel-hint">Échange une de tes cartes contre une carte d'un autre joueur, sans crédits. On ne peut échanger que des <b>doublons</b> (2 exemplaires ou plus), des deux côtés : personne ne perd une carte de sa collection. Une proposition reste ouverte 7 jours.</p>
+        <div id="swapsEl"></div>
+      </div>
       <div class="panel-box trade-box" id="tradeHistoryBox">
         <h2>Historique des échanges</h2>
         <p class="duel-hint">Tous les échanges entre joueurs au marché (annonces achetées et offres d'achat acceptées), du plus récent au plus ancien. Fais défiler pour voir les plus anciens.</p>
@@ -929,12 +961,29 @@
       <div id="leaderboardEl"></div>
     </section>
 
+    <section id="tab-chat" class="tab-panel">
+      <div class="panel-box">
+        <h2>💬 Chat du club</h2>
+        <p class="duel-hint">Discute avec les autres joueurs. Les annonces du club (cartes légendaires, saisons, scores exacts, nouveaux membres…) apparaissent ici aussi. Sois sympa : l'administrateur peut supprimer un message ou couper la parole.</p>
+        <div class="chat-list" id="chatList" aria-live="polite"></div>
+        <div class="chat-form"><input type="text" id="chatInput" maxlength="300" placeholder="Écris un message…" autocomplete="off" aria-label="Ton message"><button class="btn-primary" type="button" id="chatSend">Envoyer</button></div>
+        <p class="chat-note" id="chatNote"></p>
+      </div>
+    </section>
+
     <section id="tab-actualite" class="tab-panel">
       <div class="help-row"><button class="help-btn" type="button" data-help="actualite"><span class="help-q">?</span> Aide</button></div>
       <div class="news-grid">
+        <div class="news-col">
         <div class="panel-box">
           <h2>Prochains matchs</h2>
           <div id="upcomingEl"></div>
+        </div>
+        <div class="panel-box">
+          <h2>🎯 Pronostics</h2>
+          <p class="duel-hint" style="margin-bottom:8px;">Mise des crédits sur le score des prochains matchs du club : les mises forment une cagnotte, partagée entre les bons pronostics quand le résultat est enregistré. Appuie sur « Pronostiquer » dans « Prochains matchs ».</p>
+          <div id="pronoEl"></div>
+        </div>
         </div>
         <div class="panel-box">
           <h2>Stats des joueurs</h2>
@@ -1187,7 +1236,8 @@
       btn.classList.add('active');
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
       if (btn.dataset.tab === 'collection') loadCollection();
-      if (btn.dataset.tab === 'marche') { loadCollection().then(renderMarketForm); loadListings(); loadOffers(); loadTradeHistory(); }
+      if (btn.dataset.tab === 'marche') { loadCollection().then(renderMarketForm); loadListings(); loadOffers(); loadTradeHistory(); loadSwaps(); }
+      if (btn.dataset.tab === 'chat') startChat(); else stopChat();
       if (btn.dataset.tab === 'shop') loadShop();
       if (btn.dataset.tab === 'classement') loadLeaderboard();
       if (btn.dataset.tab === 'actualite') loadNews();
@@ -1628,7 +1678,8 @@
   async function renderProfileImage(p){
     const fonts = await shareFonts(), W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
     await paintShareBackground(g, W, H, '#B58CFF', true, fonts, 'Profil de joueur');
-    if (p.avatar) { const av = await loadImg(API_BASE + '/users/' + encodeURIComponent(p.pseudo) + '/avatar?v=' + p.avatar, true); if (av) { g.save(); g.beginPath(); g.arc(W - 120, 100, 70, 0, Math.PI * 2); g.clip(); g.drawImage(av, W - 190, 30, 140, 140); g.restore(); g.beginPath(); g.arc(W - 120, 100, 70, 0, Math.PI * 2); g.lineWidth = 6; g.strokeStyle = '#E9C46A'; g.stroke(); } }
+    if (p.avatar) { const av = await loadImg(API_BASE + '/users/' + encodeURIComponent(p.pseudo) + '/avatar?v=' + p.avatar, true); if (av) { g.save(); g.beginPath(); g.arc(W - 120, 100, 70, 0, Math.PI * 2); g.clip(); g.drawImage(av, W - 190, 30, 140, 140); g.restore(); g.beginPath(); g.arc(W - 120, 100, 70, 0, Math.PI * 2); g.lineWidth = 6; g.strokeStyle = FRAME_COLORS[p.frame] || '#E9C46A'; g.stroke(); } }
+    if (p.title) { g.textAlign = 'center'; g.fillStyle = '#E9C46A'; g.font = '800 34px ' + fonts.head; g.fillText(p.title.toUpperCase(), W / 2, 168); }
     g.textAlign = 'center'; g.textBaseline = 'alphabetic';
     let size = 130; g.font = '800 ' + size + 'px ' + fonts.head; while (g.measureText(p.pseudo).width > W - 160 && size > 50) { size -= 4; g.font = '800 ' + size + 'px ' + fonts.head; }
     g.fillStyle = '#fff'; g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 16; g.fillText(p.pseudo, W / 2, 270); g.shadowBlur = 0;
@@ -1727,7 +1778,7 @@
     const tiersHTML = p.tiers.map(t => '<div class="tb"><span class="tb-name">' + escapeHtml(tierLabel(t.tier)) + '</span><span class="tb-bar"><i style="width:' + Math.round(100 * t.owned / t.total) + '%;background:' + (TIER_COLORS[t.tier] || '#999') + '"></i></span><span class="tb-n">' + t.owned + '/' + t.total + '</span></div>').join('');
     const badgeHTML = mine && badges ? '<div class="badge-grid">' + badges.map(b => badgeTileHTML(b, true)).join('') + '</div>'
       : (p.badges.top.length ? '<div class="badge-grid">' + p.badges.top.map(b => badgeTileHTML(b, false)).join('') + '</div>' : '<p class="muted">Aucun succès pour l\'instant.</p>');
-    body.innerHTML = '<div class="profile-head"><div class="profile-avatar" id="profAvatar">' + (p.avatar ? '<img alt="Photo de ' + escapeHtml(p.pseudo) + '" src="' + API_BASE + '/users/' + encodeURIComponent(p.pseudo) + '/avatar?v=' + p.avatar + '">' : escapeHtml(p.pseudo.charAt(0).toUpperCase())) + (mine ? '<button type="button" class="profile-avatar-btn" id="profAvatarBtn" title="' + (p.avatar ? 'Changer ma photo' : 'Ajouter une photo') + '" aria-label="' + (p.avatar ? 'Changer ma photo' : 'Ajouter une photo') + '">📷</button>' : '') + '</div><div><div style="font-weight:800;font-size:17px;">' + escapeHtml(p.pseudo) + '</div><div class="profile-meta">' + since +
+    body.innerHTML = '<div class="profile-head"><div class="profile-avatar' + (p.frame ? ' fr-' + p.frame : '') + '" id="profAvatar">' + (p.avatar ? '<img alt="Photo de ' + escapeHtml(p.pseudo) + '" src="' + API_BASE + '/users/' + encodeURIComponent(p.pseudo) + '/avatar?v=' + p.avatar + '">' : escapeHtml(p.pseudo.charAt(0).toUpperCase())) + (mine ? '<button type="button" class="profile-avatar-btn" id="profAvatarBtn" title="' + (p.avatar ? 'Changer ma photo' : 'Ajouter une photo') + '" aria-label="' + (p.avatar ? 'Changer ma photo' : 'Ajouter une photo') + '">📷</button>' : '') + '</div><div><div style="font-weight:800;font-size:17px;">' + escapeHtml(p.pseudo) + '</div>' + (p.title ? '<div class="profile-title">' + escapeHtml(p.title) + '</div>' : '') + '<div class="profile-meta">' + since +
       (p.rank ? '<br>Classement : n°' + p.rank + ' sur ' + p.players_ranked : '') + '</div></div></div>' +
       '<div class="profile-tiles"><div class="profile-tile"><b>' + String(p.completion_pct).replace('.', ',') + ' %</b><span>collection (' + p.cards_owned + '/' + p.cards_total + ')</span></div>' +
       '<div class="profile-tile"><b>' + d.played + '</b><span>matchs 1v1' + (d.played ? ' · ' + d.won + 'V ' + d.drawn + 'N ' + d.lost + 'D' : '') + '</span></div>' +
@@ -1737,14 +1788,14 @@
       '<div class="showcase-row" id="profShowcase"></div><div id="profShowcaseEditor"></div>' +
       '<div class="profile-section">Succès<small>' + p.badges.earned + ' niveau' + (p.badges.earned > 1 ? 'x' : '') + ' sur ' + p.badges.total + '</small></div>' + badgeHTML +
       '<div class="profile-section">Raretés<small>packs ouverts : ' + p.packs_opened + (p.best_streak ? ' · meilleure série : ' + p.best_streak + ' j' : '') + '</small></div><div class="tier-bars">' + tiersHTML + '</div>' +
-      '<div class="share-actions" style="margin-top:18px;"><button class="btn-secondary" type="button" id="profCollection">' + (mine ? 'Voir ma collection' : 'Voir sa collection') + '</button>' + (mine ? '<button class="btn-secondary" type="button" id="profShare">📤 Partager mon profil en image</button>' + (p.avatar ? '<button class="btn-secondary" type="button" id="profPhotoDel">🗑️ Retirer ma photo</button>' : '') : '') + (mine ? '' : '<button class="btn-primary" type="button" id="profChallenge">⚔️ Défier ' + escapeHtml(p.pseudo) + '</button>') + '</div>';
+      '<div class="share-actions" style="margin-top:18px;"><button class="btn-secondary" type="button" id="profCollection">' + (mine ? 'Voir ma collection' : 'Voir sa collection') + '</button>' + (mine ? '<button class="btn-secondary" type="button" id="profShare">📤 Partager mon profil en image</button><button class="btn-secondary" type="button" id="profCosm">🎨 Titre et cadre</button>' + (p.avatar ? '<button class="btn-secondary" type="button" id="profPhotoDel">🗑️ Retirer ma photo</button>' : '') : '') + (mine ? '' : '<button class="btn-primary" type="button" id="profChallenge">⚔️ Défier ' + escapeHtml(p.pseudo) + '</button>') + '</div>';
     const row = document.getElementById('profShowcase');
     if (!p.showcase.length) row.innerHTML = '<p class="muted">Aucune carte pour l\'instant.</p>';
     p.showcase.forEach(c => { const el = makeMiniCard(c, { hideCount: true }); el.style.cursor = 'default'; row.appendChild(el); });
     document.getElementById('profCollection').addEventListener('click', () => {
       if (mine) { document.getElementById('userCollectionModal').style.display = 'none'; document.querySelector('.tab[data-tab="collection"]').click(); } else openUserCollection(p.pseudo);
     });
-    if (mine) { document.getElementById('profAvatarBtn').addEventListener('click', pickAvatar); const pd = document.getElementById('profPhotoDel'); if (pd) pd.addEventListener('click', removeAvatar); }
+    if (mine) { document.getElementById('profCosm').addEventListener('click', () => openCosmetics(p)); document.getElementById('profAvatarBtn').addEventListener('click', pickAvatar); const pd = document.getElementById('profPhotoDel'); if (pd) pd.addEventListener('click', removeAvatar); }
     if (mine) document.getElementById('profShare').addEventListener('click', () => openShareImage({ title: 'Partager mon profil', file: 'profil-' + slugOf(p.pseudo), hint: 'Image 1080 × 1350, idéale pour un post Instagram.', text: 'Mon profil FC IPSA V : ' + fmtPct(p.completion_pct) + ' % de collection, ' + p.badges.earned + ' succès ⚽', render: () => renderProfileImage(p) }));
     if (mine) document.getElementById('profShowcaseEdit').addEventListener('click', () => editShowcase(p));
     else document.getElementById('profChallenge').addEventListener('click', () => { document.getElementById('userCollectionModal').style.display = 'none'; startChallenge(p.pseudo, null); });
@@ -1776,7 +1827,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.14.4';
+  const SITE_VERSION = '2026.10.14.6';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -1933,9 +1984,11 @@
 
   // ---------- Photo de profil ----------
   // `v` = version de la photo donnée par le serveur (null : pas de photo → une pastille avec l'initiale)
-  function avatarHTML(pseudo, v){
-    if (!v) return '<span class="av" aria-hidden="true">' + escapeHtml(String(pseudo).charAt(0).toUpperCase()) + '</span>';
-    return '<img class="av" alt="" loading="lazy" src="' + API_BASE + '/users/' + encodeURIComponent(pseudo) + '/avatar?v=' + v + '">';
+  const FRAME_COLORS = { bronze: '#CD7F32', argent: '#C0C7D1', or: '#E9C46A', diamant: '#5BD6FF', legende: '#FF4FD8', champion: '#FFD45C' };
+  function avatarHTML(pseudo, v, frame){
+    const cls = 'av' + (frame ? ' fr-' + frame : '');
+    if (!v) return '<span class="' + cls + '" aria-hidden="true">' + escapeHtml(String(pseudo).charAt(0).toUpperCase()) + '</span>';
+    return '<img class="' + cls + '" alt="" loading="lazy" src="' + API_BASE + '/users/' + encodeURIComponent(pseudo) + '/avatar?v=' + v + '">';
   }
   // la photo choisie est recadrée au centre en carré et réduite à 256 × 256 (JPEG) : légère, et sans les données de localisation de la photo d'origine
   async function squareJpeg(file, size){
@@ -1966,6 +2019,155 @@
   async function removeAvatar(){
     if (!(await confirmDialog('Retirer ta photo ?', 'Ta photo disparaîtra de ton profil et du classement. Tu pourras en choisir une autre quand tu veux.', 'Retirer'))) return;
     try { await api('/me/avatar', { method: 'DELETE' }); toast('Photo retirée'); await openProfile(meInfo.pseudo); loadLeaderboard(); } catch(e) { toast(e.message); }
+  }
+
+  // ---------- Titres et cadres de profil ----------
+  async function openCosmetics(p){
+    let cat; try { cat = await api('/cosmetics'); } catch(e) { toast(e.message); return; }
+    const opts = (list, cur) => '<option value="">— aucun —</option>' + list.map(x => '<option value="' + x.id + '"' + (x.unlocked ? '' : ' disabled') + (cur === x.id ? ' selected' : '') + '>' + (x.unlocked ? '' : '🔒 ') + escapeHtml(x.label) + '</option>').join('');
+    const locked = [...cat.titles.filter(t => !t.unlocked).map(t => 'Titre « ' + t.label + ' » : ' + t.desc), ...cat.frames.filter(f => !f.unlocked).map(f => 'Cadre ' + f.label + ' : ' + f.desc)];
+    const unl = cat.titles.filter(t => t.unlocked).length + cat.frames.filter(f => f.unlocked).length;
+    const html = '<div class="cos-prev"><div class="profile-avatar' + (cat.selected.frame ? ' fr-' + cat.selected.frame : '') + '" id="cosPrev">' + (p.avatar ? '<img alt="" src="' + API_BASE + '/users/' + encodeURIComponent(p.pseudo) + '/avatar?v=' + p.avatar + '">' : escapeHtml(p.pseudo.charAt(0).toUpperCase())) + '</div></div>' +
+      '<label class="cos-sel">Titre (sous ton pseudo)<select id="cosTitle">' + opts(cat.titles, cat.selected.title) + '</select></label>' +
+      '<label class="cos-sel">Cadre (anneau autour de ta photo)<select id="cosFrame">' + opts(cat.frames, cat.selected.frame) + '</select></label>' +
+      '<p style="font-size:12.5px;color:var(--text-muted);margin:6px 0;">' + unl + ' élément' + (unl > 1 ? 's' : '') + ' débloqué' + (unl > 1 ? 's' : '') + ' sur ' + (cat.titles.length + cat.frames.length) + ' (' + cat.levels_total + ' niveaux de succès). Les 🔒 se débloquent avec tes succès, les saisons et les pronostics.</p>' +
+      (locked.length ? '<details style="font-size:12.5px;"><summary style="cursor:pointer;font-weight:700;">Comment débloquer le reste ? (' + locked.length + ')</summary><ul style="margin:6px 0 0 18px;padding:0;line-height:1.45;">' + locked.map(t => '<li>' + escapeHtml(t) + '</li>').join('') + '</ul></details>' : '');
+    const ok = await confirmDialog('Titre et cadre', html, 'Enregistrer', (body) => {
+      body.querySelector('#cosFrame').addEventListener('change', e => { body.querySelector('#cosPrev').className = 'profile-avatar' + (e.target.value ? ' fr-' + e.target.value : ''); });
+    });
+    if (!ok) return;
+    try { await api('/cosmetics', { method: 'POST', body: JSON.stringify({ title: byId('cosTitle').value || null, frame: byId('cosFrame').value || null }) }); toast('Profil mis à jour 🎨'); await openProfile(meInfo.pseudo); loadLeaderboard(); }
+    catch(e) { toast(e.message); }
+  }
+
+  // ---------- Chat du club ----------
+  const chat = { last: 0, timer: null, ids: new Set(), lastDay: null, busy: false, sending: false };
+  const chatSeenKey = () => 'fca5_chat_seen_' + (meInfo ? meInfo.pseudo : '');
+  function chatDayLabel(d){ const t = new Date(); t.setHours(0, 0, 0, 0); const x = new Date(d); x.setHours(0, 0, 0, 0); const diff = Math.round((t - x) / 86400000); return diff === 0 ? 'Aujourd\'hui' : diff === 1 ? 'Hier' : d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }); }
+  function chatAppend(msgs, forceScroll){
+    const box = byId('chatList'), near = box.scrollHeight - box.scrollTop - box.clientHeight < 90;
+    if (msgs.length) { const es = box.querySelector('.empty-state'); if (es) es.remove(); }
+    msgs.forEach(m => {
+      if (chat.ids.has(m.id)) return; chat.ids.add(m.id);
+      const when = new Date(m.at + 'Z'), time = when.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      if (when.toDateString() !== chat.lastDay) { chat.lastDay = when.toDateString(); const sep = document.createElement('div'); sep.className = 'chat-day'; sep.textContent = chatDayLabel(when); box.appendChild(sep); }
+      const row = document.createElement('div'); row.dataset.id = m.id;
+      if (m.kind === 'event') { row.className = 'chat-event'; row.innerHTML = escapeHtml(m.text) + ' <span class="chat-time">' + time + '</span>'; }
+      else {
+        row.className = 'chat-msg' + (m.mine ? ' mine' : '');
+        row.innerHTML = avatarHTML(m.pseudo, m.avatar, m.frame) + '<div class="chat-bubble"><div class="chat-head"><button type="button" class="pseudo-link">' + escapeHtml(m.pseudo) + '</button>' + (m.title ? '<span class="chat-title">' + escapeHtml(m.title) + '</span>' : '') + '<span class="chat-time">' + time + '</span>' + (m.mine ? '<button type="button" class="chat-del" title="Supprimer mon message" aria-label="Supprimer mon message">✕</button>' : '') + '</div><div class="chat-text">' + escapeHtml(m.text) + '</div></div>';
+        row.querySelector('.pseudo-link').addEventListener('click', () => openProfile(m.pseudo));
+        const del = row.querySelector('.chat-del'); if (del) del.addEventListener('click', async () => { try { await api('/chat/' + m.id, { method: 'DELETE' }); row.remove(); } catch(e) { toast(e.message); } });
+      }
+      box.appendChild(row);
+    });
+    if (forceScroll || near) box.scrollTop = box.scrollHeight;
+  }
+  async function loadChat(initial){
+    if (chat.busy) return; chat.busy = true;
+    try {
+      const d = await api('/chat?after_id=' + (initial ? 0 : chat.last) + '&limit=60');
+      if (initial) { byId('chatList').innerHTML = ''; chat.ids.clear(); chat.lastDay = null; }
+      chatAppend(d.messages, initial);
+      if (d.messages.length) chat.last = Math.max(chat.last, d.messages[d.messages.length - 1].id);
+      if (initial && !d.messages.length) byId('chatList').innerHTML = '<div class="empty-state">Personne n\'a encore écrit. Lance la conversation !</div>';
+      localStorage.setItem(chatSeenKey(), String(Math.max(d.last_id, chat.last))); updateChatDot();
+      byId('chatNote').textContent = d.muted_until ? '🔇 Tu ne peux pas écrire pour le moment.' : '';
+      byId('chatInput').disabled = byId('chatSend').disabled = !!d.muted_until;
+    } catch(e) { if (initial) toast(e.message); } finally { chat.busy = false; }
+  }
+  function startChat(){ loadChat(true); clearInterval(chat.timer); chat.timer = setInterval(() => { if (!document.hidden) loadChat(false); }, 5000); }
+  function stopChat(){ clearInterval(chat.timer); chat.timer = null; }
+  function updateChatDot(){
+    const dot = byId('chatDot'); if (!dot || !meInfo) return;
+    let seen = localStorage.getItem(chatSeenKey()); if (seen === null) { seen = String(meInfo.chat_last_id || 0); localStorage.setItem(chatSeenKey(), seen); }
+    dot.hidden = byId('tab-chat').classList.contains('active') || !((meInfo.chat_last_id || 0) > parseInt(seen, 10));
+  }
+  async function sendChat(){
+    const inp = byId('chatInput'), text = inp.value.trim(); if (!text || chat.sending) return; chat.sending = true;
+    try { const m = await api('/chat', { method: 'POST', body: JSON.stringify({ text }) }); inp.value = ''; byId('chatNote').textContent = ''; chatAppend([m], true); chat.last = Math.max(chat.last, m.id); }
+    catch(e) { byId('chatNote').textContent = e.message; } finally { chat.sending = false; inp.focus(); }
+  }
+  document.getElementById('chatSend').addEventListener('click', sendChat);
+  document.getElementById('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendChat(); } });
+
+  // ---------- Pronostics sur les vrais matchs ----------
+  let pronoMap = {}, pronoMax = 50;
+  function pronoLine(u){
+    const p = pronoMap[u.id]; if (!p) return '';
+    const pot = '<span class="prono-pot">🎯 Cagnotte ' + p.pool + ' crédit' + (p.pool > 1 ? 's' : '') + (p.bets ? ' · ' + p.bets + ' pronostic' + (p.bets > 1 ? 's' : '') : '') + '</span>';
+    const mine = p.mine ? '<span class="prono-mine">Ton pronostic : <b>' + p.mine.score_us + '–' + p.mine.score_them + '</b> (' + p.mine.stake + ' cr.)</span>' : '';
+    if (!p.open) return '<div class="prono-line">' + pot + mine + '<span class="prono-closed">Pronostics fermés</span></div>';
+    return '<div class="prono-line">' + pot + mine + '<button type="button" class="btn-small prono-btn" data-id="' + escapeHtml(u.id) + '">' + (p.mine ? 'Modifier' : '🎯 Pronostiquer') + '</button>' + (p.mine ? '<button type="button" class="btn-small ghost prono-del" data-id="' + escapeHtml(u.id) + '">Retirer</button>' : '') + '</div>';
+  }
+  async function openProno(id){
+    const p = pronoMap[id]; if (!p) return; const my = p.mine;
+    const closes = new Date(p.closes_at).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+    const html = '<p style="margin:0 0 4px;"><b>FC IPSA V — ' + escapeHtml(p.opponent) + '</b></p><p style="margin:0 0 6px;font-size:13px;color:var(--text-muted);">Les pronostics ferment le ' + escapeHtml(closes) + '.</p>' +
+      '<div class="prono-score"><label>FC IPSA V<input type="number" id="pnUs" min="0" max="30" inputmode="numeric" value="' + (my ? my.score_us : 1) + '"></label><b style="font-size:22px;">–</b><label>' + escapeHtml(p.opponent) + '<input type="number" id="pnThem" min="0" max="30" inputmode="numeric" value="' + (my ? my.score_them : 0) + '"></label></div>' +
+      '<label class="prono-stake">Ta mise (1 à ' + pronoMax + ' crédits)<input type="number" id="pnStake" min="1" max="' + pronoMax + '" inputmode="numeric" value="' + (my ? my.stake : 5) + '"></label>' +
+      '<p style="font-size:12.5px;line-height:1.45;color:var(--text-muted);margin:12px 0 0;">Cagnotte actuelle : <b>' + p.pool + ' crédit' + (p.pool > 1 ? 's' : '') + '</b>' + (p.bonus ? ' (dont ' + p.bonus + ' offerts par le club)' : '') + '. Quand le résultat est enregistré, elle est partagée : <b>score exact : 70 %</b> (entre les scores exacts, selon les mises), <b>bon résultat (victoire, nul ou défaite) : 30 %</b>. Sans score exact, les bons résultats se partagent tout. Si personne n\'a le bon résultat, tout le monde est remboursé. Ta mise est retirée de tes crédits tout de suite ; tu peux la modifier ou la retirer jusqu\'à la fermeture.</p>';
+    if (!(await confirmDialog('Pronostic', html, my ? 'Modifier mon pronostic' : 'Parier'))) return;
+    const body = { upcoming_id: id, score_us: parseInt(byId('pnUs').value, 10), score_them: parseInt(byId('pnThem').value, 10), stake: parseInt(byId('pnStake').value, 10) };
+    if ([body.score_us, body.score_them, body.stake].some(n => Number.isNaN(n))) { toast('Remplis les deux scores et ta mise.'); return; }
+    try { await api('/prono', { method: 'POST', body: JSON.stringify(body) }); toast('Pronostic enregistré 🎯'); await refreshMe(); loadUpcoming(); loadProno(); } catch(e) { toast(e.message); }
+  }
+  async function removeProno(id){
+    if (!(await confirmDialog('Retirer ton pronostic ?', 'Ta mise te sera rendue.', 'Retirer'))) return;
+    try { await api('/prono/' + encodeURIComponent(id), { method: 'DELETE' }); toast('Pronostic retiré'); await refreshMe(); loadUpcoming(); loadProno(); } catch(e) { toast(e.message); }
+  }
+  async function loadProno(){
+    const root = byId('pronoEl'); if (!root) return;
+    try {
+      const [mine, rank] = await Promise.all([api('/prono/mine'), fetch(API_BASE + '/prono/ranking').then(r => r.json())]);
+      const badge = b => b.status === 'open' ? '⏳ en attente' : b.status === 'won' ? '✅ +' + b.payout + (b.exact ? ' · score exact 🎯' : '') : b.status === 'refunded' ? '↩️ remboursé' : '❌ perdu';
+      root.innerHTML = '<div class="prono-sub" style="margin-top:0;">Mes pronostics</div>' + (mine.length ? mine.slice(0, 8).map(b => '<div class="prono-res"><span>' + escapeHtml(b.match) + ' <small style="color:var(--text-muted);">' + escapeHtml(b.date.split('-').reverse().join('/')) + '</small><br>Mon score : <b>' + b.score_us + '–' + b.score_them + '</b> · mise ' + b.stake + (b.result ? ' · résultat ' + b.result.replace('-', '–') : '') + '</span><b>' + badge(b) + '</b></div>').join('') : '<div class="empty-state">Pas encore de pronostic.</div>') +
+        '<div class="prono-sub">Meilleurs pronostiqueurs</div>' + (rank.length ? rank.slice(0, 5).map((r, i) => '<div class="prono-res"><span>' + (i + 1) + '. <button type="button" class="pseudo-link" data-pseudo="' + escapeHtml(r.pseudo) + '">' + escapeHtml(r.pseudo) + '</button></span><span><b>' + (r.net > 0 ? '+' : '') + r.net + '</b> crédits · ' + r.exact + ' score' + (r.exact > 1 ? 's' : '') + ' exact' + (r.exact > 1 ? 's' : '') + '</span></div>').join('') : '<div class="empty-state">Le classement apparaîtra après le premier match pronostiqué.</div>');
+      root.querySelectorAll('.pseudo-link').forEach(b => b.addEventListener('click', () => openProfile(b.dataset.pseudo)));
+    } catch(e) { root.innerHTML = '<div class="empty-state">Pronostics indisponibles pour le moment.</div>'; }
+  }
+
+  // ---------- Échanges de cartes entre joueurs ----------
+  async function loadSwaps(){
+    const root = byId('swapsEl'); if (!root) return;
+    try {
+      if (!myCollection.length) await loadCollection();
+      const [sw, lb] = await Promise.all([api('/swaps'), fetch(API_BASE + '/leaderboard').then(r => r.json())]);
+      const mineDup = myCollection.filter(c => c.quantity > 1 && c.tier !== 'saison').sort((a, b) => cardDisplayName(a).localeCompare(cardDisplayName(b), 'fr'));
+      const nm = c => escapeHtml(c.display_name || c.player_name) + ' <small style="color:var(--text-muted);">(' + escapeHtml(tierLabel(c.tier)) + ')</small>';
+      const players = lb.filter(r => r.pseudo !== meInfo.pseudo).map(r => '<option value="' + escapeHtml(r.pseudo) + '">' + escapeHtml(r.pseudo) + '</option>').join('');
+      const form = mineDup.length ? '<div class="swap-form"><label>Avec quel joueur ?<select id="swTo"><option value="">— choisis un joueur —</option>' + players + '</select></label>' +
+        '<label>Je donne (un de mes doublons)<select id="swGive">' + mineDup.map(c => '<option value="' + c.id + '">' + escapeHtml(cardDisplayName(c)) + ' (' + escapeHtml(tierLabel(c.tier)) + ') ×' + c.quantity + '</option>').join('') + '</select></label>' +
+        '<label>Je demande (un de ses doublons)<select id="swWant" disabled><option value="">— choisis d\'abord un joueur —</option></select></label>' +
+        '<button class="btn-primary" type="button" id="swGo" disabled>Proposer l\'échange</button></div>' : '<div class="empty-state">Tu n\'as pas de doublon à échanger pour l\'instant : ouvre des packs !</div>';
+      const row = (s, btns) => '<div class="swap-row"><span><b>' + escapeHtml(s.from) + '</b> donne ' + (s.give ? nm(s.give) : '?') + ' contre ' + (s.want ? nm(s.want) : '?') + (btns ? '' : ' à <b>' + escapeHtml(s.to) + '</b>') + '</span>' + (btns ? '<span class="swap-btns">' + btns + '</span>' : '') + '</div>';
+      root.innerHTML = form +
+        '<div class="prono-sub">Propositions reçues</div>' + (sw.incoming.length ? sw.incoming.map(s => row(s, '<button class="btn-small swap-acc" data-id="' + s.id + '">Accepter</button><button class="btn-small ghost swap-dec" data-id="' + s.id + '">Refuser</button>')).join('') : '<div class="empty-state">Aucune proposition reçue.</div>') +
+        '<div class="prono-sub">Mes propositions envoyées</div>' + (sw.outgoing.length ? sw.outgoing.map(s => row(s, '<button class="btn-small ghost swap-cancel" data-id="' + s.id + '">Annuler</button>').replace('donne', 'donne (à ' + escapeHtml(s.to) + ')')).join('') : '<div class="empty-state">Aucune proposition en attente.</div>') +
+        '<div class="prono-sub">Derniers échanges du club</div>' + (sw.recent.length ? sw.recent.map(s => '<div class="swap-row"><span>🔁 <b>' + escapeHtml(s.from) + '</b> ⇄ <b>' + escapeHtml(s.to) + '</b> : ' + (s.give ? nm(s.give) : '?') + ' contre ' + (s.want ? nm(s.want) : '?') + '</span></div>').join('') : '<div class="empty-state">Aucun échange pour le moment.</div>');
+      const toSel = root.querySelector('#swTo'), want = root.querySelector('#swWant'), go = root.querySelector('#swGo');
+      if (toSel) {
+        toSel.addEventListener('change', async () => {
+          go.disabled = true; want.disabled = true;
+          if (!toSel.value) { want.innerHTML = '<option value="">— choisis d\'abord un joueur —</option>'; return; }
+          try {
+            const d = await api('/swaps/doubles/' + encodeURIComponent(toSel.value));
+            want.innerHTML = d.length ? d.map(c => '<option value="' + c.id + '">' + escapeHtml(c.display_name || c.player_name) + ' (' + escapeHtml(tierLabel(c.tier)) + ') ×' + c.quantity + '</option>').join('') : '<option value="">' + escapeHtml(toSel.value) + ' n\'a aucun doublon</option>';
+            want.disabled = !d.length; go.disabled = !d.length;
+          } catch(e) { toast(e.message); }
+        });
+        go.addEventListener('click', async () => {
+          try { await api('/swaps', { method: 'POST', body: JSON.stringify({ to: toSel.value, give_card_id: root.querySelector('#swGive').value, want_card_id: want.value }) }); toast('Proposition envoyée 🔁'); loadSwaps(); } catch(e) { toast(e.message); }
+        });
+      }
+      root.querySelectorAll('.swap-acc').forEach(b => b.addEventListener('click', async () => {
+        const s = sw.incoming.find(x => x.id === b.dataset.id);
+        if (!(await confirmDialog('Accepter l\'échange ?', '<p style="margin:0;">Tu donnes <b>' + nm(s.want) + '</b> et tu reçois <b>' + nm(s.give) + '</b> de la part de <b>' + escapeHtml(s.from) + '</b>. C\'est définitif.</p>', 'Accepter'))) return;
+        try { await api('/swaps/' + b.dataset.id + '/accept', { method: 'POST' }); toast('Échange réalisé 🔁'); await loadCollection(); loadSwaps(); } catch(e) { toast(e.message); loadSwaps(); }
+      }));
+      root.querySelectorAll('.swap-dec').forEach(b => b.addEventListener('click', async () => { try { await api('/swaps/' + b.dataset.id + '/decline', { method: 'POST' }); loadSwaps(); } catch(e) { toast(e.message); } }));
+      root.querySelectorAll('.swap-cancel').forEach(b => b.addEventListener('click', async () => { try { await api('/swaps/' + b.dataset.id, { method: 'DELETE' }); loadSwaps(); } catch(e) { toast(e.message); } }));
+    } catch(e) { root.innerHTML = '<div class="empty-state">Échanges indisponibles pour le moment.</div>'; }
   }
 
   // ---------- Historique des échanges entre joueurs (bas de l'onglet Marché) ----------
@@ -2025,6 +2227,7 @@
       meInfo = await api('/me');
       announceBadges(meInfo.unseen_badges);
       if (meInfo.welcome) showWelcome(meInfo.welcome);        // compte tout neuf : pop-up de bienvenue
+      updateChatDot();                                         // point rouge de l'onglet Chat
       document.getElementById('chipCredits').textContent = meInfo.credits;
       const bonusTotal = Object.values(meInfo.pack_tokens || {}).reduce((a, b) => a + b, 0);
       document.getElementById('chipPacks').textContent = meInfo.stored_packs + '/3' + (bonusTotal ? (' +' + bonusTotal + ' bonus') : '');
@@ -2414,6 +2617,7 @@
     } },
     actualite: { title: 'L\'actualité du club', html(){
       return '<h3>Ce que tu vois ici</h3><ul>' +
+        '<li><b>Pronostics</b> : sur chaque match à venir, tu peux miser 1 à 50 crédits sur le score. Les mises forment une cagnotte partagée quand le résultat est enregistré : 70 % pour les scores exacts, 30 % pour ceux qui ont le bon résultat (victoire, nul, défaite). Si personne ne trouve le résultat, tout le monde est remboursé. Tu peux modifier ou retirer ton pronostic jusqu\'au coup d\'envoi.</li>' +
         '<li><b>Prochains matchs</b> : les rencontres à venir du club. Un match passé dont le résultat n\'est pas encore saisi est signalé « Résultat à venir ».</li>' +
         '<li><b>Stats des joueurs</b> : les vraies statistiques de la saison. M = matchs joués, ⚽ = buts, PD = passes décisives, 🏅 = homme du match. Clique sur un joueur pour sa fiche.</li>' +
         '<li><b>Résultats</b> : le score, le stade, les buteurs, les passeurs et les moments mémorables de chaque match.</li></ul>' +
@@ -2834,7 +3038,7 @@
       rows.forEach((r, i) => {
         const mine = r.pseudo === myPseudo;
         html += '<tr class="' + (mine ? 'me' : '') + '"><td><span class="rank-num">#' + (i+1) + '</span></td>' +
-          '<td><div class="lb-name">' + avatarHTML(r.pseudo, r.avatar) + '<button class="pseudo-link" data-pseudo="' + escapeHtml(r.pseudo) + '">' + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') + '</button></div></td>' +
+          '<td><div class="lb-name">' + avatarHTML(r.pseudo, r.avatar, r.frame) + '<span class="lb-who"><button class="pseudo-link" data-pseudo="' + escapeHtml(r.pseudo) + '">' + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') + '</button>' + (r.title ? '<small class="lb-title">' + escapeHtml(r.title) + '</small>' : '') + '</span></div></td>' +
           '<td>' + r.completion_pct + '%</td><td title="Niveaux de succès validés">' + (r.achievements || 0) + '/' + (r.achievements_total || 47) + '</td><td>' + r.credits + '</td></tr>';
       });
       html += '</tbody></table><p class="duel-hint" style="margin-top:10px;">À égalité de collection, ce sont les succès validés qui départagent (puis les crédits). Pour ajouter ta photo : touche ton pseudo, puis 📷.</p>';
@@ -2850,12 +3054,13 @@
   function localDay(iso){ const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); }
 
   async function loadNews(){
-    await Promise.all([loadUpcoming(), loadPlayerStats(), loadMatches()]);
+    await Promise.all([loadUpcoming(), loadPlayerStats(), loadMatches(), loadProno()]);
   }
 
   async function loadUpcoming(){
     try {
-      const rows = await fetch(API_BASE + '/matches/upcoming').then(r => r.json());
+      const [rows, pr] = await Promise.all([fetch(API_BASE + '/matches/upcoming').then(r => r.json()), api('/prono').catch(() => ({ matches: [], max_stake: 50 }))]);
+      pronoMap = Object.fromEntries(pr.matches.map(m => [m.id, m])); pronoMax = pr.max_stake || 50;
       const root = byId('upcomingEl');
       if (!rows.length){ root.innerHTML = '<div class="empty-state">Aucun match prévu pour l\'instant.</div>'; return; }
       const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -2865,8 +3070,10 @@
         const meta = [d.toLocaleDateString('fr-FR', { weekday: 'long' }), u.time, u.location].filter(Boolean).map(escapeHtml).join(' · ');
         const badge = isToday ? '<span class="upcoming-badge">Aujourd\'hui</span>' : (past ? '<span class="upcoming-badge" style="background:var(--bg-sunk);color:var(--text-muted);">Résultat à venir</span>' : '');
         return '<div class="upcoming-row"><div class="upcoming-date"><b>' + d.getDate() + '</b><span>' + d.toLocaleDateString('fr-FR', { month: 'short' }) + '</span></div>' +
-          '<div class="upcoming-main"><b>FC IPSA V — ' + escapeHtml(u.opponent) + '</b>' + badge + '<div class="upcoming-meta">' + meta + '</div></div></div>';
+          '<div class="upcoming-main"><b>FC IPSA V — ' + escapeHtml(u.opponent) + '</b>' + badge + '<div class="upcoming-meta">' + meta + '</div>' + pronoLine(u) + '</div></div>';
       }).join('');
+      root.querySelectorAll('.prono-btn').forEach(b => b.addEventListener('click', () => openProno(b.dataset.id)));
+      root.querySelectorAll('.prono-del').forEach(b => b.addEventListener('click', () => removeProno(b.dataset.id)));
     } catch(e) { toast(e.message); }
   }
 
