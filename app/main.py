@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting)
@@ -43,6 +43,7 @@ app.include_router(offers.router)          # offres d'achat au marché
 app.include_router(seasons.router)         # saisons mensuelles du 1v1
 app.add_middleware(admin_tools.AdminLogMiddleware)       # journal des actions d'administration
 app.include_router(admin_tools.router)         # journal et tableau de bord de l'administration
+app.include_router(tournament.router)          # tournoi 1v1 mensuel
 app.include_router(cosmetics.router)         # titres et cadres de profil
 app.include_router(chat.router)              # chat général et fil d'activité
 app.include_router(swaps.router)             # échanges de cartes entre joueurs
@@ -160,6 +161,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "unseen_badges": unseen_badges,
             "welcome": welcome_info,
             "chat_last_id": chat.last_id(db),
+            "tournament_todo": tournament.todo(db, user),
         }
     return {
         "pseudo": user.pseudo,
@@ -172,6 +174,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         "unseen_badges": unseen_badges,
             "welcome": welcome_info,
             "chat_last_id": chat.last_id(db),
+            "tournament_todo": tournament.todo(db, user),
     }
 
 
@@ -815,6 +818,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     db.query(chat.ChatMute).filter_by(user_id=user.id).delete()
     db.query(swaps.CardSwap).filter((swaps.CardSwap.proposer_id == user.id) | (swaps.CardSwap.target_id == user.id)).delete(synchronize_session=False)      # ses échanges de cartes
     db.query(prono.PronoBet).filter_by(user_id=user.id).delete()                          # ses pronostics
+    tournament.on_user_deleted(db, user.id)                                               # ses inscriptions au tournoi
     db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
     db.query(Listing).filter_by(seller_id=user.id).delete()
     for proposal in db.query(MatchProposal).filter_by(creator_id=user.id).all():
@@ -1788,6 +1792,7 @@ def _tick(fn):
 
 def _background_tick():
     _tick(weekly.check_and_run)             # cartes spéciales du vendredi 17h
+    _tick(tournament.tick)                  # tournoi mensuel : tirage, tours de 24 h, forfaits, cagnotte
     _tick(seasons.run_scheduled)            # fin de saison 1v1 (chaque 1er du mois) : podium, récompenses, Elo remis à zéro
     if push.AVAILABLE:
         _tick(push.check_packs)             # packs gratuits prêts
