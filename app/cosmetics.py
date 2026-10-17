@@ -57,6 +57,7 @@ def _title_catalog():
         out.append((lad["id"] + "_max", MASTER_TITLES[lad["id"]], "Succès « %s » : niveau %s (le dernier)" % (lad["title"], names[n - 1]), (lambda lid, lv: lambda c: c["levels"].get(lid, 0) >= lv)(lad["id"], n)))
     out.append(("champion", "Champion de saison", "Gagner une saison 1v1", lambda c: c["champion"]))
     out.append(("podium", "Sur le podium", "Finir dans les 3 premiers d'une saison 1v1", lambda c: c["podium"]))
+    out.append(("tournoi", "Champion de tournoi", "Remporter un tournoi mensuel", lambda c: c["tournament_wins"] >= 1))
     out.append(("prono", PRONO_TITLES["prono"][0], PRONO_TITLES["prono"][1], lambda c: c["prono_placed"] >= 5))
     out.append(("oracle", PRONO_TITLES["oracle"][0], PRONO_TITLES["oracle"][1], lambda c: c["prono_exact"] >= 3))
     return out
@@ -69,7 +70,7 @@ def _context(db: Session, user_id: str) -> dict:
         levels[b.badge_id] = max(levels.get(b.badge_id, 0), b.level); total += 1
     ranks = [r.rank for r in db.query(SeasonResult).filter_by(user_id=user_id).all()]
     cnt = lambda k: profiles._counter(db, user_id, k)
-    return {"levels": levels, "total": total, "champion": 1 in ranks, "podium": bool(ranks), "prono_placed": cnt("prono_placed"), "prono_exact": cnt("prono_exact")}
+    return {"levels": levels, "total": total, "champion": 1 in ranks, "podium": bool(ranks), "prono_placed": cnt("prono_placed"), "prono_exact": cnt("prono_exact"), "tournament_wins": cnt("tournament_wins")}
 
 
 def catalog(db: Session, user: User) -> dict:
