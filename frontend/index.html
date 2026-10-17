@@ -173,6 +173,17 @@
   .share-img{width:100%;max-width:400px;display:block;margin:0 auto 14px;border-radius:12px;box-shadow:var(--shadow);}
   .share-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
   .chip-pseudo-link{cursor:pointer;}
+  /* tournoi mensuel */
+  .tn-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0;} .tn-stat{background:var(--bg-sunk);border-radius:12px;padding:8px 6px;text-align:center;} .tn-stat b{display:block;font-size:21px;font-family:var(--font-head);line-height:1.1;} .tn-stat span{font-size:11.5px;color:var(--text-muted);}
+  .tn-when{font-size:13px;color:var(--text-muted);margin:4px 0 10px;} .tn-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;}
+  .tn-mine{border:2px solid var(--accent);} .tn-vs{display:flex;align-items:center;justify-content:center;gap:12px;font-family:var(--font-head);font-size:22px;font-weight:800;margin:8px 0;text-align:center;} .tn-vs small{display:block;font-family:var(--font-body);font-size:11.5px;font-weight:600;color:var(--text-muted);}
+  .tn-chips{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0;} .tn-chip{font-size:12.5px;font-weight:700;border-radius:999px;padding:4px 10px;background:var(--bg-sunk);} .tn-chip.ok{background:rgba(46,160,67,.18);}
+  .tn-champ{text-align:center;font-size:20px;font-weight:800;font-family:var(--font-head);background:linear-gradient(90deg,rgba(233,196,106,.28),rgba(233,196,106,.1));border:1px solid #E9C46A;border-radius:14px;padding:12px;margin:8px 0;}
+  .tn-bracket{display:flex;gap:14px;overflow-x:auto;padding:6px 2px 12px;align-items:stretch;} .tn-col{min-width:196px;display:flex;flex-direction:column;justify-content:space-around;gap:10px;} .tn-col h4{margin:0 0 2px;font-size:13px;text-align:center;} .tn-col .tn-dl{font-size:11px;color:var(--text-muted);text-align:center;margin-bottom:4px;}
+  .tn-match{border:1px solid var(--border);border-radius:10px;background:var(--bg-elevated);font-size:13px;overflow:hidden;} .tn-match.mine{border-color:var(--accent);box-shadow:0 0 0 2px rgba(155,89,182,.28);}
+  .tn-line{display:flex;gap:6px;align-items:center;padding:5px 8px;min-width:0;} .tn-line + .tn-line{border-top:1px solid var(--border);} .tn-line.win{font-weight:800;background:rgba(233,196,106,.2);} .tn-line .pseudo-link{background:none;border:none;font:inherit;color:inherit;cursor:pointer;padding:0;text-align:left;overflow-wrap:anywhere;}
+  .tn-seed{font-size:10.5px;color:var(--text-muted);min-width:24px;} .tn-sc{margin-left:auto;font-weight:800;white-space:nowrap;} .tn-state{font-size:11px;color:var(--text-muted);padding:3px 8px;background:var(--bg-sunk);}
+  .tn-hist{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13.5px;}
   /* cadres de profil : un anneau autour de la photo */
   .fr-bronze{box-shadow:0 0 0 3px #CD7F32;} .fr-argent{box-shadow:0 0 0 3px #C0C7D1;} .fr-or{box-shadow:0 0 0 3px #E9C46A,0 0 8px 1px rgba(233,196,106,.6);}
   .fr-diamant{box-shadow:0 0 0 3px #5BD6FF,0 0 10px 2px rgba(91,214,255,.65);} .fr-legende{box-shadow:0 0 0 3px #FF4FD8,0 0 12px 3px rgba(255,79,216,.7);} .fr-champion{box-shadow:0 0 0 3px #FFD45C,0 0 14px 4px rgba(255,212,92,.85);}
@@ -866,6 +877,7 @@
     <button class="tab" data-tab="classement">Classement</button>
     <button class="tab" data-tab="actualite">Actualité</button>
     <button class="tab" data-tab="duels">Matchs 1v1</button>
+    <button class="tab" data-tab="tournoi">Tournoi<span class="tab-dot" id="tournoiDot" hidden></span></button>
     <button class="tab" data-tab="chat">Chat<span class="tab-dot" id="chatDot" hidden></span></button>
   </nav>
 
@@ -959,6 +971,26 @@
     <section id="tab-classement" class="tab-panel">
       <div class="help-row"><button class="help-btn" type="button" data-help="classement"><span class="help-q">?</span> Aide</button></div>
       <div id="leaderboardEl"></div>
+    </section>
+
+    <section id="tab-tournoi" class="tab-panel">
+      <div class="panel-box" id="tnHead"></div>
+      <div id="tnMineBox"></div>
+      <div class="panel-box" id="tnBracketBox" hidden><h2>Le tableau</h2><div class="tn-bracket" id="tnBracket"></div></div>
+      <div class="panel-box"><h2>Cagnotte et récompenses</h2><div id="tnPrizes"></div></div>
+      <div class="panel-box">
+        <h2>Comment ça marche</h2>
+        <ul class="tn-rules" style="margin:6px 0 0 18px;padding:0;line-height:1.5;font-size:14px;">
+          <li><b>Inscriptions</b> : du <b>1er au 7</b> de chaque mois (jusqu'au 7 à minuit), en payant le droit d'entrée. Tout le monde peut s'inscrire, sans limite de places. Désinscription possible (remboursée) jusqu'à la fermeture.</li>
+          <li><b>Tirage</b> : dès minuit, le 8. Les têtes de série sont les mieux classés en Elo ; elles ne se rencontrent que tard dans le tableau. S'il manque des joueurs pour remplir le premier tour, les mieux classés le passent directement.</li>
+          <li><b>Les tours</b> : on commence par le tour qui convient au nombre d'inscrits (seizièmes, huitièmes, quarts…) jusqu'à la finale. Le 1er tour s'ouvre le 8 à midi, <b>24 h par tour</b> (de midi à midi). La finale se joue autour de la mi-mois : la fin du mois reste libre pour la course à l'Elo.</li>
+          <li><b>Ton match</b> : tu composes ton équipe en secret (comme au 1v1). Dès que les deux joueurs ont validé, le match se joue. <b>Qui n'a pas validé à l'heure limite perd par forfait</b> ; si les deux oublient, le mieux classé passe. Ne vends pas les cartes de ton équipe avant la fin du match : une équipe devenue invalide = forfait.</li>
+          <li><b>Égalité</b> : tirs au but, pondérés par la force des deux équipes.</li>
+          <li><b>Ces matchs ne comptent pas pour l'Elo</b> ni pour les statistiques de saison, et ne rapportent ni pack ni crédits.</li>
+          <li><b>Récompenses</b> : la cagnotte (droits d'entrée + bonus du club) est partagée entre le vainqueur, le finaliste et les demi-finalistes ; le vainqueur reçoit aussi un <b>trophée de tournoi</b> à son nom. Moins de 2 inscrits : tournoi annulé, tout le monde est remboursé.</li>
+        </ul>
+      </div>
+      <div class="panel-box"><h2>Anciens tournois</h2><div id="tnHistory"></div></div>
     </section>
 
     <section id="tab-chat" class="tab-panel">
@@ -1238,6 +1270,7 @@
       if (btn.dataset.tab === 'collection') loadCollection();
       if (btn.dataset.tab === 'marche') { loadCollection().then(renderMarketForm); loadListings(); loadOffers(); loadTradeHistory(); loadSwaps(); }
       if (btn.dataset.tab === 'chat') startChat(); else stopChat();
+      if (btn.dataset.tab === 'tournoi') startTournament(); else stopTournament();
       if (btn.dataset.tab === 'shop') loadShop();
       if (btn.dataset.tab === 'classement') loadLeaderboard();
       if (btn.dataset.tab === 'actualite') loadNews();
@@ -1292,11 +1325,11 @@
     return 'joueur';
   }
   // un trophée de saison s'appelle « Vainqueur de saison (octobre 2026) » : le titre en grand, le mois dessous
-  const TROPHY_MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
+  const TROPHY_MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉', 4: '🏆' };
   function trophyParts(card){
     if (card.trophy) return card.trophy;
     const m = /^(.*) \((.*)\)$/.exec(card.player_name || ''); const title = m ? m[1] : (card.player_name || '');
-    return { title, label: m ? m[2] : '', rank: /^Vainqueur/.test(title) ? 1 : /^Deuxi/.test(title) ? 2 : 3, season: null };
+    return { title, label: m ? m[2] : '', rank: /^Vainqueur du tournoi/.test(title) ? 4 : /^Vainqueur/.test(title) ? 1 : /^Deuxi/.test(title) ? 2 : 3, season: null };
   }
   function trophyMedalHTML(card){ return '<div class="item-medal trophy-medal"><span class="item-icon" aria-hidden="true">' + TROPHY_MEDALS[trophyParts(card).rank] + '</span></div>'; }
   // une carte gold s'appelle « Petit pont — Mathis » : l'action en titre, le joueur en dessous
@@ -1465,7 +1498,7 @@
     const t = trophyParts(card), preview = String(card.id || '').startsWith('trophy-');
     document.getElementById('modalTitle').textContent = card.player_name;
     const body = document.getElementById('modalBody');
-    body.innerHTML = '<div style="text-align:center;font-size:64px;line-height:1.1;margin:6px 0;">' + TROPHY_MEDALS[t.rank] + '</div><p style="text-align:center;font-weight:700;">' + (preview ? 'Cette carte sera remise à la fin de la saison de ' + escapeHtml(t.label) + '.' : 'Trophée de la saison de ' + escapeHtml(t.label) + '.') + '</p><p class="muted" style="text-align:center;">Un trophée n\'est qu\'un souvenir : il n\'a ni note ni bonus, ne joue pas de match, ne se vend pas et ne s\'échange pas. Il ne compte pas dans le pourcentage de collection.</p>';
+    body.innerHTML = '<div style="text-align:center;font-size:64px;line-height:1.1;margin:6px 0;">' + TROPHY_MEDALS[t.rank] + '</div><p style="text-align:center;font-weight:700;">' + (preview ? 'Cette carte sera remise à la fin de la saison de ' + escapeHtml(t.label) + '.' : (t.rank === 4 ? 'Trophée du tournoi de ' : 'Trophée de la saison de ') + escapeHtml(t.label) + '.') + '</p><p class="muted" style="text-align:center;">Un trophée n\'est qu\'un souvenir : il n\'a ni note ni bonus, ne joue pas de match, ne se vend pas et ne s\'échange pas. Il ne compte pas dans le pourcentage de collection.</p>';
     if (!preview && card.quantity > 0 && !card._viewing) {
       body.insertAdjacentHTML('beforeend', '<div class="share-actions" style="margin-top:14px;"><button class="btn-secondary" type="button" id="shareCardBtn">📤 Partager ce trophée</button></div>');
       document.getElementById('shareCardBtn').addEventListener('click', () => openShareCard(card));
@@ -1827,7 +1860,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.14.6';
+  const SITE_VERSION = '2026.10.15.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2170,6 +2203,112 @@
     } catch(e) { root.innerHTML = '<div class="empty-state">Échanges indisponibles pour le moment.</div>'; }
   }
 
+  // ---------- Tournoi mensuel ----------
+  let tnData = null, tnTimer = null;
+  const tnFmt = iso => new Date(iso).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+  const tnRegEnd = iso => new Date(new Date(iso) - 60000).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) + ' à minuit';       // (fermeture à 00:00 le 8 = « le 7 à minuit »)
+  const tnDelay = (iso) => { let ms = new Date(iso) - new Date(tnData.now); if (ms <= 0) return 'maintenant'; const m = Math.round(ms / 60000), j = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60); return 'dans ' + (j ? j + ' j ' + h + ' h' : h ? h + ' h ' + String(m % 60).padStart(2, '0') : (m % 60) + ' min'); };
+  function updateTournamentDot(){ const dot = byId('tournoiDot'); if (dot && meInfo) dot.hidden = !meInfo.tournament_todo || byId('tab-tournoi').classList.contains('active'); }
+  function startTournament(){ loadTournament(); clearInterval(tnTimer); tnTimer = setInterval(() => { if (!document.hidden) loadTournament(); }, 20000); }
+  function stopTournament(){ clearInterval(tnTimer); tnTimer = null; }
+  async function loadTournament(){
+    try { tnData = await api('/tournament'); } catch(e) { return; }
+    renderTournament(); updateTournamentDot();
+    fetch(API_BASE + '/tournament/history').then(r => r.json()).then(renderTnHistory).catch(() => {});
+  }
+  function tnPlayerLine(p, m, side){
+    if (!p) return '<div class="tn-line"><span class="tn-seed"></span><span class="muted">' + (m.state === 'waiting' ? 'à déterminer' : 'exempt') + '</span></div>';
+    const win = m.winner && m.winner === p.pseudo, score = m.score ? m.score[side] + (m.pens ? ' <small>(' + m.pens[side] + ')</small>' : '') : '';
+    return '<div class="tn-line' + (win ? ' win' : '') + '"><span class="tn-seed">' + (p.seed ? '#' + p.seed : '') + '</span><button type="button" class="pseudo-link" data-pseudo="' + escapeHtml(p.pseudo) + '">' + escapeHtml(p.pseudo) + '</button>' + (win ? ' ✓' : '') + '<span class="tn-sc">' + score + '</span></div>';
+  }
+  function tnMatchHTML(m){
+    const mine = tnData.me.match && tnData.me.match.id === m.id;
+    const st = m.state === 'done' ? (m.via === 'bye' ? 'passe directement (exempt)' : m.via === 'forfeit' ? 'forfait' : m.via === 'double_forfeit' ? 'double forfait : le mieux classé passe' : m.pens ? 'tirs au but' : 'terminé')
+      : m.state === 'open' ? '⏳ en cours · limite ' + tnFmt(m.deadline_at) : m.state === 'soon' ? 'ouvre ' + tnDelay(m.opens_at) : 'en attente';
+    return '<div class="tn-match' + (mine ? ' mine' : '') + '" data-id="' + m.id + '">' + tnPlayerLine(m.p1, m, 0) + tnPlayerLine(m.p2, m, 1) + '<div class="tn-state">' + escapeHtml(st) + (m.replay ? ' · <a href="#" class="tn-replay" data-id="' + m.id + '">voir</a>' : '') + '</div></div>';
+  }
+  function renderTournament(){
+    const d = tnData, head = byId('tnHead'), me = d.me, fmtN = n => (n || 0);
+    let html = '<h2>🏆 ' + (d.phase === 'none' ? 'Tournoi mensuel' : 'Tournoi de ' + escapeHtml(d.label)) + '</h2>';
+    if (d.phase === 'none') {
+      html += '<p class="tn-when">Pas de tournoi ce mois-ci. Les inscriptions du <b>tournoi de ' + escapeHtml(d.next.label) + '</b> ouvrent le 1er et ferment le 7 à minuit.</p>';
+    } else if (d.phase === 'registration') {
+      html += '<div class="tn-stats"><div class="tn-stat"><b>' + d.entry_fee + '</b><span>droit d\'entrée (crédits)</span></div><div class="tn-stat"><b>' + d.entries + '</b><span>inscrit' + (d.entries > 1 ? 's' : '') + '</span></div><div class="tn-stat"><b>' + d.pool + '</b><span>cagnotte (crédits)</span></div></div>' +
+        '<p class="tn-when">📝 Inscriptions ouvertes jusqu\'au <b>' + escapeHtml(tnRegEnd(d.registration_ends)) + '</b> (' + escapeHtml(tnDelay(d.registration_ends)) + '). Tirage ensuite, premier tour à midi.</p>' +
+        '<div class="tn-actions">' + (me.joined ? '<span class="tn-chip ok">✅ Tu es inscrit</span><button class="btn-small ghost" id="tnLeave" type="button">Se désinscrire (remboursé)</button>' : '<button class="btn-primary" id="tnJoin" type="button">S\'inscrire (' + d.entry_fee + ' crédits)</button>') + '</div>';
+    } else if (d.phase === 'running') {
+      const cur = (d.rounds || []).find(r => r.matches.some(m => m.state !== 'done'));
+      html += '<p class="tn-when">' + (cur ? '<b>' + escapeHtml(cur.name) + '</b> · ' + (new Date(cur.opens_at) > new Date(d.now) ? 'ouvre ' + escapeHtml(tnDelay(cur.opens_at)) : 'se termine ' + escapeHtml(tnDelay(cur.deadline_at))) : 'Dernier match en cours…') + ' · ' + d.entries + ' joueurs · cagnotte de ' + d.pool + ' crédits</p>';
+    } else if (d.phase === 'finished') {
+      html += '<div class="tn-champ">🏆 Champion : ' + escapeHtml(d.champion || '?') + '</div><p class="tn-when">Tournoi terminé · ' + d.entries + ' joueurs · cagnotte de ' + d.pool + ' crédits. Prochain tournoi : inscriptions du 1er au 7 (' + escapeHtml(d.next.label) + ').</p>';
+    } else {
+      html += '<p class="tn-when">Ce tournoi a été annulé : les droits d\'entrée ont été remboursés. Prochain rendez-vous : inscriptions du 1er au 7 (' + escapeHtml(d.next.label) + ').</p>';
+    }
+    if (d.phase === 'registration' && d.players && d.players.length) {
+      html += '<div class="prono-sub">Inscrits (têtes de série provisoires, par Elo)</div><div class="tn-chips">' + d.players.map((p, i) => '<span class="tn-chip">' + escapeHtml(p.pseudo) + ' <small>' + p.elo + '</small></span>').join('') + '</div>';
+    }
+    head.innerHTML = html;
+    const jb = byId('tnJoin'), lb = byId('tnLeave');
+    if (jb) jb.addEventListener('click', async () => {
+      if (!(await confirmDialog('S\'inscrire au tournoi ?', '<p style="margin:0 0 6px;">Droit d\'entrée : <b>' + d.entry_fee + ' crédits</b>, retirés tout de suite (remboursés si tu te désinscris avant la fermeture, ou si le tournoi est annulé).</p><p style="margin:0;font-size:13px;color:var(--text-muted);">La cagnotte (tous les droits d\'entrée' + (d.bonus ? ' + ' + d.bonus + ' offerts par le club' : '') + ') est partagée entre le vainqueur, le finaliste et les demi-finalistes ; le vainqueur gagne aussi un trophée. Les matchs ne comptent pas pour l\'Elo.</p>', 'Payer ' + d.entry_fee + ' crédits'))) return;
+      try { await api('/tournament/join', { method: 'POST' }); toast('Inscrit au tournoi 🏆'); await refreshMe(); loadTournament(); } catch(e) { toast(e.message); }
+    });
+    if (lb) lb.addEventListener('click', async () => {
+      if (!(await confirmDialog('Te désinscrire ?', 'Ton droit d\'entrée te sera rendu.', 'Me désinscrire'))) return;
+      try { await api('/tournament/join', { method: 'DELETE' }); toast('Désinscrit : crédits remboursés'); await refreshMe(); loadTournament(); } catch(e) { toast(e.message); }
+    });
+    renderTnMine(); renderTnBracket(); renderTnPrizes();
+  }
+  function renderTnMine(){
+    const d = tnData, box = byId('tnMineBox'), m = d.me.match; box.innerHTML = '';
+    if (!m) { if (d.me.joined && d.phase === 'running') box.innerHTML = '<div class="panel-box tn-mine"><h2>Ton tournoi</h2><p class="tn-when">Tu es qualifié : ton prochain match apparaîtra ici.</p></div>'; return; }
+    const side = m.me_side, opp = side === 1 ? m.p2 : m.p1, mine = side === 1 ? m.p1 : m.p2, oppReady = m.submitted[side === 1 ? 1 : 0];
+    let body = '<h2>⚽ Ton match : ' + escapeHtml(m.round_name) + '</h2>';
+    if (!opp) {
+      body += '<p class="tn-when">Tu passes ce tour directement (exempt, tête de série n°' + mine.seed + '). Ton prochain match apparaîtra ici.</p>';
+    } else {
+      body += '<div class="tn-vs"><div>' + escapeHtml(mine.pseudo) + '<small>#' + mine.seed + ' · Elo ' + mine.elo + '</small></div><div>⚔️</div><div>' + escapeHtml(opp.pseudo) + '<small>#' + opp.seed + ' · Elo ' + opp.elo + '</small></div></div>';
+      if (m.state === 'done') {
+        const won = m.winner === mine.pseudo;
+        body += '<div class="tn-champ" style="font-size:16px;">' + (won ? '🏆 Qualifié' : '😔 Éliminé') + (m.via === 'play' ? ' · ' + m.score[side - 1] + '–' + m.score[side === 1 ? 1 : 0] + (m.pens ? ' (tirs au but ' + m.pens[side - 1] + '–' + m.pens[side === 1 ? 1 : 0] + ')' : '') : m.via === 'forfeit' ? ' · par forfait' : m.via === 'double_forfeit' ? ' · double forfait (le mieux classé passe)' : '') + '</div>' +
+          (m.replay ? '<div class="tn-actions"><button class="btn-small" type="button" id="tnReplay">▶️ Voir le match</button></div>' : '') +
+          (d.me.place === 1 ? '<p class="tn-when">🏆 Tu as gagné le tournoi : cagnotte et trophée versés !</p>' : d.me.place ? '<p class="tn-when">Place ' + d.me.place + (d.me.place === 3 ? ' (demi-finaliste)' : ' (finaliste)') + ' : ta part de la cagnotte est versée.</p>' : '');
+      } else if (m.state === 'open') {
+        body += '<div class="tn-chips"><span class="tn-chip' + (m.my_team_ready ? ' ok' : '') + '">Ton équipe : ' + (m.my_team_ready ? '✅ prête' : '❌ pas encore composée') + '</span><span class="tn-chip' + (oppReady ? ' ok' : '') + '">' + escapeHtml(opp.pseudo) + ' : ' + (oppReady ? '✅ prêt' : 'en attente') + '</span></div>' +
+          '<p class="tn-when">⏳ Heure limite : <b>' + escapeHtml(tnFmt(m.deadline_at)) + '</b> (' + escapeHtml(tnDelay(m.deadline_at)) + '). Sans équipe validée à cette heure : <b>forfait</b>.</p><div class="tn-actions"><button class="btn-primary" type="button" id="tnTeam">' + (m.my_team_ready ? '✏️ Modifier mon équipe' : '⚽ Composer mon équipe') + '</button></div>';
+      } else {
+        body += '<p class="tn-when">Ce match s\'ouvre <b>' + escapeHtml(tnFmt(m.opens_at)) + '</b> (' + escapeHtml(tnDelay(m.opens_at)) + '). Tu auras alors 24 h pour composer ton équipe.</p>';
+      }
+    }
+    const lm = d.me.last;                                         // le dernier match joué, quand le suivant est déjà annoncé
+    if (lm && lm.state === 'done') {
+      const lside = lm.me_side, lopp = lside === 1 ? lm.p2 : lm.p1, won = lm.winner === (lside === 1 ? lm.p1 : lm.p2).pseudo;
+      body += '<div class="tn-chips" style="margin-top:12px;"><span class="tn-chip ' + (won ? 'ok' : '') + '">Dernier match (' + escapeHtml(lm.round_name) + ') : ' + (won ? '🏆 qualifié' : '😔 éliminé') + ' contre ' + escapeHtml(lopp ? lopp.pseudo : '?') + (lm.via === 'play' ? ' · ' + lm.score[lside - 1] + '–' + lm.score[lside === 1 ? 1 : 0] + (lm.pens ? ' (tirs au but ' + lm.pens[lside - 1] + '–' + lm.pens[lside === 1 ? 1 : 0] + ')' : '') : lm.via === 'forfeit' ? ' · par forfait' : '') + '</span>' + (lm.replay ? '<button class="btn-small" type="button" id="tnReplay">▶️ Voir le match</button>' : '') + '</div>';
+      d.me.lastId = lm.id;
+    }
+    box.innerHTML = '<div class="panel-box tn-mine">' + body + '</div>';
+    const tb = byId('tnTeam'); if (tb) tb.addEventListener('click', () => openTeamModal('tournament', { id: m.id, opponent: opp.pseudo, round_name: m.round_name, deadline: tnFmt(m.deadline_at) }));
+    const rb = byId('tnReplay'); if (rb) rb.addEventListener('click', () => tnReplay(m.state === 'done' ? m.id : d.me.lastId));
+  }
+  async function tnReplay(id){ try { const r = await fetch(API_BASE + '/tournament/matches/' + id + '/recap'); if (!r.ok) throw new Error('Pas de récit pour ce match'); showMatch(await r.json(), { isNew: false, animate: false }); } catch(e) { toast(e.message); } }
+  function renderTnBracket(){
+    const d = tnData, box = byId('tnBracketBox'), root = byId('tnBracket');
+    if (!d.rounds) { box.hidden = true; return; }
+    box.hidden = false;
+    root.innerHTML = d.rounds.map(r => '<div class="tn-col"><div><h4>' + escapeHtml(r.name) + '</h4><div class="tn-dl">' + escapeHtml(tnFmt(r.opens_at)) + ' → ' + escapeHtml(tnFmt(r.deadline_at).split(' à ').pop().replace(':', 'h')) + '</div></div>' + r.matches.map(tnMatchHTML).join('') + '</div>').join('');
+    root.querySelectorAll('.pseudo-link').forEach(b => b.addEventListener('click', () => openProfile(b.dataset.pseudo)));
+    root.querySelectorAll('.tn-replay').forEach(a => a.addEventListener('click', e => { e.preventDefault(); tnReplay(a.dataset.id); }));
+  }
+  function renderTnPrizesHTML(d){
+    if (d.phase === 'none') return '<div class="empty-state">La cagnotte du prochain tournoi se formera pendant les inscriptions.</div>';
+    return '<p class="tn-when" style="margin-top:0;">Cagnotte actuelle : <b>' + d.pool + ' crédits</b> (' + d.entries + ' droit' + (d.entries > 1 ? 's' : '') + ' d\'entrée' + (d.bonus ? ' + ' + d.bonus + ' offerts par le club' : '') + ').</p>' +
+      d.prizes.map(p => '<div class="prono-res"><span>' + (p.place === 1 ? '🥇' : p.place === 2 ? '🥈' : '🥉') + ' ' + escapeHtml(p.label) + '</span><b>' + p.amount + ' crédits</b></div>').join('') + (d.phase === 'registration' ? '<p class="tn-when">Les gains s\'ajustent au nombre d\'inscrits. Le vainqueur reçoit aussi le trophée du tournoi.</p>' : '');
+  }
+  function renderTnPrizes(){ byId('tnPrizes').innerHTML = renderTnPrizesHTML(tnData); }
+  function renderTnHistory(list){
+    byId('tnHistory').innerHTML = list.length ? list.map(h => '<div class="tn-hist"><span><b>' + escapeHtml(h.label) + '</b></span>' + (h.status === 'cancelled' ? '<span class="muted">annulé</span>' : '<span>🏆 ' + escapeHtml(h.champion || '?') + (h.finalist ? ' · 🥈 ' + escapeHtml(h.finalist) : '') + (h.semifinalists.length ? ' · 🥉 ' + h.semifinalists.map(escapeHtml).join(', ') : '') + '</span><span class="muted">' + h.players + ' joueurs · ' + h.pool + ' cr.</span>') + '</div>').join('') : '<div class="empty-state">Aucun tournoi terminé pour l\'instant.</div>';
+  }
+
   // ---------- Historique des échanges entre joueurs (bas de l'onglet Marché) ----------
   async function loadTradeHistory(){
     const root = byId('tradeHistoryEl'); if (!root) return;
@@ -2228,6 +2367,7 @@
       announceBadges(meInfo.unseen_badges);
       if (meInfo.welcome) showWelcome(meInfo.welcome);        // compte tout neuf : pop-up de bienvenue
       updateChatDot();                                         // point rouge de l'onglet Chat
+      updateTournamentDot();                                   // point rouge de l'onglet Tournoi (un match à composer)
       document.getElementById('chipCredits').textContent = meInfo.credits;
       const bonusTotal = Object.values(meInfo.pack_tokens || {}).reduce((a, b) => a + b, 0);
       document.getElementById('chipPacks').textContent = meInfo.stored_packs + '/3' + (bonusTotal ? (' +' + bonusTotal + ' bonus') : '');
@@ -2640,7 +2780,7 @@
         '<li><b>1 Fan</b> : ' + range(cfg.fan_bonus, ['commune', 'rare', 'epique', 'secrete', 'legendaire']) + ' %, édition limitée +' + Math.round(cfg.fan_bonus.halloween * 100) + ' %.</li>' +
         '<li><b>1 Loup</b> (la mascotte) : mêmes bonus que le Fan.</li>' +
         '<li><b>' + cfg.max_equipment + ' Équipement</b> : ' + range(cfg.equipment_bonus, ['commune', 'rare', 'epique', 'legendaire']) + ' %.</li></ul>' +
-        '<h3>Les saisons</h3><p>Chaque mois est une <b>saison</b> : le 1er à minuit (heure de Paris), l\'Elo de tout le monde repart à <b>1000</b>. Il faut avoir joué au moins <b>5 matchs</b> dans le mois pour monter sur le podium. Les <b>3 premiers</b> gagnent des crédits (100, 60, 30) et un <b>trophée</b> : une carte « Vainqueur de saison (mois) », « Deuxième de la saison (mois) » ou « Troisième de la saison (mois) ». Il y a un trophée par saison : être premier deux fois donne deux cartes différentes, jamais un doublon. Un trophée n\'est qu\'un <b>souvenir</b> : il ne sort d\'aucun pack, n\'a ni note ni bonus, ne joue pas de match, ne se vend pas, ne s\'achète pas et ne compte pas dans le pourcentage de collection. Il se range dans « Trophées de saison », dans ta collection.</p>' +
+        '<h3>Le tournoi du mois</h3><p>Chaque mois, un <b>tournoi à élimination directe</b> (onglet Tournoi) : inscriptions du 1er au 7 contre un droit d\'entrée, tirage le 8, un match par tour (24 h pour composer ton équipe, forfait sinon, tirs au but en cas d\'égalité). Il ne compte <b>pas</b> pour l\'Elo. La cagnotte revient au vainqueur, au finaliste et aux demi-finalistes ; le vainqueur gagne un trophée.</p>' + '<h3>Les saisons</h3><p>Chaque mois est une <b>saison</b> : le 1er à minuit (heure de Paris), l\'Elo de tout le monde repart à <b>1000</b>. Il faut avoir joué au moins <b>5 matchs</b> dans le mois pour monter sur le podium. Les <b>3 premiers</b> gagnent des crédits (100, 60, 30) et un <b>trophée</b> : une carte « Vainqueur de saison (mois) », « Deuxième de la saison (mois) » ou « Troisième de la saison (mois) ». Il y a un trophée par saison : être premier deux fois donne deux cartes différentes, jamais un doublon. Un trophée n\'est qu\'un <b>souvenir</b> : il ne sort d\'aucun pack, n\'a ni note ni bonus, ne joue pas de match, ne se vend pas, ne s\'achète pas et ne compte pas dans le pourcentage de collection. Il se range dans « Trophées de saison », dans ta collection.</p>' +
         '<h3>Mises, packs et classement</h3><ul>' +
         '<li><b>Mise</b> de ' + cfg.stake_min + ' à ' + cfg.stake_max + ' crédits, bloquée tant que le défi est ouvert. Le gagnant prend les deux mises <b>et un pack match</b> ; le perdant reçoit <b>un pack classique</b>. En cas de <b>nul</b>, chacun récupère sa mise <b>et reçoit un pack classique</b>. Il n\'y a aucune limite de packs gagnés par jour.</li>' +
         '<li><b>Enveloppe pour l\'arbitre</b> (facultative, sans plafond) : tu glisses des crédits à l\'arbitre en plus de ta mise. <b>Celui qui met le plus gagne +' + Math.round(cfg.referee_bonus * 100) + ' %</b> dans le match, comme un bonus d\'équipe ; en cas d\'égalité, personne ne l\'a. '
@@ -3290,7 +3430,7 @@
         fan: body.fan_card_id || '', mascot: body.mascot_card_id || '', equip: body.equipment_card_ids || [], stake: stake != null ? stake : old.stake }));
     } catch(e) { /* stockage plein ou refusé : tant pis, on ne bloque jamais le match */ }
   }
-  function tmSubmitLabel(){ return tm.mode === 'propose' ? 'Publier mon défi' : 'Lancer le match (' + tm.proposal.stake + ' crédits)'; }
+  function tmSubmitLabel(){ return tm.mode === 'tournament' ? 'Valider mon équipe' : tm.mode === 'propose' ? 'Publier mon défi' : 'Lancer le match (' + tm.proposal.stake + ' crédits)'; }
   const tmSelects = () => [...document.querySelectorAll('#tmSlots select')];
 
   async function openTeamModal(mode, proposal){
@@ -3302,7 +3442,11 @@
       .sort((a, b) => b.display_note.value - a.display_note.value || a.player_name.localeCompare(b.player_name, 'fr'));
 
     const rules = 'Une carte hors de son vrai poste perd ' + Math.round(cfg.out_of_position_malus * 100) + ' %. Le capitaine gagne ' + Math.round(cfg.captain_bonus * 100) + ' %. Tu ne peux pas mettre deux fois la même carte.';
-    if (mode === 'propose') {
+    if (mode === 'tournament') {
+      byId('tmTitle').textContent = 'Tournoi : ' + proposal.round_name + ' contre ' + proposal.opponent;
+      byId('tmIntro').textContent = 'Compose ton équipe en secret : ni mise, ni enveloppe pour l\'arbitre. Quand ' + proposal.opponent + ' aura validé la sienne, le match se jouera tout seul (en cas d\'égalité : tirs au but). Tu peux modifier ton équipe jusque-là. Limite : ' + proposal.deadline + '. Ce match ne compte pas pour l\'Elo. Ne vends pas ces cartes avant la fin du match. ' + rules;
+      byId('tmSubmit').textContent = 'Valider mon équipe';
+    } else if (mode === 'propose') {
       byId('tmTitle').textContent = 'Proposer un match';
       byId('tmIntro').textContent = 'Compose ton équipe : ta mise (et ton enveloppe pour l\'arbitre, si tu en mets une) est bloquée tant que le défi est ouvert, puis rendue si tu l\'annules. ' + rules;
       byId('tmSubmit').textContent = 'Publier mon défi';
@@ -3313,7 +3457,7 @@
       tm.proposal = proposal;
     }
     byId('tmStakeRow').style.display = mode === 'propose' ? '' : 'none';
-    byId('tmReferee').value = 0; tm.refConfirmed = null;
+    byId('tmReferee').value = 0; tm.refConfirmed = null; byId('tmRefRow').style.display = mode === 'tournament' ? 'none' : '';
     byId('tmRefHint').innerHTML = 'Celui qui met le plus gagne <b>+' + Math.round(cfg.referee_bonus * 100) + ' %</b> dans le match (égalité : personne). Les <b>deux</b> enveloppes sont <b>dépensées</b>, même celle de celui qui perd l\'enchère. ' + (mode === 'propose' ? 'Ton adversaire ne verra pas ton montant avant la fin du match.' : proposal.creator + ' a déjà glissé son enveloppe : tu ne vois pas son montant.');
     byId('tmStake').min = cfg.stake_min; byId('tmStake').max = cfg.stake_max;
 
@@ -3472,6 +3616,18 @@
       equipment_card_ids: [...document.querySelectorAll('#tmEquip select')].map(s => s.value).filter(Boolean),
       mascot_card_id: byId('tmMascot').value || null,
     };
+    if (tm.mode === 'tournament') {                              // match de tournoi : pas de mise, pas d'arbitre
+      const opp = tm.proposal.opponent; btn.disabled = true;
+      try {
+        saveLastTeam(body, null);
+        const r = await api('/tournament/matches/' + tm.proposal.id + '/team', { method: 'POST', body: JSON.stringify(body) });
+        closeTeamModal(); await refreshMe(); loadTournament();
+        if (r.resolved && r.recap) showMatch(r.recap, { isNew: true, animate: true });
+        else toast('Équipe validée ✅ Le match se jouera dès que ' + opp + ' aura validé la sienne, ou à l\'heure limite.');
+      } catch(e) { if (e.message !== 'unauthorized') err.textContent = e.message; }
+      finally { btn.disabled = tm.owned.length < cfg.team_size; btn.textContent = tmSubmitLabel(); }
+      return;
+    }
     const bidRaw = byId('tmReferee').value.trim(), referee_bid = bidRaw === '' ? 0 : Number(bidRaw);
     if (!Number.isInteger(referee_bid) || referee_bid < 0) { err.textContent = 'L\'enveloppe de l\'arbitre doit être un nombre entier de crédits (0 ou plus).'; return; }
     const needed = (tm.mode === 'propose' ? parseInt(byId('tmStake').value, 10) || 0 : tm.proposal.stake) + referee_bid;
@@ -3565,6 +3721,11 @@
   }
   function renderMatchResult(recap, isNew){
     const root = byId('msResult');
+    if (recap.tournament) {
+      const tn = recap.tournament;
+      root.innerHTML = '<div class="match-result"><div class="big">🏆 ' + escapeHtml(tn.winner || '?') + ' se qualifie</div>' + escapeHtml(tn.round_name) + ' du tournoi de ' + escapeHtml(tn.label) + (tn.pens ? ' · égalité, tirs au but : <b>' + tn.pens[0] + '–' + tn.pens[1] + '</b>' : '') + '<br><span class="muted">Match de tournoi : il ne compte ni pour l\'Elo ni pour les statistiques, et ne rapporte ni pack ni crédits.</span></div>';
+      return;
+    }
     const sa = recap.score_challenger, sb = recap.score_defender;
     let html;
     if (isNew) {
@@ -3589,7 +3750,7 @@
     byId('msSkip').style.display = 'none';
     byId('msReplay').style.display = '';
     const rc = matchState.recap, opp = rc.challenger === myPseudo ? rc.defender : (rc.defender === myPseudo ? rc.challenger : null);
-    byId('msRematch').style.display = opp ? '' : 'none'; matchState.rematch = opp ? { target: opp, stake: rc.stake } : null;      // revanche : un défi privé au même adversaire, avec la même mise
+    byId('msRematch').style.display = opp && !rc.tournament ? '' : 'none'; matchState.rematch = opp ? { target: opp, stake: rc.stake } : null;      // revanche : un défi privé au même adversaire, avec la même mise
     renderMatchResult(matchState.recap, matchState.isNew);
     renderLineups(matchState.recap.lineups);
   }
@@ -3634,7 +3795,7 @@
   // ---------- Notifications push ----------
   // Le joueur active les notifications sur CET appareil. Le navigateur nous donne une « adresse » chiffrée que
   // le serveur utilise pour le prévenir (pack prêt, nouvelle carte, défi joué, carte vendue), site fermé.
-  const TAB_KEYS = ['pack', 'collection', 'marche', 'shop', 'classement', 'actualite', 'duels'];
+  const TAB_KEYS = ['pack', 'collection', 'marche', 'shop', 'classement', 'actualite', 'duels', 'tournoi', 'chat'];
   const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isStandalone = () => (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
