@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from .database import Base, get_db
 from .models import User
 from .security import get_current_user
+from .common import require_admin
 from . import profiles
 
 router = APIRouter()
@@ -47,6 +48,11 @@ class CosmeticsRequest(BaseModel):
     frame: Optional[str] = None
 
 
+class UnlockAllRequest(BaseModel):
+    pseudo: str
+    enabled: bool = True              # True : tout débloquer ; False : revenir au déblocage normal (par les succès)
+
+
 def _title_catalog():
     """Tous les titres qui existent : [(id, nom, explication, test de déblocage)]. Le test reçoit (niveaux par succès, a gagné une saison, a un podium, nb pronos réglés, nb scores exacts)."""
     out = []
@@ -75,9 +81,10 @@ def _context(db: Session, user_id: str) -> dict:
 
 def catalog(db: Session, user: User) -> dict:
     ctx = _context(db, user.id)
-    titles = [{"id": i, "label": nm, "desc": desc, "unlocked": bool(test(ctx))} for i, nm, desc, test in _title_catalog()]
-    frames = [{"id": i, "label": nm, "desc": "%d niveaux de succès au total (tu en as %d)" % (need, ctx["total"]), "unlocked": ctx["total"] >= need} for i, nm, need in FRAMES]
-    frames.append({"id": CHAMPION_FRAME[0], "label": CHAMPION_FRAME[1], "desc": "Gagner une saison 1v1", "unlocked": ctx["champion"]})
+    everything = profiles._counter(db, user.id, "cosmetics_all") == 1          # compte de test / admin : tout est débloqué à la main (commande d'administration)
+    titles = [{"id": i, "label": nm, "desc": desc, "unlocked": everything or bool(test(ctx))} for i, nm, desc, test in _title_catalog()]
+    frames = [{"id": i, "label": nm, "desc": "%d niveaux de succès au total (tu en as %d)" % (need, ctx["total"]), "unlocked": everything or ctx["total"] >= need} for i, nm, need in FRAMES]
+    frames.append({"id": CHAMPION_FRAME[0], "label": CHAMPION_FRAME[1], "desc": "Gagner une saison 1v1", "unlocked": everything or ctx["champion"]})
     sel = db.query(UserCosmetics).filter_by(user_id=user.id).first()
     return {"titles": titles, "frames": frames, "selected": {"title": sel.title if sel else None, "frame": sel.frame if sel else None}, "levels_total": ctx["total"]}
 
@@ -115,3 +122,19 @@ def set_cosmetics(payload: CosmeticsRequest, user: User = Depends(get_current_us
     row.title, row.frame = payload.title, payload.frame
     db.commit()
     return {"status": "ok", "title": title_label(payload.title), "frame": payload.frame}
+
+
+@router.post("/admin/unlock-cosmetics", dependencies=[Depends(require_admin)])
+def admin_unlock_cosmetics(payload: UnlockAllRequest, db: Session = Depends(get_db)):
+    """Débloque TOUS les titres et cadres d'un compte (pour les essayer : compte de test ou d'administration), ou revient au déblocage normal.
+    Le choix déjà fait par le joueur reste affiché ; on ne peut plus en choisir de nouveau verrouillé quand on retire le déblocage."""
+    user = db.query(User).filter_by(pseudo=payload.pseudo).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    row = db.query(profiles.UserCounter).filter_by(user_id=user.id, key="cosmetics_all").first()
+    if row is None:
+        db.add(profiles.UserCounter(user_id=user.id, key="cosmetics_all", value=1 if payload.enabled else 0))
+    else:
+        row.value = 1 if payload.enabled else 0
+    db.commit()
+    return {"status": "ok", "pseudo": user.pseudo, "all_unlocked": payload.enabled}
