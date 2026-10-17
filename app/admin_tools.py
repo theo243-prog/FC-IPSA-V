@@ -72,6 +72,8 @@ def summarize(path: str, payload) -> str:
         if name == "add-upcoming-match": return "Match à venir : %s (%s)" % (_s(p, "opponent"), _s(p, "date"))
         if name == "delete-upcoming-match": return "Match à venir retiré : %s (%s)" % (_s(p, "opponent"), _s(p, "date"))
         if name == "push-broadcast": return "Notification « %s »%s" % (_s(p, "title"), " à " + who if who else " à tous")
+        if name == "tournament-settings": return "Tournoi : %s" % " · ".join(x for x in (("droit d'entrée %s crédits" % p["entry_fee"]) if p.get("entry_fee") is not None else "", ("bonus du club %s crédits" % p["bonus"]) if p.get("bonus") is not None else "") if x)
+        if name == "tournament-cancel": return "Tournoi du mois annulé (droits d'entrée remboursés)"
         if name == "chat-delete": return "Message %s du chat supprimé" % _s(p, "id")
         if name == "chat-mute": return "%s rendu muet %s h dans le chat" % (who, _s(p, "hours"))
         if name == "chat-unmute": return "%s peut de nouveau écrire dans le chat" % who
