@@ -72,6 +72,7 @@ def summarize(path: str, payload) -> str:
         if name == "add-upcoming-match": return "Match à venir : %s (%s)" % (_s(p, "opponent"), _s(p, "date"))
         if name == "delete-upcoming-match": return "Match à venir retiré : %s (%s)" % (_s(p, "opponent"), _s(p, "date"))
         if name == "push-broadcast": return "Notification « %s »%s" % (_s(p, "title"), " à " + who if who else " à tous")
+        if name == "remove-avatar": return "Photo de profil de %s retirée" % who
         if name == "create-mascot": return "Mascotte %s créée" % _s(p, "name", "Le Loup")
         if name == "create-equipment": return "Équipements officiels créés"
     except Exception:
