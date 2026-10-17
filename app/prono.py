@@ -10,6 +10,7 @@ quand l'administrateur enregistre le résultat, elle est partagée entre les bon
 L'administrateur peut ajouter un BONUS du club à la cagnotte. Les pronostics ferment au coup d'envoi (à midi si l'heure n'est pas indiquée).
 Un match supprimé sans résultat rembourse tout le monde.
 """
+import os
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -59,6 +60,9 @@ class BonusRequest(BaseModel):
 
 
 def now_paris() -> datetime:
+    fake = os.getenv("FC_FAKE_NOW")                     # (tests seulement : fige l'horloge, ex. 2026-11-08T13:00:00 ; jamais défini en production)
+    if fake:
+        return datetime.fromisoformat(fake)
     return datetime.now(ZoneInfo("Europe/Paris")).replace(tzinfo=None)
 
 
