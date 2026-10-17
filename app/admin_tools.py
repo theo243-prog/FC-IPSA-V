@@ -72,6 +72,10 @@ def summarize(path: str, payload) -> str:
         if name == "add-upcoming-match": return "Match à venir : %s (%s)" % (_s(p, "opponent"), _s(p, "date"))
         if name == "delete-upcoming-match": return "Match à venir retiré : %s (%s)" % (_s(p, "opponent"), _s(p, "date"))
         if name == "push-broadcast": return "Notification « %s »%s" % (_s(p, "title"), " à " + who if who else " à tous")
+        if name == "chat-delete": return "Message %s du chat supprimé" % _s(p, "id")
+        if name == "chat-mute": return "%s rendu muet %s h dans le chat" % (who, _s(p, "hours"))
+        if name == "chat-unmute": return "%s peut de nouveau écrire dans le chat" % who
+        if name == "prono-bonus": return "Bonus de %s crédits sur la cagnotte d'un pronostic" % _s(p, "bonus")
         if name == "remove-avatar": return "Photo de profil de %s retirée" % who
         if name == "create-mascot": return "Mascotte %s créée" % _s(p, "name", "Le Loup")
         if name == "create-equipment": return "Équipements officiels créés"
