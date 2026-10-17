@@ -345,6 +345,9 @@ def _finish(db, t, now):
     for uid, amount in pay.items():
         if uid in users: users[uid].credits += amount
     t.status, t.finished_at, t.paid_out = "finished", now, sum(pay.values())
+    fin_e = (by_place.get(2) or [None])[0]                     # le finaliste reçoit sa carte « Finaliste du tournoi (mois année) »
+    if fin_e is not None and fin_e.user_id in users:
+        owned2 = game_logic.get_or_create_owned(db, users[fin_e.user_id], seasons.get_or_create_trophy(db, t.month_key, 5)); owned2.quantity = max(owned2.quantity, 1)
     if champ is None or champ.user_id not in users:
         return
     t.champion_id = champ.user_id; winner = users[champ.user_id]
@@ -357,7 +360,7 @@ def _finish(db, t, now):
           (" Finaliste : %s." % fin.pseudo if fin else "") + (" Demi-finalistes : %s." % ", ".join(semis) if semis else "")), winner)
     for uid, amount in pay.items():
         if uid in users:
-            _push(db, uid, "Tournoi terminé 🏆", "Tu reçois %d crédits%s." % (amount, " et le trophée du tournoi" if uid == champ.user_id else ""))
+            _push(db, uid, "Tournoi terminé 🏆", "Tu reçois %d crédits%s." % (amount, " et le trophée du tournoi" if uid == champ.user_id else (" et la carte de finaliste" if fin_e is not None and uid == fin_e.user_id else "")))
 
 
 def _announce(db, t, r, ms, now):
