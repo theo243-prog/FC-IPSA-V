@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting)
@@ -43,6 +43,7 @@ app.include_router(offers.router)          # offres d'achat au marché
 app.include_router(seasons.router)         # saisons mensuelles du 1v1
 app.add_middleware(admin_tools.AdminLogMiddleware)       # journal des actions d'administration
 app.include_router(admin_tools.router)         # journal et tableau de bord de l'administration
+app.include_router(avatars.router)            # photos de profil
 app.include_router(collection_tools.router)   # vendre tous les doublons d'un coup
 app.include_router(welcome.router)         # accueil des nouveaux comptes : pop-up de bienvenue et pack ultra offert
 app.include_router(admin_page.router)      # la page d'administration (/admin-panel) et le numéro de version (/version)
@@ -732,6 +733,7 @@ def user_profile(pseudo: str, db: Session = Depends(get_db)):
     cards, auto = profiles.showcase_cards(db, user)
     out["showcase"], out["showcase_auto"] = [card_out(c) for c in cards], auto
     out["podiums"] = seasons.podium_counts(db, user.id)
+    out["avatar"] = avatars.user_stamp(db, user.id)
     out["players_ranked"] = len(rows)
     return out
 
@@ -745,6 +747,7 @@ def leaderboard(db: Session = Depends(get_db)):
     users = db.query(User).filter_by(is_test=False).all()
     achieved = dict(db.query(profiles.UserBadge.user_id, func.count()).group_by(profiles.UserBadge.user_id).all())      # niveaux de succès validés, par joueur
     total_levels = profiles.total_levels()
+    avatar_stamps = avatars.stamps(db)                 # version de la photo de profil de chacun (le site l'affiche à côté du pseudo)
     rows = []
     for u in users:
         owned_count = (
@@ -753,7 +756,7 @@ def leaderboard(db: Session = Depends(get_db)):
             .count()
         )
         completion = round(100 * owned_count / total_cards, 1) if total_cards else 0.0
-        rows.append({"pseudo": u.pseudo, "completion_pct": completion, "achievements": achieved.get(u.id, 0), "achievements_total": total_levels,
+        rows.append({"pseudo": u.pseudo, "completion_pct": completion, "achievements": achieved.get(u.id, 0), "achievements_total": total_levels, "avatar": avatar_stamps.get(u.id),
                      "credits": u.credits + reserved.get(u.id, 0)})
     rows.sort(key=lambda r: (-r["completion_pct"], -r["achievements"], -r["credits"]))      # à égalité de collection, les succès départagent (puis les crédits)
     return rows
@@ -791,6 +794,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
         db.query(table).filter_by(user_id=user.id).delete()
     db.query(offers.BuyOffer).filter_by(buyer_id=user.id).delete()                       # ses offres d'achat (le compte disparaît avec ses crédits)
     db.query(sessions.UserSession).filter_by(user_id=user.id).delete()                    # ses connexions
+    db.query(avatars.UserAvatar).filter_by(user_id=user.id).delete()                      # sa photo de profil
     db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
     db.query(Listing).filter_by(seller_id=user.id).delete()
     for proposal in db.query(MatchProposal).filter_by(creator_id=user.id).all():
