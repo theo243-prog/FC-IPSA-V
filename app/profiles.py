@@ -167,6 +167,9 @@ def check(db, user) -> list:
             if value >= lv["goal"] and (ladder["id"], lv["n"]) not in have:
                 db.add(UserBadge(user_id=user.id, badge_id=ladder["id"], level=lv["n"], earned_at=datetime.utcnow(), seen=False))
                 user.credits += lv["reward"]
+                if lv["name"] in ("Diamant", "Légende"):          # annonce dans le chat
+                    from . import chat
+                    chat.add_event(db, "🏅 %s a obtenu « %s » niveau %s !" % (user.pseudo, ladder["title"], lv["name"]), user)
                 new.append({"id": ladder["id"], "title": ladder["title"], "icon": ladder["icon"], "level": lv["n"], "level_name": lv["name"], "reward": lv["reward"]})
     if new:
         db.commit()
