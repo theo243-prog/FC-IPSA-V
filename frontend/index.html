@@ -138,7 +138,11 @@
   .missions-box .btn-small{white-space:nowrap;}
   /* profil public, succès, vitrine */
   .profile-head{display:flex;gap:12px;align-items:center;margin-bottom:10px;}
-  .profile-avatar{width:56px;height:56px;border-radius:50%;background:var(--accent);color:var(--accent-text);display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:800;font-size:30px;flex:none;}
+  .profile-avatar{position:relative;width:64px;height:64px;border-radius:50%;background:var(--accent);color:var(--accent-text);display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:800;font-size:34px;flex:none;}
+  .profile-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
+  .profile-avatar-btn{position:absolute;right:-5px;bottom:-5px;width:26px;height:26px;border-radius:50%;border:2px solid var(--bg-elevated,#fff);background:var(--accent);color:var(--accent-text);font-size:12px;line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;}
+  .lb-name{display:flex;align-items:center;gap:8px;min-width:0;} .lb-name .av{margin-right:0;} .lb-name .pseudo-link{text-align:left;min-width:0;overflow-wrap:anywhere;}
+  .av{width:28px;height:28px;border-radius:50%;object-fit:cover;background:var(--accent);color:var(--accent-text);display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:800;font-size:15px;flex:none;vertical-align:middle;margin-right:8px;}
   .profile-meta{font-size:12.5px;color:var(--text-muted);line-height:1.4;}
   .profile-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 4px;}
   .profile-tile{background:var(--bg-sunk);border:1px solid var(--border);border-radius:12px;padding:10px 4px;text-align:center;}
@@ -1624,6 +1628,7 @@
   async function renderProfileImage(p){
     const fonts = await shareFonts(), W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
     await paintShareBackground(g, W, H, '#B58CFF', true, fonts, 'Profil de joueur');
+    if (p.avatar) { const av = await loadImg(API_BASE + '/users/' + encodeURIComponent(p.pseudo) + '/avatar?v=' + p.avatar, true); if (av) { g.save(); g.beginPath(); g.arc(W - 120, 100, 70, 0, Math.PI * 2); g.clip(); g.drawImage(av, W - 190, 30, 140, 140); g.restore(); g.beginPath(); g.arc(W - 120, 100, 70, 0, Math.PI * 2); g.lineWidth = 6; g.strokeStyle = '#E9C46A'; g.stroke(); } }
     g.textAlign = 'center'; g.textBaseline = 'alphabetic';
     let size = 130; g.font = '800 ' + size + 'px ' + fonts.head; while (g.measureText(p.pseudo).width > W - 160 && size > 50) { size -= 4; g.font = '800 ' + size + 'px ' + fonts.head; }
     g.fillStyle = '#fff'; g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 16; g.fillText(p.pseudo, W / 2, 270); g.shadowBlur = 0;
@@ -1722,7 +1727,7 @@
     const tiersHTML = p.tiers.map(t => '<div class="tb"><span class="tb-name">' + escapeHtml(tierLabel(t.tier)) + '</span><span class="tb-bar"><i style="width:' + Math.round(100 * t.owned / t.total) + '%;background:' + (TIER_COLORS[t.tier] || '#999') + '"></i></span><span class="tb-n">' + t.owned + '/' + t.total + '</span></div>').join('');
     const badgeHTML = mine && badges ? '<div class="badge-grid">' + badges.map(b => badgeTileHTML(b, true)).join('') + '</div>'
       : (p.badges.top.length ? '<div class="badge-grid">' + p.badges.top.map(b => badgeTileHTML(b, false)).join('') + '</div>' : '<p class="muted">Aucun succès pour l\'instant.</p>');
-    body.innerHTML = '<div class="profile-head"><div class="profile-avatar">' + escapeHtml(p.pseudo.charAt(0).toUpperCase()) + '</div><div><div style="font-weight:800;font-size:17px;">' + escapeHtml(p.pseudo) + '</div><div class="profile-meta">' + since +
+    body.innerHTML = '<div class="profile-head"><div class="profile-avatar" id="profAvatar">' + (p.avatar ? '<img alt="Photo de ' + escapeHtml(p.pseudo) + '" src="' + API_BASE + '/users/' + encodeURIComponent(p.pseudo) + '/avatar?v=' + p.avatar + '">' : escapeHtml(p.pseudo.charAt(0).toUpperCase())) + (mine ? '<button type="button" class="profile-avatar-btn" id="profAvatarBtn" title="' + (p.avatar ? 'Changer ma photo' : 'Ajouter une photo') + '" aria-label="' + (p.avatar ? 'Changer ma photo' : 'Ajouter une photo') + '">📷</button>' : '') + '</div><div><div style="font-weight:800;font-size:17px;">' + escapeHtml(p.pseudo) + '</div><div class="profile-meta">' + since +
       (p.rank ? '<br>Classement : n°' + p.rank + ' sur ' + p.players_ranked : '') + '</div></div></div>' +
       '<div class="profile-tiles"><div class="profile-tile"><b>' + String(p.completion_pct).replace('.', ',') + ' %</b><span>collection (' + p.cards_owned + '/' + p.cards_total + ')</span></div>' +
       '<div class="profile-tile"><b>' + d.played + '</b><span>matchs 1v1' + (d.played ? ' · ' + d.won + 'V ' + d.drawn + 'N ' + d.lost + 'D' : '') + '</span></div>' +
@@ -1732,13 +1737,14 @@
       '<div class="showcase-row" id="profShowcase"></div><div id="profShowcaseEditor"></div>' +
       '<div class="profile-section">Succès<small>' + p.badges.earned + ' niveau' + (p.badges.earned > 1 ? 'x' : '') + ' sur ' + p.badges.total + '</small></div>' + badgeHTML +
       '<div class="profile-section">Raretés<small>packs ouverts : ' + p.packs_opened + (p.best_streak ? ' · meilleure série : ' + p.best_streak + ' j' : '') + '</small></div><div class="tier-bars">' + tiersHTML + '</div>' +
-      '<div class="share-actions" style="margin-top:18px;"><button class="btn-secondary" type="button" id="profCollection">' + (mine ? 'Voir ma collection' : 'Voir sa collection') + '</button>' + (mine ? '<button class="btn-secondary" type="button" id="profShare">📤 Partager mon profil en image</button>' : '') + (mine ? '' : '<button class="btn-primary" type="button" id="profChallenge">⚔️ Défier ' + escapeHtml(p.pseudo) + '</button>') + '</div>';
+      '<div class="share-actions" style="margin-top:18px;"><button class="btn-secondary" type="button" id="profCollection">' + (mine ? 'Voir ma collection' : 'Voir sa collection') + '</button>' + (mine ? '<button class="btn-secondary" type="button" id="profShare">📤 Partager mon profil en image</button>' + (p.avatar ? '<button class="btn-secondary" type="button" id="profPhotoDel">🗑️ Retirer ma photo</button>' : '') : '') + (mine ? '' : '<button class="btn-primary" type="button" id="profChallenge">⚔️ Défier ' + escapeHtml(p.pseudo) + '</button>') + '</div>';
     const row = document.getElementById('profShowcase');
     if (!p.showcase.length) row.innerHTML = '<p class="muted">Aucune carte pour l\'instant.</p>';
     p.showcase.forEach(c => { const el = makeMiniCard(c, { hideCount: true }); el.style.cursor = 'default'; row.appendChild(el); });
     document.getElementById('profCollection').addEventListener('click', () => {
       if (mine) { document.getElementById('userCollectionModal').style.display = 'none'; document.querySelector('.tab[data-tab="collection"]').click(); } else openUserCollection(p.pseudo);
     });
+    if (mine) { document.getElementById('profAvatarBtn').addEventListener('click', pickAvatar); const pd = document.getElementById('profPhotoDel'); if (pd) pd.addEventListener('click', removeAvatar); }
     if (mine) document.getElementById('profShare').addEventListener('click', () => openShareImage({ title: 'Partager mon profil', file: 'profil-' + slugOf(p.pseudo), hint: 'Image 1080 × 1350, idéale pour un post Instagram.', text: 'Mon profil FC IPSA V : ' + fmtPct(p.completion_pct) + ' % de collection, ' + p.badges.earned + ' succès ⚽', render: () => renderProfileImage(p) }));
     if (mine) document.getElementById('profShowcaseEdit').addEventListener('click', () => editShowcase(p));
     else document.getElementById('profChallenge').addEventListener('click', () => { document.getElementById('userCollectionModal').style.display = 'none'; startChallenge(p.pseudo, null); });
@@ -1770,7 +1776,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.14.3';
+  const SITE_VERSION = '2026.10.14.4';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -1923,6 +1929,43 @@
       const r = await api('/collection/sell-duplicates', { method: 'POST', body: JSON.stringify({ keep_for_secrets: keep }) });
       toast('+' + cr(r.credits_gained) + ' : ' + cp(r.sold) + ' vendu' + (r.sold > 1 ? 's' : '') + ' 💰'); await refreshMe(); loadCollection();
     } catch(e) { toast(e.message); }
+  }
+
+  // ---------- Photo de profil ----------
+  // `v` = version de la photo donnée par le serveur (null : pas de photo → une pastille avec l'initiale)
+  function avatarHTML(pseudo, v){
+    if (!v) return '<span class="av" aria-hidden="true">' + escapeHtml(String(pseudo).charAt(0).toUpperCase()) + '</span>';
+    return '<img class="av" alt="" loading="lazy" src="' + API_BASE + '/users/' + encodeURIComponent(pseudo) + '/avatar?v=' + v + '">';
+  }
+  // la photo choisie est recadrée au centre en carré et réduite à 256 × 256 (JPEG) : légère, et sans les données de localisation de la photo d'origine
+  async function squareJpeg(file, size){
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Image illisible')); i.src = url; });
+      const side = Math.min(img.naturalWidth, img.naturalHeight); if (!side) throw new Error('Image illisible');
+      const cv = document.createElement('canvas'); cv.width = cv.height = size; const g = cv.getContext('2d');
+      g.imageSmoothingQuality = 'high'; g.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, size, size);
+      return await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('Conversion impossible')), 'image/jpeg', 0.85));
+    } finally { URL.revokeObjectURL(url); }
+  }
+  async function uploadAvatarFile(file){
+    if (!/^image\//.test(file.type)) { toast('Choisis une image (photo ou capture d\'écran).'); return; }
+    let blob; try { blob = await squareJpeg(file, 256); } catch(e) { toast(e.message); return; }
+    const preview = URL.createObjectURL(blob);
+    const ok = await confirmDialog('Ta photo de profil', '<div style="text-align:center;"><img id="avatarPreview" src="' + preview + '" alt="Aperçu de ta photo" style="width:140px;height:140px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);"><p style="margin:10px 0 0;font-size:13px;color:var(--text-muted);">Elle sera visible par tous les joueurs, sur ton profil et dans le classement. Le centre de l\'image est conservé.</p></div>', 'Enregistrer');
+    URL.revokeObjectURL(preview);
+    if (!ok) return;
+    const dataUrl = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
+    try { await api('/me/avatar', { method: 'POST', body: JSON.stringify({ image: dataUrl }) }); toast('Photo enregistrée 📷'); await openProfile(meInfo.pseudo); loadLeaderboard(); } catch(e) { toast(e.message); }
+  }
+  function pickAvatar(){
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    inp.addEventListener('change', () => { const f = inp.files && inp.files[0]; if (f) uploadAvatarFile(f); });
+    inp.click();
+  }
+  async function removeAvatar(){
+    if (!(await confirmDialog('Retirer ta photo ?', 'Ta photo disparaîtra de ton profil et du classement. Tu pourras en choisir une autre quand tu veux.', 'Retirer'))) return;
+    try { await api('/me/avatar', { method: 'DELETE' }); toast('Photo retirée'); await openProfile(meInfo.pseudo); loadLeaderboard(); } catch(e) { toast(e.message); }
   }
 
   // ---------- Historique des échanges entre joueurs (bas de l'onglet Marché) ----------
@@ -2791,10 +2834,10 @@
       rows.forEach((r, i) => {
         const mine = r.pseudo === myPseudo;
         html += '<tr class="' + (mine ? 'me' : '') + '"><td><span class="rank-num">#' + (i+1) + '</span></td>' +
-          '<td><button class="pseudo-link" data-pseudo="' + escapeHtml(r.pseudo) + '">' + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') + '</button></td>' +
+          '<td><div class="lb-name">' + avatarHTML(r.pseudo, r.avatar) + '<button class="pseudo-link" data-pseudo="' + escapeHtml(r.pseudo) + '">' + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') + '</button></div></td>' +
           '<td>' + r.completion_pct + '%</td><td title="Niveaux de succès validés">' + (r.achievements || 0) + '/' + (r.achievements_total || 47) + '</td><td>' + r.credits + '</td></tr>';
       });
-      html += '</tbody></table><p class="duel-hint" style="margin-top:10px;">À égalité de collection, ce sont les succès validés qui départagent (puis les crédits).</p>';
+      html += '</tbody></table><p class="duel-hint" style="margin-top:10px;">À égalité de collection, ce sont les succès validés qui départagent (puis les crédits). Pour ajouter ta photo : touche ton pseudo, puis 📷.</p>';
       root.innerHTML = html;
       root.querySelectorAll('.pseudo-link').forEach(btn => {
         btn.addEventListener('click', () => openProfile(btn.dataset.pseudo));
