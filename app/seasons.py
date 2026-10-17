@@ -184,6 +184,12 @@ def close_season(db: Session, key: str) -> dict:
         results.append({"rank": r["rank"], "pseudo": user.pseudo, "elo": r["elo"], "card": card.player.name, "credits": credits})
         push.enqueue(db, user.id, "duels", "%s Podium de la saison de %s !" % (MEDALS[r["rank"]], label_of(key)),
                      "Tu finis n°%d (Elo %d) : +%d crédits et ton trophée « %s »." % (r["rank"], r["elo"], credits, card.player.name), url="/#duels", tag="season-podium")
+    if results:                                  # annonce dans le chat
+        from . import chat
+        medals = {1: "🥇", 2: "🥈", 3: "🥉"}
+        top = next((r for r in results if r["rank"] == 1), results[0])
+        rest = " · ".join("%s %s" % (medals.get(r["rank"], ""), r["pseudo"]) for r in results if r is not top)
+        chat.add_event(db, "🏆 %s a gagné la saison de %s !%s" % (top["pseudo"], label_of(key), (" (" + rest + ")") if rest else ""), db.query(User).filter_by(pseudo=top["pseudo"]).first())
     db.query(User).update({User.elo: ELO_START}, synchronize_session=False)
     nxt = label_of(next_key(key))
     for u in db.query(User).filter(User.is_test == False).all():          # noqa: E712
