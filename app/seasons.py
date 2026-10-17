@@ -59,8 +59,8 @@ class SeasonResult(Base):
 
 
 # ------------------------------------------------------------------ trophées
-RANK_TITLES = {1: "Vainqueur de saison", 2: "Deuxième de la saison", 3: "Troisième de la saison", 4: "Vainqueur du tournoi"}      # (le rang 4 est le trophée du tournoi mensuel)
-TROPHY_RE = re.compile(r"^(Vainqueur de saison|Deuxième de la saison|Troisième de la saison|Vainqueur du tournoi) \((.+)\)$")
+RANK_TITLES = {1: "Vainqueur de saison", 2: "Deuxième de la saison", 3: "Troisième de la saison", 4: "Vainqueur du tournoi", 5: "Finaliste du tournoi"}      # (les rangs 4 et 5 sont les cartes du tournoi mensuel)
+TROPHY_RE = re.compile(r"^(Vainqueur de saison|Deuxième de la saison|Troisième de la saison|Vainqueur du tournoi|Finaliste du tournoi) \((.+)\)$")
 
 
 def trophy_name(key: str, rank: int) -> str:
