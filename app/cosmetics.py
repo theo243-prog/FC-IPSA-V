@@ -79,23 +79,38 @@ def _context(db: Session, user_id: str) -> dict:
     return {"levels": levels, "total": total, "champion": 1 in ranks, "podium": bool(ranks), "prono_placed": cnt("prono_placed"), "prono_exact": cnt("prono_exact"), "tournament_wins": cnt("tournament_wins")}
 
 
+def pass_theme_name(item) -> str:
+    from . import pass_catalog
+    return pass_catalog.THEMES[item["theme"]]["name"] if item.get("theme") else "Objectif du club"
+
+
 def catalog(db: Session, user: User) -> dict:
     ctx = _context(db, user.id)
     everything = profiles._counter(db, user.id, "cosmetics_all") == 1          # compte de test / admin : tout est débloqué à la main (commande d'administration)
     titles = [{"id": i, "label": nm, "desc": desc, "unlocked": everything or bool(test(ctx))} for i, nm, desc, test in _title_catalog()]
     frames = [{"id": i, "label": nm, "desc": "%d niveaux de succès au total (tu en as %d)" % (need, ctx["total"]), "unlocked": everything or ctx["total"] >= need} for i, nm, need in FRAMES]
     frames.append({"id": CHAMPION_FRAME[0], "label": CHAMPION_FRAME[1], "desc": "Gagner une saison 1v1", "unlocked": everything or ctx["champion"]})
+    from . import battlepass
+    for it in battlepass.owned_items(db, user):                                                  # objets du Pass possédés : cadres et titres en plus
+        row = {"id": it["id"], "label": it["name"], "desc": "Objet du Pass (%s)" % pass_theme_name(it), "unlocked": True, "pass": True}
+        (frames if it["kind"] == "frame" else titles if it["kind"] == "title" else []).append(row)
     sel = db.query(UserCosmetics).filter_by(user_id=user.id).first()
     return {"titles": titles, "frames": frames, "selected": {"title": sel.title if sel else None, "frame": sel.frame if sel else None}, "levels_total": ctx["total"]}
 
 
 def title_label(title_id):
+    if title_id and str(title_id).startswith("pass-"):
+        from . import pass_catalog
+        it = pass_catalog.ITEMS.get(title_id)
+        return it["name"] if it and it["kind"] == "title" else None
     return next((nm for i, nm, _d, _t in _title_catalog() if i == title_id), None) if title_id else None
 
 
 def display_map(db: Session) -> dict:
     """{joueur: (nom du titre, id du cadre)} pour ceux qui en ont choisi : affiché dans le classement, le profil et le chat."""
     labels = {i: nm for i, nm, _d, _t in _title_catalog()}
+    from . import pass_catalog
+    labels.update({i: it["name"] for i, it in pass_catalog.ITEMS.items() if it["kind"] == "title"})        # titres du Pass
     return {r.user_id: (labels.get(r.title), r.frame) for r in db.query(UserCosmetics).all() if r.title or r.frame}
 
 
