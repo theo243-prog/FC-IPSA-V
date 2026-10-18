@@ -76,10 +76,11 @@ def last_id(db: Session) -> int:
     return int(db.query(func.coalesce(func.max(ChatMessage.id), 0)).scalar() or 0)
 
 
-def _out(m: ChatMessage, viewer_id: str, av: dict, cos: dict) -> dict:
+def _out(m: ChatMessage, viewer_id: str, av: dict, cos: dict, pdisp: dict = None) -> dict:
     title, frame = cos.get(m.user_id, (None, None)) if m.user_id else (None, None)
+    pd = (pdisp or {}).get(m.user_id, {}) if m.user_id else {}
     return {"id": m.id, "at": m.at.isoformat(), "kind": m.kind, "text": m.text, "pseudo": m.pseudo, "user": bool(m.user_id), "mine": bool(m.user_id) and m.user_id == viewer_id,
-            "avatar": av.get(m.user_id) if m.user_id else None, "frame": frame, "title": title}
+            "avatar": av.get(m.user_id) if m.user_id else None, "frame": frame, "title": title, "badge": pd.get("badge"), "name_color": pd.get("name_color")}
 
 
 @router.get("/chat")
@@ -90,10 +91,11 @@ def read_chat(after_id: int = 0, limit: int = 60, user: User = Depends(get_curre
         rows = db.query(ChatMessage).filter(ChatMessage.id > after_id).order_by(ChatMessage.id.asc()).limit(limit).all()
     else:
         rows = list(reversed(db.query(ChatMessage).order_by(ChatMessage.id.desc()).limit(limit).all()))
-    av, cos = avatars.stamps(db), cosmetics.display_map(db)
+    from . import battlepass
+    av, cos, pdisp = avatars.stamps(db), cosmetics.display_map(db), battlepass.display_map(db)
     mute = db.query(ChatMute).filter_by(user_id=user.id).first()
     muted_until = mute.until.isoformat() if mute and mute.until > datetime.utcnow() else None
-    return {"messages": [_out(m, user.id, av, cos) for m in rows], "last_id": last_id(db), "muted_until": muted_until}
+    return {"messages": [_out(m, user.id, av, cos, pdisp) for m in rows], "last_id": last_id(db), "muted_until": muted_until}
 
 
 @router.post("/chat")
@@ -116,7 +118,8 @@ def send_chat(payload: SendRequest, user: User = Depends(get_current_user), db: 
     m = ChatMessage(user_id=user.id, pseudo=user.pseudo, kind="user", text=text); db.add(m); db.commit()
     if m.id % 100 == 0:
         db.query(ChatMessage).filter(ChatMessage.id < m.id - KEEP).delete(synchronize_session=False); db.commit()
-    return _out(m, user.id, avatars.stamps(db), cosmetics.display_map(db))
+    from . import battlepass
+    return _out(m, user.id, avatars.stamps(db), cosmetics.display_map(db), battlepass.display_map(db))
 
 
 @router.delete("/chat/{message_id}")
