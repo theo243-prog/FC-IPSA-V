@@ -62,6 +62,7 @@ OUT_OF_POSITION_MALUS = 0.10
 CAPTAIN_BONUS = 0.10
 TACTIC_BONUS = 0.06
 
+MATCH_PACK_DAILY_CAP = 5   # au plus 5 packs MATCH gagnés par jour et par joueur ; ensuite chaque match (gagné ou perdu) rapporte un pack classique
 REFEREE_BONUS = 0.05     # bonus d'équipe (+5 %) donné par l'arbitre à celui qui a mis la plus grosse enveloppe
 STAKE_MIN, STAKE_MAX = 1, 10
 MAX_OPEN_PROPOSALS = 3
@@ -566,8 +567,14 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
         challenger.credits += stake
         creator.credits += stake
         classic_to = [challenger, creator]                    # les deux joueurs
+    capped = None                                             # le gagnant qui a déjà gagné ses 5 packs match du jour
     if pack_winner is not None:
-        pack_winner.pack_state.match_pack_tokens += 1         # le gagnant : un pack match
+        from . import missions
+        if missions.daily_count(db, pack_winner, "match_packs") < MATCH_PACK_DAILY_CAP:
+            pack_winner.pack_state.match_pack_tokens += 1     # le gagnant : un pack match
+            missions.daily_add(db, pack_winner, "match_packs")
+        else:                                                 # limite du jour atteinte : un pack classique à la place (comme un perdant)
+            capped = pack_winner; classic_to.append(pack_winner); pack_winner = None
     for player in classic_to:
         player.pack_state.shop_pack_tokens += 1               # perdant ou nul : un pack classique (aucune limite par jour)
     referee = {"challenger": referee_bid, "defender": bid_d, "winner": ref_winner, "bonus_pct": round(REFEREE_BONUS * 100) if ref_winner else 0}
@@ -595,7 +602,8 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
         "credits_delta": {"victoire": stake, "défaite": -stake, "nul": 0}[outcome],
         "elo_challenger_before": elo_c_before, "elo_challenger_after": challenger.elo,
         "elo_defender_before": elo_d_before, "elo_defender_after": creator.elo,
-        "pack_match_won": outcome == "victoire",                       # le challenger gagne un pack match
+        "pack_match_won": outcome == "victoire" and capped is not challenger,       # le challenger gagne un pack match (sauf limite du jour atteinte)
+        "pack_match_capped_to": capped.pseudo if capped else None,     # le gagnant qui a atteint sa limite de 5 packs match du jour (il reçoit un pack classique)
         "pack_classique_won": challenger in classic_to,                # le challenger a perdu ou fait match nul : pack classique
         "pack_match_to": pack_winner.pseudo if pack_winner else None,
         "pack_classique_to": [p.pseudo for p in classic_to],
