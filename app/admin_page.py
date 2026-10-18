@@ -95,6 +95,9 @@ ADMIN_HTML = r"""<!doctype html>
    {tab:'Pass', id:'pass-grant', title:'Donner des points ou le Premium à un compte (pour essayer)', desc:'Ajoute des points au Pass du mois en cours (sans plafond) : 100 points = 1 niveau, mais un niveau ne s\'ouvre que le jour correspondant du mois. Premium : 1 = activer, 0 = retirer, vide = ne pas toucher.', path:'/admin/pass-grant', f:[{n:'pseudo',l:'Pseudo',t:'text',req:1},{n:'points',l:'Points à ajouter',t:'int',d:3000,req:1},{n:'premium',l:'Premium (1 / 0 / vide)',t:'int'}]},
    {tab:'Pass', id:'pass-club', title:'Objectif du club : ajouter des packs ou régler les paliers', desc:'Ajoute des packs à la barre commune (pour tester), et/ou règle les 5 paliers (ex. 500, 1000, 1500, 2000, 3000 packs ouverts).', path:'/admin/pass-club', f:[{n:'packs',l:'Packs à ajouter',t:'int',d:0}]},
    {tab:'Comptes', id:'give-trophies', title:'Offrir les cartes de trophée (saison et tournoi) à un compte', desc:'Pour les VOIR sur ton compte de test : vainqueur, deuxième et troisième de la saison, vainqueur et finaliste du tournoi, pour le mois choisi. Aucun effet sur les vrais classements. Rangs : 1, 2, 3 = podium de saison ; 4 = vainqueur du tournoi ; 5 = finaliste du tournoi.', path:'/admin/give-trophies', f:[{n:'pseudo',l:'Pseudo',t:'text',req:1},{n:'month',l:'Mois (ex. 2026-10, vide = mois en cours)',t:'text'}]},
+   {tab:'Sauvegardes', id:'backup-list', title:'Les sauvegardes gardées', desc:'Un instantané complet de la base est pris automatiquement chaque jour à partir de 4h (Paris) ; on garde les 7 derniers automatiques et les 3 derniers manuels. Télécharge-en un pour le garder sur ton ordinateur : le fichier est PRIVÉ (il contient les mots de passe chiffrés).', method:'GET', path:'/admin/backups', render:'backups', f:[], go:'Actualiser'},
+   {tab:'Sauvegardes', id:'backup-now', title:'Faire une sauvegarde maintenant', desc:'Prend tout de suite un instantané de la base (gardé avec les autres). À faire avant une grosse manipulation (ménage, suppression de comptes…).', path:'/admin/backup-now', f:[]},
+   {tab:'Sauvegardes', id:'backup-export', title:'Télécharger un export tout frais', desc:'Télécharge directement un fichier .json.gz de toute la base, à l\'instant, sans le garder sur le serveur.', custom:'backupExport', f:[], go:'Télécharger'},
    {tab:'Comptes', id:'unlock-cosmetics', title:'Débloquer TOUS les cosmétiques d\'un compte (pour les essayer)', desc:'Pour ton compte de test ou d\'administration : tous les titres et cadres de profil, plus les 232 objets de tous les Pass (badges, bannières, cadres, couleurs de pseudo, titres, autocollants, fonds d\'image) deviennent possédés et équipables (bouton « 🎨 Titre et cadre » du profil). Mets 0 pour revenir au déblocage normal. Les cartes de trophée se donnent à part (« Offrir les cartes de trophée »).', path:'/admin/unlock-cosmetics', f:[{n:'pseudo',l:'Pseudo',t:'text',req:1},{n:'enabled',l:'1 = tout débloquer, 0 = retirer',t:'int',d:1,req:1}]},
    {tab:'Comptes', id:'chat-delete', title:'Supprimer un message du chat', desc:'Le numéro du message se lit dans le chat (ou via l\'API).', path:'/admin/chat-delete', f:[{n:'id',l:'Numéro du message',t:'int',req:1}], danger:1},
    {tab:'Comptes', id:'chat-mute', title:'Rendre un joueur muet dans le chat', desc:'Il ne peut plus écrire pendant la durée choisie (il lit toujours).', path:'/admin/chat-mute', f:[{n:'pseudo',l:'Pseudo',t:'text',req:1},{n:'hours',l:'Heures (1 à 720)',t:'int',d:24,req:1}]},
@@ -189,7 +192,7 @@ ADMIN_HTML = r"""<!doctype html>
   function show_result(a, status, data){
     var out = $('#out-' + a.id), ok = status >= 200 && status < 300;
     out.innerHTML = '<div class="st ' + (ok ? 'ok' : 'bad') + '">' + (ok ? '✅ ' : '❌ ') + status + (data && data.detail && !ok ? ' · ' + escapeHtml(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail)) : '') + '</div>' +
-      (ok && a.render === 'stats' && data && data.sections ? statsHTML(data) : ok && a.table && Array.isArray(data) ? tableOf(data, a.cols) : '<pre>' + escapeHtml(JSON.stringify(data, null, 2)) + '</pre>');
+      (ok && a.render === 'backups' && Array.isArray(data) ? backupsHTML(data) : ok && a.render === 'stats' && data && data.sections ? statsHTML(data) : ok && a.table && Array.isArray(data) ? tableOf(data, a.cols) : '<pre>' + escapeHtml(JSON.stringify(data, null, 2)) + '</pre>');
   }
   function statsHTML(d){
     return d.sections.map(function(sec){
@@ -198,7 +201,20 @@ ADMIN_HTML = r"""<!doctype html>
       }).join('') + '</div>';
     }).join('');
   }
+  async function saveFile(url, fallback){
+    var r = await fetch(url, {headers: headers()}); if (!r.ok) throw new Error('Téléchargement impossible (' + r.status + ')');
+    var m = /filename="?([^";]+)"?/.exec(r.headers.get('Content-Disposition') || ''); var blob = await r.blob();
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = m ? m[1] : fallback; document.body.appendChild(a); a.click(); a.remove(); return blob.size;
+  }
+  function backupsHTML(rows){
+    if (!rows.length) return '<p class="ver">Aucune sauvegarde pour l\'instant : la première sera prise demain matin à 4h, ou clique sur « Faire une sauvegarde maintenant ».</p>';
+    return '<table><thead><tr><th>Date (UTC)</th><th>Sorte</th><th>Taille</th><th>Lignes</th><th></th></tr></thead><tbody>' + rows.map(function(b){
+      return '<tr><td>' + escapeHtml(String(b.created_at).replace('T', ' ').slice(0, 16)) + '</td><td>' + escapeHtml(b.kind) + '</td><td>' + b.size_kb + ' Ko</td><td>' + b.rows + '</td><td><button type="button" data-backup-dl="' + escapeHtml(b.id) + '">Télécharger</button></td></tr>';
+    }).join('') + '</tbody></table>';
+  }
+  main.addEventListener('click', async function(e){ var b = e.target.closest('button[data-backup-dl]'); if (!b) return; b.disabled = true; try { await saveFile('/admin/backup/' + b.dataset.backupDl + '/download', 'sauvegarde.json.gz'); } catch (err) { alert(err.message); } b.disabled = false; });
   var CUSTOM = {
+    backupExport: async function(a, v){ var size = await saveFile('/admin/backup-export', 'export.json.gz'); return {status: 200, data: {message: 'Export téléchargé (' + Math.round(size / 1024) + ' Ko). Garde ce fichier privé.'}}; },
     packsAll: async function(a, v){
       var r = await fetch('/admin/users', {headers: headers()}); var users = await r.json();
       if (!r.ok) return {status: r.status, data: users};
