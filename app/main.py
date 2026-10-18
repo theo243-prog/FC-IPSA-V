@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting)
@@ -43,6 +43,7 @@ app.include_router(offers.router)          # offres d'achat au marché
 app.include_router(seasons.router)         # saisons mensuelles du 1v1
 app.add_middleware(admin_tools.AdminLogMiddleware)       # journal des actions d'administration
 app.include_router(admin_tools.router)         # journal et tableau de bord de l'administration
+app.include_router(battlepass.router)           # pass de saison
 app.include_router(tournament.router)          # tournoi 1v1 mensuel
 app.include_router(cosmetics.router)         # titres et cadres de profil
 app.include_router(chat.router)              # chat général et fil d'activité
@@ -162,6 +163,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "welcome": welcome_info,
             "chat_last_id": chat.last_id(db),
             "tournament_todo": tournament.todo(db, user),
+            "pass_todo": battlepass.claimable_count(db, user),
         }
     return {
         "pseudo": user.pseudo,
@@ -175,6 +177,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "welcome": welcome_info,
             "chat_last_id": chat.last_id(db),
             "tournament_todo": tournament.todo(db, user),
+            "pass_todo": battlepass.claimable_count(db, user),
     }
 
 
@@ -751,6 +754,7 @@ def user_profile(pseudo: str, db: Session = Depends(get_db)):
     out["podiums"] = seasons.podium_counts(db, user.id)
     out["avatar"] = avatars.user_stamp(db, user.id)
     out["title"], out["frame"] = cosmetics.user_display(db, user.id)
+    out.update(battlepass.user_display(db, user.id))      # bannière, badge, couleur de pseudo, étoiles de prestige
     out["players_ranked"] = len(rows)
     return out
 
@@ -766,6 +770,7 @@ def leaderboard(db: Session = Depends(get_db)):
     total_levels = profiles.total_levels()
     avatar_stamps = avatars.stamps(db)                 # version de la photo de profil de chacun (le site l'affiche à côté du pseudo)
     cos = cosmetics.display_map(db)                    # titre et cadre choisis par chacun
+    pdisp = battlepass.display_map(db)                 # badge, couleur de pseudo et étoiles du Pass
     rows = []
     for u in users:
         owned_count = (
@@ -774,7 +779,7 @@ def leaderboard(db: Session = Depends(get_db)):
             .count()
         )
         completion = round(100 * owned_count / total_cards, 1) if total_cards else 0.0
-        rows.append({"pseudo": u.pseudo, "completion_pct": completion, "achievements": achieved.get(u.id, 0), "achievements_total": total_levels, "avatar": avatar_stamps.get(u.id), "title": cos.get(u.id, (None, None))[0], "frame": cos.get(u.id, (None, None))[1],
+        rows.append({"pseudo": u.pseudo, "completion_pct": completion, "achievements": achieved.get(u.id, 0), "achievements_total": total_levels, "avatar": avatar_stamps.get(u.id), "title": cos.get(u.id, (None, None))[0], "frame": cos.get(u.id, (None, None))[1], "badge": pdisp.get(u.id, {}).get("badge"), "name_color": pdisp.get(u.id, {}).get("name_color"), "stars": pdisp.get(u.id, {}).get("stars", 0),
                      "credits": u.credits + reserved.get(u.id, 0)})
     rows.sort(key=lambda r: (-r["completion_pct"], -r["achievements"], -r["credits"]))      # à égalité de collection, les succès départagent (puis les crédits)
     return rows
@@ -819,6 +824,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     db.query(swaps.CardSwap).filter((swaps.CardSwap.proposer_id == user.id) | (swaps.CardSwap.target_id == user.id)).delete(synchronize_session=False)      # ses échanges de cartes
     db.query(prono.PronoBet).filter_by(user_id=user.id).delete()                          # ses pronostics
     tournament.on_user_deleted(db, user.id)                                               # ses inscriptions au tournoi
+    battlepass.on_user_deleted(db, user.id)                                               # sa progression dans le Pass
     db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
     db.query(Listing).filter_by(seller_id=user.id).delete()
     for proposal in db.query(MatchProposal).filter_by(creator_id=user.id).all():
@@ -1792,6 +1798,7 @@ def _tick(fn):
 
 def _background_tick():
     _tick(weekly.check_and_run)             # cartes spéciales du vendredi 17h
+    _tick(battlepass.tick)                  # étoiles du Pass de la saison qui vient de finir
     _tick(tournament.tick)                  # tournoi mensuel : tirage, tours de 24 h, forfaits, cagnotte
     _tick(seasons.run_scheduled)            # fin de saison 1v1 (chaque 1er du mois) : podium, récompenses, Elo remis à zéro
     if push.AVAILABLE:
