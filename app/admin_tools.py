@@ -78,7 +78,7 @@ def summarize(path: str, payload) -> str:
         if name == "pass-grant": return "Pass : %s%s pour %s" % (("+%s points" % p.get("points")) if p.get("points") else "", (", Premium " + ("activé" if p.get("premium") else "retiré")) if p.get("premium") is not None else "", who)
         if name == "pass-club": return "Objectif du club : %s%s" % (("+%s packs" % p.get("packs")) if p.get("packs") else "", (" paliers " + str(p.get("goals"))) if p.get("goals") else "")
         if name == "give-trophies": return "Cartes de trophée (rangs %s, %s) offertes à %s" % (",".join(str(r) for r in p.get("ranks", [1, 2, 3, 4, 5])), p.get("month") or "mois en cours", who)
-        if name == "unlock-cosmetics": return "%s pour %s" % ("Tous les titres et cadres débloqués" if p.get("enabled", True) else "Déblocage manuel des titres et cadres retiré", who)
+        if name == "unlock-cosmetics": return "%s pour %s" % ("Tous les cosmétiques (titres, cadres, objets des Pass) débloqués" if p.get("enabled", True) else "Déblocage manuel des cosmétiques retiré", who)
         if name == "chat-delete": return "Message %s du chat supprimé" % _s(p, "id")
         if name == "chat-mute": return "%s rendu muet %s h dans le chat" % (who, _s(p, "hours"))
         if name == "chat-unmute": return "%s peut de nouveau écrire dans le chat" % who
