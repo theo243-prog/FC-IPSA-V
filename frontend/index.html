@@ -274,6 +274,12 @@
   .offer-form{margin-top:16px;border-top:1px dashed var(--border);padding-top:12px;} .offer-form .share-actions{margin-top:8px;}
   .card-front.tier-saison,.card.tier-saison:not(.locked){background:radial-gradient(110% 70% at 50% 0%,rgba(255,224,138,.38),rgba(255,224,138,0) 60%),linear-gradient(170deg,#0F5E73 0%,#0A3A52 55%,#06243A 100%);color:#E9FBFF;box-shadow:var(--shadow),inset 0 0 0 2px #E9C46A,inset 0 0 14px rgba(233,196,106,.5);}
   .tier-saison .card-tier-label{background:linear-gradient(90deg,#F6D56B,#E9A93B);color:#3A2500;}
+  /* cartes du tournoi (vainqueur et finaliste) : violet, dégradé rose fluo */
+  .card-front.tier-saison.trophy-tournoi,.card.tier-saison.trophy-tournoi:not(.locked){background:radial-gradient(110% 70% at 50% 0%,rgba(255,79,216,.55),rgba(255,79,216,0) 62%),linear-gradient(165deg,#3A0CA3 0%,#7B2FF7 38%,#C026D3 68%,#FF2FD1 100%);color:#FFEFFB;box-shadow:var(--shadow),inset 0 0 0 2px #FF7BE8,inset 0 0 16px rgba(255,79,216,.6),0 0 14px rgba(255,47,209,.45);}
+  .tier-saison.trophy-tournoi .card-tier-label{background:linear-gradient(90deg,#FF9BEF,#FF2FD1);color:#2A0540;}
+  .tier-saison.trophy-tournoi .card-poste{background:rgba(30,0,70,.45);color:#FFD6F6;}
+  .tier-saison.trophy-tournoi .card-name,.tier-saison.trophy-tournoi.has-photo .card-name{color:#FFF;text-shadow:0 0 8px rgba(120,0,110,.9),0 1px 2px rgba(0,0,0,.9);}
+  .tier-saison.trophy-tournoi .card-stats span{background:rgba(30,0,70,.45);color:#FFD6F6;}
   .tier-saison .card-poste{background:rgba(0,0,0,.35);color:#FFE9A8;}
   .tier-saison .card-name,.tier-saison.has-photo .card-name{color:#FFF6D9;text-shadow:0 0 6px rgba(0,0,0,.85),0 1px 2px rgba(0,0,0,.9);}
   .tier-saison .card-stats span{background:rgba(0,0,0,.4);color:#FFE9A8;}
@@ -1325,12 +1331,14 @@
     return 'joueur';
   }
   // un trophée de saison s'appelle « Vainqueur de saison (octobre 2026) » : le titre en grand, le mois dessous
-  const TROPHY_MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉', 4: '🏆' };
+  const TROPHY_MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉', 4: '🏆', 5: '🥈' };
   function trophyParts(card){
     if (card.trophy) return card.trophy;
     const m = /^(.*) \((.*)\)$/.exec(card.player_name || ''); const title = m ? m[1] : (card.player_name || '');
-    return { title, label: m ? m[2] : '', rank: /^Vainqueur du tournoi/.test(title) ? 4 : /^Vainqueur/.test(title) ? 1 : /^Deuxi/.test(title) ? 2 : 3, season: null };
+    return { title, label: m ? m[2] : '', rank: /^Finaliste du tournoi/.test(title) ? 5 : /^Vainqueur du tournoi/.test(title) ? 4 : /^Vainqueur/.test(title) ? 1 : /^Deuxi/.test(title) ? 2 : 3, season: null };
   }
+  const isTourneyCard = card => card.tier === 'saison' && trophyParts(card).rank >= 4;          // vainqueur ou finaliste d'un tournoi : carte violette et rose fluo
+  const tourneyClass = card => isTourneyCard(card) ? ' trophy-tournoi' : '';
   function trophyMedalHTML(card){ return '<div class="item-medal trophy-medal"><span class="item-icon" aria-hidden="true">' + TROPHY_MEDALS[trophyParts(card).rank] + '</span></div>'; }
   // une carte gold s'appelle « Petit pont — Mathis » : l'action en titre, le joueur en dessous
   function momentParts(name){
@@ -1395,7 +1403,7 @@
       statsRow = '<div class="card-stats" title="Moment mémorable d\'un match"><span>🌟 ' + escapeHtml(momentParts(card.player_name).who) + '</span></div>';
       posteLabel = '🌟';
     } else if (kind === 'trophee') {
-      statsRow = '<div class="card-stats" title="Trophée de saison : un souvenir"><span>🏆 ' + escapeHtml(trophyParts(card).label) + '</span></div>';
+      statsRow = '<div class="card-stats" title="' + (trophyParts(card).rank >= 4 ? 'Carte de tournoi' : 'Trophée de saison') + ' : un souvenir"><span>🏆 ' + escapeHtml(trophyParts(card).label) + '</span></div>';
       posteLabel = TROPHY_MEDALS[trophyParts(card).rank];
     } else if (kind === 'mascotte') {
       statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🐺 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span></div>';
@@ -1413,7 +1421,7 @@
     else if (bgPhoto) midHTML = '';
     else if (kind === 'equipement' || kind === 'stade' || kind === 'moment') midHTML = itemMedalHTML(card);
     else midHTML = '<span class="ball-fallback">⚽</span>';
-    return bgPhoto + (kind === 'trophee' ? '' : editionDecor(card.tier)) + '<div class="card-top"><span class="card-tier-label">'+tierLabel(card.tier)+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
+    return bgPhoto + (kind === 'trophee' ? '' : editionDecor(card.tier)) + '<div class="card-top"><span class="card-tier-label">'+(kind === 'trophee' && trophyParts(card).rank >= 4 ? 'Tournoi' : tierLabel(card.tier))+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
       '<div class="card-mid">'+midHTML+'</div>'+
       '<div><div class="card-name"></div>'+statsRow+'</div>'+
       crestIco('card-watermark');
@@ -1478,7 +1486,7 @@
     const locked = hideCount ? false : !card.quantity;
     if (locked) return makeLockedCard(card);
     const el = document.createElement('div');
-    el.className = 'card tier-' + card.tier;
+    el.className = 'card tier-' + card.tier + tourneyClass(card);
     el.style.background = (EDITION_TIERS.includes(card.tier) || card.tier === 'saison') ? '' : 'linear-gradient(160deg, var(--' + (card.tier === 'legendaire' ? 'legend-2' : card.tier + '-2') + '), var(--' + (card.tier === 'legendaire' ? 'legend-1' : card.tier + '-1') + '))';
     el.innerHTML = cardFrontHTML(card);
     markPhotoCard(el, card);
@@ -1498,7 +1506,7 @@
     const t = trophyParts(card), preview = String(card.id || '').startsWith('trophy-');
     document.getElementById('modalTitle').textContent = card.player_name;
     const body = document.getElementById('modalBody');
-    body.innerHTML = '<div style="text-align:center;font-size:64px;line-height:1.1;margin:6px 0;">' + TROPHY_MEDALS[t.rank] + '</div><p style="text-align:center;font-weight:700;">' + (preview ? 'Cette carte sera remise à la fin de la saison de ' + escapeHtml(t.label) + '.' : (t.rank === 4 ? 'Trophée du tournoi de ' : 'Trophée de la saison de ') + escapeHtml(t.label) + '.') + '</p><p class="muted" style="text-align:center;">Un trophée n\'est qu\'un souvenir : il n\'a ni note ni bonus, ne joue pas de match, ne se vend pas et ne s\'échange pas. Il ne compte pas dans le pourcentage de collection.</p>';
+    body.innerHTML = '<div style="text-align:center;font-size:64px;line-height:1.1;margin:6px 0;">' + TROPHY_MEDALS[t.rank] + '</div><p style="text-align:center;font-weight:700;">' + (preview ? 'Cette carte sera remise à la fin de la saison de ' + escapeHtml(t.label) + '.' : (t.rank === 4 ? 'Trophée du tournoi de ' : t.rank === 5 ? 'Carte de finaliste du tournoi de ' : 'Trophée de la saison de ') + escapeHtml(t.label) + '.') + '</p><p class="muted" style="text-align:center;">Un trophée n\'est qu\'un souvenir : il n\'a ni note ni bonus, ne joue pas de match, ne se vend pas et ne s\'échange pas. Il ne compte pas dans le pourcentage de collection.</p>';
     if (!preview && card.quantity > 0 && !card._viewing) {
       body.insertAdjacentHTML('beforeend', '<div class="share-actions" style="margin-top:14px;"><button class="btn-secondary" type="button" id="shareCardBtn">📤 Partager ce trophée</button></div>');
       document.getElementById('shareCardBtn').addEventListener('click', () => openShareCard(card));
@@ -1569,6 +1577,8 @@
   function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
   function loadImg(src, cross){ return new Promise(res => { const i = new Image(); if (cross) i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
   function roundRect(g, x, y, w, h, r){ g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+  // la palette d'une carte précise : celle de sa rareté, sauf les cartes de tournoi (violet et rose fluo)
+  function cardPalette(card){ return isTourneyCard(card) ? { c1: '#FF2FD1', c2: '#7B2FF7', label: '#FF9BEF', labelText: '#2A0540', border: '#FF7BE8', glow: '#FF2FD1' } : tierPalette(card.tier); }
   function tierPalette(tier){
     const v = n => cssVar(n);
     if (tier === 'halloween') return { c1: '#2B1424', c2: '#0C0910', label: '#FF8A1F', labelText: '#1A0B00', border: '#FF8A1F', glow: '#FF8A1F' };
@@ -1587,7 +1597,7 @@
     const chips = [...el.querySelectorAll('.card-stats span')].map(s => s.textContent.trim()).filter(Boolean);
     const mid = ((el.querySelector('.card-mid') || {}).textContent || '').trim() || '⚽';
     const photoUrl = usesBgPhoto(card) ? card.player_photo_url : null;
-    const pal = tierPalette(card.tier), secret = card.tier === 'secrete', fontHead = cssVar('--font-head') || 'Arial Narrow, sans-serif', fontBody = cssVar('--font-body') || 'sans-serif';
+    const pal = cardPalette(card), secret = card.tier === 'secrete', fontHead = cssVar('--font-head') || 'Arial Narrow, sans-serif', fontBody = cssVar('--font-body') || 'sans-serif';
     try { await Promise.all([document.fonts.load('800 80px ' + fontHead), document.fonts.load('700 30px ' + fontBody)]); } catch(e) { /* polices par défaut */ }
     const cv = document.createElement('canvas'); cv.width = SHARE_W; cv.height = SHARE_H; const g = cv.getContext('2d');
     // --- fond de page : violet du club, halo de la couleur de la carte, loup en filigrane
@@ -1682,7 +1692,7 @@
   }
   // une carte en miniature (même dégradé, même photo, même nom que dans le jeu) ; `big` ajoute l'étiquette de rareté
   function drawMiniCard(g, card, x, y, w, photos, fonts, big){
-    const h = Math.round(w * 1.4286), r = Math.max(6, w * 0.063), pal = tierPalette(card.tier), el = makeMiniCard(card, { hideCount: true });
+    const h = Math.round(w * 1.4286), r = Math.max(6, w * 0.063), pal = cardPalette(card), el = makeMiniCard(card, { hideCount: true });
     const name = ((el.querySelector('.card-name') || {}).textContent || card.player_name).trim(), mid = ((el.querySelector('.card-mid') || {}).textContent || '').trim() || '⚽';
     const label = ((el.querySelector('.card-tier-label') || {}).textContent || tierLabel(card.tier)).trim();
     g.textAlign = 'left';                                           // (le dessin de la page peut avoir centré le texte : une carte s'écrit toujours à gauche)
@@ -1757,7 +1767,7 @@
     const photos = await loadPhotoMap(myCollection.filter(c => c.quantity > 0));
     let y = 360;
     for (const gr of groups) {
-      const pal = tierPalette(gr.tier), title = gr.tier === 'saison' ? 'Trophées de saison' : tierLabel(gr.tier);
+      const pal = tierPalette(gr.tier), title = gr.tier === 'saison' ? 'Trophées' : tierLabel(gr.tier);
       g.fillStyle = '#fff'; g.font = '800 44px ' + fonts.head; g.fillText(title, M, y + 50);
       if (gr.tier !== 'saison') { g.textAlign = 'right'; g.fillStyle = gr.owned === gr.total ? '#E9C46A' : '#C79ABA'; g.font = '800 38px ' + fonts.head; g.fillText(gr.owned + '/' + gr.total + (gr.owned === gr.total ? ' ✓' : ''), W - M, y + 50); g.textAlign = 'left'; }
       roundRect(g, M, y + 62, W - 2 * M, 5, 3); g.fillStyle = pal.c2; g.fill();
@@ -1860,7 +1870,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.15.1';
+  const SITE_VERSION = '2026.10.15.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2563,8 +2573,8 @@
       const group = document.createElement('div'); group.className = 'tier-group' + (EDITION_TIERS.includes(tier) ? ' edition-group' : ''); group.dataset.tier = tier;
       const ed = editionsInfo[tier];
       const edNote = ed ? '<span class="edition-note">' + ed.icon + ' Édition limitée · ' + (ed.status === 'active' ? 'dans les packs jusqu\'au ' + formatDay(ed.end) : ed.status === 'ended' ? 'terminée le ' + formatDay(ed.end) : 'à partir du ' + formatDay(ed.start)) + '</span>' : '';
-      group.innerHTML = '<h3>' + (tier === 'saison' ? 'Trophées de saison' : tierLabel(tier)) + (tier === 'saison' ? '' : ' <span style="color:var(--text-muted);font-size:14px;font-family:var(--font-body);">' + owned + '/' + allOfTier.length + '</span>') + edNote + '</h3>';
-      const h3 = group.querySelector('h3'), tg = document.createElement('button'), gLabel = (tier === 'saison' ? 'Trophées de saison' : tierLabel(tier));
+      group.innerHTML = '<h3>' + (tier === 'saison' ? 'Trophées' : tierLabel(tier)) + (tier === 'saison' ? '' : ' <span style="color:var(--text-muted);font-size:14px;font-family:var(--font-body);">' + owned + '/' + allOfTier.length + '</span>') + edNote + '</h3>';
+      const h3 = group.querySelector('h3'), tg = document.createElement('button'), gLabel = (tier === 'saison' ? 'Trophées' : tierLabel(tier));
       tg.type = 'button'; tg.className = 'tier-toggle'; tg.setAttribute('aria-label', 'Replier ou déplier ' + gLabel);      // (la flèche est dessinée en CSS : elle ne fait pas partie du texte du titre)
       const applyCollapsed = c => { group.classList.toggle('collapsed', c); tg.setAttribute('aria-expanded', String(!c)); tg.title = (c ? 'Déplier « ' : 'Replier « ') + gLabel + ' »'; };
       h3.insertBefore(tg, h3.firstChild); applyCollapsed(collapsedSet.has(tier));
@@ -2862,7 +2872,7 @@
     const slot = document.createElement('div'); slot.className = 'card-slot';
     const flip = document.createElement('div'); flip.className = 'card-flip';
     const back = document.createElement('div'); back.className = 'card-face card-back'; back.innerHTML = crestIco();
-    const front = document.createElement('div'); front.className = 'card-face card-front tier-' + card.tier; front.innerHTML = cardFrontHTML(card);
+    const front = document.createElement('div'); front.className = 'card-face card-front tier-' + card.tier + tourneyClass(card); front.innerHTML = cardFrontHTML(card);
     markPhotoCard(front, card);
     setCardName(front, cardDisplayName(card));
     if (card.is_new) front.insertAdjacentHTML('beforeend', '<span class="new-ribbon">NEW</span>');  // carte débloquée
