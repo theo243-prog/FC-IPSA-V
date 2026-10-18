@@ -31,7 +31,7 @@ from .models import AppSetting, User, gen_id
 from .common import require_admin, optional_user
 from .schemas import TeamPayload
 from .security import get_current_user
-from . import challenges, duel_engine, game_logic, profiles, push, seasons
+from . import battlepass, challenges, duel_engine, game_logic, profiles, push, seasons
 from .prono import now_paris
 
 router = APIRouter()
@@ -323,6 +323,8 @@ def _resolve(db, t, m, now):
     _mark_loser(db, t, m, loser, now); _advance_winner(db, t, m)
     pw, pl = (db.get(User, m.winner_id), db.get(User, loser))
     name = lambda u: u.pseudo if u else "(compte supprimé)"
+    if pw: battlepass.add_points(db, pw, "tournoi", 20)                     # Pass de saison : un tour gagné, un match joué
+    if pl and m.via == "play": battlepass.add_points(db, pl, "tournoi", 10)
     score = ("%d–%d" % (m.score1, m.score2) + (" (tirs au but %d–%d)" % (m.pens1, m.pens2) if m.pens1 is not None else "")) if m.via == "play" else "par forfait"
     if pw: _push(db, pw.id, "Tournoi : tu es qualifié 🏆", "Tu bats %s (%s) en %s." % (name(pl), score, round_name(t.size >> m.round).lower()))
     if pl: _push(db, pl.id, "Tournoi : éliminé", "%s te bat (%s) en %s. Merci d'avoir joué !" % (name(pw), score, round_name(t.size >> m.round).lower()))
@@ -522,7 +524,7 @@ def join(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if user.credits < cost:
         raise HTTPException(status_code=400, detail="Il te faut %d crédits pour t'inscrire (tu en as %d)" % (cost, user.credits))
     user.credits -= cost
-    db.add(TournamentEntry(tournament_id=t.id, user_id=user.id, paid=cost)); db.commit()
+    db.add(TournamentEntry(tournament_id=t.id, user_id=user.id, paid=cost)); battlepass.add_points(db, user, "tournoi", 30); db.commit()
     return {"status": "ok", "paid": cost, "credits_total": user.credits, "entries": len(_entries(db, t)), "pool": pool_of(db, t)}
 
 
