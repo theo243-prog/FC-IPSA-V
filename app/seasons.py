@@ -63,7 +63,7 @@ class SeasonResult(Base):
 
 # ------------------------------------------------------------------ trophées
 RANK_TITLES = {1: "Vainqueur de saison", 2: "Deuxième de la saison", 3: "Troisième de la saison", 4: "Vainqueur du tournoi", 5: "Finaliste du tournoi"}      # (les rangs 4 et 5 sont les cartes du tournoi mensuel)
-TROPHY_RE = re.compile(r"^(Vainqueur de saison|Deuxième de la saison|Troisième de la saison|Vainqueur du tournoi|Finaliste du tournoi) \((.+)\)$")
+TROPHY_RE = re.compile(r"^(Vainqueur de saison|Deuxième de la saison|Troisième de la saison|Vainqueur du tournoi|Finaliste du tournoi|Pass [^()]+) \((.+)\)$")
 
 
 def trophy_name(key: str, rank: int) -> str:
@@ -84,6 +84,13 @@ def trophy_info(player):
     m = TROPHY_RE.match(player.name or "") if (player.poste or "").upper() == "TROPHEE" else None
     if not m:
         return None
+    if m.group(1).startswith("Pass "):                      # la carte exclusive du Pass du mois : son thème donne ses couleurs
+        from . import pass_catalog
+        tid = pass_catalog.THEME_BY_NAME.get(m.group(1)[5:])
+        if tid is None:
+            return None
+        th = pass_catalog.THEMES[tid]
+        return {"rank": 6, "title": m.group(1), "label": m.group(2), "season": key_from_label(m.group(2)), "theme": {"id": tid, **{k: th[k] for k in ("name", "emoji", "c1", "c2", "accent")}}}
     rank = next(r for r, t in RANK_TITLES.items() if t == m.group(1))
     return {"rank": rank, "title": m.group(1), "label": m.group(2), "season": key_from_label(m.group(2))}
 
