@@ -30,7 +30,7 @@ from . import pass_catalog as P
 from .prono import now_paris
 
 router = APIRouter()
-PRICE, CATCHUP_DAYS = 300, 7
+PRICE, CATCHUP_DAYS, LEVEL_PRICE = 300, 7, 20       # Premium 300 crédits ; 20 crédits pour acheter directement le niveau suivant
 DAILY_CAPS = {"mission": 80, "duel": 50, "swap": 30, "prono": 30}          # points de base par jour et par source
 
 
@@ -311,7 +311,7 @@ def get_pass(user: User = Depends(get_current_user), db: Session = Depends(get_d
     for k in (key, pk):
         if ensure_completion(db, user, k, now): db.commit()
     prev = season_out(db, user, pk, now) if in_catchup(pk, now) and (_progress(db, user.id, pk) is not None or db.get(ClubGoal, pk)) else None
-    return {"now": now.isoformat(), "price": PRICE, "current": season_out(db, user, key, now), "previous": prev, "stars": user_display(db, user.id)["stars"], "loadout": user_display(db, user.id),
+    return {"now": now.isoformat(), "price": PRICE, "level_price": LEVEL_PRICE, "current": season_out(db, user, key, now), "previous": prev, "stars": user_display(db, user.id)["stars"], "loadout": user_display(db, user.id),
             "points_help": {"mission": "missions du jour (20 par mission)", "duel": "match 1v1 (10)", "tournoi": "tournoi : inscription 30, tour gagné 20", "prono": "pronostic (15), score exact (60)", "swap": "échange de cartes (15)"}}
 
 
@@ -360,6 +360,21 @@ def buy_premium(user: User = Depends(get_current_user), db: Session = Depends(ge
     chat.add_event(db, "💎 %s a pris le Pass Premium de %s !" % (user.pseudo, seasons.label_of(key)), user)
     db.commit()
     return {"status": "ok", "credits": user.credits, "claimable": season_out(db, user, key, now)["claimable"]}
+
+
+@router.post("/pass/buy-level")
+def buy_level(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """20 crédits : on gagne les points qui manquent pour atteindre le niveau SUIVANT (le niveau ne s'ouvre quand même que le jour qui lui correspond). Pass du mois en cours seulement."""
+    now = now_paris(); key = seasons.key_of(now); row = _progress(db, user.id, key, create=True); total = P.LEVELS * P.POINTS_PER_LEVEL
+    if (row.points or 0) >= total:
+        raise HTTPException(status_code=400, detail="Tu as déjà atteint les %d niveaux de ce Pass" % P.LEVELS)
+    if user.credits < LEVEL_PRICE:
+        raise HTTPException(status_code=400, detail="Il te faut %d crédits (tu en as %d)" % (LEVEL_PRICE, user.credits))
+    target = ((row.points or 0) // P.POINTS_PER_LEVEL + 1) * P.POINTS_PER_LEVEL; gained = target - (row.points or 0)
+    user.credits -= LEVEL_PRICE; row.points = target
+    ensure_completion(db, user, key, now); db.commit()
+    reached = min(P.LEVELS, row.points // P.POINTS_PER_LEVEL)
+    return {"status": "ok", "credits": user.credits, "points": row.points, "gained": gained, "reached": reached, "unlocked": unlocked_level(row.points, key, now), "opens_day": min(reached, dim(key))}
 
 
 @router.get("/pass/inventory")
