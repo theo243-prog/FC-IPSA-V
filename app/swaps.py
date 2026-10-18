@@ -152,7 +152,8 @@ def accept_swap(swap_id: str, user: User = Depends(get_current_user), db: Sessio
     game_logic.get_or_create_owned(db, proposer, want).quantity += 1
     game_logic.get_or_create_owned(db, user, give).quantity += 1
     s.status, s.resolved_at = "accepted", datetime.utcnow()
-    from . import chat
+    from . import battlepass, chat
+    battlepass.add_points(db, proposer, "swap", 15, battlepass.DAILY_CAPS["swap"]); battlepass.add_points(db, user, "swap", 15, battlepass.DAILY_CAPS["swap"])      # Pass de saison
     chat.add_event(db, "🔁 %s et %s ont échangé des cartes : %s contre %s" % (proposer.pseudo, user.pseudo, _named(give), _named(want)))
     db.commit()
     push.safe(db, lambda d: push.enqueue(d, proposer.id, "market", "Échange accepté 🔁", "%s a accepté ton échange." % user.pseudo, url="/#marche", tag="swap"))
