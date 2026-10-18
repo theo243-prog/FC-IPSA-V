@@ -106,6 +106,11 @@ def record(db, user, event: str, n: int = 1) -> None:
     p = _load(r.progress, {})
     p[event] = int(p.get(event, 0)) + int(n)
     r.progress = json.dumps(p)
+    from . import battlepass                                  # le Pass de saison : un match joué rapporte des points ; chaque pack ouvert fait avancer la barre du club
+    if event == "play_duel":
+        battlepass.add_points(db, user, "duel", 10, battlepass.DAILY_CAPS["duel"])
+    elif event == "open_packs":
+        battlepass.club_add(db, n)
     if event in LIFETIME_EVENTS:
         profiles.bump(db, user, event, n)
     db.commit()
@@ -218,5 +223,8 @@ def claim(db, user, kind: str, mission_id: Optional[str] = None) -> dict:
     else:
         raise ValueError("Récompense inconnue")
     _grant(user, reward)
+    if kind in ("mission", "bonus"):
+        from . import battlepass
+        battlepass.add_points(db, user, "mission", 20, battlepass.DAILY_CAPS["mission"])      # chaque mission (et le bonus du jour) : 20 points de Pass
     db.commit()
     return {"credits_gained": int(reward.get("credits", 0)), "pack": reward.get("pack"), "credits": user.credits, **info}
