@@ -18,7 +18,10 @@ import re
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Integer, String
 from sqlalchemy.orm import Session
 
@@ -263,3 +266,31 @@ def admin_seasons(db: Session = Depends(get_db)):
         "would_win": [{"rank": r["rank"], "pseudo": r["pseudo"], "trophy": trophy_name(key, r["rank"]), "credits": PODIUM_CREDITS[r["rank"]]} for r in podium_of(rows)],
         "state": (db.query(SeasonState).first().current_key if db.query(SeasonState).first() else None),
     }
+
+
+class GiveTrophiesRequest(BaseModel):
+    pseudo: str
+    month: Optional[str] = None                                  # « 2026-10 » ; par défaut le mois en cours
+    ranks: List[int] = Field(default_factory=lambda: [1, 2, 3, 4, 5])      # 1-3 : podium de la saison ; 4 : vainqueur du tournoi ; 5 : finaliste du tournoi
+
+
+@router.post("/admin/give-trophies", dependencies=[Depends(require_admin)])
+def admin_give_trophies(payload: GiveTrophiesRequest, db: Session = Depends(get_db)):
+    """Offre à un compte (de test) les cartes de trophée d'un mois : les 3 du podium de la saison et/ou celles du tournoi (vainqueur, finaliste), pour les voir.
+    Sans effet sur les vrais classements ; la même carte donnée deux fois reste en un seul exemplaire."""
+    user = db.query(User).filter_by(pseudo=payload.pseudo).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    key = payload.month or current_key()
+    if not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", key):
+        raise HTTPException(status_code=422, detail="Le mois doit s'écrire comme 2026-10")
+    ranks = sorted(set(payload.ranks))
+    if not ranks or any(r not in RANK_TITLES for r in ranks):
+        raise HTTPException(status_code=422, detail="Les rangs possibles sont 1, 2, 3 (podium de saison), 4 (vainqueur du tournoi) et 5 (finaliste du tournoi)")
+    given = []
+    for r in ranks:
+        owned = game_logic.get_or_create_owned(db, user, get_or_create_trophy(db, key, r))
+        owned.quantity = max(owned.quantity, 1)
+        given.append(trophy_name(key, r))
+    db.commit()
+    return {"status": "ok", "pseudo": user.pseudo, "cards": given}
