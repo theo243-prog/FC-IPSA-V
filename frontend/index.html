@@ -321,6 +321,7 @@
   .help-row{display:flex;justify-content:flex-end;margin:-8px 0 14px;}
   .help-btn{display:inline-flex;align-items:center;gap:7px;background:transparent;color:var(--accent);border:1.5px solid var(--accent);border-radius:999px;padding:3px 14px 3px 4px;cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:16px;letter-spacing:.3px;}
   .help-btn:hover{background:var(--bg-sunk);}
+  #helpModal{z-index:2600;}
   .help-q{width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-text);display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1;}
   .help-box{max-width:640px;}
   .help-body{font-size:14px;line-height:1.55;}
@@ -1063,7 +1064,7 @@
             <h2>⚔️ Défis</h2>
             <button class="btn-primary" id="proposeMatchBtn">⚔️ Proposer un match</button>
           </div>
-          <p class="duel-hint">Un défi bloque ta mise le temps qu'il est ouvert. Le gagnant d'un match remporte les deux mises et un pack match (un peu meilleur que le classique) ; le perdant reçoit un pack classique, et en cas de nul chacun reçoit le sien. Pas de limite de packs : joue autant que tu veux. Les tactiques restent secrètes jusqu'au coup d'envoi.</p>
+          <p class="duel-hint">Un défi bloque ta mise le temps qu'il est ouvert. Le gagnant d'un match remporte les deux mises et un pack match (un peu meilleur que le classique) ; le perdant reçoit un pack classique, et en cas de nul chacun reçoit le sien. Pas de limite de matchs : joue autant que tu veux. Tu peux gagner au maximum 5 packs match par jour ; ensuite, chaque match (gagné ou perdu) te rapporte un pack classique. Les tactiques restent secrètes jusqu'au coup d'envoi.</p>
           <div class="cell-scroll" id="duelProposalsEl"></div>
         </div>
         <div class="panel-box season-box cell" id="seasonBox" hidden>
@@ -1895,7 +1896,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.16.1';
+  const SITE_VERSION = '2026.10.18.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2393,9 +2394,10 @@
     byId('modalTitle').textContent = 'Pass de ' + s.label;
     const status = s.completed ? '🌟 Pass terminé : étoile de prestige gagnée !' : s.level >= 30 ? 'Les 30 niveaux sont débloqués.' : s.waiting_for_day ? '⏳ Le niveau ' + (s.level + 1) + ' s\'ouvre demain : tes ' + s.points + ' points sont gardés.' : 'Encore ' + (100 - s.points_in_level) + ' points pour le niveau ' + (s.level + 1) + ' (un niveau s\'ouvre par jour : le niveau N le jour N).';
     let html = (d.previous ? '<div class="pass-tabs"><button type="button" data-pview="current" class="' + (isCur ? 'on' : '') + '">Pass de ' + escapeHtml(cur.label.split(' ')[0]) + '</button><button type="button" data-pview="previous" class="' + (!isCur ? 'on' : '') + '">↩️ Rattrapage ' + escapeHtml(d.previous.label.split(' ')[0]) + '</button></div>' : '') +
-      '<div class="pass-head" style="--pc1:' + th.c1 + ';--pc2:' + th.c2 + ';"><h3>' + th.emoji + ' ' + escapeHtml(th.name) + ' · niveau ' + s.level + ' / 30</h3><div class="pass-bar"><i style="width:' + (s.level >= 30 ? 100 : s.points_in_level) + '%;"></i></div><div style="font-size:13px;">' + s.points + ' points · ' + escapeHtml(status) + '</div>' +
+      '<div class="help-row" style="margin:0 0 8px;"><button class="help-btn" type="button" data-help="pass"><span class="help-q">?</span> Aide</button></div><div class="pass-head" style="--pc1:' + th.c1 + ';--pc2:' + th.c2 + ';"><h3>' + th.emoji + ' ' + escapeHtml(th.name) + ' · niveau ' + s.level + ' / 30</h3><div class="pass-bar"><i style="width:' + (s.level >= 30 ? 100 : s.points_in_level) + '%;"></i></div><div style="font-size:13px;">' + s.points + ' points · ' + escapeHtml(status) + '</div>' +
       '<div class="pc-actions" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">' + (s.double_points ? '<span class="pc-chip hot">⚡ dernière semaine : points doublés</span>' : '') + (s.ended ? '<span class="pc-chip hot">↩️ rattrapage jusqu\'au ' + escapeHtml(passDateFmt(s.catchup_until)) + ' : plus de limite par jour</span>' : '') + (d.stars ? '<span class="pc-chip">' + starsHTML(d.stars) + ' ' + d.stars + ' Pass terminé' + (d.stars > 1 ? 's' : '') + '</span>' : '') + '</div></div>' +
       (isCur && !s.premium ? '<div class="panel-box" style="margin:0 0 10px;"><b>💎 Pass Premium : ' + d.price + ' crédits</b><div style="font-size:13px;color:var(--text-muted);margin:4px 0 8px;">Un objet décoratif par niveau (badges, bannières, cadres, couleurs de pseudo, titres, autocollants, fonds d\'image), un pack rare, 2 packs d\'édition limitée (niveaux 20 et 30) et la <b>carte exclusive du Pass</b> (niveau 25). Si tu l\'achètes en cours de mois, tout ce qui est déjà débloqué est immédiatement récupérable. Uniquement du décoratif : aucun avantage en match.</div><button class="btn-primary" type="button" id="passBuy">Acheter le Premium (' + d.price + ' crédits)</button></div>' : (s.premium ? '<div class="pc-chip" style="display:inline-block;background:var(--bg-sunk);margin-bottom:8px;">💎 Pass Premium actif</div>' : '')) +
+      (isCur && !s.ended && s.points < 3000 ? '<div style="margin:0 0 10px;"><button class="btn-small" type="button" id="passBuyLevel">⏩ Acheter le niveau ' + (Math.floor(s.points / 100) + 1) + ' : ' + d.level_price + ' crédits</button><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Tu gagnes les points qui te manquent pour l\'atteindre ; un niveau ne s\'ouvre quand même que le jour qui lui correspond.</div></div>' : '') +
       '<div class="pass-cols"><span></span><span>Gratuit</span><span>💎 Premium</span></div>' +
       s.levels.map(l => '<div class="pass-row' + (l.reached ? ' reached' : '') + '"><div class="pass-lv">' + l.level + '<small>J' + l.unlock_day + '</small></div>' + passRewardHTML(l.free && { ...l.free, __lv: l.level, __day: l.unlock_day }, 'free') + passRewardHTML({ ...l.premium, __lv: l.level, __day: l.unlock_day }, 'premium') + '</div>').join('') +
       '<div class="pass-sec">🤝 Objectif du club : ' + s.club.packs + ' packs ouverts ce mois-ci</div><div style="font-size:12.5px;color:var(--text-muted);margin-bottom:6px;">Tous les joueurs font avancer la barre en ouvrant des packs. À chaque palier, <b>tout le monde</b> reçoit la récompense (gratuit, sans Premium).</div><div class="pass-bar" style="background:var(--bg-sunk);"><i style="width:' + Math.min(100, Math.round(s.club.packs * 100 / s.club.tiers[s.club.tiers.length - 1].goal)) + '%;background:linear-gradient(90deg,' + th.c2 + ',' + th.accent + ');"></i></div>' +
@@ -2405,6 +2407,8 @@
     body.querySelectorAll('[data-pview]').forEach(b => b.addEventListener('click', () => { passView = b.dataset.pview; renderPass(); }));
     body.querySelectorAll('[data-pclaim]').forEach(b => b.addEventListener('click', () => passClaim(b, s.key)));
     const buy = byId('passBuy'); if (buy) buy.addEventListener('click', passBuyPremium);
+    const bl = byId('passBuyLevel'); if (bl) bl.addEventListener('click', passBuyLevel);
+    body.querySelectorAll('.help-btn').forEach(b => b.addEventListener('click', () => openHelp(b.dataset.help, b)));
     byId('passCosm').addEventListener('click', () => { closeUserCollectionModal(); openCosmetics({ pseudo: meInfo.pseudo, avatar: (meInfo.avatar || null) }); });
   }
   async function openPass(){
@@ -2423,6 +2427,11 @@
       await refreshMe(); await openPass(); loadPassCard(); loadCollection();
       confirmDialog('🎁 Récompense récupérée', '<div style="line-height:1.7;">' + parts.join('<br>') + '</div>', 'Super !');
     } catch(e) { toast(e.message); btn.disabled = false; }
+  }
+  async function passBuyLevel(){
+    const pts = passData.current.points, next = Math.floor(pts / 100) + 1, need = next * 100 - pts, price = passData.level_price;
+    if (!(await confirmDialog('Acheter le niveau ' + next + ' ?', '<p style="margin:0;">Pour <b>' + price + ' crédits</b> (retirés tout de suite), tu gagnes les <b>' + need + ' points</b> qui te manquent pour atteindre le niveau ' + next + '. Un niveau ne s\'ouvre quand même que le jour qui lui correspond : le niveau ' + next + ' s\'ouvre le jour ' + next + ' du mois.</p>', 'Payer ' + price + ' crédits'))) return;
+    try { const r = await api('/pass/buy-level', { method: 'POST' }); toast('Niveau ' + r.reached + ' atteint ⏩ (−' + price + ' crédits)'); await refreshMe(); await openPass(); loadPassCard(); } catch(e) { toast(e.message); }
   }
   async function passBuyPremium(){
     if (!(await confirmDialog('Acheter le Pass Premium ?', '<p style="margin:0;">Le Pass Premium coûte <b>' + passData.price + ' crédits</b>, retirés tout de suite. Tu récupères tout de suite ce qui est déjà débloqué, puis un objet décoratif par jour jusqu\'à la fin du mois.</p>', 'Payer ' + passData.price + ' crédits'))) return;
@@ -2822,6 +2831,16 @@
     return '<ul>' + ['rare', 'epique', 'legendaire', 'ultra'].map(k => '<li><b>' + escapeHtml(rules.packs[k].label) + '</b> (' + rules.packs[k].price + ' crédits) : ' + escapeHtml(rules.packs[k].description) + (rules.packs[k].available ? '' : ' <i>(pas encore disponible : aucune carte de cette rareté n\'existe)</i>') + '</li>').join('') + '</ul>';
   }
   const HELP = {
+    pass: { title: 'Le Pass de saison', async html(){
+      const lp = (typeof passData !== 'undefined' && passData && passData.level_price) || 20;
+      return '<h3>Comment marche le Pass</h3><ul>' +
+        '<li><b>30 niveaux, un par jour.</b> Chaque niveau coûte 100 points ; le niveau N s\'ouvre le jour N du mois. Si tu dépasses 100 points dès le 1er jour, rien n\'est perdu : le niveau 2 attend simplement le lendemain. En février, les derniers niveaux s\'ouvrent le dernier jour.</li>' +
+        '<li><b>Points</b> : mission +20 (jusqu\'à 80 par jour), match 1v1 +10 (50 par jour), échange de cartes +15 (30 par jour), pronostic +15 (30 par jour) puis score exact +60, tournoi +30 à l\'inscription puis +20 par tour gagné.</li>' +
+        '<li><b>Dernière semaine du mois : points doublés.</b></li>' +
+        '<li><b>Rattrapage</b> : les récompenses non réclamées restent disponibles 7 jours après la fin du mois, sans limite par jour. Passé ce délai, le Pass disparaît.</li>' +
+        '<li><b>Étoile de prestige</b> permanente quand les 30 niveaux sont atteints : une étoile par Pass complété (deux pass = deux étoiles), affichée à côté du pseudo.</li>' +
+        '<li><b>Acheter un niveau</b> : pour <b>' + lp + ' crédits</b>, tu gagnes d\'un coup les points qui te manquent pour atteindre le niveau suivant. Le niveau ne s\'ouvre quand même que le jour qui lui correspond.</li></ul>';
+    } },
     pack: { title: 'Les packs', async html(){
       const r = await getGameRules();
       return '<h3>Ouvrir un pack</h3><p>Chaque pack contient <b>3 cartes</b> (<b>10</b> pour le pack ultra) et te rapporte quelques crédits.</p>' +
@@ -2867,7 +2886,7 @@
       const r = await getGameRules();
       return '<h3>Acheter des packs avec tes crédits</h3><p>Tu gagnes des crédits en ouvrant des packs, en revendant des doublons et en gagnant des matchs 1v1. Un pack acheté arrive dans tes packs bonus (onglet Packs), sans limite de stock.</p>' +
         '<ul><li><b>' + escapeHtml(r.packs.classique.label) + '</b> (' + r.packs.classique.price + ' crédits) : ' + escapeHtml(r.packs.classique.description) + '.</li></ul>' + guaranteedPacksHTML(r) +
-        '<p class="help-note">Un pack à carte garantie n\'est en vente que si au moins une carte de cette rareté existe. Le pack match ne s\'achète pas : il se gagne en 1v1 (et le perdant, ou chacun des deux en cas de nul, reçoit un pack classique).</p>' +
+        '<p class="help-note">Un pack à carte garantie n\'est en vente que si au moins une carte de cette rareté existe. Le pack match ne s\'achète pas : il se gagne en 1v1 (et le perdant, ou chacun des deux en cas de nul, reçoit un pack classique). Tu peux en gagner 5 par jour au maximum ; ensuite, chaque match te rapporte un pack classique.</p>' +
         '<h3>Tes chances de tirage</h3>' + oddsTableHTML(r, ['classique']) + '<p>Pour les packs à carte garantie, les cartes qui ne sont pas garanties suivent ces mêmes chances.</p>' + ultraOddsHTML(r);
     } },
     classement: { title: 'Le classement', html(){
@@ -2902,7 +2921,7 @@
         '<li><b>' + cfg.max_equipment + ' Équipement</b> : ' + range(cfg.equipment_bonus, ['commune', 'rare', 'epique', 'legendaire']) + ' %.</li></ul>' +
         '<h3>Le tournoi du mois</h3><p>Chaque mois, un <b>tournoi à élimination directe</b> (onglet Tournoi) : inscriptions du 1er au 7 contre un droit d\'entrée, tirage le 8, un match par tour (24 h pour composer ton équipe, forfait sinon, tirs au but en cas d\'égalité). Il ne compte <b>pas</b> pour l\'Elo. La cagnotte revient au vainqueur, au finaliste et aux demi-finalistes ; le vainqueur gagne un trophée.</p>' + '<h3>Les saisons</h3><p>Chaque mois est une <b>saison</b> : le 1er à minuit (heure de Paris), l\'Elo de tout le monde repart à <b>1000</b>. Il faut avoir joué au moins <b>5 matchs</b> dans le mois pour monter sur le podium. Les <b>3 premiers</b> gagnent des crédits (100, 60, 30) et un <b>trophée</b> : une carte « Vainqueur de saison (mois) », « Deuxième de la saison (mois) » ou « Troisième de la saison (mois) ». Il y a un trophée par saison : être premier deux fois donne deux cartes différentes, jamais un doublon. Un trophée n\'est qu\'un <b>souvenir</b> : il ne sort d\'aucun pack, n\'a ni note ni bonus, ne joue pas de match, ne se vend pas, ne s\'achète pas et ne compte pas dans le pourcentage de collection. Il se range dans « Trophées de saison », dans ta collection.</p>' +
         '<h3>Mises, packs et classement</h3><ul>' +
-        '<li><b>Mise</b> de ' + cfg.stake_min + ' à ' + cfg.stake_max + ' crédits, bloquée tant que le défi est ouvert. Le gagnant prend les deux mises <b>et un pack match</b> ; le perdant reçoit <b>un pack classique</b>. En cas de <b>nul</b>, chacun récupère sa mise <b>et reçoit un pack classique</b>. Il n\'y a aucune limite de packs gagnés par jour.</li>' +
+        '<li><b>Mise</b> de ' + cfg.stake_min + ' à ' + cfg.stake_max + ' crédits, bloquée tant que le défi est ouvert. Le gagnant prend les deux mises <b>et un pack match</b> ; le perdant reçoit <b>un pack classique</b>. En cas de <b>nul</b>, chacun récupère sa mise <b>et reçoit un pack classique</b>. Tu peux gagner <b>5 packs match au maximum par jour</b> : ensuite, tu peux continuer à jouer autant que tu veux, mais chaque match (gagné ou perdu) te rapporte seulement <b>un pack classique</b>. Les mises, l\'Elo et les missions ne changent pas.</li>' +
         '<li><b>Enveloppe pour l\'arbitre</b> (facultative, sans plafond) : tu glisses des crédits à l\'arbitre en plus de ta mise. <b>Celui qui met le plus gagne +' + Math.round(cfg.referee_bonus * 100) + ' %</b> dans le match, comme un bonus d\'équipe ; en cas d\'égalité, personne ne l\'a. '
         + 'Les <b>deux</b> enveloppes sont dépensées, même celle du joueur qui a mis le moins, et même si le match est perdu ou nul. '
         + 'Les montants sont <b>secrets</b> : celui qui accepte un défi ne voit pas l\'enveloppe de son adversaire, et ne les découvre tous les deux qu\'à la fin du match. '
@@ -3854,8 +3873,8 @@
       html = '<div class="big">' + head + '</div>' + escapeHtml(money) + ' · Elo ' + recap.elo_challenger_before + ' → ' + recap.elo_challenger_after +
         ' (' + signed(recap.elo_challenger_after - recap.elo_challenger_before) + ')' + refereeLine(recap, true);
       if (recap.pack_match_won) html += '<br>🎁 Tu gagnes un <b>pack match</b> !<br><button class="btn-small" id="msGoPacks" style="margin-top:6px;">Aller l\'ouvrir</button>';
-      else if (recap.result === 'défaite') html += '<br>🎁 Le pack match revient à ' + escapeHtml(recap.defender) + '.';
-      if (recap.pack_classique_won) html += '<br>🎁 Tu reçois un <b>pack classique</b> ' + (recap.result === 'nul' ? '(match nul : chacun en reçoit un) !' : 'en consolation !') + '<br><button class="btn-small" id="msGoPacks" style="margin-top:6px;">Aller l\'ouvrir</button>';
+      else if (recap.result === 'défaite') html += (recap.pack_match_capped_to === recap.defender ? '<br>🎁 ' + escapeHtml(recap.defender) + ' a déjà gagné ses 5 packs match du jour : il reçoit un pack classique.' : '<br>🎁 Le pack match revient à ' + escapeHtml(recap.defender) + '.');
+      if (recap.pack_classique_won) html += '<br>🎁 Tu reçois un <b>pack classique</b> ' + (recap.result === 'nul' ? '(match nul : chacun en reçoit un) !' : recap.pack_match_capped_to === recap.challenger ? 'à la place du pack match : tu as déjà gagné tes 5 packs match du jour (jusqu\'à minuit, chaque match te rapporte un pack classique) !' : 'en consolation !') + '<br><button class="btn-small" id="msGoPacks" style="margin-top:6px;">Aller l\'ouvrir</button>';
     } else {
       const winner = sa > sb ? recap.challenger : (sb > sa ? recap.defender : null);
       html = '<div class="big">' + (winner ? '🏆 ' + escapeHtml(winner) : '🤝 Match nul') + '</div>mise ' + recap.stake + ' crédits · Elo ' +
