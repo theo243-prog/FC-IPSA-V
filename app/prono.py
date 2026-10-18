@@ -119,6 +119,8 @@ def place_bet(payload: BetRequest, user: User = Depends(get_current_user), db: S
         raise HTTPException(status_code=400, detail="Pas assez de crédits pour miser %d" % payload.stake)
     user.credits += refund - payload.stake
     if old is None:
+        from . import battlepass
+        battlepass.add_points(db, user, "prono", 15, 30)                 # Pass de saison : un nouveau pronostic
         db.add(PronoBet(upcoming_id=m.id, user_id=user.id, score_us=payload.score_us, score_them=payload.score_them, stake=payload.stake, match_label=_label(m), match_date=m.date.date().isoformat()))
     else:
         old.score_us, old.score_them, old.stake = payload.score_us, payload.score_them, payload.stake
@@ -195,7 +197,10 @@ def settle(db: Session, upcoming_id: str, score_us: int, score_them: int):
         u = users.get(b.user_id)
         if u is None: continue
         profiles.bump(db, u, "prono_placed")
-        if b.exact: profiles.bump(db, u, "prono_exact")
+        if b.exact:
+            profiles.bump(db, u, "prono_exact")
+            from . import battlepass
+            battlepass.add_points(db, u, "prono_exact", 60)               # Pass de saison : score exact
         push.safe(db, lambda d, u=u, b=b: push.enqueue(d, u.id, "cards", "Pronostic %s 🎯" % ("gagné" if b.status == "won" else "perdu"), "%s : %s. %s" % (b.match_label, result, ("+%d crédits" % b.payout) if b.status == "won" else "Ce sera pour la prochaine !"), url="/#actualite", tag="prono"))
     from . import chat
     for b in exact:
