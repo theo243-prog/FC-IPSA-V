@@ -173,6 +173,26 @@
   .share-img{width:100%;max-width:400px;display:block;margin:0 auto 14px;border-radius:12px;box-shadow:var(--shadow);}
   .share-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
   .chip-pseudo-link{cursor:pointer;}
+  /* Pass de saison */
+  .pass-card{border-radius:16px;padding:14px;margin:0 0 14px;color:#fff;background:linear-gradient(135deg,var(--pc1,#2b1055),var(--pc2,#7B2FF7));box-shadow:0 6px 20px rgba(0,0,0,.18);position:relative;overflow:hidden;}
+  .pass-card h3{margin:0 0 2px;font-family:var(--font-head);font-size:21px;} .pass-card .pc-sub{font-size:13px;opacity:.92;margin:0 0 8px;}
+  .pass-bar{height:12px;border-radius:7px;background:rgba(255,255,255,.25);overflow:hidden;margin:6px 0;} .pass-bar > i{display:block;height:100%;background:linear-gradient(90deg,#fff,var(--pca,#FFD54A));border-radius:7px;}
+  .pass-card .pc-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;} .pass-card .btn-small{background:#fff;color:#2b1055;}
+  .pc-chip{font-size:12px;font-weight:800;border-radius:999px;padding:3px 9px;background:rgba(255,255,255,.22);} .pc-chip.hot{background:#FFD54A;color:#3A2500;}
+  .pass-head{border-radius:14px;padding:12px;color:#fff;background:linear-gradient(135deg,var(--pc1),var(--pc2));margin-bottom:10px;} .pass-head h3{margin:0;font-family:var(--font-head);font-size:22px;}
+  .pass-tabs{display:flex;gap:6px;margin:0 0 8px;} .pass-tabs button{flex:1;font:inherit;font-weight:800;font-size:13px;border:1px solid var(--border);background:var(--bg-sunk);color:var(--text);border-radius:10px;padding:7px;cursor:pointer;} .pass-tabs button.on{background:var(--accent);color:var(--accent-text);border-color:var(--accent);}
+  .pass-cols{display:grid;grid-template-columns:34px 1fr 1fr;gap:6px;align-items:stretch;font-size:12px;font-weight:800;color:var(--text-muted);margin:8px 0 4px;text-align:center;}
+  .pass-row{display:grid;grid-template-columns:34px 1fr 1fr;gap:6px;align-items:stretch;margin:0 0 6px;} .pass-lv{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;background:var(--bg-sunk);font-family:var(--font-head);font-weight:800;font-size:15px;line-height:1.05;} .pass-lv small{font-family:var(--font-body);font-size:9px;font-weight:700;color:var(--text-muted);}
+  .pass-row.reached .pass-lv{background:var(--accent);color:var(--accent-text);} .pass-row.reached .pass-lv small{color:inherit;opacity:.85;}
+  .pass-cell{border:1px solid var(--border);border-radius:10px;padding:6px 7px;font-size:12px;line-height:1.25;background:var(--bg-elevated);min-width:0;display:flex;flex-direction:column;gap:4px;justify-content:space-between;} .pass-cell.premium{border-color:#E9C46A;background:linear-gradient(180deg,rgba(233,196,106,.16),rgba(233,196,106,.04));}
+  .pass-cell.empty{opacity:.35;text-align:center;justify-content:center;} .pass-cell.claimed{opacity:.6;} .pass-cell .pc-st{font-size:11px;font-weight:800;} .pass-cell .btn-small{padding:3px 8px;font-size:11.5px;}
+  .pass-sec{font-weight:800;margin:16px 0 6px;font-size:15px;} .pass-club-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .pbadge{margin-right:3px;} .pstars{margin-left:4px;font-size:.85em;white-space:nowrap;}
+  .profile-head.has-banner{color:#fff;position:relative;overflow:hidden;border-radius:14px;padding:12px;text-shadow:0 1px 3px rgba(0,0,0,.6);} .profile-head.has-banner .profile-meta,.profile-head.has-banner .profile-title{color:#fff;}
+  .banner-deco{position:absolute;right:6px;top:2px;font-size:30px;opacity:.28;letter-spacing:4px;pointer-events:none;white-space:nowrap;}
+  .chat-stickers{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;} .chat-stickers button{font-size:22px;background:var(--bg-sunk);border:1px solid var(--border);border-radius:10px;padding:2px 8px;cursor:pointer;}
+  .card-front.tier-saison.trophy-pass,.card.tier-saison.trophy-pass:not(.locked){background:radial-gradient(110% 70% at 50% 0%,var(--tpg,rgba(255,255,255,.35)),rgba(255,255,255,0) 62%),linear-gradient(165deg,var(--tp1,#1B0B2E) 0%,var(--tp1,#1B0B2E) 22%,var(--tp2,#FF8A1F) 100%);color:#fff;box-shadow:var(--shadow),inset 0 0 0 2px var(--tpa,#FF5C00),inset 0 0 16px var(--tpg,rgba(255,255,255,.4)),0 0 14px var(--tpg,rgba(255,255,255,.4));}
+  .tier-saison.trophy-pass .card-tier-label{background:var(--tpa,#FF5C00);color:#fff;} .tier-saison.trophy-pass .card-poste{background:rgba(0,0,0,.4);color:#fff;} .tier-saison.trophy-pass .card-name,.tier-saison.trophy-pass.has-photo .card-name{color:#fff;text-shadow:0 0 8px rgba(0,0,0,.9),0 1px 2px rgba(0,0,0,.9);} .tier-saison.trophy-pass .card-stats span{background:rgba(0,0,0,.4);color:#fff;}
   /* tournoi mensuel */
   .tn-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0;} .tn-stat{background:var(--bg-sunk);border-radius:12px;padding:8px 6px;text-align:center;} .tn-stat b{display:block;font-size:21px;font-family:var(--font-head);line-height:1.1;} .tn-stat span{font-size:11.5px;color:var(--text-muted);}
   .tn-when{font-size:13px;color:var(--text-muted);margin:4px 0 10px;} .tn-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;}
@@ -909,6 +929,7 @@
         <button id="openFreePackBtn" class="btn-primary">Ouvrir un pack gratuit</button>
       </div>
       <div class="bonus-packs" id="bonusPacksEl"></div>
+      <div class="pass-card" id="passCard" hidden></div>
       <div class="missions-box" id="missionsBox" hidden></div>
     </section>
 
@@ -1004,7 +1025,8 @@
         <h2>💬 Chat du club</h2>
         <p class="duel-hint">Discute avec les autres joueurs. Les annonces du club (cartes légendaires, saisons, scores exacts, nouveaux membres…) apparaissent ici aussi. Sois sympa : l'administrateur peut supprimer un message ou couper la parole.</p>
         <div class="chat-list" id="chatList" aria-live="polite"></div>
-        <div class="chat-form"><input type="text" id="chatInput" maxlength="300" placeholder="Écris un message…" autocomplete="off" aria-label="Ton message"><button class="btn-primary" type="button" id="chatSend">Envoyer</button></div>
+        <div class="chat-stickers" id="chatStickers" hidden></div>
+        <div class="chat-form"><button class="btn-small ghost" type="button" id="chatEmoji" title="Mes autocollants" hidden>😀</button><input type="text" id="chatInput" maxlength="300" placeholder="Écris un message…" autocomplete="off" aria-label="Ton message"><button class="btn-primary" type="button" id="chatSend">Envoyer</button></div>
         <p class="chat-note" id="chatNote"></p>
       </div>
     </section>
@@ -1337,9 +1359,12 @@
     const m = /^(.*) \((.*)\)$/.exec(card.player_name || ''); const title = m ? m[1] : (card.player_name || '');
     return { title, label: m ? m[2] : '', rank: /^Finaliste du tournoi/.test(title) ? 5 : /^Vainqueur du tournoi/.test(title) ? 4 : /^Vainqueur/.test(title) ? 1 : /^Deuxi/.test(title) ? 2 : 3, season: null };
   }
-  const isTourneyCard = card => card.tier === 'saison' && trophyParts(card).rank >= 4;          // vainqueur ou finaliste d'un tournoi : carte violette et rose fluo
-  const tourneyClass = card => isTourneyCard(card) ? ' trophy-tournoi' : '';
-  function trophyMedalHTML(card){ return '<div class="item-medal trophy-medal"><span class="item-icon" aria-hidden="true">' + TROPHY_MEDALS[trophyParts(card).rank] + '</span></div>'; }
+  const isTourneyCard = card => card.tier === 'saison' && [4, 5].includes(trophyParts(card).rank);          // vainqueur ou finaliste d'un tournoi : carte violette et rose fluo
+  const isPassCard = card => card.tier === 'saison' && trophyParts(card).rank === 6 && !!trophyParts(card).theme;          // carte exclusive du Pass : aux couleurs du thème du mois
+  const tourneyClass = card => isTourneyCard(card) ? ' trophy-tournoi' : isPassCard(card) ? ' trophy-pass' : '';
+  function applyCardTheme(el, card){ if (isPassCard(card)) { const th = trophyParts(card).theme; el.style.setProperty('--tp1', th.c1); el.style.setProperty('--tp2', th.c2); el.style.setProperty('--tpa', th.accent); el.style.setProperty('--tpg', th.c2 + '99'); } }
+  const trophyMedalOf = card => { const t = trophyParts(card); return t.rank === 6 && t.theme ? t.theme.emoji : (TROPHY_MEDALS[t.rank] || '🏆'); };
+  function trophyMedalHTML(card){ return '<div class="item-medal trophy-medal"><span class="item-icon" aria-hidden="true">' + trophyMedalOf(card) + '</span></div>'; }
   // une carte gold s'appelle « Petit pont — Mathis » : l'action en titre, le joueur en dessous
   function momentParts(name){
     const i = name.indexOf(' — ');
@@ -1403,8 +1428,8 @@
       statsRow = '<div class="card-stats" title="Moment mémorable d\'un match"><span>🌟 ' + escapeHtml(momentParts(card.player_name).who) + '</span></div>';
       posteLabel = '🌟';
     } else if (kind === 'trophee') {
-      statsRow = '<div class="card-stats" title="' + (trophyParts(card).rank >= 4 ? 'Carte de tournoi' : 'Trophée de saison') + ' : un souvenir"><span>🏆 ' + escapeHtml(trophyParts(card).label) + '</span></div>';
-      posteLabel = TROPHY_MEDALS[trophyParts(card).rank];
+      statsRow = '<div class="card-stats" title="' + (trophyParts(card).rank === 6 ? 'Carte exclusive du Pass' : trophyParts(card).rank >= 4 ? 'Carte de tournoi' : 'Trophée de saison') + ' : un souvenir"><span>🏆 ' + escapeHtml(trophyParts(card).label) + '</span></div>';
+      posteLabel = trophyMedalOf(card);
     } else if (kind === 'mascotte') {
       statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🐺 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span></div>';
       posteLabel = '🐺';
@@ -1421,7 +1446,7 @@
     else if (bgPhoto) midHTML = '';
     else if (kind === 'equipement' || kind === 'stade' || kind === 'moment') midHTML = itemMedalHTML(card);
     else midHTML = '<span class="ball-fallback">⚽</span>';
-    return bgPhoto + (kind === 'trophee' ? '' : editionDecor(card.tier)) + '<div class="card-top"><span class="card-tier-label">'+(kind === 'trophee' && trophyParts(card).rank >= 4 ? 'Tournoi' : tierLabel(card.tier))+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
+    return bgPhoto + (kind === 'trophee' ? '' : editionDecor(card.tier)) + '<div class="card-top"><span class="card-tier-label">'+(kind === 'trophee' && trophyParts(card).rank >= 4 ? (trophyParts(card).rank === 6 ? 'Pass' : 'Tournoi') : tierLabel(card.tier))+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
       '<div class="card-mid">'+midHTML+'</div>'+
       '<div><div class="card-name"></div>'+statsRow+'</div>'+
       crestIco('card-watermark');
@@ -1486,7 +1511,7 @@
     const locked = hideCount ? false : !card.quantity;
     if (locked) return makeLockedCard(card);
     const el = document.createElement('div');
-    el.className = 'card tier-' + card.tier + tourneyClass(card);
+    el.className = 'card tier-' + card.tier + tourneyClass(card); applyCardTheme(el, card);
     el.style.background = (EDITION_TIERS.includes(card.tier) || card.tier === 'saison') ? '' : 'linear-gradient(160deg, var(--' + (card.tier === 'legendaire' ? 'legend-2' : card.tier + '-2') + '), var(--' + (card.tier === 'legendaire' ? 'legend-1' : card.tier + '-1') + '))';
     el.innerHTML = cardFrontHTML(card);
     markPhotoCard(el, card);
@@ -1506,7 +1531,7 @@
     const t = trophyParts(card), preview = String(card.id || '').startsWith('trophy-');
     document.getElementById('modalTitle').textContent = card.player_name;
     const body = document.getElementById('modalBody');
-    body.innerHTML = '<div style="text-align:center;font-size:64px;line-height:1.1;margin:6px 0;">' + TROPHY_MEDALS[t.rank] + '</div><p style="text-align:center;font-weight:700;">' + (preview ? 'Cette carte sera remise à la fin de la saison de ' + escapeHtml(t.label) + '.' : (t.rank === 4 ? 'Trophée du tournoi de ' : t.rank === 5 ? 'Carte de finaliste du tournoi de ' : 'Trophée de la saison de ') + escapeHtml(t.label) + '.') + '</p><p class="muted" style="text-align:center;">Un trophée n\'est qu\'un souvenir : il n\'a ni note ni bonus, ne joue pas de match, ne se vend pas et ne s\'échange pas. Il ne compte pas dans le pourcentage de collection.</p>';
+    body.innerHTML = '<div style="text-align:center;font-size:64px;line-height:1.1;margin:6px 0;">' + trophyMedalOf(card) + '</div><p style="text-align:center;font-weight:700;">' + (preview ? 'Cette carte sera remise à la fin de la saison de ' + escapeHtml(t.label) + '.' : (t.rank === 6 ? 'Carte exclusive du Pass de ' : t.rank === 4 ? 'Trophée du tournoi de ' : t.rank === 5 ? 'Carte de finaliste du tournoi de ' : 'Trophée de la saison de ') + escapeHtml(t.label) + '.') + '</p><p class="muted" style="text-align:center;">Un trophée n\'est qu\'un souvenir : il n\'a ni note ni bonus, ne joue pas de match, ne se vend pas et ne s\'échange pas. Il ne compte pas dans le pourcentage de collection.</p>';
     if (!preview && card.quantity > 0 && !card._viewing) {
       body.insertAdjacentHTML('beforeend', '<div class="share-actions" style="margin-top:14px;"><button class="btn-secondary" type="button" id="shareCardBtn">📤 Partager ce trophée</button></div>');
       document.getElementById('shareCardBtn').addEventListener('click', () => openShareCard(card));
@@ -1578,7 +1603,7 @@
   function loadImg(src, cross){ return new Promise(res => { const i = new Image(); if (cross) i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
   function roundRect(g, x, y, w, h, r){ g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
   // la palette d'une carte précise : celle de sa rareté, sauf les cartes de tournoi (violet et rose fluo)
-  function cardPalette(card){ return isTourneyCard(card) ? { c1: '#FF2FD1', c2: '#7B2FF7', label: '#FF9BEF', labelText: '#2A0540', border: '#FF7BE8', glow: '#FF2FD1' } : tierPalette(card.tier); }
+  function cardPalette(card){ if (isPassCard(card)) { const th = trophyParts(card).theme; return { c1: th.c2, c2: th.c1, label: th.accent, labelText: '#FFFFFF', border: th.accent, glow: th.c2 }; } return isTourneyCard(card) ? { c1: '#FF2FD1', c2: '#7B2FF7', label: '#FF9BEF', labelText: '#2A0540', border: '#FF7BE8', glow: '#FF2FD1' } : tierPalette(card.tier); }
   function tierPalette(tier){
     const v = n => cssVar(n);
     if (tier === 'halloween') return { c1: '#2B1424', c2: '#0C0910', label: '#FF8A1F', labelText: '#1A0B00', border: '#FF8A1F', glow: '#FF8A1F' };
@@ -1679,8 +1704,8 @@
     try { await Promise.all([document.fonts.load('800 80px ' + f.head), document.fonts.load('700 30px ' + f.body)]); } catch(e) { /* polices par défaut */ }
     return f;
   }
-  async function paintShareBackground(g, W, H, glow, withHeader, fonts, subtitle){
-    const bg = g.createLinearGradient(0, 0, W * 0.4, H); bg.addColorStop(0, '#34124F'); bg.addColorStop(1, '#10061F'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  async function paintShareBackground(g, W, H, glow, withHeader, fonts, subtitle, bgo){
+    const bg = g.createLinearGradient(0, 0, W * 0.4, H); bg.addColorStop(0, bgo ? bgo.c1 : '#34124F'); bg.addColorStop(1, bgo ? bgo.c2 : '#10061F'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
     if (glow) { const halo = g.createRadialGradient(W / 2, Math.min(H, 1400) * 0.5, 80, W / 2, Math.min(H, 1400) * 0.5, 720); halo.addColorStop(0, glow + '55'); halo.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = halo; g.fillRect(0, 0, W, Math.min(H, 1400)); }
     const crest = document.getElementById('wolf-crest');
     if (crest) {
@@ -1720,7 +1745,7 @@
   // --- IMAGE DU PROFIL : pseudo, rang, collection, succès, Elo, matchs, podiums et vitrine
   async function renderProfileImage(p){
     const fonts = await shareFonts(), W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
-    await paintShareBackground(g, W, H, '#B58CFF', true, fonts, 'Profil de joueur');
+    await paintShareBackground(g, W, H, '#B58CFF', true, fonts, 'Profil de joueur', (passItem(p.share_bg) || {}).style);
     if (p.avatar) { const av = await loadImg(API_BASE + '/users/' + encodeURIComponent(p.pseudo) + '/avatar?v=' + p.avatar, true); if (av) { g.save(); g.beginPath(); g.arc(W - 120, 100, 70, 0, Math.PI * 2); g.clip(); g.drawImage(av, W - 190, 30, 140, 140); g.restore(); g.beginPath(); g.arc(W - 120, 100, 70, 0, Math.PI * 2); g.lineWidth = 6; g.strokeStyle = FRAME_COLORS[p.frame] || '#E9C46A'; g.stroke(); } }
     if (p.title) { g.textAlign = 'center'; g.fillStyle = '#E9C46A'; g.font = '800 34px ' + fonts.head; g.fillText(p.title.toUpperCase(), W / 2, 168); }
     g.textAlign = 'center'; g.textBaseline = 'alphabetic';
@@ -1819,9 +1844,9 @@
     const body = document.getElementById('modalBody'), d = p.duels;
     const since = p.member_since ? 'Membre depuis le ' + p.member_since.split('-').reverse().join('/') : '';
     const tiersHTML = p.tiers.map(t => '<div class="tb"><span class="tb-name">' + escapeHtml(tierLabel(t.tier)) + '</span><span class="tb-bar"><i style="width:' + Math.round(100 * t.owned / t.total) + '%;background:' + (TIER_COLORS[t.tier] || '#999') + '"></i></span><span class="tb-n">' + t.owned + '/' + t.total + '</span></div>').join('');
-    const badgeHTML = mine && badges ? '<div class="badge-grid">' + badges.map(b => badgeTileHTML(b, true)).join('') + '</div>'
+    const achievementsHTML = mine && badges ? '<div class="badge-grid">' + badges.map(b => badgeTileHTML(b, true)).join('') + '</div>'
       : (p.badges.top.length ? '<div class="badge-grid">' + p.badges.top.map(b => badgeTileHTML(b, false)).join('') + '</div>' : '<p class="muted">Aucun succès pour l\'instant.</p>');
-    body.innerHTML = '<div class="profile-head"><div class="profile-avatar' + (p.frame ? ' fr-' + p.frame : '') + '" id="profAvatar">' + (p.avatar ? '<img alt="Photo de ' + escapeHtml(p.pseudo) + '" src="' + API_BASE + '/users/' + encodeURIComponent(p.pseudo) + '/avatar?v=' + p.avatar + '">' : escapeHtml(p.pseudo.charAt(0).toUpperCase())) + (mine ? '<button type="button" class="profile-avatar-btn" id="profAvatarBtn" title="' + (p.avatar ? 'Changer ma photo' : 'Ajouter une photo') + '" aria-label="' + (p.avatar ? 'Changer ma photo' : 'Ajouter une photo') + '">📷</button>' : '') + '</div><div><div style="font-weight:800;font-size:17px;">' + escapeHtml(p.pseudo) + '</div>' + (p.title ? '<div class="profile-title">' + escapeHtml(p.title) + '</div>' : '') + '<div class="profile-meta">' + since +
+    const bnr = passItem(p.banner); body.innerHTML = '<div class="profile-head' + (bnr ? ' has-banner' : '') + '"' + (bnr ? ' style="background:' + bnr.style.bg + ';"' : '') + '>' + (bnr ? '<div class="banner-deco" aria-hidden="true">' + bnr.style.emoji.repeat(6) + '</div>' : '') + '<div class="profile-avatar' + (p.frame ? ' fr-' + p.frame : '') + '" id="profAvatar">' + (p.avatar ? '<img alt="Photo de ' + escapeHtml(p.pseudo) + '" src="' + API_BASE + '/users/' + encodeURIComponent(p.pseudo) + '/avatar?v=' + p.avatar + '">' : escapeHtml(p.pseudo.charAt(0).toUpperCase())) + (mine ? '<button type="button" class="profile-avatar-btn" id="profAvatarBtn" title="' + (p.avatar ? 'Changer ma photo' : 'Ajouter une photo') + '" aria-label="' + (p.avatar ? 'Changer ma photo' : 'Ajouter une photo') + '">📷</button>' : '') + '</div><div><div class="profile-pseudo' + ncClass(p.name_color) + '" style="font-weight:800;font-size:17px;">' + badgeHTML(p.badge) + escapeHtml(p.pseudo) + starsHTML(p.stars) + '</div>' + (p.title ? '<div class="profile-title">' + escapeHtml(p.title) + '</div>' : '') + '<div class="profile-meta">' + since +
       (p.rank ? '<br>Classement : n°' + p.rank + ' sur ' + p.players_ranked : '') + '</div></div></div>' +
       '<div class="profile-tiles"><div class="profile-tile"><b>' + String(p.completion_pct).replace('.', ',') + ' %</b><span>collection (' + p.cards_owned + '/' + p.cards_total + ')</span></div>' +
       '<div class="profile-tile"><b>' + d.played + '</b><span>matchs 1v1' + (d.played ? ' · ' + d.won + 'V ' + d.drawn + 'N ' + d.lost + 'D' : '') + '</span></div>' +
@@ -1829,7 +1854,7 @@
       (p.podiums && (p.podiums[1] || p.podiums[2] || p.podiums[3]) ? '<div class="profile-meta" style="text-align:center;margin:6px 0;">🏆 Podiums de saison : 🥇 ' + (p.podiums[1] || 0) + ' · 🥈 ' + (p.podiums[2] || 0) + ' · 🥉 ' + (p.podiums[3] || 0) + '</div>' : '') +
       '<div class="profile-section">Vitrine' + (mine ? ' <button class="btn-small ghost" type="button" id="profShowcaseEdit">Modifier</button>' : '<small>' + (p.showcase_auto ? 'ses cartes les plus rares' : 'ses cartes préférées') + '</small>') + '</div>' +
       '<div class="showcase-row" id="profShowcase"></div><div id="profShowcaseEditor"></div>' +
-      '<div class="profile-section">Succès<small>' + p.badges.earned + ' niveau' + (p.badges.earned > 1 ? 'x' : '') + ' sur ' + p.badges.total + '</small></div>' + badgeHTML +
+      '<div class="profile-section">Succès<small>' + p.badges.earned + ' niveau' + (p.badges.earned > 1 ? 'x' : '') + ' sur ' + p.badges.total + '</small></div>' + achievementsHTML +
       '<div class="profile-section">Raretés<small>packs ouverts : ' + p.packs_opened + (p.best_streak ? ' · meilleure série : ' + p.best_streak + ' j' : '') + '</small></div><div class="tier-bars">' + tiersHTML + '</div>' +
       '<div class="share-actions" style="margin-top:18px;"><button class="btn-secondary" type="button" id="profCollection">' + (mine ? 'Voir ma collection' : 'Voir sa collection') + '</button>' + (mine ? '<button class="btn-secondary" type="button" id="profShare">📤 Partager mon profil en image</button><button class="btn-secondary" type="button" id="profCosm">🎨 Titre et cadre</button>' + (p.avatar ? '<button class="btn-secondary" type="button" id="profPhotoDel">🗑️ Retirer ma photo</button>' : '') : '') + (mine ? '' : '<button class="btn-primary" type="button" id="profChallenge">⚔️ Défier ' + escapeHtml(p.pseudo) + '</button>') + '</div>';
     const row = document.getElementById('profShowcase');
@@ -1870,7 +1895,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.15.2';
+  const SITE_VERSION = '2026.10.16.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2028,6 +2053,18 @@
   // ---------- Photo de profil ----------
   // `v` = version de la photo donnée par le serveur (null : pas de photo → une pastille avec l'initiale)
   const FRAME_COLORS = { bronze: '#CD7F32', argent: '#C0C7D1', or: '#E9C46A', diamant: '#5BD6FF', legende: '#FF4FD8', champion: '#FFD45C' };
+  // ----- registre des objets du Pass (dessin) : public, chargé une fois ; ajoute les styles des cadres et des couleurs de pseudo de tous les thèmes
+  let PASS = { items: {}, themes: {} };
+  async function loadPassStyles(){
+    try { PASS = await fetch(API_BASE + '/pass/styles').then(r => r.json()); } catch(e) { return; }
+    const css = Object.entries(PASS.items).map(([id, it]) => it.kind === 'frame' ? '.fr-' + id + '{' + it.style.css + ';}' : it.kind === 'name_color' ? '.nc-' + id + '{' + it.style.css + ';}' : '').join('\n');
+    const el = document.createElement('style'); el.id = 'passStyles'; el.textContent = css; document.head.appendChild(el);
+  }
+  loadPassStyles();
+  const passItem = id => (id && PASS.items && PASS.items[id]) || null;
+  const ncClass = id => id && passItem(id) ? ' nc-' + id : '';
+  const badgeHTML = id => { const it = passItem(id); return it ? '<span class="pbadge" title="' + escapeHtml(it.name) + '">' + it.style.emoji + '</span>' : ''; };
+  const starsHTML = n => n ? '<span class="pstars" title="' + n + ' Pass terminé' + (n > 1 ? 's' : '') + '">' + '⭐'.repeat(Math.min(n, 5)) + (n > 5 ? '×' + n : '') + '</span>' : '';
   function avatarHTML(pseudo, v, frame){
     const cls = 'av' + (frame ? ' fr-' + frame : '');
     if (!v) return '<span class="' + cls + '" aria-hidden="true">' + escapeHtml(String(pseudo).charAt(0).toUpperCase()) + '</span>';
@@ -2070,16 +2107,21 @@
     const opts = (list, cur) => '<option value="">— aucun —</option>' + list.map(x => '<option value="' + x.id + '"' + (x.unlocked ? '' : ' disabled') + (cur === x.id ? ' selected' : '') + '>' + (x.unlocked ? '' : '🔒 ') + escapeHtml(x.label) + '</option>').join('');
     const locked = [...cat.titles.filter(t => !t.unlocked).map(t => 'Titre « ' + t.label + ' » : ' + t.desc), ...cat.frames.filter(f => !f.unlocked).map(f => 'Cadre ' + f.label + ' : ' + f.desc)];
     const unl = cat.titles.filter(t => t.unlocked).length + cat.frames.filter(f => f.unlocked).length;
+    let inv = { items: [], loadout: {} }; try { inv = await api('/pass/inventory'); } catch(e) { /* pas de Pass */ }
+    const slotSel = (kind, label, cur) => { const list = inv.items.filter(i => i.kind === kind); return list.length ? '<label class="cos-sel">' + label + '<select id="cosPass_' + kind + '"><option value="">— aucun —</option>' + list.map(i => '<option value="' + i.id + '"' + (cur === i.id ? ' selected' : '') + '>' + i.emoji + ' ' + escapeHtml(i.name) + '</option>').join('') + '</select></label>' : ''; };
+    const passSlots = slotSel('badge', 'Badge (à côté du pseudo)', inv.loadout.badge) + slotSel('name_color', 'Couleur du pseudo', inv.loadout.name_color) + slotSel('banner', 'Bannière du profil', inv.loadout.banner) + slotSel('share_bg', 'Fond des images à partager', inv.loadout.share_bg);
     const html = '<div class="cos-prev"><div class="profile-avatar' + (cat.selected.frame ? ' fr-' + cat.selected.frame : '') + '" id="cosPrev">' + (p.avatar ? '<img alt="" src="' + API_BASE + '/users/' + encodeURIComponent(p.pseudo) + '/avatar?v=' + p.avatar + '">' : escapeHtml(p.pseudo.charAt(0).toUpperCase())) + '</div></div>' +
       '<label class="cos-sel">Titre (sous ton pseudo)<select id="cosTitle">' + opts(cat.titles, cat.selected.title) + '</select></label>' +
-      '<label class="cos-sel">Cadre (anneau autour de ta photo)<select id="cosFrame">' + opts(cat.frames, cat.selected.frame) + '</select></label>' +
+      '<label class="cos-sel">Cadre (anneau autour de ta photo)<select id="cosFrame">' + opts(cat.frames, cat.selected.frame) + '</select></label>' + passSlots +
       '<p style="font-size:12.5px;color:var(--text-muted);margin:6px 0;">' + unl + ' élément' + (unl > 1 ? 's' : '') + ' débloqué' + (unl > 1 ? 's' : '') + ' sur ' + (cat.titles.length + cat.frames.length) + ' (' + cat.levels_total + ' niveaux de succès). Les 🔒 se débloquent avec tes succès, les saisons et les pronostics.</p>' +
       (locked.length ? '<details style="font-size:12.5px;"><summary style="cursor:pointer;font-weight:700;">Comment débloquer le reste ? (' + locked.length + ')</summary><ul style="margin:6px 0 0 18px;padding:0;line-height:1.45;">' + locked.map(t => '<li>' + escapeHtml(t) + '</li>').join('') + '</ul></details>' : '');
     const ok = await confirmDialog('Titre et cadre', html, 'Enregistrer', (body) => {
       body.querySelector('#cosFrame').addEventListener('change', e => { body.querySelector('#cosPrev').className = 'profile-avatar' + (e.target.value ? ' fr-' + e.target.value : ''); });
     });
     if (!ok) return;
-    try { await api('/cosmetics', { method: 'POST', body: JSON.stringify({ title: byId('cosTitle').value || null, frame: byId('cosFrame').value || null }) }); toast('Profil mis à jour 🎨'); await openProfile(meInfo.pseudo); loadLeaderboard(); }
+    try { await api('/cosmetics', { method: 'POST', body: JSON.stringify({ title: byId('cosTitle').value || null, frame: byId('cosFrame').value || null }) });
+      if (inv.items.length) { const v = k => (byId('cosPass_' + k) ? byId('cosPass_' + k).value : '') || null; await api('/pass/equip', { method: 'POST', body: JSON.stringify({ badge: v('badge'), name_color: v('name_color'), banner: v('banner'), share_bg: v('share_bg') }) }); }
+      toast('Profil mis à jour 🎨'); await openProfile(meInfo.pseudo); loadLeaderboard(); }
     catch(e) { toast(e.message); }
   }
 
@@ -2098,7 +2140,7 @@
       if (m.kind === 'event') { row.className = 'chat-event'; row.innerHTML = escapeHtml(m.text) + ' <span class="chat-time">' + time + '</span>'; }
       else {
         row.className = 'chat-msg' + (m.mine ? ' mine' : '');
-        row.innerHTML = avatarHTML(m.pseudo, m.avatar, m.frame) + '<div class="chat-bubble"><div class="chat-head"><button type="button" class="pseudo-link">' + escapeHtml(m.pseudo) + '</button>' + (m.title ? '<span class="chat-title">' + escapeHtml(m.title) + '</span>' : '') + '<span class="chat-time">' + time + '</span>' + (m.mine ? '<button type="button" class="chat-del" title="Supprimer mon message" aria-label="Supprimer mon message">✕</button>' : '') + '</div><div class="chat-text">' + escapeHtml(m.text) + '</div></div>';
+        row.innerHTML = avatarHTML(m.pseudo, m.avatar, m.frame) + '<div class="chat-bubble"><div class="chat-head"><button type="button" class="pseudo-link' + ncClass(m.name_color) + '">' + badgeHTML(m.badge) + escapeHtml(m.pseudo) + '</button>' + (m.title ? '<span class="chat-title">' + escapeHtml(m.title) + '</span>' : '') + '<span class="chat-time">' + time + '</span>' + (m.mine ? '<button type="button" class="chat-del" title="Supprimer mon message" aria-label="Supprimer mon message">✕</button>' : '') + '</div><div class="chat-text">' + escapeHtml(m.text) + '</div></div>';
         row.querySelector('.pseudo-link').addEventListener('click', () => openProfile(m.pseudo));
         const del = row.querySelector('.chat-del'); if (del) del.addEventListener('click', async () => { try { await api('/chat/' + m.id, { method: 'DELETE' }); row.remove(); } catch(e) { toast(e.message); } });
       }
@@ -2119,7 +2161,12 @@
       byId('chatInput').disabled = byId('chatSend').disabled = !!d.muted_until;
     } catch(e) { if (initial) toast(e.message); } finally { chat.busy = false; }
   }
-  function startChat(){ loadChat(true); clearInterval(chat.timer); chat.timer = setInterval(() => { if (!document.hidden) loadChat(false); }, 5000); }
+  async function loadStickers(){
+    try { const inv = await api('/pass/inventory'); const emojis = [...new Set(inv.items.filter(i => i.kind === 'stickers').flatMap(i => i.style.emojis))]; const box = byId('chatStickers'), btn = byId('chatEmoji');
+      btn.hidden = !emojis.length; box.innerHTML = emojis.map(e => '<button type="button">' + e + '</button>').join(''); box.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { const i = byId('chatInput'); i.value = (i.value + b.textContent).slice(0, 300); i.focus(); })); } catch(e) { /* pas d'autocollants */ }
+  }
+  document.getElementById('chatEmoji').addEventListener('click', () => { const box = document.getElementById('chatStickers'); box.hidden = !box.hidden; });
+  function startChat(){ loadStickers(); loadChat(true); clearInterval(chat.timer); chat.timer = setInterval(() => { if (!document.hidden) loadChat(false); }, 5000); }
   function stopChat(){ clearInterval(chat.timer); chat.timer = null; }
   function updateChatDot(){
     const dot = byId('chatDot'); if (!dot || !meInfo) return;
@@ -2319,6 +2366,69 @@
     byId('tnHistory').innerHTML = list.length ? list.map(h => '<div class="tn-hist"><span><b>' + escapeHtml(h.label) + '</b></span>' + (h.status === 'cancelled' ? '<span class="muted">annulé</span>' : '<span>🏆 ' + escapeHtml(h.champion || '?') + (h.finalist ? ' · 🥈 ' + escapeHtml(h.finalist) : '') + (h.semifinalists.length ? ' · 🥉 ' + h.semifinalists.map(escapeHtml).join(', ') : '') + '</span><span class="muted">' + h.players + ' joueurs · ' + h.pool + ' cr.</span>') + '</div>').join('') : '<div class="empty-state">Aucun tournoi terminé pour l\'instant.</div>';
   }
 
+  // ---------- Pass de saison ----------
+  let passData = null, passView = 'current';
+  const passDateFmt = iso => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+  async function loadPassCard(){
+    const box = byId('passCard'); if (!box) return;
+    try { passData = await api('/pass'); } catch(e) { box.hidden = true; return; }
+    const c = passData.current, th = c.theme; box.hidden = false; box.style.setProperty('--pc1', th.c1); box.style.setProperty('--pc2', th.c2); box.style.setProperty('--pca', th.accent);
+    const todo = c.claimable + (passData.previous ? passData.previous.claimable : 0);
+    const status = c.completed ? '🌟 Pass terminé : étoile de prestige gagnée !' : c.level >= 30 ? 'Dernier niveau atteint !' : c.waiting_for_day ? '⏳ Niveau ' + (c.level + 1) + ' prêt à s\'ouvrir : demain (tes points sont gardés)' : (100 - c.points_in_level) + ' points pour le niveau ' + (c.level + 1);
+    box.innerHTML = '<h3>' + th.emoji + ' Pass de ' + escapeHtml(c.label.split(' ')[0]) + '</h3><p class="pc-sub">Niveau <b>' + c.level + '</b> / 30 · ' + c.points + ' points · ' + (c.premium ? '💎 Premium' : 'piste gratuite') + (passData.stars ? ' · ' + starsHTML(passData.stars) : '') + '</p>' +
+      '<div class="pass-bar"><i style="width:' + (c.level >= 30 ? 100 : c.points_in_level) + '%"></i></div><div class="pc-sub" style="margin:0;">' + escapeHtml(status) + '</div>' +
+      '<div class="pc-actions"><button class="btn-small" type="button" id="passOpen">Voir le Pass</button>' + (todo ? '<span class="pc-chip hot">🎁 ' + todo + ' à récupérer</span>' : '') + (c.double_points ? '<span class="pc-chip hot">⚡ points doublés</span>' : '') + (passData.previous ? '<span class="pc-chip">↩️ rattrapage ' + escapeHtml(passData.previous.label.split(' ')[0]) + ' jusqu\'au ' + escapeHtml(passDateFmt(passData.previous.catchup_until)) + '</span>' : '') + '</div>';
+    byId('passOpen').addEventListener('click', () => { passView = 'current'; openPass(); });
+    const dot = byId('packsDot'); if (dot && todo > 0) dot.hidden = false;
+  }
+  function passRewardHTML(r, cls){
+    if (!r) return '<div class="pass-cell empty">—</div>';
+    const it = r.item_obj, parts = [];
+    if (r.credits) parts.push('💰 +' + r.credits); if (r.pack) parts.push('📦 pack ' + escapeHtml(r.pack)); if (r.edition_pack) parts.push('🃏 pack d\'édition limitée (' + r.edition_pack + ' cartes)'); if (r.pass_card) parts.push('🎴 carte exclusive du Pass');
+    if (it) parts.push(it.emoji + ' ' + escapeHtml(it.name) + ' <small style="color:var(--text-muted);">(' + ({ badge: 'badge', banner: 'bannière', frame: 'cadre', name_color: 'couleur du pseudo', title: 'titre', stickers: 'autocollants', share_bg: 'fond d\'image' }[it.kind]) + ')</small>');
+    return '<div class="pass-cell ' + cls + ' ' + r.status + '"><div>' + parts.join('<br>') + '</div><div>' + (r.status === 'ready' ? '<button class="btn-small" type="button" data-pclaim data-track="' + (cls === 'premium' ? 'premium' : 'free') + '" data-level="' + r.__lv + '">Récupérer</button>' : r.status === 'claimed' ? '<span class="pc-st">✓ récupéré</span>' : r.status === 'premium_locked' ? '<span class="pc-st">💎 Premium</span>' : '<span class="pc-st">🔒 jour ' + r.__day + '</span>') + '</div></div>';
+  }
+  function renderPass(){
+    const d = passData, cur = d.current, s = passView === 'previous' && d.previous ? d.previous : cur, th = s.theme, body = byId('modalBody'), isCur = s === cur;
+    byId('modalTitle').textContent = 'Pass de ' + s.label;
+    const status = s.completed ? '🌟 Pass terminé : étoile de prestige gagnée !' : s.level >= 30 ? 'Les 30 niveaux sont débloqués.' : s.waiting_for_day ? '⏳ Le niveau ' + (s.level + 1) + ' s\'ouvre demain : tes ' + s.points + ' points sont gardés.' : 'Encore ' + (100 - s.points_in_level) + ' points pour le niveau ' + (s.level + 1) + ' (un niveau s\'ouvre par jour : le niveau N le jour N).';
+    let html = (d.previous ? '<div class="pass-tabs"><button type="button" data-pview="current" class="' + (isCur ? 'on' : '') + '">Pass de ' + escapeHtml(cur.label.split(' ')[0]) + '</button><button type="button" data-pview="previous" class="' + (!isCur ? 'on' : '') + '">↩️ Rattrapage ' + escapeHtml(d.previous.label.split(' ')[0]) + '</button></div>' : '') +
+      '<div class="pass-head" style="--pc1:' + th.c1 + ';--pc2:' + th.c2 + ';"><h3>' + th.emoji + ' ' + escapeHtml(th.name) + ' · niveau ' + s.level + ' / 30</h3><div class="pass-bar"><i style="width:' + (s.level >= 30 ? 100 : s.points_in_level) + '%;"></i></div><div style="font-size:13px;">' + s.points + ' points · ' + escapeHtml(status) + '</div>' +
+      '<div class="pc-actions" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">' + (s.double_points ? '<span class="pc-chip hot">⚡ dernière semaine : points doublés</span>' : '') + (s.ended ? '<span class="pc-chip hot">↩️ rattrapage jusqu\'au ' + escapeHtml(passDateFmt(s.catchup_until)) + ' : plus de limite par jour</span>' : '') + (d.stars ? '<span class="pc-chip">' + starsHTML(d.stars) + ' ' + d.stars + ' Pass terminé' + (d.stars > 1 ? 's' : '') + '</span>' : '') + '</div></div>' +
+      (isCur && !s.premium ? '<div class="panel-box" style="margin:0 0 10px;"><b>💎 Pass Premium : ' + d.price + ' crédits</b><div style="font-size:13px;color:var(--text-muted);margin:4px 0 8px;">Un objet décoratif par niveau (badges, bannières, cadres, couleurs de pseudo, titres, autocollants, fonds d\'image), un pack rare, 2 packs d\'édition limitée (niveaux 20 et 30) et la <b>carte exclusive du Pass</b> (niveau 25). Si tu l\'achètes en cours de mois, tout ce qui est déjà débloqué est immédiatement récupérable. Uniquement du décoratif : aucun avantage en match.</div><button class="btn-primary" type="button" id="passBuy">Acheter le Premium (' + d.price + ' crédits)</button></div>' : (s.premium ? '<div class="pc-chip" style="display:inline-block;background:var(--bg-sunk);margin-bottom:8px;">💎 Pass Premium actif</div>' : '')) +
+      '<div class="pass-cols"><span></span><span>Gratuit</span><span>💎 Premium</span></div>' +
+      s.levels.map(l => '<div class="pass-row' + (l.reached ? ' reached' : '') + '"><div class="pass-lv">' + l.level + '<small>J' + l.unlock_day + '</small></div>' + passRewardHTML(l.free && { ...l.free, __lv: l.level, __day: l.unlock_day }, 'free') + passRewardHTML({ ...l.premium, __lv: l.level, __day: l.unlock_day }, 'premium') + '</div>').join('') +
+      '<div class="pass-sec">🤝 Objectif du club : ' + s.club.packs + ' packs ouverts ce mois-ci</div><div style="font-size:12.5px;color:var(--text-muted);margin-bottom:6px;">Tous les joueurs font avancer la barre en ouvrant des packs. À chaque palier, <b>tout le monde</b> reçoit la récompense (gratuit, sans Premium).</div><div class="pass-bar" style="background:var(--bg-sunk);"><i style="width:' + Math.min(100, Math.round(s.club.packs * 100 / s.club.tiers[s.club.tiers.length - 1].goal)) + '%;background:linear-gradient(90deg,' + th.c2 + ',' + th.accent + ');"></i></div>' +
+      s.club.tiers.map(t => '<div class="pass-club-row"><span>' + (t.reached ? '✅' : '🔒') + ' <b>' + t.goal + '</b> packs : ' + escapeHtml(t.label) + '</span>' + (t.claimed ? '<span class="pc-st">✓ récupéré</span>' : t.reached ? '<button class="btn-small" type="button" data-pclaim data-track="club" data-level="' + t.index + '">Récupérer</button>' : '') + '</div>').join('') +
+      '<div class="tn-actions" style="margin-top:14px;"><button class="btn-secondary" type="button" id="passCosm">🎨 Mes objets : équiper</button></div>';
+    body.innerHTML = html;
+    body.querySelectorAll('[data-pview]').forEach(b => b.addEventListener('click', () => { passView = b.dataset.pview; renderPass(); }));
+    body.querySelectorAll('[data-pclaim]').forEach(b => b.addEventListener('click', () => passClaim(b, s.key)));
+    const buy = byId('passBuy'); if (buy) buy.addEventListener('click', passBuyPremium);
+    byId('passCosm').addEventListener('click', () => { closeUserCollectionModal(); openCosmetics({ pseudo: meInfo.pseudo, avatar: (meInfo.avatar || null) }); });
+  }
+  async function openPass(){
+    try { passData = await api('/pass'); } catch(e) { toast(e.message); return; }
+    renderPass(); byId('userCollectionModal').style.display = 'flex';
+  }
+  async function passClaim(btn, season){
+    btn.disabled = true;
+    try {
+      const r = await api('/pass/claim', { method: 'POST', body: JSON.stringify({ season, track: btn.dataset.track, level: parseInt(btn.dataset.level, 10) }) });
+      const g = r.reward, parts = [];
+      if (g.credits) parts.push('💰 <b>+' + g.credits + ' crédits</b>'); if (g.pack) parts.push('📦 un <b>pack ' + escapeHtml(g.pack) + '</b> (dans tes packs bonus)');
+      if (g.item) parts.push(g.item.emoji + ' <b>' + escapeHtml(g.item.name) + '</b> (à équiper dans « 🎨 Mes objets »)');
+      if (g.pass_card) parts.push('🎴 la <b>carte exclusive du Pass</b> : ' + escapeHtml(g.pass_card.player_name));
+      if (g.edition_pack) parts.push(g.edition_pack.cards ? '🃏 <b>pack d\'édition limitée</b> : ' + g.edition_pack.cards.map(c => escapeHtml(c.player_name)).join(', ') : '📦 pas encore de carte d\'édition en jeu : tu reçois <b>' + g.edition_pack.count + ' pack(s) rare(s)</b> à la place');
+      await refreshMe(); await openPass(); loadPassCard(); loadCollection();
+      confirmDialog('🎁 Récompense récupérée', '<div style="line-height:1.7;">' + parts.join('<br>') + '</div>', 'Super !');
+    } catch(e) { toast(e.message); btn.disabled = false; }
+  }
+  async function passBuyPremium(){
+    if (!(await confirmDialog('Acheter le Pass Premium ?', '<p style="margin:0;">Le Pass Premium coûte <b>' + passData.price + ' crédits</b>, retirés tout de suite. Tu récupères tout de suite ce qui est déjà débloqué, puis un objet décoratif par jour jusqu\'à la fin du mois.</p>', 'Payer ' + passData.price + ' crédits'))) return;
+    try { await api('/pass/premium', { method: 'POST' }); toast('Pass Premium activé 💎'); await refreshMe(); await openPass(); loadPassCard(); } catch(e) { toast(e.message); }
+  }
+
   // ---------- Historique des échanges entre joueurs (bas de l'onglet Marché) ----------
   async function loadTradeHistory(){
     const root = byId('tradeHistoryEl'); if (!root) return;
@@ -2359,7 +2469,7 @@
     html += '<div class="m-item' + (m.bonus.claimed ? ' claimed' : '') + '"><div class="m-main"><div class="m-label">🎁 Bonus du jour</div><div class="m-meta">Récupère les 3 missions pour gagner ' + escapeHtml(m.bonus.label) + '.</div></div>' +
       (m.bonus.claimed ? '<span class="m-ok">✅</span>' : m.bonus.available ? '<button class="btn-small" type="button" data-claim="bonus">Récupérer</button>' : '') + '</div>';
     box.innerHTML = html; box.hidden = false;
-    document.getElementById('packsDot').hidden = !(m.claimable > 0);
+    document.getElementById('packsDot').hidden = !(m.claimable > 0 || (meInfo && meInfo.pass_todo > 0));
     box.querySelectorAll('[data-claim]').forEach(b => b.addEventListener('click', () => claimMissionReward(b.dataset.claim, b.dataset.id, b)));
   }
   async function claimMissionReward(kind, id, btn){
@@ -2392,7 +2502,7 @@
       if (bonusTotal > 0) statusMsg += ' (' + bonusTotal + ' pack(s) bonus en stock)';
       document.getElementById('packStatus').textContent = statusMsg;
     } catch(e) { /* handled by api() for 401 */ }
-    if (skipMissions !== true) loadMissions();       // les gestes du joueur (pack, vente, match…) font avancer ses missions
+    if (skipMissions !== true) loadMissions(); loadPassCard();       // les gestes du joueur (pack, vente, match…) font avancer ses missions
   }
   // ---------- Son : le hurlement du loup à l'ouverture d'un pack ----------
   // Si le fichier "sounds/loup.mp3" existe à côté de index.html, c'est lui qui est joué.
@@ -2872,7 +2982,7 @@
     const slot = document.createElement('div'); slot.className = 'card-slot';
     const flip = document.createElement('div'); flip.className = 'card-flip';
     const back = document.createElement('div'); back.className = 'card-face card-back'; back.innerHTML = crestIco();
-    const front = document.createElement('div'); front.className = 'card-face card-front tier-' + card.tier + tourneyClass(card); front.innerHTML = cardFrontHTML(card);
+    const front = document.createElement('div'); front.className = 'card-face card-front tier-' + card.tier + tourneyClass(card); applyCardTheme(front, card); front.innerHTML = cardFrontHTML(card);
     markPhotoCard(front, card);
     setCardName(front, cardDisplayName(card));
     if (card.is_new) front.insertAdjacentHTML('beforeend', '<span class="new-ribbon">NEW</span>');  // carte débloquée
@@ -3188,7 +3298,7 @@
       rows.forEach((r, i) => {
         const mine = r.pseudo === myPseudo;
         html += '<tr class="' + (mine ? 'me' : '') + '"><td><span class="rank-num">#' + (i+1) + '</span></td>' +
-          '<td><div class="lb-name">' + avatarHTML(r.pseudo, r.avatar, r.frame) + '<span class="lb-who"><button class="pseudo-link" data-pseudo="' + escapeHtml(r.pseudo) + '">' + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') + '</button>' + (r.title ? '<small class="lb-title">' + escapeHtml(r.title) + '</small>' : '') + '</span></div></td>' +
+          '<td><div class="lb-name">' + avatarHTML(r.pseudo, r.avatar, r.frame) + '<span class="lb-who"><button class="pseudo-link' + ncClass(r.name_color) + '" data-pseudo="' + escapeHtml(r.pseudo) + '">' + badgeHTML(r.badge) + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') + '</button>' + starsHTML(r.stars) + (r.title ? '<small class="lb-title">' + escapeHtml(r.title) + '</small>' : '') + '</span></div></td>' +
           '<td>' + r.completion_pct + '%</td><td title="Niveaux de succès validés">' + (r.achievements || 0) + '/' + (r.achievements_total || 47) + '</td><td>' + r.credits + '</td></tr>';
       });
       html += '</tbody></table><p class="duel-hint" style="margin-top:10px;">À égalité de collection, ce sont les succès validés qui départagent (puis les crédits). Pour ajouter ta photo : touche ton pseudo, puis 📷.</p>';
