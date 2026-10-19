@@ -76,6 +76,9 @@ def reserved_credits(db: Session) -> dict:
     out = {}
     for buyer_id, price in db.query(BuyOffer.buyer_id, BuyOffer.price).all():
         out[buyer_id] = out.get(buyer_id, 0) + price
+    from . import auctions                                    # + les crédits mis de côté dans les meilleures enchères
+    for uid, amount in auctions.escrow(db).items():
+        out[uid] = out.get(uid, 0) + amount
     return out
 
 
