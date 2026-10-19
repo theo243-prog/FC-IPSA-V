@@ -68,6 +68,7 @@ class AdminCreateCardRequest(BaseModel):
     player_name: str
     tier: str  # "commune" | "rare" | "gold" | "secrete" | "speciale" | "epique" | "legendaire"
     grant_to_pseudo: Optional[str] = None
+    quantity: int = Field(default=1, ge=1, le=500)       # nombre d'exemplaires offerts (1 par défaut)
 
 
 class AdminDeleteCardRequest(BaseModel):
