@@ -1184,11 +1184,25 @@ def admin_delete_player(payload: schemas.AdminDeletePlayerRequest, db: Session =
     return {"status": "ok", "deleted_player": payload.player_name, "cards_removed": len(card_ids)}
 
 
+def _photo_path(raw: str) -> str:
+    """Adresse d'une photo : vide (= la retirer), une adresse http(s), ou un nom de fichier image. « clem.jpg » devient « /photos/clem.jpg » ; « clem » (sans extension) est refusé."""
+    import re
+    v = (raw or "").strip()
+    if not v or v.lower().startswith(("http://", "https://")):
+        return v
+    if not re.search(r"\.(jpe?g|png|webp|gif|avif)$", v, re.I):
+        raise HTTPException(status_code=400, detail="« %s » n'est pas un nom de fichier image complet : il doit se terminer par .jpg, .jpeg, .png, .webp, .gif ou .avif (ex. /photos/clem.jpg). Le fichier doit aussi être dans frontend/photos/ sur GitHub." % v)
+    if v.startswith("/"):
+        return v if "/" in v[1:] else "/photos" + v                      # « /clem.jpg » -> « /photos/clem.jpg »
+    return "/" + v if "/" in v else "/photos/" + v                          # « photos/clem.jpg » -> « /photos/clem.jpg » ; « clem.jpg » -> « /photos/clem.jpg »
+
+
 @app.post("/admin/set-player-photo", dependencies=[Depends(require_admin)])
 def admin_set_player_photo(payload: schemas.AdminSetPlayerPhotoRequest, db: Session = Depends(get_db)):
     player = db.query(Player).filter_by(name=payload.player_name).first()
     if not player:
         raise HTTPException(status_code=404, detail="Joueur introuvable")
+    payload.photo_url = _photo_path(payload.photo_url)
     if payload.tier:
         if payload.tier not in game_logic.TIER_ORDER:
             raise HTTPException(status_code=400, detail="tier doit être : " + ", ".join(game_logic.TIER_ORDER))
