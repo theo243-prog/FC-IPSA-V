@@ -1092,7 +1092,7 @@ def admin_create_player(payload: schemas.AdminCreatePlayerRequest, db: Session =
     if not payload.force:
         close = [p.name for p in db.query(Player).all() if _plain(p.name) == _plain(name)]
         if close:
-            raise HTTPException(status_code=400, detail="Un nom très proche existe déjà : %s. Si c'est bien une autre personne, relance avec force: true" % ", ".join(close))
+            raise HTTPException(status_code=400, detail="Un nom très proche existe déjà : %s. Si c'est bien une autre personne, coche « Forcer » (ou relance avec force: true)" % ", ".join(close))
     user = None
     if payload.grant_to_pseudo:
         user = db.query(User).filter_by(pseudo=payload.grant_to_pseudo).first()
@@ -1190,6 +1190,7 @@ def _photo_path(raw: str) -> str:
     v = (raw or "").strip()
     if not v or v.lower().startswith(("http://", "https://")):
         return v
+    v = re.sub(r"^/?frontend/", "/", v, flags=re.I)                           # « frontend » est le dossier du dépôt GitHub, pas une partie de l'adresse du site
     if not re.search(r"\.(jpe?g|png|webp|gif|avif)$", v, re.I):
         raise HTTPException(status_code=400, detail="« %s » n'est pas un nom de fichier image complet : il doit se terminer par .jpg, .jpeg, .png, .webp, .gif ou .avif (ex. /photos/clem.jpg). Le fichier doit aussi être dans frontend/photos/ sur GitHub." % v)
     if v.startswith("/"):
