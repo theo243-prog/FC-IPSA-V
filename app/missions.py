@@ -4,7 +4,7 @@ Missions du jour et série de connexion.
 - SÉRIE DE CONNEXION : une récompense par jour (à récupérer à la main). La série continue tant qu'on récupère chaque
   jour ; un jour raté la remet à zéro. Les récompenses tournent sur 7 jours (le 7e jour donne aussi un pack), puis
   recommencent, alors que le compteur de jours d'affilée continue de monter.
-- MISSIONS DU JOUR : 3 missions (une par catégorie), tirées au hasard mais toujours les mêmes pour un joueur donné pendant
+- MISSIONS DU JOUR : 3 missions (une par catégorie, dont toujours le mini-jeu du jour), tirées au hasard mais toujours les mêmes pour un joueur donné pendant
   toute la journée. Elles changent à minuit, heure de Paris. Chacune rapporte quelques crédits quand on la récupère.
 - BONUS : quand les 3 missions du jour sont récupérées, un pack est offert.
 
@@ -35,9 +35,7 @@ STREAK_CYCLE = len(STREAK_REWARDS)
 MISSION_GROUPS = [
     [("open_packs", "Ouvre 3 packs", 3, 2),
      ("new_card", "Découvre 1 nouvelle carte", 1, 2)],
-    [("sell_dupes", "Vends 5 doublons", 5, 2),
-     ("market_buy", "Achète 1 carte au marché", 1, 2),
-     ("market_list", "Mets 1 carte en vente au marché", 1, 2)],
+    [("minigame", "Joue au mini-jeu du jour", 1, 4)],          # le mini-jeu du jour (quiz foot ou tirs au but) est toujours l'un des trois défis
     [("play_duel", "Joue 2 matchs 1v1", 2, 3),
      ("win_duel", "Gagne 1 match 1v1", 1, 4),
      ("propose_duel", "Lance 1 défi 1v1", 1, 2)],
@@ -86,6 +84,17 @@ def _roll_day(r: UserDaily, today: date) -> None:
     """Un nouveau jour (minuit à Paris) : les missions repartent de zéro."""
     if r.day != today.isoformat():
         r.day, r.progress, r.claimed = today.isoformat(), "{}", "[]"
+
+
+def daily_count(db, user, key: str) -> int:
+    """Un compteur du JOUR (repart de zéro à minuit, heure de Paris) : ex. les packs match gagnés en 1v1 aujourd'hui. Ne valide pas la transaction."""
+    r = _row(db, user); _roll_day(r, game_logic.today_paris())
+    return int(_load(r.progress, {}).get(key, 0))
+
+
+def daily_add(db, user, key: str, n: int = 1) -> None:
+    r = _row(db, user); _roll_day(r, game_logic.today_paris())
+    p = _load(r.progress, {}); p[key] = int(p.get(key, 0)) + int(n); r.progress = json.dumps(p)
 
 
 def todays_missions(user_id: str, today: date) -> list:
