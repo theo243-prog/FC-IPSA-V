@@ -332,6 +332,17 @@
   .mg-choice.good{background:#d8f5df;border-color:#2a9d4b;color:#12391f;} .mg-choice.bad{background:#fbdada;border-color:#d64545;color:#5a1010;} .mg-why{font-size:13px;color:var(--text-muted);margin:8px 0;}
   .mg-goal{display:flex;gap:8px;margin:12px 0;} .mg-goal button{flex:1;padding:18px 6px;font-size:15px;} .mg-shots{display:flex;gap:8px;justify-content:center;font-size:26px;margin:10px 0;} .mg-msg{text-align:center;font-weight:700;margin:8px 0;}
   .mg-end{text-align:center;} .mg-score{font-size:40px;font-weight:800;}
+  .mg-pitch{border-radius:14px;overflow:hidden;background:linear-gradient(#1d1038 0,#1d1038 36%,#2f8f46 36%,#237a39 100%);margin:6px 0;}
+  .mg-stand{padding:6px 0 4px;background:linear-gradient(#2a1650,#44207a);text-align:center;overflow:hidden;}
+  .mg-banner{font-weight:800;font-size:12px;letter-spacing:2px;color:#fff;background:#e0359c;display:inline-block;padding:2px 14px;border-radius:4px;margin:0 auto 4px;}
+  .mg-row{display:flex;justify-content:center;font-size:15px;line-height:1.15;white-space:nowrap;} .mg-row span{margin:0 1px;}
+  .mg-goal3{position:relative;margin:10px 9% 58px;aspect-ratio:7/3;border:4px solid #fff;border-bottom:0;border-radius:3px 3px 0 0;background:rgba(255,255,255,.07);}
+  .mg-net{position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.2) 0 1px,transparent 1px 9px),repeating-linear-gradient(-45deg,rgba(255,255,255,.2) 0 1px,transparent 1px 9px);}
+  .mg-zones{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);}
+  .mg-zone{border:1px dashed rgba(255,255,255,.6);background:transparent;cursor:pointer;color:#fff;font-size:20px;padding:0;} .mg-zone:hover,.mg-zone:focus-visible{background:rgba(255,255,255,.25);} .mg-zone:hover::after,.mg-zone:focus-visible::after{content:'🎯';} .mg-zone:disabled{cursor:default;}
+  .mg-keeper{position:absolute;width:42px;height:42px;border-radius:50%;background:#f4c20d;display:flex;align-items:center;justify-content:center;font-size:22px;transform:translate(-50%,-50%);transition:left .45s ease-out,top .45s ease-out,transform .45s ease-out;box-shadow:0 2px 6px rgba(0,0,0,.4);pointer-events:none;}
+  .mg-ball{position:absolute;font-size:26px;transform:translate(-50%,-50%);transition:left .4s ease-in,top .4s ease-in,transform .4s ease-in;pointer-events:none;}
+  .mg-msg.good{color:#1b6b34;} .mg-msg.stop{color:#9b2323;}
   .ref-code{font-size:32px;font-weight:800;letter-spacing:6px;text-align:center;background:var(--bg-sunk);border-radius:12px;padding:10px;margin:10px 0;} .ref-use{display:flex;gap:6px;} .ref-use input{flex:1;}
   .vs-grid{display:flex;gap:8px;margin:6px 0;} .vs-cell{flex:1;text-align:center;background:var(--bg-sunk);border-radius:12px;padding:8px;} .vs-cell b{display:block;font-size:22px;} .vs-cell span{font-size:12px;color:var(--text-muted);} .vs-cell.win b{color:#2a9d4b;} .vs-cell.lose b{color:#d64545;}
   .vs-recent{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;} .vs-chip{padding:3px 9px;border-radius:999px;font-size:12.5px;font-weight:700;background:var(--bg-sunk);} .vs-chip.victoire{background:#d8f5df;color:#1b6b34;} .vs-chip.défaite{background:#fbdada;color:#9b2323;}
@@ -1930,7 +1941,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.19.2';
+  const SITE_VERSION = '2026.10.19.3';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3347,6 +3358,15 @@
     return '<div class="mg-end"><div class="mg-score">' + s.score + ' / ' + s.rounds + '</div><p>' + (s.score === s.rounds ? '🏆 Parfait !' : s.score >= 3 ? '👏 Bien joué !' : '💪 Retente ta chance demain !') + '</p><p><b>+' + s.pass_points + ' points de Pass</b></p><p class="muted">Ta mission « Joue au mini-jeu du jour » est faite : récupère-la dans l\'onglet Packs. Prochain jeu demain.</p></div>';
   }
   function mgRefresh(){ loadMiniCard(); loadMissions(); loadPassCard(); refreshMe(true); }
+  const MG_ZN = ['en haut à gauche', 'en haut au centre', 'en haut à droite', 'en bas à gauche', 'en bas au centre', 'en bas à droite'];
+  const mgPos = z => ({ left: [16.7, 50, 83.3][z % 3], top: z < 3 ? 27 : 73 });
+  function mgPitch(interactive){
+    const faces = ['😀', '🙂', '😃', '🥳', '😄', '🤩', '😎', '🙌'], rows = [];
+    for (let r = 0; r < 3; r++) { let row = ''; for (let i = 0; i < 15; i++) row += '<span>' + faces[(i * 3 + r * 5) % faces.length] + '</span>'; rows.push('<div class="mg-row"' + (r % 2 ? ' style="transform:translateX(9px)"' : '') + '>' + row + '</div>'); }
+    return '<div class="mg-pitch"><div class="mg-stand"><div class="mg-banner">ALLEZ FC IPSA V !</div>' + rows.join('') + '</div><div class="mg-goal3"><div class="mg-net"></div>' +
+      (interactive ? '<div class="mg-zones">' + [0, 1, 2, 3, 4, 5].map(z => '<button type="button" class="mg-zone" data-zone="' + z + '" aria-label="Tirer ' + MG_ZN[z] + '"></button>').join('') + '</div>' : '') +
+      '<div class="mg-keeper" id="mgKeeper" style="left:50%;top:62%;">🧤</div><div class="mg-ball" id="mgBall" style="left:50%;top:136%;">⚽</div></div></div>';
+  }
   function renderMinigame(fb){
     const s = miniState, body = byId('modalBody'); byId('modalTitle').textContent = '🎮 Mini-jeu du jour · ' + s.title; let h = '';
     if (s.kind === 'quiz') {
@@ -3355,12 +3375,20 @@
       } else if (s.finished) h = mgEnd(s);
       else if (s.question) h = '<div class="mg-prog">Question ' + (s.question.index + 1) + ' / ' + s.rounds + ' · score ' + s.score + '</div><div class="mg-q">' + escapeHtml(s.question.text) + '</div>' + s.question.choices.map((c, i) => '<button class="mg-choice" type="button" data-choice="' + i + '">' + escapeHtml(c) + '</button>').join('');
     } else {
-      const shots = s.shots.map(x => x.goal ? '⚽' : x.missed ? '💨' : '🧤'), rest = s.finished ? 0 : s.rounds - shots.length;
-      const row = '<div class="mg-shots">' + shots.join('') + '⚪'.repeat(rest) + '</div>', zn = ['à gauche', 'au centre', 'à droite'];
-      const msg = fb ? '<div class="mg-msg">' + (fb.goal ? '⚽ BUT ! Tu as tiré ' + zn[fb.zone] + ', le gardien a plongé ' + zn[fb.keeper] + '.' : fb.missed ? '💨 Tir raté… ça passe à côté !' : '🧤 Arrêté ! Le gardien a plongé ' + zn[fb.keeper] + ', comme toi.') + '</div>' : '';
-      h = s.finished ? row + msg + mgEnd(s) : '<div class="mg-prog">Tir ' + (shots.length + 1) + ' / ' + s.rounds + ' · buts : ' + s.score + '</div>' + row + msg + '<p>Où tires-tu ? Le gardien a tendance à replonger du côté de ton dernier tir…</p><div class="mg-goal"><button class="btn-secondary" type="button" data-zone="0">⬅️ À gauche</button><button class="btn-secondary" type="button" data-zone="1">⬆️ Au centre</button><button class="btn-secondary" type="button" data-zone="2">➡️ À droite</button></div>';
+      const shots = s.shots.map(x => x.goal ? '⚽' : x.missed ? '💨' : '🧤'), rest = s.finished ? 0 : s.rounds - shots.length, row = '<div class="mg-shots">' + shots.join('') + '⚪'.repeat(rest) + '</div>';
+      if (s.finished && !fb) h = row + mgEnd(s);
+      else {
+        const msg = fb ? '<div class="mg-msg ' + (fb.goal ? 'good' : 'stop') + '">' + (fb.goal ? '⚽ BUT ! Tir ' + MG_ZN[fb.zone] + ', le gardien a plongé ' + MG_ZN[fb.keeper] + '.' : fb.missed ? '💨 Raté ! Le ballon passe à côté du but.' : fb.finger ? '🧤 Du bout des doigts ! Le gardien a effleuré ton tir ' + MG_ZN[fb.zone] + '.' : '🧤 ARRÊTÉ ! Le gardien avait deviné ' + MG_ZN[fb.zone] + '.') + '</div>' : '';
+        h = '<div class="mg-prog">Tir ' + Math.min(shots.length + (fb ? 0 : 1), s.rounds) + ' / ' + s.rounds + ' · buts : ' + s.score + '</div>' + mgPitch(!fb) + row + msg +
+          (fb ? '<button class="btn-primary" type="button" id="mgNext">' + (s.finished ? 'Voir mon score' : 'Tir suivant') + '</button>' : '<p class="muted" style="text-align:center;">Touche la zone du but où tu veux tirer. Le gardien a tendance à replonger là où tu as tiré juste avant…</p>');
+      }
     }
     body.innerHTML = h;
+    if (fb && s.kind === 'penalty') requestAnimationFrame(() => requestAnimationFrame(() => {
+      const k = byId('mgKeeper'), b = byId('mgBall'); if (!k || !b) return; const kz = mgPos(fb.keeper), bz = mgPos(fb.zone);
+      k.style.left = kz.left + '%'; k.style.top = kz.top + '%'; k.style.transform = 'translate(-50%,-50%) rotate(' + (fb.keeper % 3 === 0 ? -35 : fb.keeper % 3 === 2 ? 35 : 0) + 'deg)';
+      b.style.left = bz.left + '%'; b.style.top = bz.top + '%'; b.style.transform = 'translate(-50%,-50%) scale(.55)';
+    }));
     body.querySelectorAll('[data-choice]').forEach(b => b.addEventListener('click', async () => {
       body.querySelectorAll('[data-choice]').forEach(x => x.disabled = true); mgCur = miniState.question; const choice = parseInt(b.dataset.choice, 10);
       try { const r = await api('/minigame/answer', { method: 'POST', body: JSON.stringify({ choice }) }); miniState = r; renderMinigame({ correct: r.correct, answer: r.answer, why: r.why, q: mgCur.text, choices: mgCur.choices, choice }); if (r.finished) mgRefresh(); }
@@ -3368,7 +3396,7 @@
     }));
     body.querySelectorAll('[data-zone]').forEach(b => b.addEventListener('click', async () => {
       body.querySelectorAll('[data-zone]').forEach(x => x.disabled = true); const zone = parseInt(b.dataset.zone, 10);
-      try { const r = await api('/minigame/shoot', { method: 'POST', body: JSON.stringify({ zone }) }); miniState = r; renderMinigame({ goal: r.goal, missed: r.missed, keeper: r.keeper, zone }); if (r.finished) mgRefresh(); }
+      try { const r = await api('/minigame/shoot', { method: 'POST', body: JSON.stringify({ zone }) }); miniState = r; renderMinigame({ goal: r.goal, missed: r.missed, finger: r.finger, keeper: r.keeper, zone }); if (r.finished) mgRefresh(); }
       catch(e) { toast(e.message); body.querySelectorAll('[data-zone]').forEach(x => x.disabled = false); }
     }));
     const nx = byId('mgNext'); if (nx) nx.addEventListener('click', () => renderMinigame());
