@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 class RegisterRequest(BaseModel):
     pseudo: str = Field(min_length=2, max_length=24)
     password: str = Field(min_length=4, max_length=72)
+    referral_code: Optional[str] = Field(default=None, max_length=12)      # code d'invitation d'un parrain (facultatif)
 
 
 class LoginRequest(BaseModel):
