@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from .database import Base, get_db
 from .models import User
 from .security import get_current_user
+from .common import require_admin
 from . import game_logic, missions, battlepass
 
 router = APIRouter()
@@ -182,6 +183,22 @@ def shoot(payload: ShootRequest, user: User = Depends(get_current_user), db: Ses
     else:
         db.commit()
     return {"goal": goal, "missed": missed, "finger": finger, "keeper": keeper, "zone_name": ZONES[payload.zone], "keeper_name": ZONES[keeper], **_view(day, run)}
+
+
+class SetGameRequest(BaseModel):
+    pseudo: str
+    kind: str = Field(pattern="^(penalty|quiz)$")
+
+
+@router.post("/admin/minigame-set", dependencies=[Depends(require_admin)])
+def admin_set_game(payload: SetGameRequest, db: Session = Depends(get_db)):
+    """Pour TESTER : donne à un joueur le mini-jeu de ton choix (tirs au but ou quiz) pour aujourd'hui, à zéro, même s'il a déjà joué. Les points de Pass du jour restent plafonnés."""
+    user = db.query(User).filter_by(pseudo=payload.pseudo).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    day = _today(); db.query(MinigameRun).filter_by(user_id=user.id, day=day).delete()
+    db.add(MinigameRun(user_id=user.id, day=day, kind=payload.kind, state=json.dumps({"answers": [], "shots": []}))); db.commit()
+    return {"status": "ok", "pseudo": user.pseudo, "kind": payload.kind, "day": day}
 
 
 def on_user_deleted(db: Session, user_id: str) -> None:
