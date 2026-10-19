@@ -1570,10 +1570,10 @@ def admin_create_card(payload: schemas.AdminCreateCardRequest, db: Session = Dep
         user = db.query(User).filter_by(pseudo=payload.grant_to_pseudo).first()
         if not user:
             raise HTTPException(status_code=404, detail="Utilisateur introuvable pour grant_to_pseudo")
-        game_logic.get_or_create_owned(db, user, card).quantity += 1
+        game_logic.get_or_create_owned(db, user, card).quantity += payload.quantity
         granted_to = user.pseudo
     db.commit()
-    return {"status": "ok", "created": created, "card_id": card.id, "granted_to": granted_to}
+    return {"status": "ok", "created": created, "card_id": card.id, "granted_to": granted_to, "quantity": payload.quantity if granted_to else 0}
 
 
 @app.post("/admin/create-mascot", dependencies=[Depends(require_admin)])
