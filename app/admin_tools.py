@@ -78,6 +78,7 @@ def summarize(path: str, payload) -> str:
         if name == "pass-grant": return "Pass : %s%s pour %s" % (("+%s points" % p.get("points")) if p.get("points") else "", (", Premium " + ("activé" if p.get("premium") else "retiré")) if p.get("premium") is not None else "", who)
         if name == "pass-club": return "Objectif du club : %s%s" % (("+%s packs" % p.get("packs")) if p.get("packs") else "", (" paliers " + str(p.get("goals"))) if p.get("goals") else "")
         if name == "give-trophies": return "Cartes de trophée (rangs %s, %s) offertes à %s" % (",".join(str(r) for r in p.get("ranks", [1, 2, 3, 4, 5])), p.get("month") or "mois en cours", who)
+        if name == "minigame-set": return "Mini-jeu du jour (%s) donné à %s pour test" % (p.get("kind"), who)
         if name == "event": return "Événement lancé : %s (%s h)" % (p.get("kind"), p.get("duration_hours", 48))
         if name == "event-cancel": return "Événement annulé"
         if name == "backup-now": return "Sauvegarde de la base prise à la main"
