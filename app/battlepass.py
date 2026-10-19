@@ -29,9 +29,11 @@ from . import game_logic, missions, profiles, seasons
 from . import pass_catalog as P
 from .prono import now_paris
 
+from . import events
+
 router = APIRouter()
 PRICE, CATCHUP_DAYS, LEVEL_PRICE = 300, 7, 20       # Premium 300 crédits ; 20 crédits pour acheter directement le niveau suivant
-DAILY_CAPS = {"mission": 80, "duel": 50, "swap": 30, "prono": 30}          # points de base par jour et par source
+DAILY_CAPS = {"mission": 80, "duel": 50, "swap": 30, "prono": 30, "minigame": 50}          # points de base par jour et par source
 
 
 class PassProgress(Base):
@@ -166,7 +168,7 @@ def add_points(db: Session, user: User, source: str, pts: int, cap: Optional[int
             got = int(daily["src"].get(source, 0)); allowed = pts if cap is None else max(0, min(pts, cap - got))
             if allowed <= 0:
                 return 0
-            gain = allowed * multiplier(key, now)
+            gain = allowed * max(multiplier(key, now), 2 if events.pass_double(db) else 1)          # dernière semaine du mois OU événement « ×2 » (pas de cumul)
             daily["src"][source] = got + allowed; row.daily = json.dumps(daily); row.points = (row.points or 0) + gain
             return gain
     except Exception:
@@ -312,7 +314,7 @@ def get_pass(user: User = Depends(get_current_user), db: Session = Depends(get_d
         if ensure_completion(db, user, k, now): db.commit()
     prev = season_out(db, user, pk, now) if in_catchup(pk, now) and (_progress(db, user.id, pk) is not None or db.get(ClubGoal, pk)) else None
     return {"now": now.isoformat(), "price": PRICE, "level_price": LEVEL_PRICE, "current": season_out(db, user, key, now), "previous": prev, "stars": user_display(db, user.id)["stars"], "loadout": user_display(db, user.id),
-            "points_help": {"mission": "missions du jour (20 par mission)", "duel": "match 1v1 (10)", "tournoi": "tournoi : inscription 30, tour gagné 20", "prono": "pronostic (15), score exact (60)", "swap": "échange de cartes (15)"}}
+            "points_help": {"minigame": "mini-jeu du jour (10 par bonne réponse ou but, 50 au maximum)", "mission": "missions du jour (20 par mission)", "duel": "match 1v1 (10)", "tournoi": "tournoi : inscription 30, tour gagné 20", "prono": "pronostic (15), score exact (60)", "swap": "échange de cartes (15)"}}
 
 
 @router.post("/pass/claim")
