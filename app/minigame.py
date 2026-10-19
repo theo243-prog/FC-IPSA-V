@@ -20,7 +20,17 @@ from . import game_logic, missions, battlepass
 router = APIRouter()
 ROUNDS, POINTS_EACH = 5, 10
 RNG = random.SystemRandom()                  # (remplacé dans les tests)
-ZONES = ["à gauche", "au centre", "à droite"]
+# Le but a 6 zones (3 colonnes x 2 rangées), numérotées 0 1 2 (en haut : gauche, centre, droite) et 3 4 5 (en bas : gauche, centre, droite).
+ZONES = ["en haut à gauche", "en haut au centre", "en haut à droite", "en bas à gauche", "en bas au centre", "en bas à droite"]
+KEEPER_REPEAT = 0.35       # le gardien a 35 % de chances de replonger dans la zone de ton tir précédent (sinon : au hasard parmi les 6)
+FINGER_SAVE = 0.30         # s'il plonge dans une zone VOISINE de ton tir (à côté ou au-dessus/en dessous, pas en diagonale) : 30 % d'arrêt « du bout des doigts »
+MISS_TOP, MISS_BOTTOM = 0.12, 0.06          # tir hors cadre / sur le poteau : 12 % en haut, 6 % en bas
+# => environ 6 tirs sur 10 sont des buts ; un tir dans la zone exacte du gardien est toujours arrêté.
+
+
+def adjacent(a: int, b: int) -> bool:
+    """Deux zones voisines : même rangée et colonnes côte à côte, ou même colonne et rangées différentes."""
+    return (a // 3 == b // 3 and abs(a % 3 - b % 3) == 1) or (a % 3 == b % 3 and a // 3 != b // 3)
 
 # (question, bonne réponse, deux mauvaises, explication)
 BANK = [
@@ -135,7 +145,7 @@ class AnswerRequest(BaseModel):
 
 
 class ShootRequest(BaseModel):
-    zone: int = Field(ge=0, le=2)
+    zone: int = Field(ge=0, le=5)
 
 
 @router.post("/minigame/answer")
@@ -162,15 +172,16 @@ def shoot(payload: ShootRequest, user: User = Depends(get_current_user), db: Ses
     if run.finished:
         raise HTTPException(status_code=400, detail="Tu as déjà terminé le mini-jeu du jour : reviens demain !")
     st = json.loads(run.state); prev = st["shots"][-1]["zone"] if st["shots"] else None
-    keeper = prev if (prev is not None and RNG.random() < 0.4) else RNG.randrange(3)          # le gardien devine un peu : il a tendance à replonger du côté de ton dernier tir
-    missed = RNG.random() < 0.1                                                                  # 10 % : le tir passe à côté ou sur le poteau
-    goal = payload.zone != keeper and not missed
-    st["shots"].append({"zone": payload.zone, "keeper": keeper, "goal": goal, "missed": missed}); run.state = json.dumps(st); run.score += 1 if goal else 0
+    keeper = prev if (prev is not None and RNG.random() < KEEPER_REPEAT) else RNG.randrange(6)       # le gardien devine un peu : il a tendance à replonger là où tu as tiré
+    missed = RNG.random() < (MISS_TOP if payload.zone < 3 else MISS_BOTTOM)                           # tir hors cadre ou sur le poteau
+    finger = (not missed) and keeper != payload.zone and adjacent(keeper, payload.zone) and RNG.random() < FINGER_SAVE
+    goal = (not missed) and keeper != payload.zone and not finger
+    st["shots"].append({"zone": payload.zone, "keeper": keeper, "goal": goal, "missed": missed, "finger": finger}); run.state = json.dumps(st); run.score += 1 if goal else 0
     if len(st["shots"]) >= ROUNDS:
         _finish(db, user, run)
     else:
         db.commit()
-    return {"goal": goal, "missed": missed, "keeper": keeper, "zone_name": ZONES[payload.zone], **_view(day, run)}
+    return {"goal": goal, "missed": missed, "finger": finger, "keeper": keeper, "zone_name": ZONES[payload.zone], "keeper_name": ZONES[keeper], **_view(day, run)}
 
 
 def on_user_deleted(db: Session, user_id: str) -> None:
