@@ -190,7 +190,7 @@
   .pbadge{margin-right:3px;} .pstars{margin-left:4px;font-size:.85em;white-space:nowrap;}
   .profile-head.has-banner{color:#fff;position:relative;overflow:hidden;border-radius:14px;padding:12px;text-shadow:0 1px 3px rgba(0,0,0,.6);} .profile-head.has-banner .profile-meta,.profile-head.has-banner .profile-title{color:#fff;}
   .banner-deco{position:absolute;right:6px;top:2px;font-size:30px;opacity:.28;letter-spacing:4px;pointer-events:none;white-space:nowrap;}
-  .chat-stickers{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;} .chat-stickers button{font-size:22px;background:var(--bg-sunk);border:1px solid var(--border);border-radius:10px;padding:2px 8px;cursor:pointer;}
+  .chat-stickers{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;max-height:92px;overflow-y:auto;} .chat-stickers[hidden]{display:none;} #chatEmoji.on{background:var(--bg-sunk);} .chat-stickers button{font-size:22px;background:var(--bg-sunk);border:1px solid var(--border);border-radius:10px;padding:2px 8px;cursor:pointer;}
   .card-front.tier-saison.trophy-pass,.card.tier-saison.trophy-pass:not(.locked){background:radial-gradient(110% 70% at 50% 0%,var(--tpg,rgba(255,255,255,.35)),rgba(255,255,255,0) 62%),linear-gradient(165deg,var(--tp1,#1B0B2E) 0%,var(--tp1,#1B0B2E) 22%,var(--tp2,#FF8A1F) 100%);color:#fff;box-shadow:var(--shadow),inset 0 0 0 2px var(--tpa,#FF5C00),inset 0 0 16px var(--tpg,rgba(255,255,255,.4)),0 0 14px var(--tpg,rgba(255,255,255,.4));}
   .tier-saison.trophy-pass .card-tier-label{background:var(--tpa,#FF5C00);color:#fff;} .tier-saison.trophy-pass .card-poste{background:rgba(0,0,0,.4);color:#fff;} .tier-saison.trophy-pass .card-name,.tier-saison.trophy-pass.has-photo .card-name{color:#fff;text-shadow:0 0 8px rgba(0,0,0,.9),0 1px 2px rgba(0,0,0,.9);} .tier-saison.trophy-pass .card-stats span{background:rgba(0,0,0,.4);color:#fff;}
   /* tournoi mensuel */
@@ -322,6 +322,19 @@
   .help-btn{display:inline-flex;align-items:center;gap:7px;background:transparent;color:var(--accent);border:1.5px solid var(--accent);border-radius:999px;padding:3px 14px 3px 4px;cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:16px;letter-spacing:.3px;}
   .help-btn:hover{background:var(--bg-sunk);}
   #helpModal{z-index:2600;}
+  .events-bar{margin:0 12px 8px;display:flex;flex-direction:column;gap:6px;} .events-bar[hidden]{display:none;}
+  .ev-item{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:linear-gradient(90deg,#7B2FF7,#FF2FD1);color:#fff;border-radius:12px;padding:8px 12px;font-size:13.5px;}
+  .ev-item.soon{background:var(--bg-sunk);color:var(--text);border:1px dashed var(--border);} .ev-item .btn-small{background:#fff;color:#4a0a6e;} .disc{color:#c0158f;margin-left:4px;}
+  .dur-btns{display:flex;flex-wrap:wrap;gap:6px;} .dur-btns button{border:1px solid var(--border);background:var(--bg-sunk);border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer;color:inherit;} .dur-btns button.on{background:#5b2a86;color:#fff;border-color:transparent;}
+  .auction{flex-wrap:wrap;} .auc-actions{display:flex;gap:6px;align-items:center;margin-left:auto;} .auc-actions input{width:84px;} .auc-left{font-variant-numeric:tabular-nums;font-weight:700;} .section-h{margin:16px 0 6px;font-size:16px;}
+  .mini-card{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--bg-elevated);border:1px solid var(--border);border-radius:14px;padding:10px 12px;margin:10px 0;} .mini-card[hidden]{display:none;} .mini-card .mc-title{flex:1 1 100%;font-size:15px;} .mini-card .mc-sub{flex:1;font-size:12.5px;color:var(--text-muted);}
+  .mg-prog{font-weight:700;margin-bottom:6px;} .mg-q{font-size:17px;font-weight:700;margin:8px 0 12px;} .mg-choice{display:block;width:100%;text-align:left;margin:6px 0;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg-elevated);font-size:15px;color:inherit;cursor:pointer;}
+  .mg-choice.good{background:#d8f5df;border-color:#2a9d4b;color:#12391f;} .mg-choice.bad{background:#fbdada;border-color:#d64545;color:#5a1010;} .mg-why{font-size:13px;color:var(--text-muted);margin:8px 0;}
+  .mg-goal{display:flex;gap:8px;margin:12px 0;} .mg-goal button{flex:1;padding:18px 6px;font-size:15px;} .mg-shots{display:flex;gap:8px;justify-content:center;font-size:26px;margin:10px 0;} .mg-msg{text-align:center;font-weight:700;margin:8px 0;}
+  .mg-end{text-align:center;} .mg-score{font-size:40px;font-weight:800;}
+  .ref-code{font-size:32px;font-weight:800;letter-spacing:6px;text-align:center;background:var(--bg-sunk);border-radius:12px;padding:10px;margin:10px 0;} .ref-use{display:flex;gap:6px;} .ref-use input{flex:1;}
+  .vs-grid{display:flex;gap:8px;margin:6px 0;} .vs-cell{flex:1;text-align:center;background:var(--bg-sunk);border-radius:12px;padding:8px;} .vs-cell b{display:block;font-size:22px;} .vs-cell span{font-size:12px;color:var(--text-muted);} .vs-cell.win b{color:#2a9d4b;} .vs-cell.lose b{color:#d64545;}
+  .vs-recent{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;} .vs-chip{padding:3px 9px;border-radius:999px;font-size:12.5px;font-weight:700;background:var(--bg-sunk);} .vs-chip.victoire{background:#d8f5df;color:#1b6b34;} .vs-chip.défaite{background:#fbdada;color:#9b2323;}
   .help-q{width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-text);display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1;}
   .help-box{max-width:640px;}
   .help-body{font-size:14px;line-height:1.55;}
@@ -863,6 +876,10 @@
       <label>Mot de passe</label>
       <input id="passwordInput" type="password" maxlength="72" placeholder="4 caractères minimum">
     </div>
+    <div class="form-row" id="refRow" hidden>
+      <label>Code d'invitation (facultatif)</label>
+      <input id="refInput" type="text" maxlength="12" placeholder="Le code d'un ami : un pack pour vous deux">
+    </div>
     <div class="error" id="gateError"></div>
     <button class="btn-primary" id="gateSubmit" style="width:100%;">Créer mon compte</button>
     <div class="gate-toggle">
@@ -896,6 +913,7 @@
   </header>
 
   <div class="wrap">
+  <div class="events-bar" id="eventsBar" hidden></div>
   <nav class="tabs">
     <button class="tab active" data-tab="pack">Packs<span class="tab-dot" id="packsDot" hidden></span></button>
     <button class="tab" data-tab="collection">Collection</button>
@@ -931,6 +949,7 @@
       </div>
       <div class="bonus-packs" id="bonusPacksEl"></div>
       <div class="pass-card" id="passCard" hidden></div>
+      <div class="mini-card" id="miniCard" hidden></div>
       <div class="missions-box" id="missionsBox" hidden></div>
     </section>
 
@@ -968,6 +987,17 @@
         <div class="form-row"><label>Prix (en crédits)</label><input id="priceInput" type="number" min="1" value="10"></div>
         <button id="createListingBtn" class="btn-secondary">Mettre en vente</button>
       </div>
+      <div class="panel-box" id="auctionBox">
+        <h2>🔨 Mettre une carte aux enchères</h2>
+        <p class="duel-hint">Pour les cartes rares ou mieux. Tu choisis le prix de départ et la durée ; à la fin, la carte va au meilleur enchérisseur et tu reçois ses crédits.</p>
+        <div class="form-row"><label>Ta carte</label><select id="auctionSelect"></select></div>
+        <div class="form-row"><label>Prix de départ (en crédits)</label><input id="auctionPrice" type="number" min="1" value="10"></div>
+        <div class="form-row"><label>Durée de l'enchère</label><div class="dur-btns" id="auctionDurations"></div></div>
+        <button id="createAuctionBtn" class="btn-secondary">Lancer l'enchère</button>
+      </div>
+      <h3 class="section-h">🔨 Enchères en cours</h3>
+      <div id="auctionsEl"></div>
+      <h3 class="section-h">🏷️ Annonces à prix fixe</h3>
       <div id="listingsEl"></div>
       <div class="panel-box" id="offersForMeBox">
         <h2>Offres d'achat pour tes cartes</h2>
@@ -1247,6 +1277,7 @@
 
   // ---------- Gate (register/login) ----------
   function showGate(mode, message){
+    document.getElementById('refRow').hidden = mode !== 'register';
     gateMode = mode;
     document.getElementById('gate').style.display = 'flex';
     document.getElementById('app').style.display = 'none';
@@ -1271,7 +1302,8 @@
     if (!pseudo || !password) { errEl.textContent = "Remplis les deux champs."; return; }
     try {
       const path = gateMode === 'register' ? '/auth/register' : '/auth/login';
-      const data = await api(path, { method: 'POST', body: JSON.stringify({ pseudo, password }) });
+      const data = await api(path, { method: 'POST', body: JSON.stringify(gateMode === 'register' ? { pseudo, password, referral_code: (document.getElementById('refInput').value || '').trim() || null } : { pseudo, password }) });
+      if (data.referral) toast(data.referral.ok ? '🤝 Parrainage validé : un pack ultra offert !' : data.referral.message);
       token = data.token; myPseudo = data.pseudo;
       localStorage.setItem("fca5_token", token);
       localStorage.setItem("fca5_pseudo", myPseudo);
@@ -1853,11 +1885,12 @@
       '<div class="profile-tile"><b>' + d.played + '</b><span>matchs 1v1' + (d.played ? ' · ' + d.won + 'V ' + d.drawn + 'N ' + d.lost + 'D' : '') + '</span></div>' +
       '<div class="profile-tile"><b>' + p.elo + '</b><span>Elo' + (d.win_rate !== null ? ' · ' + d.win_rate + ' % de victoires' : '') + '</span></div></div>' +
       (p.podiums && (p.podiums[1] || p.podiums[2] || p.podiums[3]) ? '<div class="profile-meta" style="text-align:center;margin:6px 0;">🏆 Podiums de saison : 🥇 ' + (p.podiums[1] || 0) + ' · 🥈 ' + (p.podiums[2] || 0) + ' · 🥉 ' + (p.podiums[3] || 0) + '</div>' : '') +
+      (mine ? '' : '<div id="versusBox"></div>') +
       '<div class="profile-section">Vitrine' + (mine ? ' <button class="btn-small ghost" type="button" id="profShowcaseEdit">Modifier</button>' : '<small>' + (p.showcase_auto ? 'ses cartes les plus rares' : 'ses cartes préférées') + '</small>') + '</div>' +
       '<div class="showcase-row" id="profShowcase"></div><div id="profShowcaseEditor"></div>' +
       '<div class="profile-section">Succès<small>' + p.badges.earned + ' niveau' + (p.badges.earned > 1 ? 'x' : '') + ' sur ' + p.badges.total + '</small></div>' + achievementsHTML +
       '<div class="profile-section">Raretés<small>packs ouverts : ' + p.packs_opened + (p.best_streak ? ' · meilleure série : ' + p.best_streak + ' j' : '') + '</small></div><div class="tier-bars">' + tiersHTML + '</div>' +
-      '<div class="share-actions" style="margin-top:18px;"><button class="btn-secondary" type="button" id="profCollection">' + (mine ? 'Voir ma collection' : 'Voir sa collection') + '</button>' + (mine ? '<button class="btn-secondary" type="button" id="profShare">📤 Partager mon profil en image</button><button class="btn-secondary" type="button" id="profCosm">🎨 Titre et cadre</button>' + (p.avatar ? '<button class="btn-secondary" type="button" id="profPhotoDel">🗑️ Retirer ma photo</button>' : '') : '') + (mine ? '' : '<button class="btn-primary" type="button" id="profChallenge">⚔️ Défier ' + escapeHtml(p.pseudo) + '</button>') + '</div>';
+      '<div class="share-actions" style="margin-top:18px;"><button class="btn-secondary" type="button" id="profCollection">' + (mine ? 'Voir ma collection' : 'Voir sa collection') + '</button>' + (mine ? '<button class="btn-secondary" type="button" id="profShare">📤 Partager mon profil en image</button><button class="btn-secondary" type="button" id="profInvite">🤝 Inviter un ami</button><button class="btn-secondary" type="button" id="profCosm">🎨 Titre et cadre</button>' + (p.avatar ? '<button class="btn-secondary" type="button" id="profPhotoDel">🗑️ Retirer ma photo</button>' : '') : '') + (mine ? '' : '<button class="btn-primary" type="button" id="profChallenge">⚔️ Défier ' + escapeHtml(p.pseudo) + '</button>') + '</div>';
     const row = document.getElementById('profShowcase');
     if (!p.showcase.length) row.innerHTML = '<p class="muted">Aucune carte pour l\'instant.</p>';
     p.showcase.forEach(c => { const el = makeMiniCard(c, { hideCount: true }); el.style.cursor = 'default'; row.appendChild(el); });
@@ -1866,6 +1899,7 @@
     });
     if (mine) { document.getElementById('profCosm').addEventListener('click', () => openCosmetics(p)); document.getElementById('profAvatarBtn').addEventListener('click', pickAvatar); const pd = document.getElementById('profPhotoDel'); if (pd) pd.addEventListener('click', removeAvatar); }
     if (mine) document.getElementById('profShare').addEventListener('click', () => openShareImage({ title: 'Partager mon profil', file: 'profil-' + slugOf(p.pseudo), hint: 'Image 1080 × 1350, idéale pour un post Instagram.', text: 'Mon profil FC IPSA V : ' + fmtPct(p.completion_pct) + ' % de collection, ' + p.badges.earned + ' succès ⚽', render: () => renderProfileImage(p) }));
+    if (mine) document.getElementById('profInvite').addEventListener('click', openReferral); else loadVersus(p.pseudo);
     if (mine) document.getElementById('profShowcaseEdit').addEventListener('click', () => editShowcase(p));
     else document.getElementById('profChallenge').addEventListener('click', () => { document.getElementById('userCollectionModal').style.display = 'none'; startChallenge(p.pseudo, null); });
   }
@@ -1896,7 +1930,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.18.1';
+  const SITE_VERSION = '2026.10.19.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2166,7 +2200,7 @@
     try { const inv = await api('/pass/inventory'); const emojis = [...new Set(inv.items.filter(i => i.kind === 'stickers').flatMap(i => i.style.emojis))]; const box = byId('chatStickers'), btn = byId('chatEmoji');
       btn.hidden = !emojis.length; box.innerHTML = emojis.map(e => '<button type="button">' + e + '</button>').join(''); box.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { const i = byId('chatInput'); i.value = (i.value + b.textContent).slice(0, 300); i.focus(); })); } catch(e) { /* pas d'autocollants */ }
   }
-  document.getElementById('chatEmoji').addEventListener('click', () => { const box = document.getElementById('chatStickers'); box.hidden = !box.hidden; });
+  document.getElementById('chatEmoji').addEventListener('click', () => { const box = document.getElementById('chatStickers'), btn = document.getElementById('chatEmoji'); box.hidden = !box.hidden; btn.classList.toggle('on', !box.hidden); btn.setAttribute('aria-expanded', String(!box.hidden)); });
   function startChat(){ loadStickers(); loadChat(true); clearInterval(chat.timer); chat.timer = setInterval(() => { if (!document.hidden) loadChat(false); }, 5000); }
   function stopChat(){ clearInterval(chat.timer); chat.timer = null; }
   function updateChatDot(){
@@ -2450,7 +2484,7 @@
         const when = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + '<br>' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
         const card = t.card.masked ? 'Une carte <b>' + escapeHtml(tierLabel(t.card.tier)) + '</b> <small>' + (t.card.deleted ? '(supprimée du jeu)' : '(nom masqué : tu ne la possèdes pas encore)') + '</small>' : '<b>' + escapeHtml(cardDisplayName(t.card)) + '</b> · ' + escapeHtml(tierLabel(t.card.tier));
         const row = document.createElement('div'); row.className = 'trade-row' + (mine ? ' mine' : '');
-        row.innerHTML = '<div class="trade-date">' + when + '</div><div class="trade-main"><b>' + escapeHtml(t.seller) + '</b> → <b>' + escapeHtml(t.buyer) + '</b><span class="trade-kind">' + (t.kind === 'offre' ? 'Offre d\'achat' : 'Annonce') + '</span><br>' + card + '</div><div class="trade-price">' + t.price + ' crédit' + (t.price > 1 ? 's' : '') + '</div>';
+        row.innerHTML = '<div class="trade-date">' + when + '</div><div class="trade-main"><b>' + escapeHtml(t.seller) + '</b> → <b>' + escapeHtml(t.buyer) + '</b><span class="trade-kind">' + (t.kind === 'offre' ? 'Offre d\'achat' : t.kind === 'enchère' ? 'Enchère' : 'Annonce') + '</span><br>' + card + '</div><div class="trade-price">' + t.price + ' crédit' + (t.price > 1 ? 's' : '') + '</div>';
         root.appendChild(row);
       });
     } catch(e) { /* silencieux : l'historique est un plus */ }
@@ -2473,13 +2507,14 @@
     m.missions.forEach(x => {
       const pct = Math.round(100 * x.progress / x.target);
       html += '<div class="m-item' + (x.claimed ? ' claimed' : '') + '"><div class="m-main"><div class="m-label">' + escapeHtml(x.label) + '</div><div class="m-bar"><i style="width:' + pct + '%"></i></div><div class="m-meta">' + x.progress + ' / ' + x.target + ' · récompense : ' + x.reward + ' crédits</div></div>' +
-        (x.claimed ? '<span class="m-ok">✅</span>' : x.done ? '<button class="btn-small" type="button" data-claim="mission" data-id="' + x.id + '">Récupérer +' + x.reward + '</button>' : '') + '</div>';
+        (x.claimed ? '<span class="m-ok">✅</span>' : x.done ? '<button class="btn-small" type="button" data-claim="mission" data-id="' + x.id + '">Récupérer +' + x.reward + '</button>' : (x.id === 'minigame' ? '<button class="btn-small" type="button" data-play="mini">🎮 Jouer</button>' : '')) + '</div>';
     });
     html += '<div class="m-item' + (m.bonus.claimed ? ' claimed' : '') + '"><div class="m-main"><div class="m-label">🎁 Bonus du jour</div><div class="m-meta">Récupère les 3 missions pour gagner ' + escapeHtml(m.bonus.label) + '.</div></div>' +
       (m.bonus.claimed ? '<span class="m-ok">✅</span>' : m.bonus.available ? '<button class="btn-small" type="button" data-claim="bonus">Récupérer</button>' : '') + '</div>';
     box.innerHTML = html; box.hidden = false;
     document.getElementById('packsDot').hidden = !(m.claimable > 0 || (meInfo && meInfo.pass_todo > 0));
     box.querySelectorAll('[data-claim]').forEach(b => b.addEventListener('click', () => claimMissionReward(b.dataset.claim, b.dataset.id, b)));
+    box.querySelectorAll('[data-play="mini"]').forEach(b => b.addEventListener('click', openMinigame));
   }
   async function claimMissionReward(kind, id, btn){
     if (btn) btn.disabled = true;
@@ -2511,7 +2546,7 @@
       if (bonusTotal > 0) statusMsg += ' (' + bonusTotal + ' pack(s) bonus en stock)';
       document.getElementById('packStatus').textContent = statusMsg;
     } catch(e) { /* handled by api() for 401 */ }
-    if (skipMissions !== true) loadMissions(); loadPassCard();       // les gestes du joueur (pack, vente, match…) font avancer ses missions
+    if (skipMissions !== true) { loadMissions(); loadMiniCard(); } loadPassCard(); loadEvents();       // les gestes du joueur (pack, vente, match…) font avancer ses missions
   }
   // ---------- Son : le hurlement du loup à l'ouverture d'un pack ----------
   // Si le fichier "sounds/loup.mp3" existe à côté de index.html, c'est lui qui est joué.
@@ -2835,7 +2870,7 @@
       const lp = (typeof passData !== 'undefined' && passData && passData.level_price) || 20;
       return '<h3>Comment marche le Pass</h3><ul>' +
         '<li><b>30 niveaux, un par jour.</b> Chaque niveau coûte 100 points ; le niveau N s\'ouvre le jour N du mois. Si tu dépasses 100 points dès le 1er jour, rien n\'est perdu : le niveau 2 attend simplement le lendemain. En février, les derniers niveaux s\'ouvrent le dernier jour.</li>' +
-        '<li><b>Points</b> : mission +20 (jusqu\'à 80 par jour), match 1v1 +10 (50 par jour), échange de cartes +15 (30 par jour), pronostic +15 (30 par jour) puis score exact +60, tournoi +30 à l\'inscription puis +20 par tour gagné.</li>' +
+        '<li><b>Points</b> : mission +20 (jusqu\'à 80 par jour), match 1v1 +10 (50 par jour), échange de cartes +15 (30 par jour), pronostic +15 (30 par jour) puis score exact +60, mini-jeu du jour jusqu\'à +50, tournoi +30 à l\'inscription puis +20 par tour gagné.</li>' +
         '<li><b>Dernière semaine du mois : points doublés.</b></li>' +
         '<li><b>Rattrapage</b> : les récompenses non réclamées restent disponibles 7 jours après la fin du mois, sans limite par jour. Passé ce délai, le Pass disparaît.</li>' +
         '<li><b>Étoile de prestige</b> permanente quand les 30 niveaux sont atteints : une étoile par Pass complété (deux pass = deux étoiles), affichée à côté du pseudo.</li>' +
@@ -2874,7 +2909,8 @@
       return '<h3>Acheter et vendre entre joueurs</h3><ul>' +
         '<li><b>Vendre</b> : choisis une carte que tu possèdes et fixe ton prix en crédits. Elle quitte ta collection tant que l\'annonce est ouverte.</li>' +
         '<li><b>Annuler</b> une de tes annonces te rend la carte.</li>' +
-        '<li><b>Acheter</b> : le prix est débité de tes crédits et versé au vendeur. Tu ne peux pas acheter tes propres annonces.</li></ul>' +
+        '<li><b>Acheter</b> : le prix est débité de tes crédits et versé au vendeur. Tu ne peux pas acheter tes propres annonces.</li>' +
+        '<li><b>Enchères 🔨</b> : pour une carte rare ou mieux, tu choisis le prix de départ et la durée (de 15 minutes à 24 heures). Chaque enchère doit dépasser la précédente d\'au moins 5 %. Tes crédits sont mis de côté et rendus si quelqu\'un te dépasse. Une enchère dans les 2 dernières minutes prolonge l\'enchère de 2 minutes. À la fin, la carte va au meilleur enchérisseur ; sans enchère, elle te revient.</li></ul>' +
         '<p class="help-note">Pour garder une carte précieuse, vends plutôt tes doublons.</p>' +
         '<h3>L\'historique des échanges</h3><p>Tout en bas du marché, la liste des échanges entre joueurs (annonces achetées et offres acceptées), du plus récent au plus ancien : qui a vendu à qui, quelle carte, à quel prix. Le nom d\'une carte échangée par offre d\'achat n\'est montré qu\'aux joueurs de l\'échange et à ceux qui possèdent cette carte.</p>' +
         '<h3>Les offres d\'achat</h3><ul>' +
@@ -3192,8 +3228,157 @@
     }
   }
 
+  // ---------- Événements éphémères (bandeau) ----------
+  let eventsState = [], eventsAt = 0, auctionsState = null, auctionMinutes = 60, auctionReload = false, miniState = null, mgCur = null;
+  const fmtLeft = sec => { sec = Math.max(0, Math.floor(sec)); const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60), r = sec % 60; return d ? d + ' j ' + h + ' h' : h ? h + ' h ' + String(m).padStart(2, '0') + ' min' : m + ' min ' + String(r).padStart(2, '0') + ' s'; };
+  async function loadEvents(force){
+    if (!token || (!force && Date.now() - eventsAt < 30000)) return; eventsAt = Date.now();
+    try { const r = await api('/events'); eventsState = r.events.map(e => Object.assign({}, e, { t0: Date.now() })); renderEvents(); } catch(e) {}
+  }
+  function renderEvents(){
+    const bar = byId('eventsBar'); if (!bar) return; const now = Date.now(), act = eventsState.filter(e => e.active), soon = eventsState.filter(e => !e.active);
+    if (!act.length && !soon.length) { bar.hidden = true; bar.innerHTML = ''; return; }
+    bar.hidden = false;
+    bar.innerHTML = act.map(e => '<div class="ev-item"><span>' + e.icon + ' <b>' + escapeHtml(e.title) + '</b> · encore <span class="ev-left" data-end="' + (e.t0 + e.seconds_left * 1000) + '">' + fmtLeft(e.seconds_left - (now - e.t0) / 1000) + '</span></span>' +
+      (e.kind === 'free_pack' ? (e.claimed_today ? '<span class="m-ok">✅ récupéré aujourd\'hui</span>' : '<button class="btn-small" type="button" data-evclaim="' + e.id + '">🎁 Récupérer mes ' + e.params.per_day + ' pack' + (e.params.per_day > 1 ? 's' : '') + '</button>') : '') + '</div>').join('') +
+      soon.map(e => '<div class="ev-item soon"><span>⏳ Bientôt : <b>' + escapeHtml(e.title) + '</b> · dans ' + fmtLeft(e.starts_in - (now - e.t0) / 1000) + '</span></div>').join('');
+    bar.querySelectorAll('[data-evclaim]').forEach(b => b.addEventListener('click', async () => {
+      b.disabled = true;
+      try { const r = await api('/events/' + b.dataset.evclaim + '/claim', { method: 'POST' }); toast('🎁 ' + r.count + ' pack' + (r.count > 1 ? 's' : '') + ' (' + r.pack + ') ajouté' + (r.count > 1 ? 's' : '') + ' à ta réserve !'); await refreshMe(true); loadEvents(true); }
+      catch(e) { toast(e.message); b.disabled = false; }
+    }));
+  }
+  setInterval(() => { document.querySelectorAll('.ev-left').forEach(el => { el.textContent = fmtLeft((parseInt(el.dataset.end, 10) - Date.now()) / 1000); }); }, 1000);
+  setInterval(() => { if (token) loadEvents(true); }, 60000);
+
+  // ---------- Enchères ----------
+  const durLabel = m => m < 60 ? m + ' min' : (m / 60) + ' h';
+  async function loadAuctions(){
+    try { auctionsState = await api('/auctions'); } catch(e) { return; }
+    auctionsState.t0 = Date.now(); renderAuctions(); renderAuctionForm();
+  }
+  function renderAuctionForm(){
+    const sel = byId('auctionSelect'), btn = byId('createAuctionBtn'); if (!sel || !auctionsState) return;
+    const owned = myCollection.filter(c => c.quantity > 0 && c.tier !== 'commune' && c.tier !== 'saison');
+    const keep = sel.value; sel.innerHTML = owned.length ? owned.map(c => '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' — ' + tierLabel(c.tier) + ' (×' + c.quantity + ')</option>').join('') : '<option value="">Aucune carte rare ou mieux disponible</option>';
+    if (keep && owned.some(c => c.id === keep)) sel.value = keep; sel.disabled = btn.disabled = !owned.length;
+    byId('auctionDurations').innerHTML = auctionsState.durations.map(m => '<button type="button" data-min="' + m + '" class="' + (m === auctionMinutes ? 'on' : '') + '">' + durLabel(m) + '</button>').join('');
+    byId('auctionDurations').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { auctionMinutes = parseInt(b.dataset.min, 10); renderAuctionForm(); }));
+  }
+  function renderAuctions(){
+    const root = byId('auctionsEl'); if (!root || !auctionsState) return; const list = auctionsState.auctions;
+    if (!list.length) { root.innerHTML = '<div class="empty-state">Aucune enchère en cours. Lance la première !</div>'; return; }
+    root.innerHTML = ''; const wrap = document.createElement('div'); wrap.className = 'listings';
+    list.forEach(a => {
+      const row = document.createElement('div'); row.className = 'listing auction'; const end = auctionsState.t0 + a.seconds_left * 1000;
+      row.innerHTML = '<div class="mini-badge tier-' + a.card.tier + '">' + escapeHtml(a.card.player_name.slice(0, 2)) + '</div><div class="listing-text"><b>' + (a.mine ? 'Toi' : escapeHtml(a.seller_pseudo)) + '</b> met <b>' + escapeHtml(a.card.player_name) + '</b> (' + tierLabel(a.card.tier) + ') aux enchères' +
+        '<div class="listing-meta">' + (a.current_bid === null ? 'Départ : ' + a.start_price + ' crédits · aucune enchère' : 'Meilleure enchère : <b>' + a.current_bid + ' crédits</b> par ' + (a.i_am_top ? 'toi 🏆' : escapeHtml(a.top_bidder)) + ' (' + a.bids + ' enchère' + (a.bids > 1 ? 's' : '') + ')') + ' · ⏱ <span class="auc-left" data-end="' + end + '">' + fmtLeft(a.seconds_left) + '</span></div></div>';
+      const act = document.createElement('div'); act.className = 'auc-actions';
+      if (a.mine) { if (!a.bids) { const b = document.createElement('button'); b.className = 'btn-small ghost'; b.textContent = 'Annuler'; b.addEventListener('click', () => cancelAuction(a.id)); act.appendChild(b); } }
+      else {
+        const inp = document.createElement('input'); inp.type = 'number'; inp.min = a.min_next_bid; inp.value = a.min_next_bid; inp.setAttribute('aria-label', 'Ton enchère en crédits');
+        const b = document.createElement('button'); b.className = 'btn-small'; b.textContent = a.i_am_top ? 'Relever' : 'Enchérir'; b.addEventListener('click', () => bidAuction(a, parseInt(inp.value, 10), b));
+        act.appendChild(inp); act.appendChild(b);
+      }
+      row.appendChild(act); wrap.appendChild(row);
+    });
+    root.appendChild(wrap);
+  }
+  async function bidAuction(a, amount, btn){
+    if (!amount || amount < a.min_next_bid) { toast('Ton enchère doit être d\'au moins ' + a.min_next_bid + ' crédits'); return; }
+    btn.disabled = true;
+    try { await api('/auctions/' + a.id + '/bid', { method: 'POST', body: JSON.stringify({ amount }) }); toast('🔨 Enchère de ' + amount + ' crédits enregistrée'); await refreshMe(true); loadAuctions(); }
+    catch(e) { toast(e.message); btn.disabled = false; loadAuctions(); }
+  }
+  async function cancelAuction(id){
+    try { await api('/auctions/' + id, { method: 'DELETE' }); toast('Enchère annulée : la carte est revenue'); await loadCollection(); renderMarketForm(); loadAuctions(); } catch(e) { toast(e.message); }
+  }
+  document.getElementById('createAuctionBtn').addEventListener('click', async () => {
+    const card_id = byId('auctionSelect').value, start_price = parseInt(byId('auctionPrice').value, 10);
+    if (!card_id || !start_price || start_price < 1) { toast('Choisis une carte et un prix de départ valide'); return; }
+    try { await api('/auctions', { method: 'POST', body: JSON.stringify({ card_id, start_price, minutes: auctionMinutes }) }); toast('🔨 Enchère lancée pour ' + durLabel(auctionMinutes)); await loadCollection(); renderMarketForm(); loadAuctions(); refreshMe(); }
+    catch(e) { toast(e.message); }
+  });
+  setInterval(() => {
+    document.querySelectorAll('.auc-left').forEach(el => { const left = (parseInt(el.dataset.end, 10) - Date.now()) / 1000; el.textContent = fmtLeft(left); if (left <= 0 && !auctionReload) { auctionReload = true; setTimeout(() => { auctionReload = false; loadAuctions(); }, 2000); } });
+  }, 1000);
+  setInterval(() => { if (token && byId('tab-marche').classList.contains('active')) loadAuctions(); }, 20000);
+
+  // ---------- Parrainage ----------
+  async function openReferral(){
+    let r; try { r = await api('/referral'); } catch(e) { toast(e.message); return; }
+    const link = location.origin + location.pathname + '?ref=' + r.code;
+    byId('modalTitle').textContent = '🤝 Inviter un ami';
+    byId('modalBody').innerHTML = '<p>Quand un ami crée son compte avec ton code, <b>vous recevez chacun un pack ultra</b> 🎁. Jusqu\'à ' + r.max + ' amis.</p><div class="ref-code" id="refCode">' + r.code + '</div>' +
+      '<div class="share-actions"><button class="btn-primary" type="button" id="refCopy">📋 Copier le lien d\'invitation</button></div>' +
+      '<p class="muted" style="margin-top:10px;">Amis parrainés : ' + r.count + ' / ' + r.max + (r.referees.length ? ' (' + r.referees.map(escapeHtml).join(', ') + ')' : '') + '</p>' +
+      (r.can_use ? '<div class="profile-section">J\'ai reçu un code</div><div class="ref-use"><input id="refUseInput" maxlength="12" placeholder="Code d\'un ami"><button class="btn-secondary" type="button" id="refUseBtn">Valider</button></div><p class="muted">Possible pendant les ' + r.eligible_days + ' premiers jours de ton compte.</p>' : (r.used_with ? '<p class="muted">Tu as été invité par ' + escapeHtml(r.used_with) + ' 🤝</p>' : ''));
+    byId('userCollectionModal').style.display = 'flex';
+    byId('refCopy').addEventListener('click', async () => { try { await navigator.clipboard.writeText(link); toast('Lien copié ✅'); } catch(e) { prompt('Copie ce lien :', link); } });
+    const use = byId('refUseBtn'); if (use) use.addEventListener('click', async () => { try { const x = await api('/referral/use', { method: 'POST', body: JSON.stringify({ code: byId('refUseInput').value }) }); toast('🤝 Parrainage validé avec ' + x.referrer + ' : un pack ultra chacun !'); await refreshMe(true); openReferral(); } catch(e) { toast(e.message); } });
+  }
+
+  // ---------- Face-à-face ----------
+  async function loadVersus(pseudo){
+    const box = byId('versusBox'); if (!box) return;
+    try {
+      const v = await api('/users/' + encodeURIComponent(pseudo) + '/versus');
+      if (!v.played) { box.innerHTML = '<div class="profile-section">⚔️ Face à face</div><p class="muted">Vous ne vous êtes encore jamais affrontés en 1v1.</p>'; return; }
+      const d = x => new Date(x).toLocaleDateString('fr-FR'), sk = v.streak && v.streak.count > 1 ? ' · série en cours : ' + v.streak.count + ' ' + (v.streak.type === 'victoire' ? 'victoires' : v.streak.type === 'défaite' ? 'défaites' : 'nuls') + ' de suite' : '';
+      box.innerHTML = '<div class="profile-section">⚔️ Face à face<small>depuis toujours, vu de ton côté</small></div><div class="vs-grid"><div class="vs-cell win"><b>' + v.wins + '</b><span>victoires</span></div><div class="vs-cell"><b>' + v.draws + '</b><span>nuls</span></div><div class="vs-cell lose"><b>' + v.losses + '</b><span>défaites</span></div></div>' +
+        '<div class="profile-meta" style="text-align:center;margin:6px 0;">' + v.played + ' match' + (v.played > 1 ? 's' : '') + ' · buts ' + v.goals_for + '–' + v.goals_against + sk + '</div>' +
+        '<div class="vs-recent">' + v.recent.map(g => '<span class="vs-chip ' + g.result + '" title="' + d(g.date) + ' · ' + g.result + '">' + g.mine + '-' + g.theirs + '</span>').join('') + '</div>' +
+        (v.best_win ? '<div class="profile-meta" style="text-align:center;margin-top:6px;">Ta plus large victoire : ' + v.best_win.mine + '–' + v.best_win.theirs + ' (' + d(v.best_win.date) + ')</div>' : '');
+    } catch(e) { box.innerHTML = ''; }
+  }
+
+  // ---------- Mini-jeu du jour ----------
+  async function loadMiniCard(){
+    let s; try { s = await api('/minigame'); } catch(e) { return; }
+    miniState = s; const box = byId('miniCard'); if (!box) return; box.hidden = false;
+    box.innerHTML = '<div class="mc-title">🎮 Mini-jeu du jour : <b>' + escapeHtml(s.title) + '</b></div><div class="mc-sub">' + (s.finished ? 'Terminé : ' + s.score + ' / ' + s.rounds + ' · +' + s.pass_points + ' points de Pass. Reviens demain !' : s.started ? 'Partie en cours : continue !' : 'Un des 3 défis du jour : jusqu\'à ' + (s.rounds * s.points_each) + ' points de Pass.') + '</div><button class="btn-small" type="button" id="miniPlay">' + (s.finished ? 'Revoir' : s.started ? 'Continuer' : '🎮 Jouer') + '</button>';
+    byId('miniPlay').addEventListener('click', openMinigame);
+  }
+  async function openMinigame(){
+    try { miniState = await api('/minigame'); } catch(e) { toast(e.message); return; }
+    renderMinigame(); byId('userCollectionModal').style.display = 'flex';
+  }
+  function mgEnd(s){
+    return '<div class="mg-end"><div class="mg-score">' + s.score + ' / ' + s.rounds + '</div><p>' + (s.score === s.rounds ? '🏆 Parfait !' : s.score >= 3 ? '👏 Bien joué !' : '💪 Retente ta chance demain !') + '</p><p><b>+' + s.pass_points + ' points de Pass</b></p><p class="muted">Ta mission « Joue au mini-jeu du jour » est faite : récupère-la dans l\'onglet Packs. Prochain jeu demain.</p></div>';
+  }
+  function mgRefresh(){ loadMiniCard(); loadMissions(); loadPassCard(); refreshMe(true); }
+  function renderMinigame(fb){
+    const s = miniState, body = byId('modalBody'); byId('modalTitle').textContent = '🎮 Mini-jeu du jour · ' + s.title; let h = '';
+    if (s.kind === 'quiz') {
+      if (fb) {
+        h = '<div class="mg-prog">' + (fb.correct ? '✅ Bonne réponse !' : '❌ Raté…') + ' · score ' + s.score + ' / ' + s.rounds + '</div><div class="mg-q">' + escapeHtml(fb.q) + '</div>' + fb.choices.map((c, i) => '<div class="mg-choice ' + (i === fb.answer ? 'good' : i === fb.choice ? 'bad' : '') + '">' + escapeHtml(c) + '</div>').join('') + '<p class="mg-why">' + escapeHtml(fb.why) + '</p><button class="btn-primary" type="button" id="mgNext">' + (s.finished ? 'Voir mon score' : 'Question suivante') + '</button>';
+      } else if (s.finished) h = mgEnd(s);
+      else if (s.question) h = '<div class="mg-prog">Question ' + (s.question.index + 1) + ' / ' + s.rounds + ' · score ' + s.score + '</div><div class="mg-q">' + escapeHtml(s.question.text) + '</div>' + s.question.choices.map((c, i) => '<button class="mg-choice" type="button" data-choice="' + i + '">' + escapeHtml(c) + '</button>').join('');
+    } else {
+      const shots = s.shots.map(x => x.goal ? '⚽' : x.missed ? '💨' : '🧤'), rest = s.finished ? 0 : s.rounds - shots.length;
+      const row = '<div class="mg-shots">' + shots.join('') + '⚪'.repeat(rest) + '</div>', zn = ['à gauche', 'au centre', 'à droite'];
+      const msg = fb ? '<div class="mg-msg">' + (fb.goal ? '⚽ BUT ! Tu as tiré ' + zn[fb.zone] + ', le gardien a plongé ' + zn[fb.keeper] + '.' : fb.missed ? '💨 Tir raté… ça passe à côté !' : '🧤 Arrêté ! Le gardien a plongé ' + zn[fb.keeper] + ', comme toi.') + '</div>' : '';
+      h = s.finished ? row + msg + mgEnd(s) : '<div class="mg-prog">Tir ' + (shots.length + 1) + ' / ' + s.rounds + ' · buts : ' + s.score + '</div>' + row + msg + '<p>Où tires-tu ? Le gardien a tendance à replonger du côté de ton dernier tir…</p><div class="mg-goal"><button class="btn-secondary" type="button" data-zone="0">⬅️ À gauche</button><button class="btn-secondary" type="button" data-zone="1">⬆️ Au centre</button><button class="btn-secondary" type="button" data-zone="2">➡️ À droite</button></div>';
+    }
+    body.innerHTML = h;
+    body.querySelectorAll('[data-choice]').forEach(b => b.addEventListener('click', async () => {
+      body.querySelectorAll('[data-choice]').forEach(x => x.disabled = true); mgCur = miniState.question; const choice = parseInt(b.dataset.choice, 10);
+      try { const r = await api('/minigame/answer', { method: 'POST', body: JSON.stringify({ choice }) }); miniState = r; renderMinigame({ correct: r.correct, answer: r.answer, why: r.why, q: mgCur.text, choices: mgCur.choices, choice }); if (r.finished) mgRefresh(); }
+      catch(e) { toast(e.message); body.querySelectorAll('[data-choice]').forEach(x => x.disabled = false); }
+    }));
+    body.querySelectorAll('[data-zone]').forEach(b => b.addEventListener('click', async () => {
+      body.querySelectorAll('[data-zone]').forEach(x => x.disabled = true); const zone = parseInt(b.dataset.zone, 10);
+      try { const r = await api('/minigame/shoot', { method: 'POST', body: JSON.stringify({ zone }) }); miniState = r; renderMinigame({ goal: r.goal, missed: r.missed, keeper: r.keeper, zone }); if (r.finished) mgRefresh(); }
+      catch(e) { toast(e.message); body.querySelectorAll('[data-zone]').forEach(x => x.disabled = false); }
+    }));
+    const nx = byId('mgNext'); if (nx) nx.addEventListener('click', () => renderMinigame());
+  }
+
+  (function(){ const r = new URLSearchParams(location.search).get('ref'); if (r) document.getElementById('refInput').value = r.toUpperCase().slice(0, 12); })();       // lien d'invitation : ?ref=CODE
+
   // ---------- Marché ----------
   function renderMarketForm(){
+    if (auctionsState) renderAuctionForm();
     const offerSel = document.getElementById('offerSelect');
     const owned = myCollection.filter(c => c.quantity > 0);
     if (!owned.length){
@@ -3220,6 +3405,7 @@
   });
 
   async function loadListings(){
+    loadAuctions();
     try {
       const listings = await api('/market/listings');
       renderListings(listings);
@@ -3286,7 +3472,7 @@
         const row = document.createElement('div'); row.className = 'shop-item';
         row.innerHTML = '<div><div class="shop-item-name">' + escapeHtml(item.label) + '</div>' +
           '<div class="shop-item-desc">' + escapeHtml(item.description) + '</div>' +
-          '<div class="shop-item-price">' + item.price + ' crédits</div></div>';
+          '<div class="shop-item-price">' + (item.discount ? '<s style="opacity:.6">' + item.base_price + '</s> ' + item.price + ' crédits <b class="disc">−' + item.discount + ' %</b>' : item.price + ' crédits') + '</div></div>';
         const btn = document.createElement('button'); btn.className = 'btn-small';
         btn.textContent = item.available ? 'Acheter' : 'Bientôt disponible';
         btn.disabled = !item.available || !meInfo || meInfo.credits < item.price;
