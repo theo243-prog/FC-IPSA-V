@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting)
@@ -43,6 +43,10 @@ app.include_router(offers.router)          # offres d'achat au marché
 app.include_router(seasons.router)         # saisons mensuelles du 1v1
 app.add_middleware(admin_tools.AdminLogMiddleware)       # journal des actions d'administration
 app.include_router(admin_tools.router)         # journal et tableau de bord de l'administration
+app.include_router(events.router)              # événements éphémères (promotions, Pass ×2, pack gratuit)
+app.include_router(auctions.router)            # enchères au marché
+app.include_router(referral.router)            # parrainage
+app.include_router(minigame.router)            # mini-jeu du jour
 app.include_router(backup.router)              # sauvegarde de la base : instantanés, export
 app.include_router(battlepass.router)           # pass de saison
 app.include_router(tournament.router)          # tournoi 1v1 mensuel
@@ -116,7 +120,7 @@ def register(payload: schemas.RegisterRequest, db: Session = Depends(get_db)):
     sessions.adopt_token(db, user)                   # sa première session
     db.commit()
     chat.post_event(db, "👋 %s a rejoint le club !" % user.pseudo, user)
-    return {"token": user.token, "pseudo": user.pseudo}
+    return {"token": user.token, "pseudo": user.pseudo, "referral": referral.try_apply(db, user, payload.referral_code)}
 
 
 @app.post("/auth/login")
@@ -708,7 +712,9 @@ def shop_items(db: Session = Depends(get_db)):
             "item": "pack_" + key,
             "pack_type": key,
             "label": spec["label"],
-            "price": spec["price"],
+            "price": events.shop_price(db, spec["price"]),        # (réduit pendant un événement de promotion)
+            "base_price": spec["price"],
+            "discount": events.discount_percent(db),
             "description": spec["description"],
             "available": game_logic.pack_available(counts, key),
         }
@@ -725,9 +731,10 @@ def shop_buy(payload: schemas.BuyShopItemRequest, user: User = Depends(get_curre
         raise HTTPException(status_code=404, detail="Article inconnu")
     if not game_logic.pack_available(game_logic.tier_card_counts(db), pack_type):
         raise HTTPException(status_code=400, detail="Ce pack n'est pas encore disponible cette saison")
-    if user.credits < spec["price"]:
+    price = events.shop_price(db, spec["price"])
+    if user.credits < price:
         raise HTTPException(status_code=400, detail="Pas assez de crédits")
-    user.credits -= spec["price"]
+    user.credits -= price
     field = spec["token_field"]
     setattr(user.pack_state, field, getattr(user.pack_state, field) + 1)
     db.commit()
@@ -740,6 +747,31 @@ def shop_buy(payload: schemas.BuyShopItemRequest, user: User = Depends(get_curre
 
 
 # --------------------------------------------------------- Classement -----
+
+@app.get("/users/{pseudo}/versus")
+def user_versus(pseudo: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Face-à-face, depuis toujours, entre toi et un autre joueur : tous vos matchs 1v1 (le tournoi ne compte pas)."""
+    from .models import Duel
+    other = db.query(User).filter_by(pseudo=pseudo).first()
+    if not other:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    if other.id == user.id:
+        raise HTTPException(status_code=400, detail="C'est ton propre profil")
+    rows = db.query(Duel).filter(or_((Duel.challenger_id == user.id) & (Duel.defender_id == other.id), (Duel.challenger_id == other.id) & (Duel.defender_id == user.id))).order_by(Duel.created_at.desc()).all()
+    games = []
+    for d in rows:
+        mine, theirs = (d.score_challenger, d.score_defender) if d.challenger_id == user.id else (d.score_defender, d.score_challenger)
+        games.append({"date": d.created_at.isoformat(), "mine": mine, "theirs": theirs, "result": "victoire" if mine > theirs else ("défaite" if mine < theirs else "nul")})
+    wins, losses, draws = (sum(1 for g in games if g["result"] == r) for r in ("victoire", "défaite", "nul"))
+    best = max((g for g in games if g["result"] == "victoire"), key=lambda g: g["mine"] - g["theirs"], default=None)
+    streak = 0
+    for g in games:                                          # série en cours (du plus récent au plus ancien)
+        if streak and g["result"] != games[0]["result"]:
+            break
+        streak += 1
+    return {"pseudo": other.pseudo, "played": len(games), "wins": wins, "draws": draws, "losses": losses, "goals_for": sum(g["mine"] for g in games), "goals_against": sum(g["theirs"] for g in games),
+            "last": games[0] if games else None, "best_win": best, "streak": {"type": games[0]["result"], "count": streak} if games else None, "recent": games[:5]}
+
 
 @app.get("/users/{pseudo}/profile")
 def user_profile(pseudo: str, db: Session = Depends(get_db)):
@@ -798,6 +830,7 @@ def purge_card_rows(db: Session, card_ids: list):
         return
     duel_engine.purge_card_references(db, card_ids)
     offers.refund_for_cards(db, card_ids)          # offres d'achat visant ces cartes : annulées et remboursées
+    auctions.cancel_for_cards(db, card_ids)        # enchères sur ces cartes : annulées, meilleur enchérisseur remboursé
     db.query(Listing).filter(Listing.card_id.in_(card_ids)).delete(synchronize_session=False)
     db.query(OwnedCard).filter(OwnedCard.card_id.in_(card_ids)).delete(synchronize_session=False)
     db.query(TeamSlot).filter(TeamSlot.card_id.in_(card_ids)).delete(synchronize_session=False)      # ancien 1v1
@@ -825,7 +858,10 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     db.query(swaps.CardSwap).filter((swaps.CardSwap.proposer_id == user.id) | (swaps.CardSwap.target_id == user.id)).delete(synchronize_session=False)      # ses échanges de cartes
     db.query(prono.PronoBet).filter_by(user_id=user.id).delete()                          # ses pronostics
     tournament.on_user_deleted(db, user.id)                                               # ses inscriptions au tournoi
-    battlepass.on_user_deleted(db, user.id)                                               # sa progression dans le Pass
+    battlepass.on_user_deleted(db, user.id)
+    auctions.on_user_deleted(db, user.id)                                                 # ses enchères (et ses mises en tête)
+    referral.on_user_deleted(db, user.id)                                                 # son code et ses parrainages
+    minigame.on_user_deleted(db, user.id)                                                 # son mini-jeu du jour                                               # sa progression dans le Pass
     db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
     db.query(Listing).filter_by(seller_id=user.id).delete()
     for proposal in db.query(MatchProposal).filter_by(creator_id=user.id).all():
@@ -1799,6 +1835,7 @@ def _tick(fn):
 
 def _background_tick():
     _tick(weekly.check_and_run)             # cartes spéciales du vendredi 17h
+    _tick(auctions.tick)                    # fin des enchères
     _tick(backup.tick)                      # sauvegarde automatique (une fois par jour, à partir de 4h)
     _tick(battlepass.tick)                  # étoiles du Pass de la saison qui vient de finir
     _tick(tournament.tick)                  # tournoi mensuel : tirage, tours de 24 h, forfaits, cagnotte
