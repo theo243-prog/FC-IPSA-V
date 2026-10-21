@@ -209,8 +209,9 @@ def simulate(prep_a, prep_b) -> dict:
     side_a, fan_a, eq_a, mas_a = prep_a; side_b, fan_b, eq_b, mas_b = prep_b
     wt = duel_engine.tactic_advantage(side_a["tactic"], side_b["tactic"])
     ma = 1 + duel_engine.TACTIC_BONUS if wt == "a" else 1.0; mb = 1 + duel_engine.TACTIC_BONUS if wt == "b" else 1.0
-    att_a, def_a, *_ = duel_engine.team_powers(side_a["members"], fan_a, ma, eq_a, mas_a, 0.0)
-    att_b, def_b, *_ = duel_engine.team_powers(side_b["members"], fan_b, mb, eq_b, mas_b, 0.0)
+    # « team_bonus » : bonus d'équipe de l'équipe du club (défi du club) ; jamais présent dans un match de tournoi
+    att_a, def_a, *_ = duel_engine.team_powers(side_a["members"], fan_a, ma, eq_a, mas_a, side_a.get("team_bonus", 0.0))
+    att_b, def_b, *_ = duel_engine.team_powers(side_b["members"], fan_b, mb, eq_b, mas_b, side_b.get("team_bonus", 0.0))
     xg_a, xg_b = duel_engine.expected_goals(att_a, def_b), duel_engine.expected_goals(att_b, def_a)
     sa, sb = duel_engine.poisson_random(xg_a), duel_engine.poisson_random(xg_b)
     events = duel_engine.build_events(side_a, side_b, sa, sb, xg_a, xg_b, wt)

@@ -1961,7 +1961,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.21.1';
+  const SITE_VERSION = '2026.10.21.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2988,7 +2988,8 @@
         '<li><b>' + cfg.max_equipment + ' Équipement</b> : ' + range(cfg.equipment_bonus, ['commune', 'rare', 'epique', 'legendaire']) + ' %.</li></ul>' +
         '<h3>Le défi du club</h3><ul>' +
         '<li>Un défi <b>permanent</b> contre l\'équipe du club, contrôlée par le jeu. Trois niveaux : <b>🟢 Facile</b> (cartes communes et rares), <b>🟠 Normal</b> (rares et épiques), <b>🔴 Difficile</b> (légendaires et éditions limitées).</li>' +
-        '<li>Chaque jour à minuit (heure de Paris), chaque niveau reçoit une <b>nouvelle équipe</b>, tirée au hasard parmi les joueurs de l\'effectif, avec sa formation et sa tactique. C\'est la même pour tout le monde toute la journée.</li>' +
+        '<li>Chaque jour à minuit (heure de Paris), chaque niveau reçoit une <b>nouvelle équipe</b>, tirée au hasard parmi les cartes qui existent dans le jeu, avec sa formation et sa tactique. C\'est la même pour tout le monde toute la journée. S\'il manque une rareté (par exemple aucune légendaire), le club aligne les meilleures cartes existantes en dessous.</li>' +
+        '<li>Sa <b>tactique est secrète</b> : à toi de la deviner (le récit du match la dévoile). Au niveau Difficile, le club a un <b>bonus d\'équipe de +15 %</b>.</li>' +
         '<li><b>3 essais par niveau et par jour</b>, gagnés ou perdus. Pas de mise ni d\'arbitre ; en cas d\'égalité, <b>tirs au but</b>.</li>' +
         '<li>Seule ta <b>première victoire du jour</b> à chaque niveau rapporte : 5, 10 ou 15 crédits et 10, 20 ou 30 points de Pass (30 crédits et 60 points au maximum par jour). Tu peux rejouer pour l\'honneur.</li>' +
         '<li>Aucun effet sur l\'Elo, l\'historique 1v1, les packs match ni les missions du jour.</li>' +
@@ -3667,7 +3668,6 @@
         fetch(API_BASE + '/club', { headers: token ? { Authorization: 'Bearer ' + token } : {} }).then(r => r.json()),
         fetch(API_BASE + '/club/ranking').then(r => r.json()),
       ]);
-      const tacticLabel = t => (duelConfig && duelConfig.tactics[t] ? duelConfig.tactics[t].label : t);
       const slotLabel = s => (duelConfig && duelConfig.slot_labels[s]) || s;
       root.innerHTML = '';
       d.levels.forEach(lv => {
@@ -3676,13 +3676,13 @@
         const wins = known ? ' · ' + lv.my_wins + ' victoire' + (lv.my_wins > 1 ? 's' : '') : '';
         const reward = lv.rewarded_today ? '✅ Récompense du jour obtenue' : '🎁 +' + lv.reward.credits + ' crédits, +' + lv.reward.pass_points + ' points de Pass';
         box.innerHTML = '<h3>' + lv.icon + ' ' + escapeHtml(lv.label) + '</h3>' +
-          '<div class="club-meta">' + escapeHtml(lv.team.formation) + ' · ' + escapeHtml(tacticLabel(lv.team.tactic)) + wins + '</div>' +
+          '<div class="club-meta">' + escapeHtml(lv.team.formation) + ' · tactique secrète' + (lv.bonus_pct ? ' · bonus du club +' + lv.bonus_pct + ' %' : '') + wins + '</div>' +
           '<div class="club-team"></div><div class="club-reward">' + reward + '</div>' +
           '<div class="club-play"><span class="club-meta">' + (known ? 'Essais : <b>' + lv.tries_left + '/' + lv.tries_max + '</b>' : lv.tries_max + ' essais par jour') + '</span>' +
           '<button class="btn-primary" type="button"' + (left > 0 ? '' : ' disabled') + '>' + (left > 0 ? '⚽ Jouer' : 'Reviens demain') + '</button></div>';
         const teamEl = box.querySelector('.club-team');
         lv.team.cards.forEach(c => { const el = makeMiniCard(c, { hideCount: true }); el.title = slotLabel(c.slot) + (c.captain ? ' · capitaine' : ''); teamEl.appendChild(el); });
-        box.querySelector('button').addEventListener('click', () => openTeamModal('club', { level: lv.level, label: lv.label, icon: lv.icon, formation: lv.team.formation, tactic: tacticLabel(lv.team.tactic),
+        box.querySelector('button').addEventListener('click', () => openTeamModal('club', { level: lv.level, label: lv.label, icon: lv.icon, formation: lv.team.formation, bonus_pct: lv.bonus_pct,
           tries_left: left, tries_max: lv.tries_max, rewarded: !!lv.rewarded_today, reward: lv.reward }));
         root.appendChild(box);
       });
@@ -3866,7 +3866,7 @@
       byId('tmSubmit').textContent = 'Valider mon équipe';
     } else if (mode === 'club') {
       byId('tmTitle').textContent = 'Défi du club · ' + proposal.icon + ' ' + proposal.label;
-      byId('tmIntro').textContent = 'Le club joue en ' + proposal.formation + ' avec la tactique « ' + proposal.tactic + ' ». Ni mise, ni enveloppe pour l\'arbitre ; en cas d\'égalité, tirs au but. Essais restants aujourd\'hui : ' + proposal.tries_left + '/' + proposal.tries_max + '. ' +
+      byId('tmIntro').textContent = 'Le club joue en ' + proposal.formation + ' ; sa tactique est secrète (le récit du match la dévoile)' + (proposal.bonus_pct ? ', et il a un bonus d\'équipe de +' + proposal.bonus_pct + ' %' : '') + '. Ni mise, ni enveloppe pour l\'arbitre ; en cas d\'égalité, tirs au but. Essais restants aujourd\'hui : ' + proposal.tries_left + '/' + proposal.tries_max + '. ' +
         (proposal.rewarded ? 'Tu as déjà gagné la récompense du jour à ce niveau : ce match est pour l\'honneur. ' : 'Ta première victoire du jour à ce niveau rapporte +' + proposal.reward.credits + ' crédits et +' + proposal.reward.pass_points + ' points de Pass. ') +
         'Aucun effet sur l\'Elo ni sur les packs. ' + rules;
       byId('tmSubmit').textContent = 'Lancer le match';
@@ -4136,6 +4136,7 @@
         (t.fan ? ' · Fan ' + escapeHtml(t.fan.player) + ' (+' + t.fan.bonus_pct + ' %)' : '') +
         (t.mascot ? ' · Loup ' + escapeHtml(t.mascot.player) + ' (+' + t.mascot.bonus_pct + ' %)' : '') +
         (t.referee_bonus_pct ? ' · Arbitre +' + t.referee_bonus_pct + ' %' : '') +
+        (t.club_bonus_pct ? ' · Bonus du club +' + t.club_bonus_pct + ' %' : '') +
         (t.equipment && t.equipment.length ? ' · Équipement ' + t.equipment.map(e => escapeHtml(e.player)).join(', ') + ' (+' + t.equipment.reduce((n, e) => n + e.bonus_pct, 0) + ' %)' : '') + '</div>';
       players.forEach(p => {
         html += '<div class="lu-row"><span>' + SLOT_ICON[p.slot] + ' ' + escapeHtml(p.player) + (p.captain ? ' <span class="lu-flag" title="Capitaine">©</span>' : '') +

@@ -57,7 +57,8 @@ for k, x in lv.items():
     cards = x["team"]["cards"]; need = DE.FORMATIONS[x["team"]["formation"]]
     cats = {s: sum(1 for cd in cards if cd["slot"] == s) for s in need}
     postes_ok = all(DE.poste_category(cd["poste"]) == cd["slot"] or (cd["slot"] == "MC" and cd["poste"] == "MIL") for cd in cards)
-    ok(cats == need and x["team"]["tactic"] in DE.TACTICS and postes_ok, f"{k} : formation {x['team']['formation']} respectée, tactique valide, chaque carte à son poste")
+    ok(cats == need and "tactic" not in x["team"] and postes_ok, f"{k} : formation {x['team']['formation']} respectée, chaque carte à son poste, tactique NON envoyée au site")
+    ok(x["bonus_pct"] == (15 if k == "difficile" else 0), f"{k} : bonus du club +{x['bonus_pct']} %")
     ok(all(cd["tier"] in allowed[k] for cd in cards), f"{k} : raretés du niveau ({', '.join(sorted({cd['tier'] for cd in cards}))})")
     ok(len({cd["player_name"] for cd in cards}) == 5 and sum(1 for cd in cards if cd["captain"]) == 1, f"{k} : 5 joueurs différents, un capitaine")
 ok(all(x["tries_left"] == 3 and x["rewarded_today"] is False and x["my_wins"] == 0 for x in g["levels"]) and g["title"]["hard_wins"] == 0, "un joueur neuf : 3 essais par niveau, aucune récompense, aucune victoire")
@@ -65,7 +66,13 @@ gb = c.get("/club", headers=H["bob"]).json()
 ok([[cd["id"] for cd in x["team"]["cards"]] for x in gb["levels"]] == [[cd["id"] for cd in x["team"]["cards"]] for x in g["levels"]], "un autre joueur, le même jour : exactement les mêmes équipes")
 ga = c.get("/club").json(); ok("tries_left" not in ga["levels"][0] and len(ga["levels"][0]["team"]["cards"]) == 5, "sans compte : on voit les équipes du jour (sans essais)")
 ok(db.query(CL.ClubTeam).filter_by(day=DAY[0]).count() == 3, "une seule ligne par jour et par niveau, malgré plusieurs consultations")
-ids = lambda d: [[cd["id"] for cd in x["team"]["cards"]] + [x["team"]["formation"], x["team"]["tactic"]] for x in d["levels"]]
+ids = lambda d: [[cd["id"] for cd in x["team"]["cards"]] + [x["team"]["formation"]] for x in d["levels"]]
+rows = {r.level: r for r in db.query(CL.ClubTeam).filter_by(day=DAY[0]).all()}
+ok(all(rows[k].tactic in DE.TACTICS for k in CL.LEVELS) and all(e["tactique"] in DE.TACTICS for e in c.get("/admin/club", headers=A).json()["equipes"]), "la tactique tirée est bien enregistrée en base (et visible de l'admin seulement)")
+sides = {k: CL.club_side(db, k, rows[k])[0] for k in CL.LEVELS}
+ok(sides["difficile"]["team_bonus"] == 0.15 and sides["normal"]["team_bonus"] == 0 and sides["facile"]["team_bonus"] == 0, "bonus d'équipe passé au moteur : +15 % au niveau Difficile seulement")
+a0 = DE.team_powers(sides["difficile"]["members"], None, 1.0, [], None, 0.0)[0]; a1 = DE.team_powers(sides["difficile"]["members"], None, 1.0, [], None, 0.15)[0]
+ok(abs(a1 / a0 - 1.15) < 1e-9, "le bonus de +15 % multiplie bien la force de l'équipe du club")
 days = []
 for d in ("2026-11-13", "2026-11-14", "2026-11-15"):
     DAY[0] = d; days.append(ids(c.get("/club").json()))
@@ -80,6 +87,23 @@ db.commit(); fb = CL.generate_team(db, "difficile"); gk = [db.get(Card, s["card_
 ok(gk.player.poste == "GB" and gk.tier.value == "epique", f"sans gardien légendaire : repli sur la rareté la plus proche (épique), toujours un gardien ({gk.player.name}, {gk.tier.value})")
 for cd in legends_gb: cd.tier = Tier.legendaire
 db.commit()
+# aucune légendaire dans le jeu (la situation réelle aujourd'hui) : le club n'invente rien, il prend les meilleures cartes existantes en dessous
+legends = db.query(Card).filter(Card.tier == Tier.legendaire).all(); keep = {cd.id: cd.player_id for cd in legends}
+for cd in legends: db.delete(cd)
+db.commit()
+ok(db.query(Card).filter(Card.tier == Tier.legendaire).count() == 0, "on retire toutes les légendaires du jeu")
+for _ in range(5):
+    sp = CL.generate_team(db, "difficile"); got = [db.get(Card, s["card_id"]) for s in sp["slots"]]
+    if not all(cd is not None and cd.tier.value == "epique" for cd in got): break
+ok(all(cd is not None for cd in got), "Difficile sans légendaire : les 5 cartes du club existent toutes dans le jeu (aucune inventée)")
+ok(all(cd.tier.value == "epique" for cd in got), "Difficile sans légendaire : il aligne la meilleure rareté existante en dessous (épique), 5 tirages sur 5")
+epics = db.query(Card).filter(Card.tier == Tier.epique).all()
+for cd in epics: cd.tier = Tier.speciale                                   # ni légendaire ni épique : encore un niveau en dessous
+db.commit(); got = [db.get(Card, s["card_id"]) for s in CL.generate_team(db, "difficile")["slots"]]
+ok(all(cd.tier.value == "speciale" for cd in got), "ni légendaire ni épique : il descend encore d'un niveau (spéciale)")
+for cd in epics: cd.tier = Tier.epique
+for cid, pid in keep.items(): db.add(Card(id=cid, player_id=pid, tier=Tier.legendaire, vitesse=0, tir=0))
+db.commit()
 
 print("2) ESSAIS ET RÉCOMPENSES")
 elo0 = {p: U(p).elo for p in H}; duels0 = db.query(Duel).count(); mp0 = U("ana").pack_state.match_pack_tokens; cl0 = U("ana").pack_state.shop_pack_tokens
@@ -87,6 +111,7 @@ miss0 = mission_progress("ana"); cr0 = U("ana").credits; pp0 = pass_points("ana"
 r = play(H["ana"], "facile", (2, 0)); j = r.json()
 ok(r.status_code == 200 and j["club"]["won"] and j["club"]["rewarded"] and j["club"]["credits"] == 5 and j["club"]["pass_points"] == 10 and j["club"]["tries_left"] == 2, "Facile, 1re victoire : +5 crédits, +10 points de Pass, 2 essais restants")
 ok(j["defender"] == "Club · Facile" and j["events"] and j["lineups"]["defender"]["players"], "le résultat contient le récit et les compositions (comme un match 1v1)")
+ok(j["tactics"]["defender"] in DE.TACTICS and j["lineups"]["defender"]["club_bonus_pct"] == 0, "après le match, la tactique du club est dévoilée dans le récit")
 r = play(H["ana"], "facile", (3, 1)); ok(r.json()["club"]["won"] and not r.json()["club"]["rewarded"] and r.json()["club"]["credits"] == 0, "Facile, 2e victoire le même jour : aucune récompense")
 r = play(H["ana"], "facile", (0, 1)); ok(r.status_code == 200 and not r.json()["club"]["won"] and r.json()["club"]["tries_left"] == 0, "Facile, une défaite compte aussi comme essai : 0 essai restant")
 r = play(H["ana"], "facile"); ok(r.status_code == 400 and "demain" in r.json()["detail"], "4e essai au niveau Facile : refusé (« reviens demain »)")

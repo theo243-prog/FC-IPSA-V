@@ -6,6 +6,9 @@ Défi du club : un défi PERMANENT contre une équipe fictive du club, contrôl�
   les postes d'une formation du 1v1 tirée elle aussi au hasard (comme la tactique et le capitaine). Elle est créée au premier accès de la journée,
   puis gardée en base : la même pour tout le monde toute la journée. Sans carte du bon poste et de la bonne rareté, on prend la rareté la plus proche
   du niveau, puis n'importe quelle carte du poste. Une édition limitée pas encore commencée n'est jamais choisie (elle reste une surprise).
+  Le club n'utilise QUE des cartes qui existent : sans légendaire dans le jeu, le Difficile aligne les meilleures cartes existantes (épique, puis en dessous).
+  Sa tactique reste secrète (le site ne la reçoit pas) : seul le récit d'un match la dévoile.
+- BONUS : le club Difficile a un bonus d'équipe de +15 % (comme un Fan), réglé par simulation.
 - MATCH : moteur du 1v1, comme au tournoi (tournament.simulate : ni mise, ni arbitre) ; en cas d'égalité, tirs au but. 3 essais par niveau, par jour
   et par joueur, gagnés ou perdus.
 - RÉCOMPENSE : seulement la PREMIÈRE VICTOIRE du jour de chaque niveau : 5 / 10 / 15 crédits et 10 / 20 / 30 points de Pass (source « club »,
@@ -34,9 +37,10 @@ from . import battlepass, challenges, duel_engine, game_logic, profiles, tournam
 router = APIRouter()
 
 LEVELS = {
-    "facile": {"label": "Facile", "icon": "🟢", "tiers": ["commune", "rare"], "credits": 5, "points": 10},
-    "normal": {"label": "Normal", "icon": "🟠", "tiers": ["rare", "epique"], "credits": 10, "points": 20},
-    "difficile": {"label": "Difficile", "icon": "🔴", "tiers": ["legendaire"] + list(game_logic.EDITION_TIERS), "credits": 15, "points": 30},
+    "facile": {"label": "Facile", "icon": "🟢", "tiers": ["commune", "rare"], "credits": 5, "points": 10, "bonus": 0.0},
+    "normal": {"label": "Normal", "icon": "🟠", "tiers": ["rare", "epique"], "credits": 10, "points": 20, "bonus": 0.0},
+    # bonus d'équipe du club Difficile (+15 %) : réglé par simulation pour qu'une équipe de légendaires gagne environ 35 à 50 % de ses matchs
+    "difficile": {"label": "Difficile", "icon": "🔴", "tiers": ["legendaire"] + list(game_logic.EDITION_TIERS), "credits": 15, "points": 30, "bonus": 0.15},
 }
 TRIES_PER_DAY = 3
 TITLE_WINS = 10                         # victoires au niveau Difficile pour le titre « Tombeur du club »
@@ -162,14 +166,15 @@ def _team_cards(db: Session, row: ClubTeam) -> list:
 
 
 def club_side(db: Session, level: str, row: ClubTeam):
-    """L'équipe du club prête pour le moteur : ni Fan, ni Loup, ni équipement."""
-    side = {"pseudo": club_name(level), "formation": row.formation, "tactic": row.tactic,
+    """L'équipe du club prête pour le moteur : ni Fan, ni Loup, ni équipement, mais le bonus d'équipe de son niveau."""
+    side = {"pseudo": club_name(level), "formation": row.formation, "tactic": row.tactic, "team_bonus": LEVELS[level]["bonus"],
             "members": duel_engine.build_members(_team_cards(db, row), row.captain_card_id)}
     return side, None, [], None
 
 
 def team_out(db: Session, row: ClubTeam) -> dict:
-    return {"formation": row.formation, "tactic": row.tactic, "captain_card_id": row.captain_card_id,
+    """L'équipe telle que le site la montre : SANS sa tactique, qui reste secrète (le récit d'un match la dévoile)."""
+    return {"formation": row.formation, "captain_card_id": row.captain_card_id,
             "cards": [{**card_out(c), "slot": cat, "captain": c.id == row.captain_card_id} for c, cat in _team_cards(db, row)]}
 
 
@@ -225,7 +230,8 @@ def get_club(viewer=Depends(optional_user), db: Session = Depends(get_db)):
     for key, spec in LEVELS.items():
         row = team_of_day(db, key, day)
         item = {"level": key, "label": spec["label"], "icon": spec["icon"], "tiers": spec["tiers"], "name": club_name(key),
-                "reward": {"credits": spec["credits"], "pass_points": spec["points"]}, "tries_max": TRIES_PER_DAY, "team": team_out(db, row)}
+                "reward": {"credits": spec["credits"], "pass_points": spec["points"]}, "bonus_pct": round(spec["bonus"] * 100),
+                "tries_max": TRIES_PER_DAY, "team": team_out(db, row)}
         if viewer:
             item.update({"tries_left": tries_left(db, viewer.id, key, day), "rewarded_today": rewarded_today(db, viewer.id, key, day), "my_wins": wins[key]})
         levels.append(item)
@@ -258,6 +264,7 @@ def play(level: str, payload: TeamPayload, user: User = Depends(get_current_user
              "members": duel_engine.build_members(cards, cap.id if cap else None)}, fan, equip, mascot)
     row = team_of_day(db, level, day)
     res = tournament.simulate(mine, club_side(db, level, row))
+    res["lineups"]["defender"]["club_bonus_pct"] = round(spec["bonus"] * 100)          # (affiché dans les compositions du récit)
     su, sc = res["score"]; pens = res["pens"]
     won = (pens[0] > pens[1]) if pens else su > sc
     first = won and not rewarded_today(db, user.id, level, day)
@@ -277,7 +284,7 @@ def play(level: str, payload: TeamPayload, user: User = Depends(get_current_user
             "score_challenger": su, "score_defender": sc, "stake": 0, "result": "victoire" if won else "défaite",
             "elo_challenger_before": None, "elo_challenger_after": None, "elo_defender_before": None, "elo_defender_after": None,
             "tactics": {"challenger": payload.tactic, "defender": row.tactic}, "events": res["events"], "lineups": res["lineups"],
-            "club": {"level": level, "label": spec["label"], "icon": spec["icon"], "won": won, "pens": list(pens) if pens else None,
+            "club": {"level": level, "label": spec["label"], "icon": spec["icon"], "won": won, "bonus_pct": round(spec["bonus"] * 100), "pens": list(pens) if pens else None,
                      "rewarded": first, "credits": credits, "pass_points": pass_points, "tries_left": left, "tries_max": TRIES_PER_DAY,
                      "hard_wins": profiles._counter(db, user.id, "club_hard_wins"), "title_wins": TITLE_WINS},
             "credits_total": user.credits}
@@ -290,7 +297,7 @@ def admin_club(db: Session = Depends(get_db)):
     day = today(); out = []
     for key, spec in LEVELS.items():
         row = team_of_day(db, key, day)
-        out.append({"niveau": spec["label"], "formation": row.formation, "tactique": row.tactic,
+        out.append({"niveau": spec["label"], "formation": row.formation, "tactique": row.tactic, "bonus": "+%d %%" % round(spec["bonus"] * 100),
                     "joueurs": ", ".join("%s (%s, %s%s)" % (c.player.name, c.tier.value, cat, ", capitaine" if c.id == row.captain_card_id else "") for c, cat in _team_cards(db, row)),
                     "matchs_aujourd_hui": db.query(ClubMatch).filter_by(day=day, level=key).count()})
     return {"jour": day, "equipes": out}
