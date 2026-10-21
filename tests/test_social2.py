@@ -33,7 +33,7 @@ GL.ensure_secret_cards(db)
 Ha, Hb, Hc, Hd = mk("ana"), mk("ben"), mk("cléo"), mk("dan")
 
 print("1) TITRES ET CADRES")
-cat = c.get("/cosmetics", headers=Ha).json(); ok(not any(t["unlocked"] for t in cat["titles"]) and not any(f["unlocked"] for f in cat["frames"]) and len(cat["titles"]) == 33 and len(cat["frames"]) == 6, f"un compte neuf : {len(cat['titles'])} titres et {len(cat['frames'])} cadres, tous verrouillés")
+cat = c.get("/cosmetics", headers=Ha).json(); ok(not any(t["unlocked"] for t in cat["titles"]) and not any(f["unlocked"] for f in cat["frames"]) and len(cat["titles"]) == 34 and len(cat["frames"]) == 6, f"un compte neuf : {len(cat['titles'])} titres et {len(cat['frames'])} cadres, tous verrouillés")
 ok(c.post("/cosmetics", json={"title": "packs", "frame": None}, headers=Ha).status_code == 400 and c.post("/cosmetics", json={"title": None, "frame": "bronze"}, headers=Ha).status_code == 400, "choisir un titre ou un cadre verrouillé : refusé (400)")
 ua = U("ana").id
 for bid, lv in [("packs", 1), ("packs", 2), ("collection", 1), ("matchs", 1), ("matchs", 2)]: db.add(PR.UserBadge(user_id=ua, badge_id=bid, level=lv, seen=True))

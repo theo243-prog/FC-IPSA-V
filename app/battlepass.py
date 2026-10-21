@@ -33,7 +33,7 @@ from . import events
 
 router = APIRouter()
 PRICE, CATCHUP_DAYS, LEVEL_PRICE = 300, 7, 20       # Premium 300 crédits ; 20 crédits pour acheter directement le niveau suivant
-DAILY_CAPS = {"mission": 80, "duel": 50, "swap": 30, "prono": 30, "minigame": 50}          # points de base par jour et par source
+DAILY_CAPS = {"mission": 80, "duel": 50, "swap": 30, "prono": 30, "minigame": 50, "club": 60}          # points de base par jour et par source
 
 
 class PassProgress(Base):
@@ -314,7 +314,7 @@ def get_pass(user: User = Depends(get_current_user), db: Session = Depends(get_d
         if ensure_completion(db, user, k, now): db.commit()
     prev = season_out(db, user, pk, now) if in_catchup(pk, now) and (_progress(db, user.id, pk) is not None or db.get(ClubGoal, pk)) else None
     return {"now": now.isoformat(), "price": PRICE, "level_price": LEVEL_PRICE, "current": season_out(db, user, key, now), "previous": prev, "stars": user_display(db, user.id)["stars"], "loadout": user_display(db, user.id),
-            "points_help": {"minigame": "mini-jeu du jour (10 par bonne réponse ou but, 50 au maximum)", "mission": "missions du jour (20 par mission)", "duel": "match 1v1 (10)", "tournoi": "tournoi : inscription 30, tour gagné 20", "prono": "pronostic (15), score exact (60)", "swap": "échange de cartes (15)"}}
+            "points_help": {"minigame": "mini-jeu du jour (10 par bonne réponse ou but, 50 au maximum)", "mission": "missions du jour (20 par mission)", "duel": "match 1v1 (10)", "tournoi": "tournoi : inscription 30, tour gagné 20", "prono": "pronostic (15), score exact (60)", "swap": "échange de cartes (15)", "club": "défi du club : première victoire du jour de chaque niveau (10, 20, 30), jusqu'à +60"}}
 
 
 @router.post("/pass/claim")

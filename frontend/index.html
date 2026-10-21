@@ -799,6 +799,20 @@
   .duel-grid .season-prizes .p-credits{font-size:12px;margin:2px 0 4px;}
   table.duel-table th{position:sticky;top:0;background:var(--bg-elevated);z-index:1;}
   @media (max-width:760px){.duel-grid{grid-template-columns:1fr;} .duel-grid .cell{height:480px;} .duel-grid .duel-proposals.cell{height:600px;} .duel-grid .season-box.cell,.duel-grid .duel-grid-board.cell{height:580px;} .duel-grid .duel-stars.cell{height:520px;}}
+  /* ---- Défi du club ---- */
+  .club-box{border-top:5px solid #2E9E5B;}
+  .club-levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+  .club-level{background:var(--bg-sunk);border:1px solid var(--border);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0;}
+  .club-level h3{margin:0;font-size:17px;}
+  .club-meta{font-size:12.5px;color:var(--text-muted);}
+  .club-team{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;}
+  .club-team .card{zoom:.42;}
+  .club-reward{font-size:13px;font-weight:700;}
+  .club-play{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;}
+  .club-foot{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:12px;margin-top:12px;}
+  .club-foot h3{margin:0 0 6px;font-size:15px;}
+  .club-foot table{width:100%;border-collapse:collapse;font-size:13px;} .club-foot td,.club-foot th{padding:4px 6px;border-bottom:1px solid var(--border);text-align:left;} .club-foot .num{text-align:center;} .club-foot tr.me{background:var(--bg-sunk);font-weight:700;}
+  @media (max-width:760px){.club-levels,.club-foot{grid-template-columns:1fr;}}
   .duel-proposals-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
   .duel-proposals-head h2{margin:0;}
   .duel-hint{font-size:12.5px;color:var(--text-muted);margin:0 0 12px;}
@@ -1108,6 +1122,12 @@
           <p class="duel-hint">Un défi bloque ta mise le temps qu'il est ouvert. Le gagnant d'un match remporte les deux mises et un pack match (un peu meilleur que le classique) ; le perdant reçoit un pack classique, et en cas de nul chacun reçoit le sien. Pas de limite de matchs : joue autant que tu veux. Tu peux gagner au maximum 5 packs match par jour ; ensuite, chaque match (gagné ou perdu) te rapporte un pack classique. Les tactiques restent secrètes jusqu'au coup d'envoi.</p>
           <div class="cell-scroll" id="duelProposalsEl"></div>
         </div>
+        <div class="panel-box cell-wide club-box" id="clubBox">
+          <h2>🏟️ Défi du club</h2>
+          <p class="duel-hint">Affronte l'équipe du club, tirée au hasard chaque jour parmi les joueurs de l'effectif (la même pour tout le monde). 3 essais par niveau et par jour ; seule ta <b>première victoire du jour</b> à chaque niveau rapporte des crédits et des points de Pass. Ni mise, ni Elo, ni pack : en cas d'égalité, tirs au but.</p>
+          <div class="club-levels" id="clubLevels"></div>
+          <div class="club-foot" id="clubFoot"></div>
+        </div>
         <div class="panel-box season-box cell" id="seasonBox" hidden>
           <h2 id="seasonTitle">🏆 Saison</h2>
           <p class="duel-hint" id="seasonHint"></p>
@@ -1132,7 +1152,7 @@
         </div>
         <div class="panel-box duel-stars cell">
           <h2>Cartes stars de tous les temps</h2>
-          <p class="duel-hint" style="margin-bottom:12px;">L'historique complet des matchs 1v1, depuis le début.</p>
+          <p class="duel-hint" style="margin-bottom:12px;">L'historique complet des matchs 1v1, depuis le début. « Les plus utilisées » compte aussi tes cartes du tournoi et du défi du club.</p>
           <div class="cell-scroll" id="duelStarsEl"></div>
         </div>
       </div>
@@ -1941,7 +1961,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.19.3';
+  const SITE_VERSION = '2026.10.21.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2881,7 +2901,7 @@
       const lp = (typeof passData !== 'undefined' && passData && passData.level_price) || 20;
       return '<h3>Comment marche le Pass</h3><ul>' +
         '<li><b>30 niveaux, un par jour.</b> Chaque niveau coûte 100 points ; le niveau N s\'ouvre le jour N du mois. Si tu dépasses 100 points dès le 1er jour, rien n\'est perdu : le niveau 2 attend simplement le lendemain. En février, les derniers niveaux s\'ouvrent le dernier jour.</li>' +
-        '<li><b>Points</b> : mission +20 (jusqu\'à 80 par jour), match 1v1 +10 (50 par jour), échange de cartes +15 (30 par jour), pronostic +15 (30 par jour) puis score exact +60, mini-jeu du jour jusqu\'à +50, tournoi +30 à l\'inscription puis +20 par tour gagné.</li>' +
+        '<li><b>Points</b> : mission +20 (jusqu\'à 80 par jour), match 1v1 +10 (50 par jour), échange de cartes +15 (30 par jour), pronostic +15 (30 par jour) puis score exact +60, mini-jeu du jour jusqu\'à +50, tournoi +30 à l\'inscription puis +20 par tour gagné, défi du club jusqu\'à +60 (première victoire du jour : +10 en Facile, +20 en Normal, +30 en Difficile).</li>' +
         '<li><b>Dernière semaine du mois : points doublés.</b></li>' +
         '<li><b>Rattrapage</b> : les récompenses non réclamées restent disponibles 7 jours après la fin du mois, sans limite par jour. Passé ce délai, le Pass disparaît.</li>' +
         '<li><b>Étoile de prestige</b> permanente quand les 30 niveaux sont atteints : une étoile par Pass complété (deux pass = deux étoiles), affichée à côté du pseudo.</li>' +
@@ -2966,6 +2986,13 @@
         '<li><b>1 Fan</b> : ' + range(cfg.fan_bonus, ['commune', 'rare', 'epique', 'secrete', 'legendaire']) + ' %, édition limitée +' + Math.round(cfg.fan_bonus.halloween * 100) + ' %.</li>' +
         '<li><b>1 Loup</b> (la mascotte) : mêmes bonus que le Fan.</li>' +
         '<li><b>' + cfg.max_equipment + ' Équipement</b> : ' + range(cfg.equipment_bonus, ['commune', 'rare', 'epique', 'legendaire']) + ' %.</li></ul>' +
+        '<h3>Le défi du club</h3><ul>' +
+        '<li>Un défi <b>permanent</b> contre l\'équipe du club, contrôlée par le jeu. Trois niveaux : <b>🟢 Facile</b> (cartes communes et rares), <b>🟠 Normal</b> (rares et épiques), <b>🔴 Difficile</b> (légendaires et éditions limitées).</li>' +
+        '<li>Chaque jour à minuit (heure de Paris), chaque niveau reçoit une <b>nouvelle équipe</b>, tirée au hasard parmi les joueurs de l\'effectif, avec sa formation et sa tactique. C\'est la même pour tout le monde toute la journée.</li>' +
+        '<li><b>3 essais par niveau et par jour</b>, gagnés ou perdus. Pas de mise ni d\'arbitre ; en cas d\'égalité, <b>tirs au but</b>.</li>' +
+        '<li>Seule ta <b>première victoire du jour</b> à chaque niveau rapporte : 5, 10 ou 15 crédits et 10, 20 ou 30 points de Pass (30 crédits et 60 points au maximum par jour). Tu peux rejouer pour l\'honneur.</li>' +
+        '<li>Aucun effet sur l\'Elo, l\'historique 1v1, les packs match ni les missions du jour.</li>' +
+        '<li>Palmarès <b>« Tombeurs du club »</b> (victoires au niveau Difficile d\'abord), et titre <b>« Tombeur du club »</b> à 10 victoires au niveau Difficile.</li></ul>' +
         '<h3>Le tournoi du mois</h3><p>Chaque mois, un <b>tournoi à élimination directe</b> (onglet Tournoi) : inscriptions du 1er au 7 contre un droit d\'entrée, tirage le 8, un match par tour (24 h pour composer ton équipe, forfait sinon, tirs au but en cas d\'égalité). Il ne compte <b>pas</b> pour l\'Elo. La cagnotte revient au vainqueur, au finaliste et aux demi-finalistes ; le vainqueur gagne un trophée.</p>' + '<h3>Les saisons</h3><p>Chaque mois est une <b>saison</b> : le 1er à minuit (heure de Paris), l\'Elo de tout le monde repart à <b>1000</b>. Il faut avoir joué au moins <b>5 matchs</b> dans le mois pour monter sur le podium. Les <b>3 premiers</b> gagnent des crédits (100, 60, 30) et un <b>trophée</b> : une carte « Vainqueur de saison (mois) », « Deuxième de la saison (mois) » ou « Troisième de la saison (mois) ». Il y a un trophée par saison : être premier deux fois donne deux cartes différentes, jamais un doublon. Un trophée n\'est qu\'un <b>souvenir</b> : il ne sort d\'aucun pack, n\'a ni note ni bonus, ne joue pas de match, ne se vend pas, ne s\'achète pas et ne compte pas dans le pourcentage de collection. Il se range dans « Trophées de saison », dans ta collection.</p>' +
         '<h3>Mises, packs et classement</h3><ul>' +
         '<li><b>Mise</b> de ' + cfg.stake_min + ' à ' + cfg.stake_max + ' crédits, bloquée tant que le défi est ouvert. Le gagnant prend les deux mises <b>et un pack match</b> ; le perdant reçoit <b>un pack classique</b>. En cas de <b>nul</b>, chacun récupère sa mise <b>et reçoit un pack classique</b>. Tu peux gagner <b>5 packs match au maximum par jour</b> : ensuite, tu peux continuer à jouer autant que tu veux, mais chaque match (gagné ou perdu) te rapporte seulement <b>un pack classique</b>. Les mises, l\'Elo et les missions ne changent pas.</li>' +
@@ -2979,7 +3006,8 @@
         '<li><b>Classement</b> : par Elo. M = matchs, V = victoires, D = défaites, N = nuls, <b>Diff</b> = buts marqués moins buts encaissés.</li></ul>' +
         '<h3>Les cartes stars</h3><p>Deux classements, avec les 5 cartes les plus utilisées et les 5 plus décisives en buts et en passes :</p><ul>' +
         '<li><b>De la semaine</b> : remis à zéro chaque <b>vendredi à 17h</b>. À ce moment, le n°1 de chaque catégorie (✨) reçoit une <b>carte spéciale</b> (note 80, puis +1 chaque fois qu\'il la regagne). Le classement de la semaine compte par joueur, toutes raretés confondues.</li>' +
-        '<li><b>De tous les temps</b> : l\'historique complet, depuis le premier match.</li></ul>' +
+        '<li><b>De tous les temps</b> : l\'historique complet, depuis le premier match.</li>' +
+        '<li><b>Les plus utilisées</b> comptent aussi les cartes que tu alignes au <b>tournoi</b> et au <b>défi du club</b> (jamais celles de l\'équipe du club). Les buts et les passes ne viennent que des matchs 1v1.</li></ul>' +
         '<p>Les cartes spéciales ne sortent que des packs gagnés en 1v1 :</p>' +
         oddsTableHTML(r, ['match']);
     } },
@@ -3628,7 +3656,44 @@
 
   async function loadDuelsTab(){
     try { await loadDuelConfig(); } catch(e) { toast('Impossible de charger les règles du 1v1'); return; }
-    await Promise.all([loadDuelBoard(), loadDuelHistory(), loadDuelProposals(), loadDuelStars()]);
+    await Promise.all([loadDuelBoard(), loadDuelHistory(), loadDuelProposals(), loadDuelStars(), loadClub()]);
+  }
+
+  // ---- cellule : Défi du club (l'équipe du club, tirée chaque jour, en 3 niveaux)
+  async function loadClub(){
+    const root = byId('clubLevels'); if (!root) return;
+    try {
+      const [d, rank] = await Promise.all([
+        fetch(API_BASE + '/club', { headers: token ? { Authorization: 'Bearer ' + token } : {} }).then(r => r.json()),
+        fetch(API_BASE + '/club/ranking').then(r => r.json()),
+      ]);
+      const tacticLabel = t => (duelConfig && duelConfig.tactics[t] ? duelConfig.tactics[t].label : t);
+      const slotLabel = s => (duelConfig && duelConfig.slot_labels[s]) || s;
+      root.innerHTML = '';
+      d.levels.forEach(lv => {
+        const box = document.createElement('div'); box.className = 'club-level';
+        const known = lv.tries_left != null, left = known ? lv.tries_left : lv.tries_max;
+        const wins = known ? ' · ' + lv.my_wins + ' victoire' + (lv.my_wins > 1 ? 's' : '') : '';
+        const reward = lv.rewarded_today ? '✅ Récompense du jour obtenue' : '🎁 +' + lv.reward.credits + ' crédits, +' + lv.reward.pass_points + ' points de Pass';
+        box.innerHTML = '<h3>' + lv.icon + ' ' + escapeHtml(lv.label) + '</h3>' +
+          '<div class="club-meta">' + escapeHtml(lv.team.formation) + ' · ' + escapeHtml(tacticLabel(lv.team.tactic)) + wins + '</div>' +
+          '<div class="club-team"></div><div class="club-reward">' + reward + '</div>' +
+          '<div class="club-play"><span class="club-meta">' + (known ? 'Essais : <b>' + lv.tries_left + '/' + lv.tries_max + '</b>' : lv.tries_max + ' essais par jour') + '</span>' +
+          '<button class="btn-primary" type="button"' + (left > 0 ? '' : ' disabled') + '>' + (left > 0 ? '⚽ Jouer' : 'Reviens demain') + '</button></div>';
+        const teamEl = box.querySelector('.club-team');
+        lv.team.cards.forEach(c => { const el = makeMiniCard(c, { hideCount: true }); el.title = slotLabel(c.slot) + (c.captain ? ' · capitaine' : ''); teamEl.appendChild(el); });
+        box.querySelector('button').addEventListener('click', () => openTeamModal('club', { level: lv.level, label: lv.label, icon: lv.icon, formation: lv.team.formation, tactic: tacticLabel(lv.team.tactic),
+          tries_left: left, tries_max: lv.tries_max, rewarded: !!lv.rewarded_today, reward: lv.reward }));
+        root.appendChild(box);
+      });
+      const t = d.title, me = myPseudo;
+      const titleHTML = t.unlocked ? '✅ Titre « ' + escapeHtml(t.label) + ' » débloqué : choisis-le dans « 🎨 Titre et cadre » de ton profil.'
+        : '🏅 Titre « ' + escapeHtml(t.label) + ' » : bats le club <b>' + t.needed + ' fois</b> au niveau Difficile' + (t.hard_wins != null ? ' (tu en es à <b>' + t.hard_wins + '</b>)' : '') + '.';
+      byId('clubFoot').innerHTML = '<div><h3>🏆 Tombeurs du club</h3>' + (rank.length
+        ? '<table><thead><tr><th>#</th><th>Joueur</th><th class="num">🔴</th><th class="num">🟠</th><th class="num">🟢</th></tr></thead><tbody>' +
+          rank.map((r, i) => '<tr' + (r.pseudo === me ? ' class="me"' : '') + '><td>' + (i + 1) + '</td><td>' + escapeHtml(r.pseudo) + '</td><td class="num"><b>' + r.difficile + '</b></td><td class="num">' + r.normal + '</td><td class="num">' + r.facile + '</td></tr>').join('') + '</tbody></table>'
+        : '<div class="empty-state">Personne n\'a encore battu le club : à toi de jouer !</div>') + '</div><div><h3>Titre à débloquer</h3><p class="duel-hint" style="margin:0;">' + titleHTML + '</p></div>';
+    } catch(e) { root.innerHTML = '<div class="empty-state">Le défi du club n\'a pas pu être chargé.</div>'; }
   }
 
   // ---- cellule 1 : profils et classement Elo
@@ -3783,7 +3848,7 @@
         fan: body.fan_card_id || '', mascot: body.mascot_card_id || '', equip: body.equipment_card_ids || [], stake: stake != null ? stake : old.stake }));
     } catch(e) { /* stockage plein ou refusé : tant pis, on ne bloque jamais le match */ }
   }
-  function tmSubmitLabel(){ return tm.mode === 'tournament' ? 'Valider mon équipe' : tm.mode === 'propose' ? 'Publier mon défi' : 'Lancer le match (' + tm.proposal.stake + ' crédits)'; }
+  function tmSubmitLabel(){ return tm.mode === 'tournament' ? 'Valider mon équipe' : tm.mode === 'club' ? 'Lancer le match' : tm.mode === 'propose' ? 'Publier mon défi' : 'Lancer le match (' + tm.proposal.stake + ' crédits)'; }
   const tmSelects = () => [...document.querySelectorAll('#tmSlots select')];
 
   async function openTeamModal(mode, proposal){
@@ -3799,6 +3864,12 @@
       byId('tmTitle').textContent = 'Tournoi : ' + proposal.round_name + ' contre ' + proposal.opponent;
       byId('tmIntro').textContent = 'Compose ton équipe en secret : ni mise, ni enveloppe pour l\'arbitre. Quand ' + proposal.opponent + ' aura validé la sienne, le match se jouera tout seul (en cas d\'égalité : tirs au but). Tu peux modifier ton équipe jusque-là. Limite : ' + proposal.deadline + '. Ce match ne compte pas pour l\'Elo. Ne vends pas ces cartes avant la fin du match. ' + rules;
       byId('tmSubmit').textContent = 'Valider mon équipe';
+    } else if (mode === 'club') {
+      byId('tmTitle').textContent = 'Défi du club · ' + proposal.icon + ' ' + proposal.label;
+      byId('tmIntro').textContent = 'Le club joue en ' + proposal.formation + ' avec la tactique « ' + proposal.tactic + ' ». Ni mise, ni enveloppe pour l\'arbitre ; en cas d\'égalité, tirs au but. Essais restants aujourd\'hui : ' + proposal.tries_left + '/' + proposal.tries_max + '. ' +
+        (proposal.rewarded ? 'Tu as déjà gagné la récompense du jour à ce niveau : ce match est pour l\'honneur. ' : 'Ta première victoire du jour à ce niveau rapporte +' + proposal.reward.credits + ' crédits et +' + proposal.reward.pass_points + ' points de Pass. ') +
+        'Aucun effet sur l\'Elo ni sur les packs. ' + rules;
+      byId('tmSubmit').textContent = 'Lancer le match';
     } else if (mode === 'propose') {
       byId('tmTitle').textContent = 'Proposer un match';
       byId('tmIntro').textContent = 'Compose ton équipe : ta mise (et ton enveloppe pour l\'arbitre, si tu en mets une) est bloquée tant que le défi est ouvert, puis rendue si tu l\'annules. ' + rules;
@@ -3810,7 +3881,7 @@
       tm.proposal = proposal;
     }
     byId('tmStakeRow').style.display = mode === 'propose' ? '' : 'none';
-    byId('tmReferee').value = 0; tm.refConfirmed = null; byId('tmRefRow').style.display = mode === 'tournament' ? 'none' : '';
+    byId('tmReferee').value = 0; tm.refConfirmed = null; byId('tmRefRow').style.display = (mode === 'tournament' || mode === 'club') ? 'none' : '';
     byId('tmRefHint').innerHTML = 'Celui qui met le plus gagne <b>+' + Math.round(cfg.referee_bonus * 100) + ' %</b> dans le match (égalité : personne). Les <b>deux</b> enveloppes sont <b>dépensées</b>, même celle de celui qui perd l\'enchère. ' + (mode === 'propose' ? 'Ton adversaire ne verra pas ton montant avant la fin du match.' : proposal.creator + ' a déjà glissé son enveloppe : tu ne vois pas son montant.');
     byId('tmStake').min = cfg.stake_min; byId('tmStake').max = cfg.stake_max;
 
@@ -3981,6 +4052,17 @@
       finally { btn.disabled = tm.owned.length < cfg.team_size; btn.textContent = tmSubmitLabel(); }
       return;
     }
+    if (tm.mode === 'club') {                                    // défi du club : pas de mise, pas d'arbitre, match joué tout de suite
+      btn.disabled = true;
+      try {
+        saveLastTeam(body, null);
+        const r = await api('/club/' + tm.proposal.level + '/play', { method: 'POST', body: JSON.stringify(body) });
+        closeTeamModal(); await refreshMe(); loadClub(); loadDuelStars();
+        showMatch(r, { isNew: true, animate: true });
+      } catch(e) { if (e.message !== 'unauthorized') err.textContent = e.message; }
+      finally { btn.disabled = tm.owned.length < cfg.team_size; btn.textContent = tmSubmitLabel(); }
+      return;
+    }
     const bidRaw = byId('tmReferee').value.trim(), referee_bid = bidRaw === '' ? 0 : Number(bidRaw);
     if (!Number.isInteger(referee_bid) || referee_bid < 0) { err.textContent = 'L\'enveloppe de l\'arbitre doit être un nombre entier de crédits (0 ou plus).'; return; }
     const needed = (tm.mode === 'propose' ? parseInt(byId('tmStake').value, 10) || 0 : tm.proposal.stake) + referee_bid;
@@ -4079,6 +4161,15 @@
       root.innerHTML = '<div class="match-result"><div class="big">🏆 ' + escapeHtml(tn.winner || '?') + ' se qualifie</div>' + escapeHtml(tn.round_name) + ' du tournoi de ' + escapeHtml(tn.label) + (tn.pens ? ' · égalité, tirs au but : <b>' + tn.pens[0] + '–' + tn.pens[1] + '</b>' : '') + '<br><span class="muted">Match de tournoi : il ne compte ni pour l\'Elo ni pour les statistiques, et ne rapporte ni pack ni crédits.</span></div>';
       return;
     }
+    if (recap.club) {
+      const cl = recap.club;
+      let html = '<div class="big">' + (cl.won ? '🏆 Tu bats le club !' : '😔 Le club l\'emporte') + '</div>' + cl.icon + ' Niveau ' + escapeHtml(cl.label) + (cl.pens ? ' · égalité, tirs au but : <b>' + cl.pens[0] + '–' + cl.pens[1] + '</b>' : '');
+      if (cl.rewarded) html += '<br>🎁 Première victoire du jour : <b>+' + cl.credits + ' crédits</b>' + (cl.pass_points ? ' et <b>+' + cl.pass_points + ' points de Pass</b>' : '') + ' !';
+      else if (cl.won) html += '<br>Récompense du jour déjà obtenue à ce niveau : victoire pour l\'honneur.';
+      html += '<br><span class="muted">Essais restants aujourd\'hui : ' + cl.tries_left + '/' + cl.tries_max + '. Ce match ne compte ni pour l\'Elo ni pour les packs.</span>';
+      root.innerHTML = '<div class="match-result">' + html + '</div>';
+      return;
+    }
     const sa = recap.score_challenger, sb = recap.score_defender;
     let html;
     if (isNew) {
@@ -4103,7 +4194,7 @@
     byId('msSkip').style.display = 'none';
     byId('msReplay').style.display = '';
     const rc = matchState.recap, opp = rc.challenger === myPseudo ? rc.defender : (rc.defender === myPseudo ? rc.challenger : null);
-    byId('msRematch').style.display = opp && !rc.tournament ? '' : 'none'; matchState.rematch = opp ? { target: opp, stake: rc.stake } : null;      // revanche : un défi privé au même adversaire, avec la même mise
+    byId('msRematch').style.display = opp && !rc.tournament && !rc.club ? '' : 'none'; matchState.rematch = opp ? { target: opp, stake: rc.stake } : null;      // revanche : un défi privé au même adversaire, avec la même mise
     renderMatchResult(matchState.recap, matchState.isNew);
     renderLineups(matchState.recap.lineups);
   }

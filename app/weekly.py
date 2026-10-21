@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy.orm import Session
 
-from .models import Card, Duel, JobRun, Player, Tier
+from .models import Card, CardUsage, Duel, JobRun, Player, Tier
 from . import game_logic
 
 JOB_NAME = "weekly_specials"
@@ -57,9 +57,26 @@ def last_slot(now_utc: datetime) -> datetime:
 
 # ----------------------------------------------------------------- calculs ----
 
+def record_usage(db: Session, source: str, user_id: str, players) -> None:
+    """Note les cartes alignées par un joueur dans un match de tournoi ou du défi du club (pas de commit : l'appelant s'en charge)."""
+    now = datetime.utcnow()
+    for p in players or []:
+        db.add(CardUsage(at=now, source=source, user_id=user_id, player_name=p["player"], tier=p["tier"]))
+
+
+def _usage_rows(db: Session, start: datetime = None, end: datetime = None):
+    q = db.query(CardUsage.player_name, CardUsage.tier)
+    if start is not None:
+        q = q.filter(CardUsage.at > start, CardUsage.at <= end)
+    return q.all()
+
+
 def window_stats(db: Session, start: datetime, end: datetime):
-    """Sur les matchs 1v1 de ]start, end] : utilisations, buts et passes décisives PAR JOUEUR (toutes raretés confondues)."""
+    """Sur les matchs 1v1 de ]start, end] : utilisations, buts et passes décisives PAR JOUEUR (toutes raretés confondues).
+    Les cartes alignées en tournoi et au défi du club comptent aussi dans les utilisations (jamais dans les buts ni les passes)."""
     used, goals, assists = Counter(), Counter(), Counter()
+    for name, _tier in _usage_rows(db, start, end):
+        used[name] += 1
     rows = db.query(Duel).filter(Duel.lineups_json.isnot(None), Duel.created_at > start, Duel.created_at <= end).all()
     for d in rows:
         try:
@@ -148,6 +165,8 @@ def next_slot(slot_utc: datetime) -> datetime:
 def window_tiers(db: Session, start: datetime, end: datetime) -> Counter:
     """Utilisations par carte (joueur, rareté) sur la fenêtre : sert à choisir quelle carte afficher pour un joueur."""
     tiers = Counter()
+    for name, tier in _usage_rows(db, start, end):                  # tournoi et défi du club
+        tiers[(name, tier)] += 1
     for d in db.query(Duel).filter(Duel.lineups_json.isnot(None), Duel.created_at > start, Duel.created_at <= end).all():
         try:
             lineups = json.loads(d.lineups_json)

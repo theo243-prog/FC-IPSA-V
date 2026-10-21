@@ -31,7 +31,7 @@ from .models import AppSetting, User, gen_id
 from .common import require_admin, optional_user
 from .schemas import TeamPayload
 from .security import get_current_user
-from . import battlepass, challenges, duel_engine, game_logic, profiles, push, seasons
+from . import battlepass, challenges, duel_engine, game_logic, profiles, push, seasons, weekly
 from .prono import now_paris
 
 router = APIRouter()
@@ -311,6 +311,8 @@ def _resolve(db, t, m, now):
         else:
             m.winner_id = m.p1_id if m.score1 > m.score2 else m.p2_id
         m.events_json, m.lineups_json = json.dumps(res["events"], ensure_ascii=False), json.dumps(res["lineups"], ensure_ascii=False)
+        weekly.record_usage(db, "tournoi", m.p1_id, res["lineups"]["challenger"]["players"])     # « cartes les plus utilisées » (pas pour un forfait)
+        weekly.record_usage(db, "tournoi", m.p2_id, res["lineups"]["defender"]["players"])
     elif prep1 or prep2:
         m.winner_id = m.p1_id if prep1 else m.p2_id; m.via = "forfeit"
     else:                                                      # personne n'a joué : le mieux classé passe

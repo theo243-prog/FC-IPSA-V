@@ -24,6 +24,17 @@ Site web (PWA) où les membres du club ouvrent des packs de cartes des vrais jou
 - Tests : dossier tests/, lancer `python tests/run_tests.py` avant tout envoi.
 - Idée en attente de ma décision : un défi permanent « Affronter l'équipe du club ».
 
+## Défi du club (`app/club.py`)
+- Défi permanent contre une équipe fictive du club (pas un compte joueur), jamais mélangé aux défis 1v1 proposés par les joueurs. Panneau « 🏟️ Défi du club » dans l'onglet 1v1.
+- 3 niveaux, chacun avec son équipe : Facile (communes et rares), Normal (rares et épiques), Difficile (légendaires et éditions limitées). Jamais de carte secrète, de trophée, ni d'édition pas encore commencée.
+- Équipe du jour (jour de Paris) : formation (2-1-1, 1-2-1 ou 1-1-2), tactique et capitaine tirés au hasard, 5 vrais joueurs (`card_kind == "joueur"`) aux postes de la formation, sans doublon. Elle est créée au premier accès et enregistrée (`club_teams`, une ligne par jour et par niveau) : la même pour tous toute la journée. Repli : rareté la plus proche des raretés principales du niveau (éditions exclues du calcul), puis n'importe quelle carte du poste ; sans joueur du poste, un joueur sans poste précis (X), puis n'importe lequel.
+- Match : `tournament.simulate` (ni mise, ni arbitre), tirs au but en cas d'égalité. 3 essais par niveau, par jour et par joueur.
+- Récompense : uniquement la première victoire du jour de chaque niveau : 5 / 10 / 15 crédits et 10 / 20 / 30 points de Pass (source « club », plafond 60 par jour, doublements habituels). Rejouer reste possible sans gain.
+- Aucun effet sur l'Elo, les statistiques et l'historique 1v1, les packs match, les missions du jour ni les points de Pass « duel ».
+- Chaque match est enregistré (`club_matches`). Palmarès « Tombeurs du club » : victoires Difficile, puis Normal, puis Facile (top 10, sans les comptes de test). Titre « Tombeur du club » à 10 victoires au niveau Difficile (compteur `club_hard_wins`).
+- Admin : `GET /admin/club` (équipes du jour), `POST /admin/club-reset {pseudo}` (rend les essais et la récompense du jour ; les matchs restent au palmarès).
+- Cartes les plus utilisées : la table `card_usage` note les cartes alignées au tournoi (les deux équipes, match réellement joué, pas un forfait) et au défi du club (l'équipe du joueur seulement, jamais celle du club). Elle compte dans `/duel/card-stats` (semaine et total) et dans `weekly.window_stats` / `window_tiers`, donc **aussi dans l'attribution des cartes spéciales du vendredi**. Seule l'utilisation compte, pas les buts ni les passes. Les matchs de tournoi joués avant cette fonctionnalité ne sont pas comptés.
+
 ## Lancer en local
 
 Environnement : `.venv` (Python 3.13, créé avec `uv`), exclu de git via `.git/info/exclude`.

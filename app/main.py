@@ -19,10 +19,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
-                     Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting)
+                     Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
 from .security import hash_password, verify_password, generate_token, get_current_user
 
 # Clé secrète pour les routes /admin/*. À définir dans Railway (Variables -> ADMIN_KEY).
@@ -50,6 +50,7 @@ app.include_router(minigame.router)            # mini-jeu du jour
 app.include_router(backup.router)              # sauvegarde de la base : instantanés, export
 app.include_router(battlepass.router)           # pass de saison
 app.include_router(tournament.router)          # tournoi 1v1 mensuel
+app.include_router(club.router)                # défi du club (équipe du club contrôlée par le jeu)
 app.include_router(cosmetics.router)         # titres et cadres de profil
 app.include_router(chat.router)              # chat général et fil d'activité
 app.include_router(swaps.router)             # échanges de cartes entre joueurs
@@ -862,6 +863,8 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     auctions.on_user_deleted(db, user.id)                                                 # ses enchères (et ses mises en tête)
     referral.on_user_deleted(db, user.id)                                                 # son code et ses parrainages
     minigame.on_user_deleted(db, user.id)                                                 # son mini-jeu du jour                                               # sa progression dans le Pass
+    club.on_user_deleted(db, user.id)                                                     # ses matchs contre le club
+    db.query(CardUsage).filter_by(user_id=user.id).delete()                               # ses cartes alignées (tournoi, défi du club), comme ses matchs 1v1
     db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
     db.query(Listing).filter_by(seller_id=user.id).delete()
     for proposal in db.query(MatchProposal).filter_by(creator_id=user.id).all():
