@@ -28,7 +28,7 @@ from sqlalchemy.orm import Session
 
 from .game_logic import (card_note, TIER_FAN_BONUS, TIER_MASCOT_BONUS, TIER_EQUIPMENT_BONUS, MAX_EQUIPMENT,
                          card_kind, is_fan, is_equipment, is_mascot)
-from .models import User, Card, OwnedCard, MatchProposal, ProposalSlot, ProposalEquipment, Duel
+from .models import User, Card, OwnedCard, MatchProposal, ProposalSlot, ProposalEquipment, Duel, CardUsage
 
 # ----------------------------------------------------------------- Règles ----
 
@@ -687,8 +687,11 @@ def duel_recap(db: Session, duel_id: str) -> dict:
 
 def duel_card_stats(db: Session):
     """Compte, sur tous les matchs 1v1 joués, les utilisations, buts et passes décisives par carte
-    (un joueur + une rareté). Retourne trois Counter indexés par (nom du joueur, rareté)."""
+    (un joueur + une rareté). Retourne trois Counter indexés par (nom du joueur, rareté).
+    Les cartes alignées en tournoi et au défi du club comptent aussi dans les utilisations (jamais dans les buts ni les passes)."""
     used, goals, assists = Counter(), Counter(), Counter()
+    for name, tier in db.query(CardUsage.player_name, CardUsage.tier).all():
+        used[(name, tier)] += 1
     for d in db.query(Duel).filter(Duel.lineups_json.isnot(None)).all():
         try:
             lineups = json.loads(d.lineups_json)

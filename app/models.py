@@ -381,6 +381,19 @@ class ProposalSlot(Base):
     card = relationship("Card")
 
 
+class CardUsage(Base):
+    """Une carte alignée par un joueur dans un match qui n'est pas un 1v1 (tournoi, défi du club). Alimente « les cartes les plus
+    utilisées » (semaine et depuis toujours) : l'utilisation seulement, pas les buts ni les passes. Volontairement sans clé étrangère."""
+    __tablename__ = "card_usage"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+    source = Column(String, nullable=False)          # "tournoi" | "club"
+    user_id = Column(String, nullable=False, index=True)
+    player_name = Column(String, nullable=False)     # nom du joueur de la carte
+    tier = Column(String, nullable=False)
+
+
 class Listing(Base):
     __tablename__ = "listings"
 

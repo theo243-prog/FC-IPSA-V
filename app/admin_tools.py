@@ -73,6 +73,7 @@ def summarize(path: str, payload) -> str:
         if name == "delete-upcoming-match": return "Match à venir retiré : %s (%s)" % (_s(p, "opponent"), _s(p, "date"))
         if name == "push-broadcast": return "Notification « %s »%s" % (_s(p, "title"), " à " + who if who else " à tous")
         if name == "tournament-settings": return "Tournoi : %s" % " · ".join(x for x in (("droit d'entrée %s crédits" % p["entry_fee"]) if p.get("entry_fee") is not None else "", ("bonus du club %s crédits" % p["bonus"]) if p.get("bonus") is not None else "") if x)
+        if name == "club-reset": return "Défi du club : essais et récompenses du jour remis à zéro pour %s" % who
         if name == "tournament-cancel": return "Tournoi du mois annulé (droits d'entrée remboursés)"
         if name == "pass-theme": return "Thème du Pass de %s : %s" % (_s(p, "month"), _s(p, "theme"))
         if name == "pass-grant": return "Pass : %s%s pour %s" % (("+%s points" % p.get("points")) if p.get("points") else "", (", Premium " + ("activé" if p.get("premium") else "retiré")) if p.get("premium") is not None else "", who)
