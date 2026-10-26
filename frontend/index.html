@@ -119,6 +119,13 @@
   /* missions du jour et série de connexion */
   .missions-box{max-width:560px;margin:26px auto 0;background:var(--bg-elevated);border:1px solid var(--border);border-radius:16px;padding:16px 16px 14px;box-shadow:var(--shadow);}
   .missions-box[hidden]{display:none;}
+  /* Premiers pas (nouveaux comptes) */
+  .first-steps{border-top:5px solid var(--accent);}
+  .fs-list{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .fs-list li{font-size:14px;}
+  .fs-list .fs-done{display:block;padding:7px 10px;border-radius:10px;background:var(--bg-sunk);color:var(--text-muted);}
+  .fs-list .fs-go{width:100%;text-align:left;font:inherit;font-weight:700;color:var(--text);background:transparent;border:1px dashed var(--border);border-radius:10px;padding:7px 10px;cursor:pointer;}
+  .fs-list .fs-go:hover,.fs-list .fs-go:focus-visible{border-style:solid;border-color:var(--accent);}
   .missions-box h3{font-family:var(--font-head);font-size:22px;font-weight:800;margin:0;}
   .missions-box .m-sub{font-size:12px;color:var(--text-muted);margin:2px 0 12px;}
   .m-streak-title{font-weight:800;font-size:14px;margin:4px 0 8px;display:flex;justify-content:space-between;gap:8px;align-items:baseline;}
@@ -975,6 +982,7 @@
       <div class="bonus-packs" id="bonusPacksEl"></div>
       <div class="pass-card" id="passCard" hidden></div>
       <div class="mini-card" id="miniCard" hidden></div>
+      <div class="missions-box first-steps" id="firstStepsBox" hidden></div>
       <div class="missions-box" id="missionsBox" hidden></div>
     </section>
 
@@ -1359,6 +1367,7 @@
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      if (btn.dataset.tab === 'pack') loadFirstSteps();          // un objectif a pu être fait dans un autre onglet (chat, 1v1, profil)
       if (btn.dataset.tab === 'collection') loadCollection();
       if (btn.dataset.tab === 'marche') { loadCollection().then(renderMarketForm); loadListings(); loadOffers(); loadTradeHistory(); loadSwaps(); }
       if (btn.dataset.tab === 'chat') startChat(); else stopChat();
@@ -1961,7 +1970,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.26.1';
+  const SITE_VERSION = '2026.10.26.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2535,6 +2544,39 @@
 
   // ---------- Missions du jour et série de connexion ----------
   let missionsState = null;
+  // ---------- Premiers pas : 5 objectifs pour les comptes de moins de 14 jours, puis une récompense ----------
+  const FS_GO = {
+    pack: () => { openTab('pack'); byId('openFreePackBtn').scrollIntoView({ behavior: 'smooth', block: 'center' }); },
+    photo: () => { if (meInfo) openProfile(meInfo.pseudo); },
+    duel: () => openTab('duels'),
+    chat: () => openTab('chat'),
+    mission: () => { openTab('pack'); byId('missionsBox').scrollIntoView({ behavior: 'smooth', block: 'start' }); },
+  };
+  async function loadFirstSteps(){
+    const box = byId('firstStepsBox'); if (!box) return;
+    let s; try { s = await api('/first-steps'); } catch(e) { box.hidden = true; return; }
+    if (!s || !s.visible) { box.hidden = true; return; }
+    const until = new Date(s.ends_at + 'Z').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+    box.innerHTML = '<h3>🚀 Premiers pas · ' + s.done + '/' + s.total + '</h3>' +
+      '<p class="m-sub">5 étapes pour découvrir le jeu (jusqu\'au ' + escapeHtml(until) + '). Touche une étape pour y aller.</p>' +
+      '<ul class="fs-list">' + s.steps.map(st => '<li>' + (st.done ? '<span class="fs-done">✅ ' + escapeHtml(st.label) + '</span>'
+        : '<button type="button" class="fs-go" data-step="' + st.id + '">⬜ ' + escapeHtml(st.label) + ' →</button>') + '</li>').join('') + '</ul>' +
+      (s.claimable ? '<button class="btn-primary" type="button" id="fsClaim">🎁 Récupérer ma récompense (' + s.reward.credits + ' crédits + 1 pack classique)</button>'
+        : '<p class="m-sub" style="margin:0;">À 5/5 : <b>' + s.reward.credits + ' crédits + 1 pack classique</b>.</p>');
+    box.hidden = false;
+    box.querySelectorAll('.fs-go').forEach(b => b.addEventListener('click', () => (FS_GO[b.dataset.step] || (() => {}))()));
+    const claimBtn = byId('fsClaim');
+    if (claimBtn) claimBtn.addEventListener('click', async () => {
+      claimBtn.disabled = true;
+      try {
+        const r = await api('/first-steps/claim', { method: 'POST' });
+        box.hidden = true;
+        toast('🎉 Bravo, tes premiers pas sont faits ! +' + r.credits_gained + ' crédits et 1 pack classique');
+        refreshMe();
+      } catch(e) { claimBtn.disabled = false; if (e.message !== 'unauthorized') toast(e.message); }
+    });
+  }
+
   async function loadMissions(){
     try { missionsState = await api('/missions'); renderMissions(); }
     catch(e) { document.getElementById('missionsBox').hidden = true; document.getElementById('packsDot').hidden = true; }
@@ -2589,7 +2631,7 @@
       if (bonusTotal > 0) statusMsg += ' (' + bonusTotal + ' pack(s) bonus en stock)';
       document.getElementById('packStatus').textContent = statusMsg;
     } catch(e) { /* handled by api() for 401 */ }
-    if (skipMissions !== true) { loadMissions(); loadMiniCard(); } loadPassCard(); loadEvents();       // les gestes du joueur (pack, vente, match…) font avancer ses missions
+    if (skipMissions !== true) { loadMissions(); loadMiniCard(); } loadPassCard(); loadEvents(); loadFirstSteps();       // les gestes du joueur (pack, vente, match…) font avancer ses missions
   }
   // ---------- Son : le hurlement du loup à l'ouverture d'un pack ----------
   // Si le fichier "sounds/loup.mp3" existe à côté de index.html, c'est lui qui est joué.
@@ -2944,7 +2986,8 @@
     pack: { title: 'Les packs', async html(){
       const r = await getGameRules();
       return '<h3>Ouvrir un pack</h3><p>Chaque pack contient <b>3 cartes</b> (<b>10</b> pour le pack ultra) et te rapporte quelques crédits.</p>' +
-        '<ul><li><b>Packs gratuits</b> : tu peux en stocker ' + r.free_packs_max + ' au maximum, et un nouveau arrive toutes les ' + r.free_pack_hours + ' heures.</li>' +
+        '<ul><li><b>Premiers pas</b> (comptes de moins de 14 jours) : ouvrir un pack, ajouter une photo de profil, jouer un match 1v1, écrire dans le chat et récupérer une mission du jour. Les 5 faits : <b>20 crédits et 1 pack classique</b>, une seule fois.</li>' +
+        '<li><b>Packs gratuits</b> : tu peux en stocker ' + r.free_packs_max + ' au maximum, et un nouveau arrive toutes les ' + r.free_pack_hours + ' heures.</li>' +
         '<li><b>Packs bonus</b> (achetés au shop, offerts ou gagnés) : ils se stockent sans limite et s\'affichent sous les boutons.</li>' +
         '<li><b>Missions du jour</b> (sous les packs) : 3 missions par jour, une de chaque sorte (cartes, marché, matchs 1v1), qui rapportent des crédits. Elles changent à minuit, heure de Paris. Quand tu as récupéré les 3, un <b>pack classique</b> t\'est offert en bonus.</li>' +
         '<li><b>Série de connexion</b> : récupère ta récompense chaque jour sans en rater un. Elle grandit jusqu\'au 7e jour (qui offre en plus un <b>pack rare</b>), puis le cycle recommence. Un jour raté remet la série à zéro.</li>' +

@@ -215,6 +215,7 @@ def claim(db, user, kind: str, mission_id: Optional[str] = None) -> dict:
         if int(_load(r.progress, {}).get(mission_id, 0)) < mission["target"]:
             raise ValueError("Cette mission n'est pas encore terminée")
         reward = {"credits": mission["reward"]}
+        profiles.bump(db, user, "missions_claimed")          # compteur à vie (Premiers pas : « récupérer une mission du jour »)
         claimed.append(mission_id)
         r.claimed = json.dumps(claimed)
         info = {}

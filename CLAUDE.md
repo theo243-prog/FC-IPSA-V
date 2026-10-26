@@ -39,6 +39,14 @@ Site web (PWA) où les membres du club ouvrent des packs de cartes des vrais jou
 - Admin : `GET /admin/club` (équipes du jour), `POST /admin/club-reset {pseudo}` (rend les essais et la récompense du jour ; les matchs restent au palmarès).
 - Cartes les plus utilisées : la table `card_usage` note les cartes alignées au tournoi (les deux équipes, match réellement joué, pas un forfait) et au défi du club (l'équipe du joueur seulement, jamais celle du club). Elle compte dans `/duel/card-stats` (semaine et total) et dans `weekly.window_stats` / `window_tiers`, donc **aussi dans l'attribution des cartes spéciales du vendredi**. Seule l'utilisation compte, pas les buts ni les passes. Les matchs de tournoi joués avant cette fonctionnalité ne sont pas comptés.
 
+## Premiers pas (`app/first_steps.py`)
+- 5 objectifs pour les nouveaux joueurs, dans cet ordre : ouvrir un pack, ajouter une photo de profil, jouer un match 1v1 (créateur ou joueur du défi ; ni le défi du club, ni le tournoi), écrire un message de joueur dans le chat (pas une annonce automatique), récupérer une mission du jour (pas la série ni le bonus).
+- Indicateurs durables, qui ne se décochent jamais : compteurs à vie de `user_counters` (`open_packs`, `avatar_set`, `chat_messages`, `missions_claimed`) et la table des duels. Pour les comptes qui ont mis une photo ou écrit avant ces compteurs, une photo en place ou un message de joueur encore dans le salon comptent aussi.
+- Récompense quand les 5 sont faits, sur appui de « Récupérer » : +20 crédits et 1 pack classique, une seule fois par compte (table `first_steps_claims`, avec la date). Pas de récompense par objectif.
+- Visible seulement pour les comptes créés depuis moins de 14 jours, tant que la récompense n'est pas récupérée.
+- Routes : `GET /first-steps` (`{"visible": false}` si le compte n'y a pas droit), `POST /first-steps/claim`, admin `POST /admin/first-steps-reset {pseudo}` (efface la récupération ; un compte de plus de 14 jours reste invisible).
+- Site : carte « 🚀 Premiers pas · n/5 » au-dessus des missions de l'onglet Packs ; chaque objectif non fait mène au bon endroit.
+
 ## Lancer en local
 
 Environnement : `.venv` (Python 3.13, créé avec `uv`), exclu de git via `.git/info/exclude`.
@@ -59,7 +67,7 @@ uv pip install --python .venv/Scripts/python.exe -r requirements.txt pytest http
 ```
 
 - **À lancer avant chaque proposition d'envoi.** Pour une seule suite : `.venv/Scripts/python.exe tests/run_tests.py test_pass`.
-- Le lanceur exécute les suites `test_pass`, `test_social2`, `test_tournament`, `test_duel_packs`, `test_backup`, `test_features2` et `test_smoke_routes`. Chacune tourne sur une base SQLite temporaire, remplie par `tests/seed_test_data.py` (joueurs fictifs, à ne pas confondre avec `app/seed_data.py`). La vraie base n'est jamais touchée.
+- Le lanceur exécute les suites `test_pass`, `test_social2`, `test_tournament`, `test_duel_packs`, `test_backup`, `test_features2`, `test_club`, `test_first_steps` et `test_smoke_routes`. Chacune tourne sur une base SQLite temporaire, remplie par `tests/seed_test_data.py` (joueurs fictifs, à ne pas confondre avec `app/seed_data.py`). La vraie base n'est jamais touchée.
 - Résultat attendu : « TOUT EST VERT ». `test_smoke_routes` affiche « 0 vérifications » : c'est normal, car il n'imprime pas de lignes « OK ». Il appelle toutes les routes GET et échoue seulement en cas d'erreur 500.
 - `tests/ui_*.js` et `tests/prep_*_ui.py` servent aux tests d'interface, voir `tests/LISEZMOI.md`.
 - Pour les tests, `minigame.RNG` peut être remplacé et `FC_FAKE_NOW` simule la date.

@@ -71,6 +71,8 @@ def set_avatar(payload: AvatarUpload, user: User = Depends(get_current_user), db
         db.add(UserAvatar(user_id=user.id, data=data, updated_at=now))
     else:
         row.data, row.updated_at = data, now
+    from . import profiles
+    profiles.bump(db, user, "avatar_set")                    # compteur à vie (Premiers pas : il reste coché même si la photo est retirée ensuite)
     db.commit()
     return {"status": "ok", "avatar": user_stamp(db, user.id)}
 
