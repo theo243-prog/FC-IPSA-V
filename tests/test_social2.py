@@ -51,7 +51,7 @@ ok(c.post("/admin/unlock-cosmetics", json={"pseudo": "cléo", "enabled": True}).
 r = c.post("/admin/unlock-cosmetics", json={"pseudo": "cléo", "enabled": True}, headers=A); cc = c.get("/cosmetics", headers=Hc).json()
 from app import pass_catalog as PC
 inv = c.get("/pass/inventory", headers=Hc).json()["items"]; kinds = {i["kind"] for i in inv}
-ok(len(inv) == len(PC.ITEMS) and kinds == set(PC.KINDS) and len(inv) == 232, f"« tout débloquer » donne aussi les {len(inv)} objets de tous les Pass ({len(kinds)} sortes : badges, bannières, cadres, couleurs de pseudo, titres, autocollants, fonds d'image)")
+ok(len(inv) == len(PC.ITEMS) and kinds == set(PC.KINDS) and len(inv) == 239, f"« tout débloquer » donne aussi les {len(inv)} objets de tous les Pass ({len(kinds)} sortes : badges, bannières, cadres, couleurs de pseudo, titres, autocollants, fonds d'image, sons d'ouverture)")
 pick = lambda k, n: [i["id"] for i in inv if i["kind"] == k][n]
 ok(c.post("/pass/equip", json={"banner": pick("banner", -1), "name_color": pick("name_color", 0), "badge": pick("badge", 5), "share_bg": pick("share_bg", -1)}, headers=Hc).status_code == 200, "on peut équiper des objets de thèmes différents (bannière, couleur de pseudo, badge, fond d'image)")
 ok(sum(1 for t in cc["titles"] + cc["frames"] if t.get("pass")) >= 60, "les titres et cadres des Pass sont dans la liste « Titre et cadre »")

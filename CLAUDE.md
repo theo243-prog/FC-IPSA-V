@@ -21,6 +21,7 @@ Site web (PWA) où les membres du club ouvrent des packs de cartes des vrais jou
 - Événements éphémères (promo boutique, Pass ×2, pack gratuit par jour) pilotés depuis la page d'administration.
 - Sauvegarde automatique de la base chaque jour dès 4 h ; export depuis l'administration.
 - Photos des joueurs : fichiers dans frontend/photos/, chemin enregistré sous la forme /photos/nom.ext ; photo par rareté : nom-rareté.ext.
+- Sons d'ouverture de packs : un son par thème de Pass (objet de type « sound », « Son d'ouverture <Thème> »), fichier `frontend/sounds/<id du thème>.mp3`, au niveau 18 de la piste Premium à partir du Pass de novembre 2026 (`pass_catalog.SOUND_LEVEL`, `SOUND_FROM`) ; octobre 2026 garde sa couleur de pseudo au niveau 18. Le choix est enregistré sur le compte (table `pass_sound`, route `POST /pass/sound`, renvoyé par `/me` dans `open_sound`). Le site charge seulement le son choisi et joue le hurlement du loup (`sounds/loup.mp3`, sinon un son fabriqué) si le fichier manque ; le bouton 🔊/🔇 coupe tout. Le code ne dépend jamais de la présence des fichiers de sons. Ne pas modifier `pass_catalog.CYCLE` : les objets déjà réclamés en dépendent.
 - Tests : dossier tests/, lancer `python tests/run_tests.py` avant tout envoi.
 - Idée en attente de ma décision : un défi permanent « Affronter l'équipe du club ».
 

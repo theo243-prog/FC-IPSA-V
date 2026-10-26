@@ -75,6 +75,18 @@ class PassLoadout(Base):
     share_bg = Column(String, nullable=True)
 
 
+class PassSound(Base):
+    """Le son d'ouverture de packs choisi par un joueur (table à part : pass_loadout existe déjà en production, on n'y touche pas).
+    item_id vide = le hurlement du loup, le son par défaut."""
+    __tablename__ = "pass_sound"
+    user_id = Column(String, primary_key=True)
+    item_id = Column(String, nullable=True)
+
+
+class SoundRequest(BaseModel):
+    item_id: Optional[str] = None                           # un objet « sound » possédé, ou rien pour revenir au hurlement du loup
+
+
 class ClaimRequest(BaseModel):
     season: Optional[str] = None
     track: str                                              # free / premium / club
@@ -279,7 +291,7 @@ def season_out(db: Session, user: User, key: str, now: datetime) -> dict:
     level = unlocked_level(points, key, now); premium = bool(row and row.premium); claims = _claims(db, user.id, key); d = dim(key); over = now >= season_end(key)
     levels = []
     for lv in range(1, P.LEVELS + 1):
-        fr, pr = P.free_reward(theme_id, lv), P.premium_reward(theme_id, lv)
+        fr, pr = P.free_reward(theme_id, lv), P.premium_reward(theme_id, lv, key)
         fs = "claimed" if "f%d" % lv in claims else ("ready" if lv <= level else "locked")
         ps = "claimed" if "p%d" % lv in claims else (("ready" if lv <= level else "locked") if premium else "premium_locked")
         levels.append({"level": lv, "unlock_day": min(lv, d), "reached": lv <= level, "free": {"status": fs, **_reward_out(fr, theme_id)} if fr else None, "premium": {"status": ps, **_reward_out(pr, theme_id)}})
@@ -343,7 +355,7 @@ def claim(payload: ClaimRequest, user: User = Depends(get_current_user), db: Ses
             if not reward: raise HTTPException(status_code=400, detail="Pas de récompense gratuite à ce niveau")
         elif payload.track == "premium":
             if not (row and row.premium): raise HTTPException(status_code=400, detail="Cette récompense est réservée au Pass Premium")
-            ck, reward = "p%d" % lv, P.premium_reward(theme_id, lv)
+            ck, reward = "p%d" % lv, P.premium_reward(theme_id, lv, key)
         else:
             raise HTTPException(status_code=400, detail="Piste inconnue")
         if ck in claims: raise HTTPException(status_code=400, detail="Tu as déjà récupéré cette récompense")
@@ -379,10 +391,43 @@ def buy_level(user: User = Depends(get_current_user), db: Session = Depends(get_
     return {"status": "ok", "credits": user.credits, "points": row.points, "gained": gained, "reached": reached, "unlocked": unlocked_level(row.points, key, now), "opens_day": min(reached, dim(key))}
 
 
+def chosen_sound(db: Session, user: User) -> Optional[str]:
+    """L'objet « son d'ouverture » choisi par le joueur, s'il le possède encore ; sinon None (hurlement du loup)."""
+    row = db.get(PassSound, user.id)
+    if row is None or not row.item_id or row.item_id not in P.ITEMS or row.item_id not in owned_ids(db, user):
+        return None
+    return row.item_id
+
+
+def open_sound(db: Session, user: User) -> Optional[dict]:
+    """Ce que le site doit jouer à l'ouverture d'un pack : {"id", "name", "file"}, ou None pour le hurlement du loup. Ne fait jamais échouer /me."""
+    try:
+        sid = chosen_sound(db, user)
+    except Exception:
+        return None
+    return {"id": sid, "name": P.ITEMS[sid]["name"], "file": P.ITEMS[sid]["style"]["file"]} if sid else None
+
+
 @router.get("/pass/inventory")
 def inventory(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     lo = db.query(PassLoadout).filter_by(user_id=user.id).first()
-    return {"items": owned_items(db, user), "loadout": {k: getattr(lo, k, None) if lo else None for k in ("banner", "name_color", "badge", "share_bg")}}
+    loadout = {k: getattr(lo, k, None) if lo else None for k in ("banner", "name_color", "badge", "share_bg")}
+    loadout["sound"] = chosen_sound(db, user)
+    return {"items": owned_items(db, user), "loadout": loadout}
+
+
+@router.post("/pass/sound")
+def set_sound(payload: SoundRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Choisit le son d'ouverture de packs (enregistré sur le compte : le même sur tous les appareils). item_id vide : le hurlement du loup."""
+    v = payload.item_id or None
+    if v is not None and (v not in owned_ids(db, user) or P.ITEMS[v]["kind"] != "sound"):
+        raise HTTPException(status_code=400, detail="Tu n'as pas ce son d'ouverture")
+    row = db.get(PassSound, user.id)
+    if row is None:
+        row = PassSound(user_id=user.id); db.add(row)
+    row.item_id = v
+    db.commit()
+    return {"status": "ok", "sound": open_sound(db, user)}
 
 
 @router.post("/pass/equip")
@@ -470,5 +515,5 @@ def tick(db: Session) -> None:
 
 
 def on_user_deleted(db: Session, user_id: str) -> None:
-    for m in (PassProgress, PassClaim, PassLoadout):
+    for m in (PassProgress, PassClaim, PassLoadout, PassSound):
         db.query(m).filter_by(user_id=user_id).delete()
