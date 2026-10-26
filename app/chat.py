@@ -115,7 +115,10 @@ def send_chat(payload: SendRequest, user: User = Depends(get_current_user), db: 
     recent = db.query(func.count()).select_from(ChatMessage).filter(ChatMessage.user_id == user.id, ChatMessage.kind == "user", ChatMessage.at > now - timedelta(minutes=1)).scalar()
     if recent >= 15:
         raise HTTPException(status_code=429, detail="Trop de messages d'un coup, attends un peu")
-    m = ChatMessage(user_id=user.id, pseudo=user.pseudo, kind="user", text=text); db.add(m); db.commit()
+    m = ChatMessage(user_id=user.id, pseudo=user.pseudo, kind="user", text=text); db.add(m)
+    from . import profiles
+    profiles.bump(db, user, "chat_messages")                 # compteur à vie (Premiers pas) : le salon ne garde que les derniers messages
+    db.commit()
     if m.id % 100 == 0:
         db.query(ChatMessage).filter(ChatMessage.id < m.id - KEEP).delete(synchronize_session=False); db.commit()
     from . import battlepass

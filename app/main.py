@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -51,6 +51,7 @@ app.include_router(backup.router)              # sauvegarde de la base : instant
 app.include_router(battlepass.router)           # pass de saison
 app.include_router(tournament.router)          # tournoi 1v1 mensuel
 app.include_router(club.router)                # défi du club (équipe du club contrôlée par le jeu)
+app.include_router(first_steps.router)         # Premiers pas : objectifs des nouveaux comptes
 app.include_router(cosmetics.router)         # titres et cadres de profil
 app.include_router(chat.router)              # chat général et fil d'activité
 app.include_router(swaps.router)             # échanges de cartes entre joueurs
@@ -866,6 +867,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     referral.on_user_deleted(db, user.id)                                                 # son code et ses parrainages
     minigame.on_user_deleted(db, user.id)                                                 # son mini-jeu du jour                                               # sa progression dans le Pass
     club.on_user_deleted(db, user.id)                                                     # ses matchs contre le club
+    first_steps.on_user_deleted(db, user.id)                                              # sa récompense des Premiers pas
     db.query(CardUsage).filter_by(user_id=user.id).delete()                               # ses cartes alignées (tournoi, défi du club), comme ses matchs 1v1
     db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
     db.query(Listing).filter_by(seller_id=user.id).delete()
