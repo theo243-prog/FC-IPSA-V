@@ -170,6 +170,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "chat_last_id": chat.last_id(db),
             "tournament_todo": tournament.todo(db, user),
             "pass_todo": battlepass.claimable_count(db, user),
+            "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
         }
     return {
         "pseudo": user.pseudo,
@@ -184,6 +185,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "chat_last_id": chat.last_id(db),
             "tournament_todo": tournament.todo(db, user),
             "pass_todo": battlepass.claimable_count(db, user),
+            "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
     }
 
 

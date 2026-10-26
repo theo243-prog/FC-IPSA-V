@@ -1961,7 +1961,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.21.2';
+  const SITE_VERSION = '2026.10.26.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2175,7 +2175,12 @@
     const unl = cat.titles.filter(t => t.unlocked).length + cat.frames.filter(f => f.unlocked).length;
     let inv = { items: [], loadout: {} }; try { inv = await api('/pass/inventory'); } catch(e) { /* pas de Pass */ }
     const slotSel = (kind, label, cur) => { const list = inv.items.filter(i => i.kind === kind); return list.length ? '<label class="cos-sel">' + label + '<select id="cosPass_' + kind + '"><option value="">— aucun —</option>' + list.map(i => '<option value="' + i.id + '"' + (cur === i.id ? ' selected' : '') + '>' + i.emoji + ' ' + escapeHtml(i.name) + '</option>').join('') + '</select></label>' : ''; };
-    const passSlots = slotSel('badge', 'Badge (à côté du pseudo)', inv.loadout.badge) + slotSel('name_color', 'Couleur du pseudo', inv.loadout.name_color) + slotSel('banner', 'Bannière du profil', inv.loadout.banner) + slotSel('share_bg', 'Fond des images à partager', inv.loadout.share_bg);
+    const sounds = inv.items.filter(i => i.kind === 'sound');
+    const soundSel = '<label class="cos-sel">Son d\'ouverture de packs<span style="display:flex;gap:6px;align-items:center;"><select id="cosSound" style="flex:1;"><option value="">🐺 Hurlement du loup (par défaut)</option>' +
+      sounds.map(i => '<option value="' + i.id + '" data-file="' + escapeHtml(i.style.file) + '"' + (inv.loadout.sound === i.id ? ' selected' : '') + '>' + i.emoji + ' ' + escapeHtml(i.name) + '</option>').join('') +
+      '</select><button class="btn-small" type="button" id="cosSoundPlay" title="Écouter" aria-label="Écouter le son choisi">▶</button></span></label>' +
+      (sounds.length ? '' : '<p style="font-size:12px;color:var(--text-muted);margin:-4px 0 8px;">Les sons d\'ouverture se gagnent au niveau 18 du Pass Premium (un par mois, à partir de novembre 2026).</p>');
+    const passSlots = slotSel('badge', 'Badge (à côté du pseudo)', inv.loadout.badge) + slotSel('name_color', 'Couleur du pseudo', inv.loadout.name_color) + slotSel('banner', 'Bannière du profil', inv.loadout.banner) + slotSel('share_bg', 'Fond des images à partager', inv.loadout.share_bg) + soundSel;
     const html = '<div class="cos-prev"><div class="profile-avatar' + (cat.selected.frame ? ' fr-' + cat.selected.frame : '') + '" id="cosPrev">' + (p.avatar ? '<img alt="" src="' + API_BASE + '/users/' + encodeURIComponent(p.pseudo) + '/avatar?v=' + p.avatar + '">' : escapeHtml(p.pseudo.charAt(0).toUpperCase())) + '</div></div>' +
       '<label class="cos-sel">Titre (sous ton pseudo)<select id="cosTitle">' + opts(cat.titles, cat.selected.title) + '</select></label>' +
       '<label class="cos-sel">Cadre (anneau autour de ta photo)<select id="cosFrame">' + opts(cat.frames, cat.selected.frame) + '</select></label>' + passSlots +
@@ -2183,10 +2188,17 @@
       (locked.length ? '<details style="font-size:12.5px;"><summary style="cursor:pointer;font-weight:700;">Comment débloquer le reste ? (' + locked.length + ')</summary><ul style="margin:6px 0 0 18px;padding:0;line-height:1.45;">' + locked.map(t => '<li>' + escapeHtml(t) + '</li>').join('') + '</ul></details>' : '');
     const ok = await confirmDialog('Titre et cadre', html, 'Enregistrer', (body) => {
       body.querySelector('#cosFrame').addEventListener('change', e => { body.querySelector('#cosPrev').className = 'profile-avatar' + (e.target.value ? ' fr-' + e.target.value : ''); });
+      body.querySelector('#cosSoundPlay').addEventListener('click', () => {          // écouter le son sélectionné (sans l'enregistrer)
+        if (!soundOn) { toast('Le son est coupé : active-le avec le bouton 🔇 en haut'); return; }
+        const o = body.querySelector('#cosSound').selectedOptions[0];
+        if (o && o.dataset.file) playSoundFile(o.dataset.file); else playHowl();
+      });
     });
     if (!ok) return;
     try { await api('/cosmetics', { method: 'POST', body: JSON.stringify({ title: byId('cosTitle').value || null, frame: byId('cosFrame').value || null }) });
       if (inv.items.length) { const v = k => (byId('cosPass_' + k) ? byId('cosPass_' + k).value : '') || null; await api('/pass/equip', { method: 'POST', body: JSON.stringify({ badge: v('badge'), name_color: v('name_color'), banner: v('banner'), share_bg: v('share_bg') }) }); }
+      const snd = byId('cosSound').value || null;
+      if (snd !== (inv.loadout.sound || null)) { const r = await api('/pass/sound', { method: 'POST', body: JSON.stringify({ item_id: snd }) }); if (meInfo) meInfo.open_sound = r.sound; }       // enregistré sur le compte
       toast('Profil mis à jour 🎨'); await openProfile(meInfo.pseudo); loadLeaderboard(); }
     catch(e) { toast(e.message); }
   }
@@ -2451,7 +2463,7 @@
     if (!r) return '<div class="pass-cell empty">—</div>';
     const it = r.item_obj, parts = [];
     if (r.credits) parts.push('💰 +' + r.credits); if (r.pack) parts.push('📦 pack ' + escapeHtml(r.pack)); if (r.edition_pack) parts.push('🃏 pack d\'édition limitée (' + r.edition_pack + ' cartes)'); if (r.pass_card) parts.push('🎴 carte exclusive du Pass');
-    if (it) parts.push(it.emoji + ' ' + escapeHtml(it.name) + ' <small style="color:var(--text-muted);">(' + ({ badge: 'badge', banner: 'bannière', frame: 'cadre', name_color: 'couleur du pseudo', title: 'titre', stickers: 'autocollants', share_bg: 'fond d\'image' }[it.kind]) + ')</small>');
+    if (it) parts.push(it.emoji + ' ' + escapeHtml(it.name) + ' <small style="color:var(--text-muted);">(' + ({ badge: 'badge', banner: 'bannière', frame: 'cadre', name_color: 'couleur du pseudo', title: 'titre', stickers: 'autocollants', share_bg: 'fond d\'image', sound: 'son d\'ouverture de packs' }[it.kind]) + ')</small>');
     return '<div class="pass-cell ' + cls + ' ' + r.status + '"><div>' + parts.join('<br>') + '</div><div>' + (r.status === 'ready' ? '<button class="btn-small" type="button" data-pclaim data-track="' + (cls === 'premium' ? 'premium' : 'free') + '" data-level="' + r.__lv + '">Récupérer</button>' : r.status === 'claimed' ? '<span class="pc-st">✓ récupéré</span>' : r.status === 'premium_locked' ? '<span class="pc-st">💎 Premium</span>' : '<span class="pc-st">🔒 jour ' + r.__day + '</span>') + '</div></div>';
   }
   function renderPass(){
@@ -2598,7 +2610,7 @@
     soundOn = !soundOn;
     try { localStorage.setItem(SOUND_KEY, soundOn ? '1' : '0'); } catch(e) {}
     refreshSoundBtn();
-    if (soundOn) playHowl();          // petit aperçu quand on réactive le son
+    if (soundOn) playOpenSound();     // petit aperçu quand on réactive le son
   });
   refreshSoundBtn();
 
@@ -2661,6 +2673,27 @@
       }
       playSynth();
     } catch(e) { /* le son ne doit jamais empêcher d'ouvrir un pack */ }
+  }
+  // Son d'ouverture choisi dans le Pass (objet « sound », fichier sounds/<thème>.mp3) : seul ce fichier-là est chargé, au premier
+  // pack ouvert. Introuvable ou illisible : c'est le hurlement du loup qui est joué. Le bouton 🔊/🔇 vaut pour tous les sons.
+  let chosenAudio = null;
+  function playSoundFile(file){
+    if (!soundOn) return;
+    try {
+      if (!chosenAudio || chosenAudio._file !== file) {
+        const a = new Audio(file); a.preload = 'auto'; a._file = file; a._failed = false;
+        a.addEventListener('error', () => { a._failed = true; });
+        chosenAudio = a;
+      }
+      if (chosenAudio._failed) { playHowl(); return; }
+      chosenAudio.currentTime = 0;
+      const pr = chosenAudio.play();
+      if (pr && pr.catch) pr.catch(() => playHowl());
+    } catch(e) { playHowl(); }
+  }
+  function playOpenSound(){
+    const s = meInfo && meInfo.open_sound;
+    if (s && s.file) playSoundFile(s.file); else playHowl();
   }
   function playSynth(){
     try {
@@ -2903,6 +2936,7 @@
         '<li><b>30 niveaux, un par jour.</b> Chaque niveau coûte 100 points ; le niveau N s\'ouvre le jour N du mois. Si tu dépasses 100 points dès le 1er jour, rien n\'est perdu : le niveau 2 attend simplement le lendemain. En février, les derniers niveaux s\'ouvrent le dernier jour.</li>' +
         '<li><b>Points</b> : mission +20 (jusqu\'à 80 par jour), match 1v1 +10 (50 par jour), échange de cartes +15 (30 par jour), pronostic +15 (30 par jour) puis score exact +60, mini-jeu du jour jusqu\'à +50, tournoi +30 à l\'inscription puis +20 par tour gagné, défi du club jusqu\'à +60 (première victoire du jour : +10 en Facile, +20 en Normal, +30 en Difficile).</li>' +
         '<li><b>Dernière semaine du mois : points doublés.</b></li>' +
+        '<li><b>Son d\'ouverture</b> : à partir de novembre 2026, le niveau 18 du Premium donne le son d\'ouverture de packs du thème du mois. Choisis-le (ou reviens au hurlement du loup) dans « 🎨 Mes objets » ; le bouton 🔊/🔇 coupe tous les sons.</li>' +
         '<li><b>Rattrapage</b> : les récompenses non réclamées restent disponibles 7 jours après la fin du mois, sans limite par jour. Passé ce délai, le Pass disparaît.</li>' +
         '<li><b>Étoile de prestige</b> permanente quand les 30 niveaux sont atteints : une étoile par Pass complété (deux pass = deux étoiles), affichée à côté du pseudo.</li>' +
         '<li><b>Acheter un niveau</b> : pour <b>' + lp + ' crédits</b>, tu gagnes d\'un coup les points qui te manquent pour atteindre le niveau suivant. Le niveau ne s\'ouvre quand même que le jour qui lui correspond.</li></ul>';
@@ -3221,7 +3255,7 @@
   async function openPack(packType){
     if (opening) return;
     opening = true;
-    playHowl();            // dans le clic, pour que le navigateur autorise le son
+    playOpenSound();       // dans le clic, pour que le navigateur autorise le son (son choisi dans le Pass, sinon le hurlement)
     // annule tout minuteur laissé par une ouverture précédente interrompue,
     // pour ne jamais avoir deux séquences d'animation qui se marchent dessus
     pendingTimers.forEach(clearTimeout);

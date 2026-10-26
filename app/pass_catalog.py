@@ -6,7 +6,11 @@ Un THÈME = un nom, un emoji, deux couleurs (+ une d'accent), 12 emojis nommés,
 et 3 objets de la piste gratuite. Aucun fichier d'image : tout est dessiné avec des couleurs, des dégradés et des emojis.
 
 Types d'objets : badge (emoji à côté du pseudo), banner (bannière du profil), frame (cadre autour de la photo), name_color (couleur du pseudo),
-title (titre sous le pseudo), stickers (emojis du chat), share_bg (fond des images à partager).
+title (titre sous le pseudo), stickers (emojis du chat), share_bg (fond des images à partager), sound (son joué à l'ouverture d'un pack).
+
+SONS D'OUVERTURE : un par thème (« Son d'ouverture <Thème> »), au niveau SOUND_LEVEL de la piste Premium, à partir du Pass SOUND_FROM. Il remplace à ce niveau
+la décoration ordinaire (une couleur de pseudo) ; celle-ci reste au catalogue pour ceux qui l'ont déjà réclamée. Le fichier est frontend/sounds/<id du thème>.mp3 :
+le site joue le hurlement du loup s'il n'existe pas (encore).
 """
 
 THEMES = {
@@ -34,9 +38,11 @@ THEMES = {
 }
 THEME_BY_NAME = {t["name"]: k for k, t in THEMES.items()}
 DEFAULT_THEME_BY_MONTH = {1: "hiver", 2: "hiver", 3: "printemps", 4: "printemps", 5: "printemps", 6: "ete", 7: "ete", 8: "ete", 9: "automne", 10: "automne", 11: "halloween", 12: "noel"}
-KINDS = ["badge", "banner", "frame", "name_color", "title", "stickers", "share_bg"]
-KIND_LABELS = {"badge": "Badge", "banner": "Bannière", "frame": "Cadre", "name_color": "Couleur du pseudo", "title": "Titre", "stickers": "Autocollants", "share_bg": "Fond d'image"}
+CYCLE = ["badge", "banner", "frame", "name_color", "title", "stickers", "share_bg"]      # l'ordre des décorations, niveau après niveau (ne pas changer : les objets déjà réclamés en dépendent)
+KINDS = CYCLE + ["sound"]
+KIND_LABELS = {"badge": "Badge", "banner": "Bannière", "frame": "Cadre", "name_color": "Couleur du pseudo", "title": "Titre", "stickers": "Autocollants", "share_bg": "Fond d'image", "sound": "Son d'ouverture"}
 LEVELS, POINTS_PER_LEVEL = 30, 100
+SOUND_LEVEL, SOUND_FROM = 18, "2026-11"           # niveau Premium du son d'ouverture, et premier Pass (mois) qui le donne
 PREMIUM_EXTRAS = {10: {"pack": "rare"}, 15: {"credits": 50}, 20: {"edition_pack": 2}, 25: {"pass_card": True}, 30: {"edition_pack": 3}}
 FREE_REWARDS = {1: {"credits": 5}, 4: {"pack": "classique"}, 7: {"credits": 10}, 10: {"free_item": 10}, 13: {"credits": 10}, 16: {"pack": "classique"}, 19: {"credits": 10}, 20: {"free_item": 20},
                 23: {"credits": 10}, 26: {"pack": "rare"}, 28: {"pack": "classique"}, 30: {"credits": 10, "free_item": 30}}
@@ -53,7 +59,7 @@ def _theme_items(theme_id: str) -> dict:
     def add(n, kind, name, emoji, style):
         out[item_id(theme_id, n)] = {"id": item_id(theme_id, n), "kind": kind, "name": name, "emoji": emoji, "style": style, "theme": theme_id, "level": n}
     for n in range(1, LEVELS + 1):
-        kind = KINDS[(n - 1) % 7]; i = (n - 1) // 7; e, en = em[(n - 1) % 12]
+        kind = CYCLE[(n - 1) % 7]; i = (n - 1) // 7; e, en = em[(n - 1) % 12]
         if kind == "badge": add(n, kind, "Badge %s" % en, e, {"emoji": e})
         elif kind == "banner":
             bg = ["linear-gradient(135deg,%s,%s)" % (c1, c2), "linear-gradient(135deg,%s,%s)" % (c2, c1), "radial-gradient(circle at 20%% 20%%,%s,%s 70%%)" % (c2, c1),
@@ -75,7 +81,13 @@ def _theme_items(theme_id: str) -> dict:
     for n, kind, name, e, style in ((10, "badge", "Badge du Pass %s" % t["name"], t["emoji"], {"emoji": t["emoji"]}), (20, "stickers", "Autocollants du Pass %s" % t["name"], t["emoji"], {"emojis": [x[0] for x in em[:6]]}),
                                     (30, "frame", "Cadre du Pass %s" % t["name"], t["emoji"], {"css": "box-shadow:0 0 0 3px %s,0 0 10px 2px %s" % (c2, c2)})):
         out[item_id(theme_id, "f%d" % n)] = {"id": item_id(theme_id, "f%d" % n), "kind": kind, "name": name, "emoji": e, "style": style, "theme": theme_id, "level": n, "free": True}
+    out[sound_id(theme_id)] = {"id": sound_id(theme_id), "kind": "sound", "name": "Son d'ouverture %s" % t["name"], "emoji": "🔊",
+                               "style": {"file": "sounds/%s.mp3" % theme_id}, "theme": theme_id, "level": SOUND_LEVEL}
     return out
+
+
+def sound_id(theme_id: str) -> str:
+    return item_id(theme_id, "son")
 
 
 ITEMS = {}
@@ -85,8 +97,10 @@ CLUB_STICKER = {"id": "pass-club-stickers", "kind": "stickers", "name": "Autocol
 ITEMS[CLUB_STICKER["id"]] = CLUB_STICKER
 
 
-def premium_reward(theme_id: str, level: int) -> dict:
-    r = {"item": item_id(theme_id, level)}; r.update(PREMIUM_EXTRAS.get(level, {})); return r
+def premium_reward(theme_id: str, level: int, season: str = None) -> dict:
+    """La récompense Premium d'un niveau. `season` (AAAA-MM) : à partir de SOUND_FROM, le niveau SOUND_LEVEL donne le son d'ouverture du thème."""
+    sound = level == SOUND_LEVEL and season is not None and season >= SOUND_FROM
+    r = {"item": sound_id(theme_id) if sound else item_id(theme_id, level)}; r.update(PREMIUM_EXTRAS.get(level, {})); return r
 
 
 def free_reward(theme_id: str, level: int):
