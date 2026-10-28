@@ -13,7 +13,7 @@ import tempfile
 import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SUITES = ["test_pass", "test_social2", "test_tournament", "test_duel_packs", "test_backup", "test_features2", "test_club", "test_first_steps", "test_smoke_routes"]
+SUITES = ["test_pass", "test_social2", "test_tournament", "test_duel_packs", "test_backup", "test_features2", "test_club", "test_first_steps", "test_admin_password", "test_smoke_routes"]
 
 
 def run(name: str):

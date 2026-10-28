@@ -1554,6 +1554,20 @@ def admin_delete_upcoming_match(payload: schemas.AdminDeleteUpcomingMatchRequest
     return {"status": "ok", "deleted": label}
 
 
+@app.post("/admin/set-password", dependencies=[Depends(require_admin)])
+def admin_set_password(payload: schemas.AdminSetPasswordRequest, db: Session = Depends(get_db)):
+    """Mot de passe oublié : donne un nouveau mot de passe à un compte existant (sa collection, ses crédits et le reste ne changent pas).
+    Tous ses appareils sont déconnectés : il se reconnecte avec le nouveau mot de passe. Le mot de passe n'est jamais écrit dans le journal."""
+    user = db.query(User).filter_by(pseudo=payload.pseudo).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable (le pseudo doit être exact : majuscules et accents compris)")
+    user.password_hash = hash_password(payload.new_password)
+    closed = db.query(sessions.UserSession).filter_by(user_id=user.id).delete()
+    user.token = None
+    db.commit()
+    return {"status": "ok", "pseudo": user.pseudo, "appareils_deconnectes": closed}
+
+
 @app.post("/admin/set-test-account", dependencies=[Depends(require_admin)])
 def admin_set_test_account(payload: schemas.AdminSetTestAccountRequest, db: Session = Depends(get_db)):
     """Marque (ou démarque) un compte comme compte de test :
