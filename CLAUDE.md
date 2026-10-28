@@ -47,6 +47,11 @@ Site web (PWA) où les membres du club ouvrent des packs de cartes des vrais jou
 - Routes : `GET /first-steps` (`{"visible": false}` si le compte n'y a pas droit), `POST /first-steps/claim`, admin `POST /admin/first-steps-reset {pseudo}` (efface la récupération ; un compte de plus de 14 jours reste invisible).
 - Site : carte « 🚀 Premiers pas · n/5 » au-dessus des missions de l'onglet Packs ; chaque objectif non fait mène au bon endroit.
 
+## Mot de passe oublié
+- Les comptes n'ont pas d'e-mail : c'est l'administrateur qui donne un nouveau mot de passe, avec `POST /admin/set-password {pseudo, new_password}` (4 à 72 caractères, pseudo exact). Formulaire dans l'onglet Comptes de la page d'administration.
+- Le compte garde tout ; tous ses appareils sont déconnectés (sessions supprimées).
+- Le journal de l'administration ne doit jamais contenir de mot de passe : `admin_tools.SECRET_FIELDS` masque `new_password` et `password` (« (masqué) »). Toute nouvelle commande qui reçoit un secret doit utiliser un de ces noms de champ.
+
 ## Lancer en local
 
 Environnement : `.venv` (Python 3.13, créé avec `uv`), exclu de git via `.git/info/exclude`.
@@ -67,7 +72,7 @@ uv pip install --python .venv/Scripts/python.exe -r requirements.txt pytest http
 ```
 
 - **À lancer avant chaque proposition d'envoi.** Pour une seule suite : `.venv/Scripts/python.exe tests/run_tests.py test_pass`.
-- Le lanceur exécute les suites `test_pass`, `test_social2`, `test_tournament`, `test_duel_packs`, `test_backup`, `test_features2`, `test_club`, `test_first_steps` et `test_smoke_routes`. Chacune tourne sur une base SQLite temporaire, remplie par `tests/seed_test_data.py` (joueurs fictifs, à ne pas confondre avec `app/seed_data.py`). La vraie base n'est jamais touchée.
+- Le lanceur exécute les suites `test_pass`, `test_social2`, `test_tournament`, `test_duel_packs`, `test_backup`, `test_features2`, `test_club`, `test_first_steps`, `test_admin_password` et `test_smoke_routes`. Chacune tourne sur une base SQLite temporaire, remplie par `tests/seed_test_data.py` (joueurs fictifs, à ne pas confondre avec `app/seed_data.py`). La vraie base n'est jamais touchée.
 - Résultat attendu : « TOUT EST VERT ». `test_smoke_routes` affiche « 0 vérifications » : c'est normal, car il n'imprime pas de lignes « OK ». Il appelle toutes les routes GET et échoue seulement en cas d'erreur 500.
 - `tests/ui_*.js` et `tests/prep_*_ui.py` servent aux tests d'interface, voir `tests/LISEZMOI.md`.
 - Pour les tests, `minigame.RNG` peut être remplacé et `FC_FAKE_NOW` simule la date.

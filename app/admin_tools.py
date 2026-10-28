@@ -73,6 +73,7 @@ def summarize(path: str, payload) -> str:
         if name == "delete-upcoming-match": return "Match à venir retiré : %s (%s)" % (_s(p, "opponent"), _s(p, "date"))
         if name == "push-broadcast": return "Notification « %s »%s" % (_s(p, "title"), " à " + who if who else " à tous")
         if name == "tournament-settings": return "Tournoi : %s" % " · ".join(x for x in (("droit d'entrée %s crédits" % p["entry_fee"]) if p.get("entry_fee") is not None else "", ("bonus du club %s crédits" % p["bonus"]) if p.get("bonus") is not None else "") if x)
+        if name == "set-password": return "Nouveau mot de passe pour %s (tous ses appareils déconnectés)" % who
         if name == "first-steps-reset": return "Premiers pas : récupération de la récompense effacée pour %s" % who
         if name == "club-reset": return "Défi du club : essais et récompenses du jour remis à zéro pour %s" % who
         if name == "tournament-cancel": return "Tournoi du mois annulé (droits d'entrée remboursés)"
@@ -97,6 +98,9 @@ def summarize(path: str, payload) -> str:
     return "%s %s" % ("POST", path)
 
 
+SECRET_FIELDS = ("new_password", "password")      # jamais écrits dans le journal (il est lisible dans l'administration et part dans les sauvegardes)
+
+
 def write_entry(method: str, path: str, status: int, body: bytes, ip: str) -> None:
     """Note une action. Ne lève JAMAIS d'exception."""
     try:
@@ -105,7 +109,15 @@ def write_entry(method: str, path: str, status: int, body: bytes, ip: str) -> No
             payload = json.loads(body.decode("utf-8")) if body else None
         except Exception:
             payload = None
-        raw = (json.dumps(payload, ensure_ascii=False) if payload is not None else (body.decode("utf-8", "replace") if body else ""))[:MAX_PAYLOAD_CHARS]
+        if isinstance(payload, dict):
+            payload = {k: ("(masqué)" if k in SECRET_FIELDS else v) for k, v in payload.items()}
+        if payload is not None:
+            raw = json.dumps(payload, ensure_ascii=False)
+        elif path.endswith("/set-password"):
+            raw = "(masqué)"                                      # contenu illisible : on ne le recopie pas, il pourrait contenir le mot de passe
+        else:
+            raw = body.decode("utf-8", "replace") if body else ""
+        raw = raw[:MAX_PAYLOAD_CHARS]
         db = SessionLocal()
         try:
             db.add(AdminLog(method=method, path=path, status=status, summary=summarize(path, payload), payload=raw, ip=ip))

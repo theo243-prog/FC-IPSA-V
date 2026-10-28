@@ -82,6 +82,11 @@ class AdminSetPlayerPhotoRequest(BaseModel):
     tier: Optional[str] = None  # sans tier : photo par défaut du joueur ; avec tier ("commune", "rare", "speciale"...) : photo de cette rareté seulement
 
 
+class AdminSetPasswordRequest(BaseModel):
+    pseudo: str
+    new_password: str = Field(min_length=4, max_length=72)     # mêmes limites qu'à la création d'un compte
+
+
 class AdminSetTestAccountRequest(BaseModel):
     pseudo: str
     is_test: bool = True
