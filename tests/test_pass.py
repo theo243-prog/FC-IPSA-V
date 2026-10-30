@@ -161,4 +161,37 @@ at(31, mo=12); grant("p7", 2900); r = buy("p7").json(); st7 = st("p7"); ok(r["po
 ok(buy("p7").status_code == 400 and "déjà atteint les 30 niveaux" in buy("p7").json()["detail"] and U("p7").credits == 80, "à 3000 points : « Tu as déjà atteint les 30 niveaux » ; rien n'est retiré")
 ok(c.post("/pass/buy-level").status_code == 401, "sans compte : 401")
 
+print("12) RÉCUPÉRER TOUT")
+from fastapi import HTTPException
+at(31, mo=12); H["p8"] = mk("p8"); H["p9"] = mk("p9"); H["p10"] = mk("p10")
+claim_all = lambda who, season=None: c.post("/pass/claim-all", json={"season": season} if season else {}, headers=H[who])
+ok(claim_all("p8").status_code == 400 and "Rien à récupérer" in claim_all("p8").json()["detail"], "rien de débloqué : « Récupérer tout » refusé (400)")
+def expected(cur):
+    """Ce que « Récupérer tout » doit verser : récompenses prêtes des deux pistes et paliers du club atteints."""
+    rw = [l[t] for l in cur["levels"] for t in ("free", "premium") if l[t] and l[t]["status"] == "ready"] + [t["reward"] for t in cur["club"]["tiers"] if t["reached"] and not t["claimed"]]
+    club_items = sum(1 for t in cur["club"]["tiers"] if t["reached"] and not t["claimed"] and t["index"] == len(cur["club"]["tiers"]) - 1)
+    return len(rw), sum(r.get("credits") or 0 for r in rw), sum(1 for r in rw if r.get("item")) + club_items
+grant("p8", 1000, 1); s8 = st("p8")["current"]; n8, cr8, it8 = expected(s8)
+cr0, inv0 = U("p8").credits, len(c.get("/pass/inventory", headers=H["p8"]).json()["items"])
+r = claim_all("p8"); j = r.json()
+ok(r.status_code == 200 and j["claimed"] == n8 == s8["claimable"] and n8 >= 14, f"p8 (Premium, niveau 10) : {j.get('claimed')} récompenses récupérées d'un coup (gratuites, Premium et objectif du club)")
+ok(U("p8").credits - cr0 == cr8 == j["summary"]["credits"] and j["credits"] == U("p8").credits, f"crédits versés : +{cr8}, comme en récupérant chaque récompense")
+ok(len(j["summary"]["items"]) == it8 and len(c.get("/pass/inventory", headers=H["p8"]).json()["items"]) == inv0 + it8 and j["summary"]["packs"].get("rare") == 1, f"{it8} objets ajoutés à l'inventaire ; le pack rare du niveau 10 est dans le récapitulatif")
+s8 = st("p8")["current"]; ok(s8["claimable"] == 0 and all(l[t]["status"] == "claimed" for l in s8["levels"][:10] for t in ("free", "premium") if l[t]), "ensuite : plus rien à récupérer, les 10 premiers niveaux sont « récupéré »")
+ok(claim_all("p8").status_code == 400 and claim("p8", "free", 1).status_code == 400 and claim("p8", "premium", 10).status_code == 400, "relancer « Récupérer tout » ou récupérer à la main une récompense déjà prise : refusé")
+ok(all(l["premium"]["status"] == "locked" for l in s8["levels"][10:]), "les niveaux pas encore débloqués (11 à 30) ne sont pas touchés")
+grant("p9", 1000); n9 = expected(st("p9")["current"])[0]; r = claim_all("p9"); s9 = st("p9")["current"]
+ok(r.status_code == 200 and r.json()["claimed"] == n9 and all(l["premium"]["status"] == "premium_locked" for l in s9["levels"]) and s9["claimable"] == 0, f"p9 sans Premium : seulement les {n9} récompenses gratuites et du club ; la piste Premium reste verrouillée")
+grant("p10", 1000, 1); n10 = st("p10")["current"]["claimable"]; cr10 = U("p10").credits
+real_grant, calls = BP._grant, [0]
+def failing_grant(*a, **kw):
+    calls[0] += 1
+    if calls[0] == 3: raise HTTPException(status_code=400, detail="panne simulée")
+    return real_grant(*a, **kw)
+BP._grant = failing_grant; r = claim_all("p10"); BP._grant = real_grant
+db.expire_all(); ok(r.status_code == 400 and U("p10").credits == cr10 and db.query(BP.PassClaim).filter_by(user_id=U("p10").id).count() == 0 and st("p10")["current"]["claimable"] == n10, "tout ou rien : si la 3e récompense échoue, aucune n'est versée ni notée")
+ok(claim_all("p10").json()["claimed"] == n10, "relancé ensuite, tout est récupéré")
+ok(claim_all("p8", "2026-10").status_code == 400 and claim_all("p8", "2026-12").status_code == 400, "un Pass terminé (octobre, hors rattrapage) : refusé ; un Pass précis sans rien de prêt : refusé")
+ok(c.post("/pass/claim-all", json={}).status_code == 401, "sans compte : 401")
+
 print(); print("BILAN (Pass de saison) :", "TOUT EST VERT" if not FAILS else f"{len(FAILS)} ÉCHEC(S) : {FAILS}")

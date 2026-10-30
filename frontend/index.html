@@ -1970,7 +1970,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.28.1';
+  const SITE_VERSION = '2026.10.30.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2484,6 +2484,7 @@
       '<div class="pc-actions" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">' + (s.double_points ? '<span class="pc-chip hot">⚡ dernière semaine : points doublés</span>' : '') + (s.ended ? '<span class="pc-chip hot">↩️ rattrapage jusqu\'au ' + escapeHtml(passDateFmt(s.catchup_until)) + ' : plus de limite par jour</span>' : '') + (d.stars ? '<span class="pc-chip">' + starsHTML(d.stars) + ' ' + d.stars + ' Pass terminé' + (d.stars > 1 ? 's' : '') + '</span>' : '') + '</div></div>' +
       (isCur && !s.premium ? '<div class="panel-box" style="margin:0 0 10px;"><b>💎 Pass Premium : ' + d.price + ' crédits</b><div style="font-size:13px;color:var(--text-muted);margin:4px 0 8px;">Un objet décoratif par niveau (badges, bannières, cadres, couleurs de pseudo, titres, autocollants, fonds d\'image), un pack rare, 2 packs d\'édition limitée (niveaux 20 et 30) et la <b>carte exclusive du Pass</b> (niveau 25). Si tu l\'achètes en cours de mois, tout ce qui est déjà débloqué est immédiatement récupérable. Uniquement du décoratif : aucun avantage en match.</div><button class="btn-primary" type="button" id="passBuy">Acheter le Premium (' + d.price + ' crédits)</button></div>' : (s.premium ? '<div class="pc-chip" style="display:inline-block;background:var(--bg-sunk);margin-bottom:8px;">💎 Pass Premium actif</div>' : '')) +
       (isCur && !s.ended && s.points < 3000 ? '<div style="margin:0 0 10px;"><button class="btn-small" type="button" id="passBuyLevel">⏩ Acheter le niveau ' + (Math.floor(s.points / 100) + 1) + ' : ' + d.level_price + ' crédits</button><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Tu gagnes les points qui te manquent pour l\'atteindre ; un niveau ne s\'ouvre quand même que le jour qui lui correspond.</div></div>' : '') +
+      (s.claimable ? '<div style="margin:0 0 10px;"><button class="btn-primary" type="button" id="passClaimAll">📥 Récupérer tout (' + s.claimable + ' récompense' + (s.claimable > 1 ? 's' : '') + ')</button></div>' : '') +
       '<div class="pass-cols"><span></span><span>Gratuit</span><span>💎 Premium</span></div>' +
       s.levels.map(l => '<div class="pass-row' + (l.reached ? ' reached' : '') + '"><div class="pass-lv">' + l.level + '<small>J' + l.unlock_day + '</small></div>' + passRewardHTML(l.free && { ...l.free, __lv: l.level, __day: l.unlock_day }, 'free') + passRewardHTML({ ...l.premium, __lv: l.level, __day: l.unlock_day }, 'premium') + '</div>').join('') +
       '<div class="pass-sec">🤝 Objectif du club : ' + s.club.packs + ' packs ouverts ce mois-ci</div><div style="font-size:12.5px;color:var(--text-muted);margin-bottom:6px;">Tous les joueurs font avancer la barre en ouvrant des packs. À chaque palier, <b>tout le monde</b> reçoit la récompense (gratuit, sans Premium).</div><div class="pass-bar" style="background:var(--bg-sunk);"><i style="width:' + Math.min(100, Math.round(s.club.packs * 100 / s.club.tiers[s.club.tiers.length - 1].goal)) + '%;background:linear-gradient(90deg,' + th.c2 + ',' + th.accent + ');"></i></div>' +
@@ -2492,6 +2493,7 @@
     body.innerHTML = html;
     body.querySelectorAll('[data-pview]').forEach(b => b.addEventListener('click', () => { passView = b.dataset.pview; renderPass(); }));
     body.querySelectorAll('[data-pclaim]').forEach(b => b.addEventListener('click', () => passClaim(b, s.key)));
+    const all = byId('passClaimAll'); if (all) all.addEventListener('click', () => passClaimAll(all, s.key));
     const buy = byId('passBuy'); if (buy) buy.addEventListener('click', passBuyPremium);
     const bl = byId('passBuyLevel'); if (bl) bl.addEventListener('click', passBuyLevel);
     body.querySelectorAll('.help-btn').forEach(b => b.addEventListener('click', () => openHelp(b.dataset.help, b)));
@@ -2512,6 +2514,22 @@
       if (g.edition_pack) parts.push(g.edition_pack.cards ? '🃏 <b>pack d\'édition limitée</b> : ' + g.edition_pack.cards.map(c => escapeHtml(c.player_name)).join(', ') : '📦 pas encore de carte d\'édition en jeu : tu reçois <b>' + g.edition_pack.count + ' pack(s) rare(s)</b> à la place');
       await refreshMe(); await openPass(); loadPassCard(); loadCollection();
       confirmDialog('🎁 Récompense récupérée', '<div style="line-height:1.7;">' + parts.join('<br>') + '</div>', 'Super !');
+    } catch(e) { toast(e.message); btn.disabled = false; }
+  }
+  // « Récupérer tout » : toutes les récompenses prêtes de ce Pass d'un coup, puis un seul récapitulatif
+  async function passClaimAll(btn, season){
+    btn.disabled = true;
+    try {
+      const r = await api('/pass/claim-all', { method: 'POST', body: JSON.stringify({ season }) });
+      const s = r.summary, parts = [];
+      if (s.credits) parts.push('💰 <b>+' + s.credits + ' crédits</b>');
+      Object.entries(s.packs).forEach(([t, n]) => parts.push('📦 <b>' + n + ' pack' + (n > 1 ? 's' : '') + ' ' + escapeHtml(t) + '</b> (dans tes packs bonus)'));
+      if (s.fallback_rare_packs) parts.push('📦 <b>' + s.fallback_rare_packs + ' pack(s) rare(s)</b> (à la place des packs d\'édition limitée)');
+      if (s.edition_cards.length) parts.push('🃏 <b>cartes d\'édition limitée</b> : ' + s.edition_cards.map(c => escapeHtml(c.player_name)).join(', '));
+      s.pass_cards.forEach(c => parts.push('🎴 la <b>carte exclusive du Pass</b> : ' + escapeHtml(c.player_name)));
+      if (s.items.length) parts.push(s.items.map(it => it.emoji + ' ' + escapeHtml(it.name)).join('<br>') + '<br><small style="color:var(--text-muted);">(à équiper dans « 🎨 Mes objets »)</small>');
+      await refreshMe(); await openPass(); loadPassCard(); loadCollection();
+      confirmDialog('🎁 ' + r.claimed + ' récompense' + (r.claimed > 1 ? 's' : '') + ' récupérée' + (r.claimed > 1 ? 's' : ''), '<div style="line-height:1.7;max-height:55vh;overflow:auto;">' + parts.join('<br>') + '</div>', 'Super !');
     } catch(e) { toast(e.message); btn.disabled = false; }
   }
   async function passBuyLevel(){
@@ -2980,6 +2998,7 @@
         '<li><b>Dernière semaine du mois : points doublés.</b></li>' +
         '<li><b>Son d\'ouverture</b> : à partir de novembre 2026, le niveau 18 du Premium donne le son d\'ouverture de packs du thème du mois. Choisis-le (ou reviens au hurlement du loup) dans « 🎨 Mes objets » ; le bouton 🔊/🔇 coupe tous les sons.</li>' +
         '<li><b>Rattrapage</b> : les récompenses non réclamées restent disponibles 7 jours après la fin du mois, sans limite par jour. Passé ce délai, le Pass disparaît.</li>' +
+        '<li><b>Récupérer tout</b> : le bouton en haut du Pass récupère d\'un coup toutes les récompenses déjà débloquées (gratuites, Premium et objectif du club), avec un seul récapitulatif.</li>' +
         '<li><b>Étoile de prestige</b> permanente quand les 30 niveaux sont atteints : une étoile par Pass complété (deux pass = deux étoiles), affichée à côté du pseudo.</li>' +
         '<li><b>Acheter un niveau</b> : pour <b>' + lp + ' crédits</b>, tu gagnes d\'un coup les points qui te manquent pour atteindre le niveau suivant. Le niveau ne s\'ouvre quand même que le jour qui lui correspond.</li></ul>';
     } },
