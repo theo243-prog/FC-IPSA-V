@@ -11,6 +11,13 @@ Site web (PWA) où les membres du club ouvrent des packs de cartes des vrais jou
 - **Ne touche pas au guide « Commandes site.md »** (dans le dossier : `Commandes site (1).md`, non suivi par git) sauf si je le demande.
 - **Aucun secret dans le dépôt : il est public.** Pas de clé admin, d'URL de base avec mot de passe, de clé VAPID ni de sauvegarde `.json.gz`. Les secrets vivent dans les variables d'environnement de Railway.
 
+## Façon de travailler (décidée avec moi)
+- Une fonctionnalité = une branche dédiée (ex. `defi-du-club`, `premiers-pas`). Si je le demande, présenter d'abord un plan court et attendre mon accord avant de modifier le code.
+- Avant de fusionner : tests verts, vérification dans le navigateur intégré, puis rapport (fichiers modifiés, ce qui est vérifié ou non, effets de bord). Ne fusionner dans `main` qu'après mon accord ; ensuite relancer les tests sur `main` et pousser.
+- Avant toute fusion ou envoi, récupérer d'abord ce qui a changé sur GitHub (j'y ajoute parfois des photos et des sons directement).
+- Ne JAMAIS envoyer une modification de `API_BASE` dans `frontend/index.html`. Pour tester en local, servir une copie temporaire du site (hors du dépôt) dont l'adresse de l'API pointe vers le serveur local, avec une base SQLite jetable et des comptes de test.
+- Ne pas créer de fichiers audio ou image soi-même : seulement le code.
+
 ## Décisions de jeu (à respecter, ne pas « corriger »)
 - Prix boutique : classique 50, rare 100, épique 300, légendaire 500, ultra 500 crédits.
 - Pass de saison : 30 niveaux de 100 points ; le niveau N s'ouvre le jour N du mois ; Premium 300 crédits ; acheter le niveau suivant 20 crédits ; dernière semaine du mois = points ×2 ; rattrapage 7 jours ; une étoile permanente par Pass terminé.
@@ -24,7 +31,7 @@ Site web (PWA) où les membres du club ouvrent des packs de cartes des vrais jou
 - Photos des joueurs : fichiers dans frontend/photos/, chemin enregistré sous la forme /photos/nom.ext ; photo par rareté : nom-rareté.ext.
 - Sons d'ouverture de packs : un son par thème de Pass (objet de type « sound », « Son d'ouverture <Thème> »), fichier `frontend/sounds/<id du thème>.mp3`, au niveau 18 de la piste Premium à partir du Pass de novembre 2026 (`pass_catalog.SOUND_LEVEL`, `SOUND_FROM`) ; octobre 2026 garde sa couleur de pseudo au niveau 18. Le choix est enregistré sur le compte (table `pass_sound`, route `POST /pass/sound`, renvoyé par `/me` dans `open_sound`). Le site charge seulement le son choisi et joue le hurlement du loup (`sounds/loup.mp3`, sinon un son fabriqué) si le fichier manque ; le bouton 🔊/🔇 coupe tout. Le code ne dépend jamais de la présence des fichiers de sons. Ne pas modifier `pass_catalog.CYCLE` : les objets déjà réclamés en dépendent.
 - Tests : dossier tests/, lancer `python tests/run_tests.py` avant tout envoi.
-- Idée en attente de ma décision : un défi permanent « Affronter l'équipe du club ».
+- Défi permanent « Affronter l'équipe du club » : décidé et réalisé (section « Défi du club » ci-dessous).
 
 ## Défi du club (`app/club.py`)
 - Défi permanent contre une équipe fictive du club (pas un compte joueur), jamais mélangé aux défis 1v1 proposés par les joueurs. Panneau « 🏟️ Défi du club » dans l'onglet 1v1.
@@ -81,7 +88,7 @@ uv pip install --python .venv/Scripts/python.exe -r requirements.txt pytest http
 ## Architecture
 
 - **Backend** : FastAPI + SQLAlchemy 2 (`app/`), déployé sur Railway (PostgreSQL en production). Point d'entrée : `app/main.py`, qui contient les routes principales (auth, packs, collection, marché, 1v1, shop, classement, `/admin/*`) et inclut les routeurs des autres modules.
-- **Frontend** : un seul fichier `frontend/index.html` (HTML/CSS/JS sans framework), qui appelle l'API via `API_BASE` (URL Railway). Il comprend aussi `sw.js` (service worker, notifications push uniquement, aucun cache), `manifest.webmanifest`, `icons/` et `photos/` (photos `.webp` des joueurs, référencées par `/photos/xxx.webp`).
+- **Frontend** : un seul fichier `frontend/index.html` (HTML/CSS/JS sans framework), qui appelle l'API via `API_BASE` (URL Railway). Il comprend aussi `sw.js` (service worker, notifications push uniquement, aucun cache), `manifest.webmanifest`, `icons/`, `photos/` (photos `.webp` des joueurs, référencées par `/photos/xxx.webp`) et `sounds/` (`loup.mp3`, le hurlement par défaut, et les sons d'ouverture `<thème>.mp3`, ajoutés au fil des mois).
 - **Base** : `Base.metadata.create_all` au démarrage. Les colonnes ajoutées après coup se déclarent dans `app/schema_upgrades.py` (`NEW_COLUMNS`, `NEW_TIER_VALUES` pour l'énumération PostgreSQL des raretés). Les fichiers `migrate_*.py` sont d'anciennes migrations ponctuelles.
 - **Tâches de fond** : boucle toutes les 60 s dans `main._background_tick` (cartes spéciales du vendredi, enchères, sauvegarde quotidienne, Pass, tournoi, saisons, notifications). Une erreur dans une tâche est ignorée et ne fait jamais tomber le site.
 - **Auth** : pseudo + mot de passe (bcrypt), jeton aléatoire en `Authorization: Bearer`, plusieurs sessions par compte (`sessions.py`). Les routes admin exigent l'en-tête `X-Admin-Key` égal à la variable `ADMIN_KEY`, et chaque action admin qui modifie quelque chose est journalisée (`admin_tools.py`).
