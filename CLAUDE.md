@@ -14,6 +14,7 @@ Site web (PWA) où les membres du club ouvrent des packs de cartes des vrais jou
 ## Décisions de jeu (à respecter, ne pas « corriger »)
 - Prix boutique : classique 50, rare 100, épique 300, légendaire 500, ultra 500 crédits.
 - Pass de saison : 30 niveaux de 100 points ; le niveau N s'ouvre le jour N du mois ; Premium 300 crédits ; acheter le niveau suivant 20 crédits ; dernière semaine du mois = points ×2 ; rattrapage 7 jours ; une étoile permanente par Pass terminé.
+- Pass, « Récupérer tout » : un bouton en haut de la fenêtre du Pass récupère d'un coup toutes les récompenses débloquées et pas encore prises du Pass affiché (gratuites, Premium si acheté, paliers du club), avec un seul récapitulatif. Route `POST /pass/claim-all {season?}` (vide : le Pass du mois et, pendant le rattrapage, le précédent). Tout ou rien : si une récompense échoue, aucune n'est versée. Les récompenses passent par la même fonction que « Récupérer » (`battlepass._claim_one`).
 - Packs match : 5 par jour au maximum et par joueur (MATCH_PACK_DAILY_CAP dans duel_engine.py) ; au-delà, un pack classique, qu'on gagne ou qu'on perde.
 - Parrainage : un pack ultra pour le parrain et le filleul ; 3 filleuls maximum par code (referral.py).
 - Mini-jeu du jour : 5 questions (quiz) ou 5 tirs au but (but à 6 zones, probabilité d'arrêt réglée côté serveur) ; 10 points de Pass par bonne réponse ou but, 50 au maximum ; il remplace l'ancien défi quotidien « marché ».

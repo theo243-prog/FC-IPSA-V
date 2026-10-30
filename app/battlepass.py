@@ -93,6 +93,10 @@ class ClaimRequest(BaseModel):
     level: int = Field(ge=0, le=100)                        # niveau (1-30), ou numéro du palier du club (0-4)
 
 
+class ClaimAllRequest(BaseModel):
+    season: Optional[str] = None                            # un Pass précis (AAAA-MM), ou rien : tous ceux encore récupérables
+
+
 class EquipRequest(BaseModel):
     banner: Optional[str] = None
     name_color: Optional[str] = None
@@ -329,16 +333,29 @@ def get_pass(user: User = Depends(get_current_user), db: Session = Depends(get_d
             "points_help": {"minigame": "mini-jeu du jour (10 par bonne réponse ou but, 50 au maximum)", "mission": "missions du jour (20 par mission)", "duel": "match 1v1 (10)", "tournoi": "tournoi : inscription 30, tour gagné 20", "prono": "pronostic (15), score exact (60)", "swap": "échange de cartes (15)", "club": "défi du club : première victoire du jour de chaque niveau (10, 20, 30), jusqu'à +60"}}
 
 
-@router.post("/pass/claim")
-def claim(payload: ClaimRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    now = now_paris(); cur = seasons.key_of(now); key = payload.season or cur
+def _check_season(key: str, now: datetime) -> None:
+    """Seuls le Pass du mois et, pendant le rattrapage, celui du mois précédent se récupèrent."""
+    cur = seasons.key_of(now)
     if key != cur and not in_catchup(key, now):
         raise HTTPException(status_code=400, detail="Ce Pass est terminé : les récompenses ne se récupèrent plus")
     if not (key == cur or key == prev_key(cur)):
         raise HTTPException(status_code=400, detail="Saison inconnue")
+
+
+@router.post("/pass/claim")
+def claim(payload: ClaimRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    now = now_paris(); key = payload.season or seasons.key_of(now)
+    _check_season(key, now)
+    got = _claim_one(db, user, key, payload.track, payload.level, now)
+    db.commit()
+    return {"status": "ok", "season": key, "reward": got, "credits": user.credits}
+
+
+def _claim_one(db: Session, user: User, key: str, track: str, level_or_tier: int, now: datetime) -> dict:
+    """Vérifie puis verse UNE récompense (piste free / premium / club) et la note comme récupérée. Ne valide pas la transaction (l'appelant le fait)."""
     theme_id = theme_for(db, key); row = _progress(db, user.id, key); points = row.points if row else 0; level = unlocked_level(points, key, now); claims = _claims(db, user.id, key)
-    if payload.track == "club":
-        goals = club_goals(db); i = payload.level
+    if track == "club":
+        goals = club_goals(db); i = level_or_tier
         if not (0 <= i < len(goals)): raise HTTPException(status_code=400, detail="Palier inconnu")
         cg = db.get(ClubGoal, key)
         if (cg.packs if cg else 0) < goals[i]: raise HTTPException(status_code=400, detail="L'objectif du club n'est pas encore atteint pour ce palier")
@@ -347,21 +364,53 @@ def claim(payload: ClaimRequest, user: User = Depends(get_current_user), db: Ses
         reward = dict(P.CLUB_TIERS[i][1]); item = P.CLUB_STICKER["id"] if i == len(goals) - 1 else None
         if item: reward["item"] = item
     else:
-        lv = payload.level
+        lv = level_or_tier
         if not (1 <= lv <= P.LEVELS): raise HTTPException(status_code=400, detail="Niveau inconnu")
         if lv > level: raise HTTPException(status_code=400, detail="Le niveau %d n'est pas encore débloqué%s" % (lv, " (il s'ouvre le jour %d du mois)" % min(lv, dim(key)) if points >= lv * P.POINTS_PER_LEVEL else ""))
-        if payload.track == "free":
+        if track == "free":
             ck, reward = "f%d" % lv, P.free_reward(theme_id, lv)
             if not reward: raise HTTPException(status_code=400, detail="Pas de récompense gratuite à ce niveau")
-        elif payload.track == "premium":
+        elif track == "premium":
             if not (row and row.premium): raise HTTPException(status_code=400, detail="Cette récompense est réservée au Pass Premium")
             ck, reward = "p%d" % lv, P.premium_reward(theme_id, lv, key)
         else:
             raise HTTPException(status_code=400, detail="Piste inconnue")
         if ck in claims: raise HTTPException(status_code=400, detail="Tu as déjà récupéré cette récompense")
     got = _grant(db, user, key, reward, theme_id)
-    db.add(PassClaim(user_id=user.id, season=key, key=ck, item_id=reward.get("item"))); ensure_completion(db, user, key, now); db.commit()
-    return {"status": "ok", "season": key, "reward": got, "credits": user.credits}
+    db.add(PassClaim(user_id=user.id, season=key, key=ck, item_id=reward.get("item"))); db.flush(); ensure_completion(db, user, key, now)
+    return got
+
+
+@router.post("/pass/claim-all")
+def claim_all(payload: ClaimAllRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """« Récupérer tout » : toutes les récompenses débloquées et pas encore récupérées (pistes gratuite et Premium, objectif du club),
+    du Pass demandé, ou de tous les Pass encore récupérables si `season` est vide (le mois en cours et, pendant le rattrapage, le précédent).
+    Tout ou rien : si une récompense ne peut pas être versée, aucune ne l'est."""
+    now = now_paris(); cur = seasons.key_of(now)
+    keys = [payload.season] if payload.season else [k for k in (cur, prev_key(cur)) if k == cur or in_catchup(k, now)]
+    for k in keys:
+        _check_season(k, now)
+    done = []
+    for k in keys:
+        s = season_out(db, user, k, now)
+        todo = [(t, l["level"]) for l in s["levels"] for t in ("free", "premium") if l[t] and l[t]["status"] == "ready"]
+        todo += [("club", t["index"]) for t in s["club"]["tiers"] if t["reached"] and not t["claimed"]]
+        for track, n in todo:
+            done.append({"season": k, "track": track, "level": n, "reward": _claim_one(db, user, k, track, n, now)})
+    if not done:
+        raise HTTPException(status_code=400, detail="Rien à récupérer pour le moment")
+    db.commit()
+    summary = {"credits": 0, "packs": {}, "items": [], "pass_cards": [], "edition_cards": [], "fallback_rare_packs": 0}
+    for d in done:
+        g = d["reward"]
+        summary["credits"] += g.get("credits", 0)
+        if g.get("pack"): summary["packs"][g["pack"]] = summary["packs"].get(g["pack"], 0) + 1
+        if g.get("item"): summary["items"].append(g["item"])
+        if g.get("pass_card"): summary["pass_cards"].append(g["pass_card"])
+        if g.get("edition_pack"):
+            summary["edition_cards"] += g["edition_pack"].get("cards", [])
+            summary["fallback_rare_packs"] += g["edition_pack"].get("count", 0)
+    return {"status": "ok", "claimed": len(done), "rewards": done, "summary": summary, "credits": user.credits}
 
 
 @router.post("/pass/premium")
