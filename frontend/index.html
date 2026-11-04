@@ -541,16 +541,17 @@
     content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
     background:linear-gradient(165deg, rgba(255,255,255,0.4), rgba(255,255,255,0) 45%);
   }
-  /* ---- Photo plein cadre : l'image remplit le haut de la carte (plus de rond) et se fond dans la couleur de la
-     rareté sous le nom. Elle passe sous les textes, le reflet et les paillettes. ---- */
+  /* ---- Photo plein cadre : l'image remplit TOUTE la carte, du haut jusqu'en bas. Un voile sombre en bas (.card-scrim)
+     garde le nom et les infos lisibles, en blanc, quelle que soit la photo. Tout passe sous les textes, le reflet et les paillettes. ---- */
   .card-bgphoto{
-    position:absolute;left:0;top:0;width:100%;height:86%;object-fit:cover;object-position:center 18%;
+    position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;
     z-index:0;pointer-events:none;display:block;
-    -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 52%,rgba(0,0,0,.65) 72%,rgba(0,0,0,.22) 88%,rgba(0,0,0,0) 100%);
-    mask-image:linear-gradient(to bottom,#000 0,#000 52%,rgba(0,0,0,.65) 72%,rgba(0,0,0,.22) 88%,rgba(0,0,0,0) 100%);
   }
+  .card-scrim{position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;
+    background:linear-gradient(to top,rgba(0,0,0,.78) 0,rgba(0,0,0,.5) 15%,rgba(0,0,0,.14) 28%,rgba(0,0,0,0) 36%);}
   .has-photo::before{z-index:1;}
-  .has-photo .card-name{text-shadow:0 0 5px rgba(255,255,255,.7),0 0 12px rgba(255,255,255,.45);}
+  .has-photo .card-name{color:#fff !important;text-shadow:0 1px 2px rgba(0,0,0,.95),0 0 8px rgba(0,0,0,.7) !important;}
+  .has-photo .card-stats > span:not(.card-num):not(.tag-limitee):not(.fusion-gauge){background:rgba(0,0,0,.5);color:#fff;}
   .card-top{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;font-family:var(--font-head);gap:4px;}
   .card-tier-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;background:rgba(255,255,255,0.4);padding:2px 6px;border-radius:5px;}
   .card-poste{font-size:11px;font-weight:700;background:rgba(0,0,0,0.15);padding:2px 7px;border-radius:6px;white-space:nowrap;}
@@ -1536,7 +1537,7 @@
       statsRow = '<div class="card-stats"><span>⭐ ' + (card.display_note ? card.display_note.value : '') + '</span>' + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
       posteLabel = escapeHtml(card.poste);
     }
-    const bgPhoto = usesBgPhoto(card) ? '<img class="card-bgphoto" src="' + escapeHtml(card.player_photo_url) + '" alt="">' : '';
+    const bgPhoto = usesBgPhoto(card) ? '<img class="card-bgphoto" src="' + escapeHtml(card.player_photo_url) + '" alt=""><span class="card-scrim" aria-hidden="true"></span>' : '';
     if (kind === 'mascotte') midHTML = mascotMedalHTML(card.tier);
     else if (kind === 'trophee') midHTML = trophyMedalHTML(card);
     else if (bgPhoto) midHTML = '';
@@ -1548,13 +1549,48 @@
       crestIco('card-watermark');
   }
 
+  // Les photos des joueurs sont détourées : la personne n'occupe qu'une partie de l'image (beaucoup de vide transparent autour).
+  // On mesure une fois par photo la zone non transparente, puis on agrandit l'image pour que cette zone aille du haut jusqu'en bas
+  // de la carte (avec de l'air au-dessus de la tête) ; les côtés peuvent être un peu rognés. Photo d'un autre site (illisible) ou erreur : simple remplissage de la carte.
+  const PHOTO_BOX = new Map();
+  function photoBox(img){
+    const key = img.currentSrc || img.src;
+    if (!PHOTO_BOX.has(key)) PHOTO_BOX.set(key, (async () => {
+      if (!img.complete) await new Promise((res, rej) => { img.addEventListener('load', res, { once: true }); img.addEventListener('error', rej, { once: true }); });
+      const w = img.naturalWidth, h = img.naturalHeight; if (!w || !h) return null;
+      const k = Math.min(1, 160 / Math.max(w, h)), cw = Math.max(1, Math.round(w * k)), ch = Math.max(1, Math.round(h * k));
+      const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+      const g = cv.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, cw, ch);
+      const d = g.getImageData(0, 0, cw, ch).data;                       // lève une erreur si la photo vient d'un autre site
+      let x0 = cw, y0 = ch, x1 = -1, y1 = -1;
+      for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) if (d[(y * cw + x) * 4 + 3] > 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      if (x1 < 0) return null;
+      return { w, h, x0: x0 / cw, y0: y0 / ch, x1: (x1 + 1) / cw, y1: (y1 + 1) / ch };
+    })().catch(() => null));
+    return PHOTO_BOX.get(key);
+  }
+  async function fitBgPhoto(container, img){
+    const b = await photoBox(img);
+    if (!b || !img.isConnected) return;
+    const r = container.getBoundingClientRect(); const ratio = (r.width && r.height) ? r.width / r.height : 2 / 3;   // largeur / hauteur de la carte
+    const head = (b.y1 - b.y0) * 0.15, y0 = Math.max(0, b.y0 - head);                // de l'air au-dessus de la tête (sous la rareté et le poste)
+    const bw = (b.x1 - b.x0) * b.w, bh = (b.y1 - y0) * b.h;                          // zone utile, en pixels de la photo
+    const W = ratio, H = 1, sc = Math.min(H / bh, 1.35 * W / bw);                      // la photo remplit la hauteur de la carte ; un objet très large n'est rogné sur les côtés que de 35 % au plus
+    const iw = b.w * sc, ih = b.h * sc;
+    const left = -b.x0 * b.w * sc + (W - bw * sc) / 2;                                // centrée en largeur
+    const top = -y0 * b.h * sc + (H - bh * sc) / 2;                                   // centrée en hauteur si elle ne la remplit pas
+    Object.assign(img.style, { inset: 'auto', left: (left / W * 100) + '%', top: (top / H * 100) + '%', width: (iw / W * 100) + '%', height: (ih / H * 100) + '%', objectFit: 'fill', maxWidth: 'none' });
+  }
+
   // si l'image ne charge pas (lien cassé, photo pas encore ajoutée), on retombe sur le ballon
   function attachPhotoFallback(container, card){
     const bg = container.querySelector('.card-bgphoto');
     if (bg) {
+      fitBgPhoto(container, bg);                                   // agrandit la photo détourée pour remplir la carte
       bg.addEventListener('error', () => {                          // photo introuvable : on retombe sur le ballon ou l'icône
         const kind = card ? cardKind(card) : 'joueur';
         bg.remove();
+        const scrim = container.querySelector('.card-scrim'); if (scrim) scrim.remove();
         container.classList.remove('has-photo');
         const mid = container.querySelector('.card-mid');
         if (mid) mid.innerHTML = (kind === 'equipement' || kind === 'stade' || kind === 'moment') ? itemMedalHTML(card) : '<span class="ball-fallback">⚽</span>';
@@ -1993,7 +2029,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.04.1';
+  const SITE_VERSION = '2026.11.04.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
