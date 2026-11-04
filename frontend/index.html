@@ -197,6 +197,28 @@
   .pbadge{margin-right:3px;} .pstars{margin-left:4px;font-size:.85em;white-space:nowrap;}
   .profile-head.has-banner{color:#fff;position:relative;overflow:hidden;border-radius:14px;padding:12px;text-shadow:0 1px 3px rgba(0,0,0,.6);} .profile-head.has-banner .profile-meta,.profile-head.has-banner .profile-title{color:#fff;}
   .banner-deco{position:absolute;right:6px;top:2px;font-size:30px;opacity:.28;letter-spacing:4px;pointer-events:none;white-space:nowrap;}
+  /* ---- Cosmétiques holographiques du shop (palier 5) : mêmes couleurs que la feuille des cartes légendaires ---- */
+  .profile-head.banner-holo,.shopc-banner.banner-holo{background-size:100% 100%,300% 300% !important;animation:holoBanner 6s ease-in-out infinite alternate;}
+  .profile-head.banner-holo::after,.shopc-banner.banner-holo::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(115deg,rgba(255,255,255,0) 38%,rgba(255,255,255,.45) 50%,rgba(255,255,255,0) 62%);background-size:240% 100%;background-repeat:no-repeat;animation:holoSheen 3.8s ease-in-out infinite;}
+  @keyframes holoBanner{from{background-position:0 0,0% 0%;}to{background-position:0 0,100% 100%;}}
+  @keyframes holoSheen{0%,30%{background-position:130% 0;}100%{background-position:-30% 0;}}
+  @keyframes shopHoloText{to{background-position:300% 0;}}
+  @keyframes shopHoloRing{0%,100%{box-shadow:0 0 0 3px #fff,0 0 0 6px #FF6FC4,0 0 16px 5px #FFD36A;}25%{box-shadow:0 0 0 3px #fff,0 0 0 6px #6CFFC4,0 0 16px 5px #6CB6FF;}50%{box-shadow:0 0 0 3px #fff,0 0 0 6px #6CB6FF,0 0 16px 5px #C46CFF;}75%{box-shadow:0 0 0 3px #fff,0 0 0 6px #C46CFF,0 0 16px 5px #FF6FC4;}}
+  @media (prefers-reduced-motion: reduce){.profile-head.banner-holo,.shopc-banner.banner-holo,.profile-head.banner-holo::after,.shopc-banner.banner-holo::after,[class*="nc-shop-"],[class*="fr-shop-"]{animation:none !important;}}
+  /* ---- Shop : pistes de cosmétiques à paliers ---- */
+  .shopc-head{font-weight:800;font-size:16px;margin:22px 0 4px;} .shopc-sub{font-size:12.5px;color:var(--text-muted);margin:0 0 10px;}
+  .shopc-track{background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px;}
+  .shopc-track h4{margin:0 0 8px;font-size:14px;display:flex;justify-content:space-between;gap:8px;} .shopc-track h4 small{font-weight:600;color:var(--text-muted);}
+  .shopc-levels{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;}
+  @media (max-width:640px){.shopc-levels{grid-template-columns:repeat(auto-fill,minmax(118px,1fr));}}
+  .shopc-lv{border:1px solid var(--border);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center;background:var(--bg-sunk);min-width:0;}
+  .shopc-lv.owned{border-color:var(--accent);} .shopc-lv.locked{opacity:.6;}
+  .shopc-lv .shopc-n{font-size:11px;font-weight:700;color:var(--text-muted);} .shopc-lv .shopc-name{font-size:12px;font-weight:700;line-height:1.25;overflow-wrap:anywhere;}
+  .shopc-prev{min-height:44px;width:100%;display:flex;align-items:center;justify-content:center;}
+  .shopc-banner{position:relative;overflow:hidden;width:100%;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:18px;}
+  .shopc-av{width:34px;height:34px;border-radius:50%;background:var(--bg-elevated);display:inline-flex;align-items:center;justify-content:center;font-weight:800;}
+  .shopc-pseudo{font-weight:800;font-size:14px;overflow-wrap:anywhere;} .shopc-title{font-size:12px;font-style:italic;} .shopc-badge{font-size:26px;}
+  .shopc-lv .btn-small{width:100%;}
   .chat-stickers{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;max-height:92px;overflow-y:auto;} .chat-stickers[hidden]{display:none;} #chatEmoji.on{background:var(--bg-sunk);} .chat-stickers button{font-size:22px;background:var(--bg-sunk);border:1px solid var(--border);border-radius:10px;padding:2px 8px;cursor:pointer;}
   .card-front.tier-saison.trophy-pass,.card.tier-saison.trophy-pass:not(.locked){background:radial-gradient(110% 70% at 50% 0%,var(--tpg,rgba(255,255,255,.35)),rgba(255,255,255,0) 62%),linear-gradient(165deg,var(--tp1,#1B0B2E) 0%,var(--tp1,#1B0B2E) 22%,var(--tp2,#FF8A1F) 100%);color:#fff;box-shadow:var(--shadow),inset 0 0 0 2px var(--tpa,#FF5C00),inset 0 0 16px var(--tpg,rgba(255,255,255,.4)),0 0 14px var(--tpg,rgba(255,255,255,.4));}
   .tier-saison.trophy-pass .card-tier-label{background:var(--tpa,#FF5C00);color:#fff;} .tier-saison.trophy-pass .card-poste{background:rgba(0,0,0,.4);color:#fff;} .tier-saison.trophy-pass .card-name,.tier-saison.trophy-pass.has-photo .card-name{color:#fff;text-shadow:0 0 8px rgba(0,0,0,.9),0 1px 2px rgba(0,0,0,.9);} .tier-saison.trophy-pass .card-stats span{background:rgba(0,0,0,.4);color:#fff;}
@@ -1057,6 +1079,7 @@
     <section id="tab-shop" class="tab-panel">
       <div class="help-row"><button class="help-btn" type="button" data-help="shop"><span class="help-q">?</span> Aide</button></div>
       <div id="shopItemsEl"></div>
+      <div id="shopCosmeticsEl"></div>
     </section>
 
     <section id="tab-classement" class="tab-panel">
@@ -1919,7 +1942,7 @@
     const tiersHTML = p.tiers.map(t => '<div class="tb"><span class="tb-name">' + escapeHtml(tierLabel(t.tier)) + '</span><span class="tb-bar"><i style="width:' + Math.round(100 * t.owned / t.total) + '%;background:' + (TIER_COLORS[t.tier] || '#999') + '"></i></span><span class="tb-n">' + t.owned + '/' + t.total + '</span></div>').join('');
     const achievementsHTML = mine && badges ? '<div class="badge-grid">' + badges.map(b => badgeTileHTML(b, true)).join('') + '</div>'
       : (p.badges.top.length ? '<div class="badge-grid">' + p.badges.top.map(b => badgeTileHTML(b, false)).join('') + '</div>' : '<p class="muted">Aucun succès pour l\'instant.</p>');
-    const bnr = passItem(p.banner); body.innerHTML = '<div class="profile-head' + (bnr ? ' has-banner' : '') + '"' + (bnr ? ' style="background:' + bnr.style.bg + ';"' : '') + '>' + (bnr ? '<div class="banner-deco" aria-hidden="true">' + bnr.style.emoji.repeat(6) + '</div>' : '') + '<div class="profile-avatar' + (p.frame ? ' fr-' + p.frame : '') + '" id="profAvatar">' + (p.avatar ? '<img alt="Photo de ' + escapeHtml(p.pseudo) + '" src="' + API_BASE + '/users/' + encodeURIComponent(p.pseudo) + '/avatar?v=' + p.avatar + '">' : escapeHtml(p.pseudo.charAt(0).toUpperCase())) + (mine ? '<button type="button" class="profile-avatar-btn" id="profAvatarBtn" title="' + (p.avatar ? 'Changer ma photo' : 'Ajouter une photo') + '" aria-label="' + (p.avatar ? 'Changer ma photo' : 'Ajouter une photo') + '">📷</button>' : '') + '</div><div><div class="profile-pseudo' + ncClass(p.name_color) + '" style="font-weight:800;font-size:17px;">' + badgeHTML(p.badge) + escapeHtml(p.pseudo) + starsHTML(p.stars) + '</div>' + (p.title ? '<div class="profile-title">' + escapeHtml(p.title) + '</div>' : '') + '<div class="profile-meta">' + since +
+    const bnr = passItem(p.banner); body.innerHTML = '<div class="profile-head' + (bnr ? ' has-banner' + (bnr.style.holo ? ' banner-holo' : '') : '') + '"' + (bnr ? ' style="background:' + bnr.style.bg + ';"' : '') + '>' + (bnr ? '<div class="banner-deco" aria-hidden="true">' + bnr.style.emoji.repeat(6) + '</div>' : '') + '<div class="profile-avatar' + (p.frame ? ' fr-' + p.frame : '') + '" id="profAvatar">' + (p.avatar ? '<img alt="Photo de ' + escapeHtml(p.pseudo) + '" src="' + API_BASE + '/users/' + encodeURIComponent(p.pseudo) + '/avatar?v=' + p.avatar + '">' : escapeHtml(p.pseudo.charAt(0).toUpperCase())) + (mine ? '<button type="button" class="profile-avatar-btn" id="profAvatarBtn" title="' + (p.avatar ? 'Changer ma photo' : 'Ajouter une photo') + '" aria-label="' + (p.avatar ? 'Changer ma photo' : 'Ajouter une photo') + '">📷</button>' : '') + '</div><div><div class="profile-pseudo' + ncClass(p.name_color) + '" style="font-weight:800;font-size:17px;">' + badgeHTML(p.badge) + escapeHtml(p.pseudo) + starsHTML(p.stars) + '</div>' + (p.title ? '<div class="profile-title">' + escapeHtml(p.title) + '</div>' : '') + '<div class="profile-meta">' + since +
       (p.rank ? '<br>Classement : n°' + p.rank + ' sur ' + p.players_ranked : '') + '</div></div></div>' +
       '<div class="profile-tiles"><div class="profile-tile"><b>' + String(p.completion_pct).replace('.', ',') + ' %</b><span>collection (' + p.cards_owned + '/' + p.cards_total + ')</span></div>' +
       '<div class="profile-tile"><b>' + d.played + '</b><span>matchs 1v1' + (d.played ? ' · ' + d.won + 'V ' + d.drawn + 'N ' + d.lost + 'D' : '') + '</span></div>' +
@@ -1970,7 +1993,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.10.30.1';
+  const SITE_VERSION = '2026.11.04.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3050,6 +3073,7 @@
       return '<h3>Acheter des packs avec tes crédits</h3><p>Tu gagnes des crédits en ouvrant des packs, en revendant des doublons et en gagnant des matchs 1v1. Un pack acheté arrive dans tes packs bonus (onglet Packs), sans limite de stock.</p>' +
         '<ul><li><b>' + escapeHtml(r.packs.classique.label) + '</b> (' + r.packs.classique.price + ' crédits) : ' + escapeHtml(r.packs.classique.description) + '.</li></ul>' + guaranteedPacksHTML(r) +
         '<p class="help-note">Un pack à carte garantie n\'est en vente que si au moins une carte de cette rareté existe. Le pack match ne s\'achète pas : il se gagne en 1v1 (et le perdant, ou chacun des deux en cas de nul, reçoit un pack classique). Tu peux en gagner 5 par jour au maximum ; ensuite, chaque match te rapporte un pack classique.</p>' +
+        '<h3>Les cosmétiques</h3><p>Sous les packs, 5 pistes de décorations vendues <b>uniquement au shop</b> : titres, cadres de profil, bannières, couleurs du pseudo et badges. Chaque piste a 5 paliers (50, 100, 200, 350 puis 500 crédits), à acheter dans l\'ordre. Un cosmétique acheté est gardé pour toujours ; tu l\'équipes depuis ton profil (bouton « 🎨 Titre et cadre »). Le dernier palier de chaque piste forme l\'ensemble du Pigeon : titre « Pigeon du shop », pseudo et bannière holographiques. Les promotions de la boutique ne s\'appliquent qu\'aux packs.</p>' +
         '<h3>Tes chances de tirage</h3>' + oddsTableHTML(r, ['classique']) + '<p>Pour les packs à carte garantie, les cartes qui ne sont pas garanties suivent ces mêmes chances.</p>' + ultraOddsHTML(r);
     } },
     classement: { title: 'Le classement', html(){
@@ -3634,6 +3658,38 @@
         root.appendChild(row);
       });
     } catch(e) { toast(e.message); }
+    loadShopCosmetics();
+  }
+
+  // ---------- Shop : cosmétiques à paliers (vendus uniquement ici) ----------
+  function shopPreviewHTML(it){
+    const st = it.style || {}; const who = escapeHtml((meInfo && meInfo.pseudo) || 'Toi');
+    if (it.kind === 'title') return '<span class="shopc-title">« ' + escapeHtml(st.text) + ' »</span>';
+    if (it.kind === 'frame') return '<span class="shopc-av fr-' + it.id + '">' + who.charAt(0).toUpperCase() + '</span>';
+    if (it.kind === 'banner') return '<span class="shopc-banner' + (st.holo ? ' banner-holo' : '') + '" style="background:' + st.bg + ';">' + st.emoji + '</span>';
+    if (it.kind === 'name_color') return '<span class="shopc-pseudo nc-' + it.id + '">' + who + '</span>';
+    if (it.kind === 'badge') return '<span class="shopc-badge">' + st.emoji + '</span>';
+    return it.emoji;
+  }
+  async function loadShopCosmetics(){
+    const root = document.getElementById('shopCosmeticsEl'); if (!root) return;
+    let d; try { d = await api('/shop/cosmetics'); } catch(e) { root.innerHTML = ''; return; }
+    root.innerHTML = '<div class="shopc-head">🎨 Cosmétiques</div><p class="shopc-sub">Des décorations vendues <b>uniquement au shop</b>. Chaque piste a 5 paliers à acheter dans l\'ordre, de 50 à 500 crédits. Équipe-les ensuite depuis ton profil (bouton « 🎨 Titre et cadre »). Tu en as ' + d.owned + ' sur ' + d.total + '.</p>' +
+      d.tracks.map(t => '<div class="shopc-track"><h4>' + escapeHtml(t.label) + ' <small>' + t.owned + ' / ' + t.levels.length + '</small></h4><div class="shopc-levels">' +
+        t.levels.map(l => '<div class="shopc-lv' + (l.owned ? ' owned' : l.next ? '' : ' locked') + '"><span class="shopc-n">Palier ' + l.level + '</span><div class="shopc-prev">' + shopPreviewHTML(l.item) + '</div><span class="shopc-name">' + escapeHtml(l.item.name) + '</span>' +
+          (l.owned ? '<span class="pc-st">✓ possédé</span>' : l.next ? '<button class="btn-small" type="button" data-shopc="' + l.item.id + '"' + (d.credits < l.price ? ' disabled title="Pas assez de crédits"' : '') + '>' + l.price + ' crédits</button>' : '<span class="pc-st">🔒 ' + l.price + ' crédits</span>') + '</div>').join('') +
+        '</div></div>').join('');
+    root.querySelectorAll('[data-shopc]').forEach(b => b.addEventListener('click', () => buyShopCosmetic(b, d)));
+  }
+  async function buyShopCosmetic(btn, d){
+    const it = d.tracks.flatMap(t => t.levels).find(l => l.item.id === btn.dataset.shopc); if (!it) return;
+    if (!(await confirmDialog('Acheter ce cosmétique ?', '<div style="text-align:center;"><div class="shopc-prev" style="margin-bottom:8px;">' + shopPreviewHTML(it.item) + '</div><b>' + escapeHtml(it.item.name) + '</b> pour <b>' + it.price + ' crédits</b>.<p style="font-size:12.5px;color:var(--text-muted);margin:8px 0 0;">Tu le gardes pour toujours. Équipe-le depuis ton profil (bouton « 🎨 Titre et cadre »).</p></div>', 'Acheter'))) return;
+    try {
+      btn.disabled = true;
+      await api('/shop/cosmetics/buy', { method: 'POST', body: JSON.stringify({ item_id: it.item.id }) });
+      toast(it.item.emoji + ' ' + it.item.name + ' acheté ! Équipe-le depuis ton profil 🎨');
+      await refreshMe(); loadShop();
+    } catch(e) { toast(e.message); btn.disabled = false; }
   }
 
   async function buyShopItem(item, btn){

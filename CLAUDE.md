@@ -30,6 +30,8 @@ Site web (PWA) où les membres du club ouvrent des packs de cartes des vrais jou
 - Sauvegarde automatique de la base chaque jour dès 4 h ; export depuis l'administration.
 - Photos des joueurs : fichiers dans frontend/photos/, chemin enregistré sous la forme /photos/nom.ext ; photo par rareté : nom-rareté.ext.
 - Sons d'ouverture de packs : un son par thème de Pass (objet de type « sound », « Son d'ouverture <Thème> »), fichier `frontend/sounds/<id du thème>.mp3`, au niveau 18 de la piste Premium à partir du Pass de novembre 2026 (`pass_catalog.SOUND_LEVEL`, `SOUND_FROM`) ; octobre 2026 garde sa couleur de pseudo au niveau 18. Le choix est enregistré sur le compte (table `pass_sound`, route `POST /pass/sound`, renvoyé par `/me` dans `open_sound`). Le site charge seulement le son choisi et joue le hurlement du loup (`sounds/loup.mp3`, sinon un son fabriqué) si le fichier manque ; le bouton 🔊/🔇 coupe tout. Le code ne dépend jamais de la présence des fichiers de sons. Ne pas modifier `pass_catalog.CYCLE` : les objets déjà réclamés en dépendent.
+- Cosmétiques du shop (`shop_catalog.py`, `shop_cosmetics.py`) : 5 pistes (titre, cadre, bannière, couleur du pseudo, badge) de 5 paliers à 50 / 100 / 200 / 350 / 500 crédits, achetés dans l'ordre, vendus uniquement au shop (jamais dans le Pass), prix fixes (les promotions ne touchent que les packs). Le palier 5 forme l'ensemble « Pigeon » : titre « Pigeon du shop », couleur du pseudo et bannière holographiques (couleurs des cartes légendaires). Ils s'ajoutent à `pass_catalog.ITEMS` (identifiants `shop-<piste>-<palier>`) et s'équipent comme les objets du Pass. Admin : `GET /admin/shop-cosmetics` (ventes), `POST /admin/shop-cosmetics-refund {pseudo, item_id}` (palier le plus haut d'une piste seulement).
+- **Jamais de taxe** (marché, enchères, mises, cagnotte) pour retirer des crédits : seulement des dépenses volontaires.
 - Tests : dossier tests/, lancer `python tests/run_tests.py` avant tout envoi.
 - Défi permanent « Affronter l'équipe du club » : décidé et réalisé (section « Défi du club » ci-dessous).
 
@@ -80,7 +82,7 @@ uv pip install --python .venv/Scripts/python.exe -r requirements.txt pytest http
 ```
 
 - **À lancer avant chaque proposition d'envoi.** Pour une seule suite : `.venv/Scripts/python.exe tests/run_tests.py test_pass`.
-- Le lanceur exécute les suites `test_pass`, `test_social2`, `test_tournament`, `test_duel_packs`, `test_backup`, `test_features2`, `test_club`, `test_first_steps`, `test_admin_password` et `test_smoke_routes`. Chacune tourne sur une base SQLite temporaire, remplie par `tests/seed_test_data.py` (joueurs fictifs, à ne pas confondre avec `app/seed_data.py`). La vraie base n'est jamais touchée.
+- Le lanceur exécute les suites `test_pass`, `test_social2`, `test_tournament`, `test_duel_packs`, `test_backup`, `test_features2`, `test_club`, `test_first_steps`, `test_admin_password`, `test_shop_cosmetics` et `test_smoke_routes`. Chacune tourne sur une base SQLite temporaire, remplie par `tests/seed_test_data.py` (joueurs fictifs, à ne pas confondre avec `app/seed_data.py`). La vraie base n'est jamais touchée.
 - Résultat attendu : « TOUT EST VERT ». `test_smoke_routes` affiche « 0 vérifications » : c'est normal, car il n'imprime pas de lignes « OK ». Il appelle toutes les routes GET et échoue seulement en cas d'erreur 500.
 - `tests/ui_*.js` et `tests/prep_*_ui.py` servent aux tests d'interface, voir `tests/LISEZMOI.md`.
 - Pour les tests, `minigame.RNG` peut être remplacé et `FC_FAKE_NOW` simule la date.

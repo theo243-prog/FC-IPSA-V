@@ -118,3 +118,8 @@ def reward_label(r: dict, theme_id: str) -> str:
     if r.get("pass_card"): parts.append("carte exclusive du Pass")
     if r.get("item") and r["item"] in ITEMS: it = ITEMS[r["item"]]; parts.append("%s %s : %s" % (it["emoji"], KIND_LABELS[it["kind"]].lower(), it["name"]))
     return " + ".join(parts)
+
+
+# Cosmétiques vendus au shop (shop_catalog.py) : même format que les objets du Pass, donc équipables et affichés de la même façon
+from .shop_catalog import SHOP_ITEMS as _SHOP_ITEMS
+ITEMS.update(_SHOP_ITEMS)
