@@ -76,6 +76,7 @@ def summarize(path: str, payload) -> str:
         if name == "set-password": return "Nouveau mot de passe pour %s (tous ses appareils déconnectés)" % who
         if name == "first-steps-reset": return "Premiers pas : récupération de la récompense effacée pour %s" % who
         if name == "shop-cosmetics-refund": return "Cosmétique du shop %s remboursé à %s" % (_s(p, "item_id"), who)
+        if name == "chat-silent": return "Annonces automatiques du chat %s pour %s" % ("coupées" if p.get("enabled", True) else "rétablies", who)
         if name == "club-reset": return "Défi du club : essais et récompenses du jour remis à zéro pour %s" % who
         if name == "tournament-cancel": return "Tournoi du mois annulé (droits d'entrée remboursés)"
         if name == "pass-theme": return "Thème du Pass de %s : %s" % (_s(p, "month"), _s(p, "theme"))

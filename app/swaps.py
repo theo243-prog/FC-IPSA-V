@@ -154,7 +154,7 @@ def accept_swap(swap_id: str, user: User = Depends(get_current_user), db: Sessio
     s.status, s.resolved_at = "accepted", datetime.utcnow()
     from . import battlepass, chat
     battlepass.add_points(db, proposer, "swap", 15, battlepass.DAILY_CAPS["swap"]); battlepass.add_points(db, user, "swap", 15, battlepass.DAILY_CAPS["swap"])      # Pass de saison
-    chat.add_event(db, "🔁 %s et %s ont échangé des cartes : %s contre %s" % (proposer.pseudo, user.pseudo, _named(give), _named(want)))
+    chat.add_event(db, "🔁 %s et %s ont échangé des cartes : %s contre %s" % (proposer.pseudo, user.pseudo, _named(give), _named(want)), also=(proposer, user))
     db.commit()
     push.safe(db, lambda d: push.enqueue(d, proposer.id, "market", "Échange accepté 🔁", "%s a accepté ton échange." % user.pseudo, url="/#marche", tag="swap"))
     return {"status": "ok", "gave": _cout(want), "got": _cout(give)}
