@@ -93,14 +93,14 @@ def catalog(db: Session, user: User) -> dict:
     frames.append({"id": CHAMPION_FRAME[0], "label": CHAMPION_FRAME[1], "desc": "Gagner une saison 1v1", "unlocked": everything or ctx["champion"]})
     from . import battlepass
     for it in battlepass.owned_items(db, user):                                                  # objets du Pass possédés : cadres et titres en plus
-        row = {"id": it["id"], "label": it["name"], "desc": "Objet du Pass (%s)" % pass_theme_name(it), "unlocked": True, "pass": True}
+        row = {"id": it["id"], "label": it["name"], "desc": ("Boutique, palier %d" % it["level"]) if it.get("shop") else "Objet du Pass (%s)" % pass_theme_name(it), "unlocked": True, "pass": True}
         (frames if it["kind"] == "frame" else titles if it["kind"] == "title" else []).append(row)
     sel = db.query(UserCosmetics).filter_by(user_id=user.id).first()
     return {"titles": titles, "frames": frames, "selected": {"title": sel.title if sel else None, "frame": sel.frame if sel else None}, "levels_total": ctx["total"]}
 
 
 def title_label(title_id):
-    if title_id and str(title_id).startswith("pass-"):
+    if title_id and str(title_id).startswith(("pass-", "shop-")):          # titres du Pass et de la boutique
         from . import pass_catalog
         it = pass_catalog.ITEMS.get(title_id)
         return it["name"] if it and it["kind"] == "title" else None
