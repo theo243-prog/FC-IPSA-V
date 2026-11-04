@@ -56,9 +56,23 @@ class AdminChatUnmute(BaseModel):
     pseudo: str
 
 
-def add_event(db: Session, text: str, user: User = None) -> None:
-    """Ajoute une annonce SANS valider la transaction (elle partira avec le commit de l'appelant)."""
+SILENT_KEY = "chat_silent"          # compteur de user_counters : 1 = aucune annonce automatique pour ce compte (compte d'administration)
+
+
+def is_silent(db: Session, user) -> bool:
+    """Compte dont les annonces automatiques sont coupées par l'administrateur. Ses messages écrits à la main restent publiés."""
+    if user is None:
+        return False
+    from . import profiles
+    return profiles._counter(db, user.id, SILENT_KEY) == 1
+
+
+def add_event(db: Session, text: str, user: User = None, also=()) -> None:
+    """Ajoute une annonce SANS valider la transaction (elle partira avec le commit de l'appelant).
+    Rien n'est publié si le compte concerné (`user`, ou un des comptes de `also`) a ses annonces coupées."""
     try:
+        if any(is_silent(db, u) for u in (user, *also)):
+            return
         db.add(ChatMessage(user_id=user.id if user else None, pseudo=user.pseudo if user else "FC IPSA V", kind="event", text=text[:MAX_LEN]))
     except Exception:
         pass
@@ -157,6 +171,28 @@ def admin_chat_mute(payload: AdminChatMute, db: Session = Depends(get_db)):
         row.until = until
     db.commit()
     return {"status": "ok", "pseudo": user.pseudo, "muted_until": until.isoformat()}
+
+
+class AdminChatSilent(BaseModel):
+    pseudo: str
+    enabled: bool = True              # True : couper ses annonces automatiques ; False : les rétablir
+
+
+@router.post("/admin/chat-silent", dependencies=[Depends(require_admin)])
+def admin_chat_silent(payload: AdminChatSilent, db: Session = Depends(get_db)):
+    """Coupe (ou rétablit) les annonces automatiques d'un compte dans le chat : succès, légendaires, Pass, enchères… Pour le compte
+    d'administration. Ses messages écrits à la main restent publiés ; les annonces déjà parues ne sont pas effacées."""
+    from . import profiles
+    user = db.query(User).filter_by(pseudo=payload.pseudo).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    row = db.query(profiles.UserCounter).filter_by(user_id=user.id, key=SILENT_KEY).first()
+    if row is None:
+        db.add(profiles.UserCounter(user_id=user.id, key=SILENT_KEY, value=1 if payload.enabled else 0))
+    else:
+        row.value = 1 if payload.enabled else 0
+    db.commit()
+    return {"status": "ok", "pseudo": user.pseudo, "annonces_coupees": payload.enabled}
 
 
 @router.post("/admin/chat-unmute", dependencies=[Depends(require_admin)])
