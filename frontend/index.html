@@ -1573,7 +1573,7 @@
     const b = await photoBox(img);
     if (!b || !img.isConnected) return;
     const r = container.getBoundingClientRect(); const ratio = (r.width && r.height) ? r.width / r.height : 2 / 3;   // largeur / hauteur de la carte
-    const head = (b.y1 - b.y0) * 0.15, y0 = Math.max(0, b.y0 - head);                // de l'air au-dessus de la tête (sous la rareté et le poste)
+    const head = (b.y1 - b.y0) * 0.3, y0 = b.y0 - head;                              // de l'air au-dessus de la tête : le visage commence sous la rareté et le poste (environ 23 % de la hauteur)
     const bw = (b.x1 - b.x0) * b.w, bh = (b.y1 - y0) * b.h;                          // zone utile, en pixels de la photo
     const W = ratio, H = 1, sc = Math.min(H / bh, 1.35 * W / bw);                      // la photo remplit la hauteur de la carte ; un objet très large n'est rogné sur les côtés que de 35 % au plus
     const iw = b.w * sc, ih = b.h * sc;
@@ -2029,7 +2029,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.04.2';
+  const SITE_VERSION = '2026.11.04.3';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
