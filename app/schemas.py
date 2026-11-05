@@ -157,6 +157,11 @@ class AdminRecordMatchRequest(BaseModel):
     open_vote: bool = False             # match officiel : ouvre le vote « homme du match » (24 h) parmi les joueurs présents
 
 
+class AdminCreateGoldRequest(BaseModel):
+    moments: List[MomentEntry] = []     # chaque moment (joueur + action) crée une carte GOLD, sans match
+    date: Optional[str] = None          # AAAA-MM-JJ, sert seulement à distinguer deux moments identiques (aujourd'hui par défaut)
+
+
 class AdminUpdateCardStatsRequest(BaseModel):
     player_name: str
     tier: str  # "commune" | "rare" | "epique" | "legendaire"

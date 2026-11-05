@@ -18,7 +18,10 @@ CREDIT_WEIGHTS = {1: 40, 2: 25, 3: 18, 4: 12, 5: 5}         # plus le nombre est
 # spéciales n'existent que dans les packs match.
 # Épiques et légendaires doivent avoir de la VALEUR : elles sont rares. Par pack de 3 cartes : une épique tombe environ
 # 1 fois sur 17 (6 %), une légendaire environ 1 fois sur 67 (1,5 %).
-TIER_WEIGHTS = {"commune": 76, "rare": 18, "gold": 3.5, "epique": 2, "legendaire": 0.5}
+# Le GOLD (souvenirs des vrais matchs, une dizaine par match) est fréquent : 8 % des cartes PENDANT une édition limitée.
+# Son poids de départ tient compte de la part réservée à l'édition (EDITION_SHARE) : 8 / (1 - 0,035) = 8,29 (8,29 % hors édition).
+# La commune absorbe la différence (total 100) ; rare, épique et légendaire gardent leurs rapports.
+TIER_WEIGHTS = {"commune": 71.21, "rare": 18, "gold": 8.29, "epique": 2, "legendaire": 0.5}
 # (une rareté dont aucune carte n'existe encore est ignorée au tirage, les autres se rééquilibrent)
 
 # Nombre de cartes à partir duquel une rareté atteint sa probabilité "pleine".
@@ -53,12 +56,13 @@ PACK_TYPES = {
     "ultra": {"label": "Pack ultra", "price": 500, "guaranteed": [],
               "token_field": "ultra_pack_tokens",
               "slots": [(1, "epique_legendaire"), (1, "edition_min"), (2, "rare_plus"), (6, "toutes")],
-              "description": "10 cartes : 6 aux probabilités classiques, 2 rares ou mieux, 1 édition limitée ou mieux, 1 épique ou légendaire"},
+              "description": "10 cartes : 6 aux probabilités classiques, 2 rares ou mieux, 1 gold, édition limitée ou mieux, 1 épique ou légendaire"},
     # Récompense des matchs 1v1 : pas en vente (price None). Un peu mieux que le pack classique pour CHAQUE rareté
-    # (rare 30 contre 18, gold 6 contre 3,5, épique 4 contre 2, légendaire 1 contre 0,5), et le seul où sortent les spéciales (8 %).
+    # (rare 30 contre 18, gold 10,64 contre 8,29, épique 4 contre 2, légendaire 1 contre 0,5), et le seul où sortent les spéciales (8).
+    # Gold : 10 % des cartes pendant une édition limitée (10 / (1 - 0,06) = 10,64) ; la commune absorbe la différence (total 100).
     "match": {"label": "Pack match", "price": None, "guaranteed": [],
               "token_field": "match_pack_tokens",
-              "weights": {"commune": 51, "rare": 30, "gold": 6, "speciale": 8, "epique": 4, "legendaire": 1},
+              "weights": {"commune": 46.36, "rare": 30, "gold": 10.64, "speciale": 8, "epique": 4, "legendaire": 1},
               "description": "3 cartes avec un peu plus de chances de rares que le pack classique, et le seul pack où sortent les cartes spéciales"},
 }
 
@@ -137,7 +141,7 @@ EDITIONS = {
 }
 for _slot in CUSTOM_EDITION_SLOTS:       # un emplacement pas encore configuré : jamais « en cours » (dates très lointaines) et sans carte
     EDITIONS[_slot] = {"label": "Édition libre " + _slot[2:], "icon": "🎁", "start": "2100-01-01", "end": "2100-01-01", "custom": True}
-EDITION_SHARE = {"classique": 0.08, "match": 0.10}      # part des cartes tirées qui sont de l'édition en cours (8 % / 10 %)
+EDITION_SHARE = {"classique": 0.035, "match": 0.06}     # part des cartes tirées qui sont de l'édition en cours (3,5 % / 6 %)
 
 
 def today_paris(now_utc=None):
@@ -233,7 +237,7 @@ def edition_info(db: Session, key: str, today=None) -> dict:
 
 
 def weights_with_editions(db: Session, base_weights: dict, kind: str, counts: dict, today=None) -> dict:
-    """Ajoute au tirage l'édition limitée en cours (8 % des cartes du pack classique, 10 % du pack match) : les autres
+    """Ajoute au tirage l'édition limitée en cours (3,5 % des cartes du pack classique, 6 % du pack match) : les autres
     raretés se partagent le reste. Sans édition en cours (ou sans carte créée), rien ne change."""
     active = [k for k in EDITION_TIERS if counts.get(k, 0) > 0 and edition_status(db, k, today) == "active"]
     if not active:
@@ -267,7 +271,7 @@ def classic_tier_weights(counts: dict, base_weights: dict = None) -> dict:
 SLOT_RULES = {
     "toutes": None,
     "rare_plus": {"rare", "gold", "epique", "legendaire"} | set(EDITION_TIERS),          # pas de commune
-    "edition_min": {"gold", "epique", "legendaire"} | set(EDITION_TIERS),                # édition limitée ou mieux : pas de commune ni de rare
+    "edition_min": {"gold", "epique", "legendaire"} | set(EDITION_TIERS),                # gold, édition limitée ou mieux : pas de commune ni de rare
     "epique_legendaire": {"epique", "legendaire"},
 }
 
@@ -580,6 +584,7 @@ def pack_odds(db: Session) -> dict:
     return {"counts": counts, "packs": packs, "never_in_packs": ["secrete"],
             "sell_values": DUPLICATE_SELL_VALUE, "secret_fusion": {"cost": SECRET_FUSION_COST, "rare_value": RARE_FUSION_VALUE},
             "tier_order": TIER_ORDER, "free_packs_max": MAX_STORED_PACKS, "free_pack_hours": PACK_REGEN_SECONDS // 3600,
+            "edition_share_pct": {k: round(100 * v, 1) for k, v in EDITION_SHARE.items()},      # part de l'édition en cours (aides du site)
             "editions": [edition_info(db, k) for k in EDITIONS if edition_configured(db, k)]}
 
 
