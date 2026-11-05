@@ -149,14 +149,35 @@ def my_bets(user: User = Depends(get_current_user), db: Session = Depends(get_db
 
 @router.get("/prono/ranking")
 def prono_ranking(db: Session = Depends(get_db)):
-    """Les meilleurs pronostiqueurs : gain net (gains moins mises) sur les pronostics réglés."""
+    """TOUS ceux qui ont pronostiqué (même sans aucun bon résultat) : matchs pronostiqués qui ont eu lieu, scores exacts,
+    bons résultats (bon vainqueur ou nul, sans le score exact), mauvais pronostics, et gain net (gains moins mises).
+    Un match joué compte même si personne n'avait trouvé (tout le monde remboursé : ce sont des mauvais pronostics) ; un match
+    supprimé sans résultat ne compte pas. Classement : scores exacts, puis bons résultats, puis gain net, puis le moins d'erreurs."""
     users = {u.id: u for u in db.query(User).filter(User.is_test == False).all()}       # noqa: E712
     agg = {}
-    for b in db.query(PronoBet).filter(PronoBet.status.in_(("won", "lost"))).all():
+    for b in db.query(PronoBet).all():
         if b.user_id not in users:
             continue
-        a = agg.setdefault(b.user_id, {"net": 0, "exact": 0, "bets": 0}); a["net"] += b.payout - b.stake; a["exact"] += b.exact; a["bets"] += 1
-    rows = sorted(agg.items(), key=lambda kv: (-kv[1]["net"], -kv[1]["exact"], users[kv[0]].pseudo))[:10]
+        a = agg.setdefault(b.user_id, {"played": 0, "exact": 0, "good": 0, "wrong": 0, "pending": 0, "net": 0, "bets": 0})
+        if b.status == "open":
+            a["pending"] += 1                                       # match pas encore joué (ou résultat pas encore saisi)
+            continue
+        if not b.result:
+            continue                                                # match supprimé sans résultat : mise rendue, ne compte pas
+        try:
+            us, them = (int(x) for x in b.result.split("-"))
+        except ValueError:
+            continue
+        a["played"] += 1; a["bets"] += 1
+        if b.score_us == us and b.score_them == them:
+            a["exact"] += 1
+        elif _outcome(b.score_us, b.score_them) == _outcome(us, them):
+            a["good"] += 1
+        else:
+            a["wrong"] += 1
+        if b.status in ("won", "lost"):
+            a["net"] += b.payout - b.stake                         # (remboursé : gain nul)
+    rows = sorted(agg.items(), key=lambda kv: (-kv[1]["exact"], -kv[1]["good"], -kv[1]["net"], kv[1]["wrong"], users[kv[0]].pseudo.lower()))
     return [{"pseudo": users[uid].pseudo, **a} for uid, a in rows]
 
 

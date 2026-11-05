@@ -124,6 +124,10 @@
   .motm-place{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.18);font-size:11px;font-weight:800;}
   .motm-podium{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 6px;} .motm-podium span{background:var(--bg-sunk);border-radius:8px;padding:4px 8px;font-size:13px;}
   .motm-card{font-size:12.5px;margin:2px 0;} .motm-old{font-size:12.5px;padding:6px 0;border-top:1px solid var(--border);}
+  .prono-rank-wrap{max-height:320px;overflow:auto;} table.prono-rank{width:100%;border-collapse:collapse;font-size:13px;}
+  table.prono-rank th{position:sticky;top:0;background:var(--bg-elevated);text-align:left;font-size:11px;color:var(--text-muted);font-weight:700;padding:5px 6px;border-bottom:1px solid var(--border);}
+  table.prono-rank td{padding:6px;border-bottom:1px solid var(--border);} table.prono-rank .num{text-align:center;font-weight:700;} table.prono-rank tr.me{background:var(--bg-sunk);}
+  table.prono-rank .pseudo-link{background:none;border:none;padding:0;font:inherit;color:var(--text);cursor:pointer;text-decoration:underline;text-decoration-color:var(--border);} table.prono-rank .pseudo-link:hover{color:var(--accent);}
   .tab-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#E5484D;margin-left:5px;vertical-align:super;box-shadow:0 0 0 2px var(--bg);}
   .tab-dot[hidden]{display:none;}
   /* missions du jour et série de connexion */
@@ -2064,7 +2068,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.06.1';
+  const SITE_VERSION = '2026.11.06.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2393,7 +2397,9 @@
       const [mine, rank] = await Promise.all([api('/prono/mine'), fetch(API_BASE + '/prono/ranking').then(r => r.json())]);
       const badge = b => b.status === 'open' ? '⏳ en attente' : b.status === 'won' ? '✅ +' + b.payout + (b.exact ? ' · score exact 🎯' : '') : b.status === 'refunded' ? '↩️ remboursé' : '❌ perdu';
       root.innerHTML = '<div class="prono-sub" style="margin-top:0;">Mes pronostics</div>' + (mine.length ? mine.slice(0, 8).map(b => '<div class="prono-res"><span>' + escapeHtml(b.match) + ' <small style="color:var(--text-muted);">' + escapeHtml(b.date.split('-').reverse().join('/')) + '</small><br>Mon score : <b>' + b.score_us + '–' + b.score_them + '</b> · mise ' + b.stake + (b.result ? ' · résultat ' + b.result.replace('-', '–') : '') + '</span><b>' + badge(b) + '</b></div>').join('') : '<div class="empty-state">Pas encore de pronostic.</div>') +
-        '<div class="prono-sub">Meilleurs pronostiqueurs</div>' + (rank.length ? rank.slice(0, 5).map((r, i) => '<div class="prono-res"><span>' + (i + 1) + '. <button type="button" class="pseudo-link" data-pseudo="' + escapeHtml(r.pseudo) + '">' + escapeHtml(r.pseudo) + '</button></span><span><b>' + (r.net > 0 ? '+' : '') + r.net + '</b> crédits · ' + r.exact + ' score' + (r.exact > 1 ? 's' : '') + ' exact' + (r.exact > 1 ? 's' : '') + '</span></div>').join('') : '<div class="empty-state">Le classement apparaîtra après le premier match pronostiqué.</div>');
+        '<div class="prono-sub">Classement des pronostiqueurs</div>' + (rank.length ? '<div class="prono-rank-wrap"><table class="prono-rank"><thead><tr><th></th><th>Joueur</th><th class="num" title="Matchs pronostiqués qui ont eu lieu">Matchs</th><th class="num" title="Scores exacts">🎯</th><th class="num" title="Bon vainqueur (ou bon nul), sans le score exact">✅</th><th class="num" title="Mauvais pronostics">❌</th><th class="num" title="Gain net : gains moins mises">💰</th></tr></thead><tbody>' +
+          rank.map((r, i) => '<tr' + (r.pseudo === myPseudo ? ' class="me"' : '') + '><td>' + (i + 1) + '</td><td><button type="button" class="pseudo-link" data-pseudo="' + escapeHtml(r.pseudo) + '">' + escapeHtml(r.pseudo) + '</button>' + (r.pending ? ' <small title="Pronostic sur un match pas encore joué">⏳' + r.pending + '</small>' : '') + '</td><td class="num">' + r.played + '</td><td class="num">' + r.exact + '</td><td class="num">' + r.good + '</td><td class="num">' + r.wrong + '</td><td class="num">' + (r.net > 0 ? '+' : '') + r.net + '</td></tr>').join('') +
+          '</tbody></table></div><p class="motm-meta" style="margin-top:6px;">🎯 score exact · ✅ bon vainqueur ou bon nul · ❌ mauvais prono · 💰 gain net en crédits. Classement : scores exacts, puis bons résultats, puis gain.</p>' : '<div class="empty-state">Personne n\'a encore pronostiqué.</div>');
       root.querySelectorAll('.pseudo-link').forEach(b => b.addEventListener('click', () => openProfile(b.dataset.pseudo)));
     } catch(e) { root.innerHTML = '<div class="empty-state">Pronostics indisponibles pour le moment.</div>'; }
   }
@@ -3224,7 +3230,7 @@
     } },
     actualite: { title: 'L\'actualité du club', html(){
       return '<h3>Ce que tu vois ici</h3><ul>' +
-        '<li><b>Pronostics</b> : sur chaque match à venir, tu peux miser 1 à 50 crédits sur le score. Les mises forment une cagnotte partagée quand le résultat est enregistré : 70 % pour les scores exacts, 30 % pour ceux qui ont le bon résultat (victoire, nul, défaite). Si personne ne trouve le résultat, tout le monde est remboursé. Tu peux modifier ou retirer ton pronostic jusqu\'au coup d\'envoi.</li>' +
+        '<li><b>Pronostics</b> : sur chaque match à venir, tu peux miser 1 à 50 crédits sur le score. Les mises forment une cagnotte partagée quand le résultat est enregistré : 70 % pour les scores exacts, 30 % pour ceux qui ont le bon résultat (victoire, nul, défaite). Si personne ne trouve le résultat, tout le monde est remboursé. Tu peux modifier ou retirer ton pronostic jusqu\'au coup d\'envoi. Le classement des pronostiqueurs montre tous ceux qui ont pronostiqué : matchs joués, 🎯 scores exacts, ✅ bons résultats (bon vainqueur ou bon nul), ❌ mauvais pronostics et 💰 gain net ; il est rangé par scores exacts, puis bons résultats, puis gain.</li>' +
         '<li><b>Prochains matchs</b> : les rencontres à venir du club. Un match passé dont le résultat n\'est pas encore saisi est signalé « Résultat à venir ».</li>' +
         '<li><b>Stats des joueurs</b> : les vraies statistiques de la saison. M = matchs joués, ⚽ = buts, PD = passes décisives, 🏅 = homme du match, 🟨 = cartons jaunes, 🟥 = cartons rouges. Clique sur un joueur pour sa fiche.</li>' +
         '<li><b>Résultats</b> : le score, le stade, les buteurs, les passeurs et les moments mémorables de chaque match.</li>' +
