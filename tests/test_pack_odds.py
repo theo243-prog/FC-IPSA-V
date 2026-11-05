@@ -82,5 +82,9 @@ db.add(Player(name="Fan Test", poste="FAN")); db.commit()
 ok(c.post("/admin/create-gold", json={"moments": [{"player_name": "Fan Test", "action": "Tifo"}]}, headers=A).status_code == 400, "un fan n'a pas de moment gold")
 r = c.post("/admin/record-match", json={"date": "2026-11-09", "opponent": "Test", "score_us": 1, "score_them": 0, "moments": [{"player_name": "Hugo", "action": "Sauvetage"}]}, headers=A)
 ok(r.status_code == 200 and r.json()["gold_cards_created"] == ["Sauvetage — Hugo"], "l'enregistrement d'un match crée toujours ses cartes gold (même fonction)")
+st = {r["name"]: r for r in c.get("/players/stats").json()}; y0, r0 = st["Hugo"]["cartons_jaunes"], st["Hugo"]["cartons_rouges"]
+c.post("/admin/record-match", json={"date": "2026-11-10", "opponent": "Cartons", "score_us": 0, "score_them": 0, "cartons_jaunes": ["Hugo"], "cartons_rouges": ["Hugo"]}, headers=A)
+st = {r["name"]: r for r in c.get("/players/stats").json()}
+ok(st["Hugo"]["cartons_jaunes"] == y0 + 1 and st["Hugo"]["cartons_rouges"] == r0 + 1 and st["Lucas"]["cartons_jaunes"] == 0, "stats des joueurs (onglet Actualité) : cartons jaunes et rouges")
 print("BILAN (chances des packs et cartes gold) :", "TOUT EST VERT" if not FAILS else "%d ÉCHEC(S)" % len(FAILS))
 raise SystemExit(1 if FAILS else 0)

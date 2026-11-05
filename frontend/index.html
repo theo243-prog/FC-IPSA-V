@@ -2064,7 +2064,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.05.6';
+  const SITE_VERSION = '2026.11.06.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3226,7 +3226,7 @@
       return '<h3>Ce que tu vois ici</h3><ul>' +
         '<li><b>Pronostics</b> : sur chaque match à venir, tu peux miser 1 à 50 crédits sur le score. Les mises forment une cagnotte partagée quand le résultat est enregistré : 70 % pour les scores exacts, 30 % pour ceux qui ont le bon résultat (victoire, nul, défaite). Si personne ne trouve le résultat, tout le monde est remboursé. Tu peux modifier ou retirer ton pronostic jusqu\'au coup d\'envoi.</li>' +
         '<li><b>Prochains matchs</b> : les rencontres à venir du club. Un match passé dont le résultat n\'est pas encore saisi est signalé « Résultat à venir ».</li>' +
-        '<li><b>Stats des joueurs</b> : les vraies statistiques de la saison. M = matchs joués, ⚽ = buts, PD = passes décisives, 🏅 = homme du match. Clique sur un joueur pour sa fiche.</li>' +
+        '<li><b>Stats des joueurs</b> : les vraies statistiques de la saison. M = matchs joués, ⚽ = buts, PD = passes décisives, 🏅 = homme du match, 🟨 = cartons jaunes, 🟥 = cartons rouges. Clique sur un joueur pour sa fiche.</li>' +
         '<li><b>Résultats</b> : le score, le stade, les buteurs, les passeurs et les moments mémorables de chaque match.</li>' +
         '<li><b>🏅 Homme du match</b> : après chaque match officiel, vous avez <b>24 h</b> pour voter parmi les joueurs présents. Classe 3 joueurs différents : 1er = 5 points, 2e = 3, 3e = 1. Tu peux modifier ton vote jusqu\'à la fin. Personne ne voit le classement avant la fin du chrono ; ensuite, le podium est révélé. Il faut au moins 3 votants, sinon pas de résultat. Un point rouge sur l\'onglet te rappelle de voter.</li></ul>' +
         '<h3>Ce que chaque match fait gagner au jeu</h3><ul>' +
@@ -3902,9 +3902,9 @@
       if (!rows.length){ root.innerHTML = '<div class="empty-state">Aucun joueur.</div>'; return; }
       const cell = n => '<td class="num' + (n ? '' : ' zero') + '">' + n + '</td>';
       root.innerHTML = '<table class="pstats"><thead><tr><th>Joueur</th><th class="num" title="Matchs joués">M</th><th class="num" title="Buts">⚽</th>' +
-        '<th class="num" title="Passes décisives">PD</th><th class="num" title="Homme du match">🏅</th></tr></thead><tbody>' +
+        '<th class="num" title="Passes décisives">PD</th><th class="num" title="Homme du match">🏅</th><th class="num" title="Cartons jaunes">🟨</th><th class="num" title="Cartons rouges">🟥</th></tr></thead><tbody>' +
         rows.map(r => '<tr><td><span class="pname" data-name="' + escapeHtml(r.name) + '">' + escapeHtml(r.name) + '</span> <span class="poste">' + escapeHtml(r.poste) + '</span></td>' +
-          cell(r.matches_joues) + cell(r.buts) + cell(r.passes_decisives) + cell(r.homme_du_match_count) + '</tr>').join('') + '</tbody></table>';
+          cell(r.matches_joues) + cell(r.buts) + cell(r.passes_decisives) + cell(r.homme_du_match_count) + cell(r.cartons_jaunes || 0) + cell(r.cartons_rouges || 0) + '</tr>').join('') + '</tbody></table>';
       root.querySelectorAll('.pname').forEach(el => el.addEventListener('click', () => openPlayerDetail(el.dataset.name, 'commune')));
     } catch(e) { toast(e.message); }
   }
