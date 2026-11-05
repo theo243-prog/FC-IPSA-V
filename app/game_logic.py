@@ -388,7 +388,7 @@ def open_pack_for_user(db: Session, user: User, pack_type: str = "free") -> dict
 # (plus de notes par poste). Réutilisée par le moteur de duel.
 # ---------------------------------------------------------------------
 
-CARD_NOTE = {"commune": 75, "rare": 85, "halloween": 88, "noel": 88, "secrete": 90, "saison": 92, "legendaire": 95}
+CARD_NOTE = {"commune": 75, "rare": 85, "halloween": 85, "noel": 85, "secrete": 90, "saison": 92, "legendaire": 95}
 SPECIAL_BASE_NOTE = 80      # note d'une carte spéciale à sa création ; +1 à chaque nouvelle récompense
 TIER_FAN_BONUS = {"commune": 0.05, "rare": 0.10, "halloween": 0.11, "noel": 0.11, "epique": 0.12, "secrete": 0.13, "saison": 0.14, "legendaire": 0.15}  # bonus % apporté par le Fan
 TIER_MASCOT_BONUS = dict(TIER_FAN_BONUS)       # la mascotte (Le Loup) a son propre emplacement, mêmes bonus que le Fan

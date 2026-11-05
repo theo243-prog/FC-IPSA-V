@@ -137,9 +137,14 @@ ok(mission_progress("ana") == miss0, "missions du jour inchangées")
 ok(json.loads(db.query(PassProgress).filter_by(user_id=U("ana").id).first().daily)["src"].get("duel") is None, "pas de points de Pass « duel »")
 
 print("4) CARTES LES PLUS UTILISÉES (club et tournoi)")
+def week_used(week):                                  # classement de la semaine : « la plus utilisée » est rangée par groupe de rareté
+    out = {}
+    for g in week["most_used_groups"]:
+        for e in g["cards"]: out[e["card"]["player_name"]] = out.get(e["card"]["player_name"], 0) + e["count"]
+    return out
 club_names = {cd["player_name"] for x in g["levels"] for cd in x["team"]["cards"]} - {n for n, _ in TEAM}
 week = c.get("/duel/card-stats", params={"scope": "week", "limit": 10}).json(); allt = c.get("/duel/card-stats", params={"limit": 10}).json()
-wn = {e["card"]["player_name"]: e["count"] for e in week["most_used"]}; an = {(e["card"]["player_name"], e["card"]["tier"]): e["count"] for e in allt["most_used"]}
+wn = week_used(week); an = {(e["card"]["player_name"], e["card"]["tier"]): e["count"] for e in allt["most_used"]}
 ok(all(wn.get(n) == 9 for n, _ in TEAM) and all(an.get((n, "commune")) == 9 for n, _ in TEAM), "les 5 cartes de « ana » : 9 utilisations, cette semaine et depuis toujours")
 ok(not (set(wn) & club_names) and not ({n for n, _ in an} & club_names), "les cartes de l'équipe du club n'y sont jamais")
 ok(week["top_scorers"] == [] and allt["top_scorers"] == [] and week["top_assisters"] == [], "buts et passes : seulement les matchs 1v1 (rien ici)")
@@ -156,7 +161,7 @@ m2 = TN.TournamentMatch(tournament_id=t.id, round=1, slot=1, p1_id=U("bob").id, 
 db.add(m2); db.flush(); TN._resolve(db, t, m2, now); db.commit()
 ok(m2.via == "forfeit" and db.query(CardUsage).filter_by(source="tournoi").count() == 10, "match gagné par forfait : rien n'est noté")
 week = c.get("/duel/card-stats", params={"scope": "week", "limit": 10}).json(); allt = c.get("/duel/card-stats", params={"limit": 10}).json()
-ok({e["card"]["player_name"]: e["count"] for e in week["most_used"]}.get("Lucas") == 11 and {(e["card"]["player_name"], e["card"]["tier"]): e["count"] for e in allt["most_used"]}.get(("Lucas", "commune")) == 11, "avec le tournoi : 11 utilisations (9 au club + 2 au tournoi), semaine et total")
+ok(week_used(week).get("Lucas") == 11 and {(e["card"]["player_name"], e["card"]["tier"]): e["count"] for e in allt["most_used"]}.get(("Lucas", "commune")) == 11, "avec le tournoi : 11 utilisations (9 au club + 2 au tournoi), semaine et total")
 ok(db.query(Duel).count() == duels0, "le tournoi n'écrit toujours rien dans la table des duels")
 
 print("5) PALMARÈS ET TITRE")
