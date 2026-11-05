@@ -1926,6 +1926,7 @@
   }
 
   // --- IMAGE DE LA COLLECTION COMPLÈTE : toutes les cartes, rareté par rareté (les manquantes en « ? »)
+  const SHARE_MAX_TILES = 32;          // une rareté de plus de BIG_GROUP (40) cartes : 4 rangées de 8 au plus dans l'image de la collection
   async function renderCollectionImage(){
     let prof = null; try { prof = await fetch(API_BASE + '/users/' + encodeURIComponent(meInfo.pseudo) + '/profile').then(r => r.json()); } catch(e) { prof = null; }
     const fonts = await shareFonts(), W = 1080, M = 36, order = ['saison', 'legendaire', 'epique', 'speciale', 'secrete', 'gold', ...ED_SLOTS.slice().reverse(), 'noel', 'halloween', 'rare', 'commune'];
@@ -1934,9 +1935,12 @@
       const all = myCollection.filter(c => c.tier === tier); if (!all.length) return;
       let list = all.slice().sort((a, b) => (!!b.quantity - !!a.quantity) || (a.quantity ? cardDisplayName(a).localeCompare(cardDisplayName(b), 'fr') : 0));
       if (tier === 'saison') list = list.filter(c => c.quantity > 0);
-      if (list.length) groups.push({ tier, list, owned: all.filter(c => c.quantity > 0).length, total: all.length });
+      let more = 0;                                                     // une très grande rareté (souvent les gold) : 4 rangées au plus, puis « +N autres »
+      if (list.length > BIG_GROUP) { more = list.length - (SHARE_MAX_TILES - 1); list = list.slice(0, SHARE_MAX_TILES - 1); }
+      if (list.length) groups.push({ tier, list, more, owned: all.filter(c => c.quantity > 0).length, total: all.length });
     });
-    const layout = cols => { const gap = 10, w = Math.floor((W - 2 * M - (cols - 1) * gap) / cols), h = Math.round(w * 1.4286); return { cols, gap, w, h, H: 360 + groups.reduce((a, gr) => a + 84 + Math.ceil(gr.list.length / cols) * (h + gap) + 14, 0) + 100 }; };
+    const tiles = gr => gr.list.length + (gr.more ? 1 : 0);
+    const layout = cols => { const gap = 10, w = Math.floor((W - 2 * M - (cols - 1) * gap) / cols), h = Math.round(w * 1.4286); return { cols, gap, w, h, H: 360 + groups.reduce((a, gr) => a + 84 + Math.ceil(tiles(gr) / cols) * (h + gap) + 14, 0) + 100 }; };
     let L = layout(8); if (L.H > 14000) L = layout(10); if (L.H > 14000) L = layout(12);
     const cv = document.createElement('canvas'); cv.width = W; cv.height = L.H; const g = cv.getContext('2d');
     await paintShareBackground(g, W, L.H, null, true, fonts, 'Collection complète');
@@ -1946,7 +1950,7 @@
     g.textAlign = 'right'; g.fillStyle = '#E9C46A'; g.font = '800 100px ' + fonts.head; g.fillText(fmtPct(pct) + ' %', W - M, 250); g.textAlign = 'left';
     g.fillStyle = '#C79ABA'; g.font = '700 28px ' + fonts.body; g.fillText(ownedN + ' / ' + totalN + ' cartes' + (prof ? '  ·  ' + prof.badges.earned + '/' + prof.badges.total + ' succès' : '') + (prof && prof.rank ? '  ·  n°' + prof.rank + ' au classement' : ''), M, 300);
     roundRect(g, M, 322, W - 2 * M, 16, 8); g.fillStyle = 'rgba(255,255,255,.12)'; g.fill(); roundRect(g, M, 322, Math.max(16, (W - 2 * M) * Math.min(100, pct) / 100), 16, 8); g.fillStyle = '#E9C46A'; g.fill();
-    const photos = await loadPhotoMap(myCollection.filter(c => c.quantity > 0));
+    const photos = await loadPhotoMap(groups.flatMap(gr => gr.list).filter(c => c.quantity > 0));      // seulement les photos dessinées
     let y = 360;
     for (const gr of groups) {
       const pal = tierPalette(gr.tier), title = gr.tier === 'saison' ? 'Trophées' : tierLabel(gr.tier);
@@ -1955,12 +1959,18 @@
       roundRect(g, M, y + 62, W - 2 * M, 5, 3); g.fillStyle = pal.c2; g.fill();
       y += 84;
       gr.list.forEach((c, i) => { const cx = M + (i % L.cols) * (L.w + L.gap), cy = y + Math.floor(i / L.cols) * (L.h + L.gap); if (c.quantity > 0) drawMiniCard(g, c, cx, cy, L.w, photos, fonts, false); else drawMissingTile(g, cx, cy, L.w); });
-      y += Math.ceil(gr.list.length / L.cols) * (L.h + L.gap) + 14;
+      if (gr.more) {                                                    // la case « +N autres »
+        const i = gr.list.length, cx = M + (i % L.cols) * (L.w + L.gap), cy = y + Math.floor(i / L.cols) * (L.h + L.gap);
+        roundRect(g, cx, cy, L.w, L.h, 12); g.fillStyle = 'rgba(255,255,255,.10)'; g.fill(); g.strokeStyle = pal.c2; g.lineWidth = 3; g.stroke();
+        g.textAlign = 'center'; g.fillStyle = '#fff'; g.font = '800 ' + Math.round(L.w * 0.3) + 'px ' + fonts.head; g.fillText('+' + gr.more, cx + L.w / 2, cy + L.h * 0.52);
+        g.fillStyle = '#C79ABA'; g.font = '700 ' + Math.round(L.w * 0.13) + 'px ' + fonts.body; g.fillText('autres', cx + L.w / 2, cy + L.h * 0.68); g.textAlign = 'left';
+      }
+      y += Math.ceil(tiles(gr) / L.cols) * (L.h + L.gap) + 14;
     }
     g.textAlign = 'center'; g.fillStyle = '#C79ABA'; g.font = '700 28px ' + fonts.body; g.fillText(location.host + '  ·  ' + new Date().toLocaleDateString('fr-FR'), W / 2, L.H - 40); g.textAlign = 'left';
     return await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('image vide')), 'image/png'));
   }
-  document.getElementById('collShare').addEventListener('click', () => openShareImage({ title: 'Partager ma collection', file: 'collection-' + slugOf(meInfo.pseudo), hint: 'Image 1080 pixels de large, avec toutes tes cartes rareté par rareté.', text: 'Ma collection FC IPSA V ⚽', render: renderCollectionImage }));
+  document.getElementById('collShare').addEventListener('click', () => openShareImage({ title: 'Partager ma collection', file: 'collection-' + slugOf(meInfo.pseudo), hint: 'Image 1080 pixels de large, avec tes cartes rareté par rareté (une rareté de plus de 40 cartes est résumée : 4 rangées, puis « +N autres »).', text: 'Ma collection FC IPSA V ⚽', render: renderCollectionImage }));
 
   // --- HISTORIQUE DES SAISONS : le podium de chaque saison terminée
   async function openSeasonHistory(){
@@ -2054,7 +2064,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.05.5';
+  const SITE_VERSION = '2026.11.05.6';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2988,6 +2998,11 @@
     return out;
   }
 
+  // Un très grand groupe (ex. plus de 40 cartes gold) est replié par défaut, pour atteindre vite les autres raretés ; sauf pendant une
+  // recherche, ou si le joueur l'a déplié lui-même (mémorisé : « +gold »). Un groupe replié à la main reste replié (« gold »).
+  const BIG_GROUP = 40;
+  const isFolded = (st, tier, n, view) => st.has(tier) ? true : st.has('+' + tier) ? false : (n > BIG_GROUP && !(view && view.q && view.q.trim()));
+  function rememberFold(st, tier, c){ st.delete(c ? '+' + tier : tier); st.add(c ? tier : '+' + tier); }
   function buildTierGroups(cards, withSell, view){
     const frag = document.createDocumentFragment(), collapsedSet = getCollapsed();
     ['saison','legendaire','epique','speciale','secrete','gold', ...ED_SLOTS.slice().reverse(), 'noel','halloween','rare','commune'].forEach(tier => {
@@ -3004,8 +3019,8 @@
       const h3 = group.querySelector('h3'), tg = document.createElement('button'), gLabel = (tier === 'saison' ? 'Trophées' : tierLabel(tier));
       tg.type = 'button'; tg.className = 'tier-toggle'; tg.setAttribute('aria-label', 'Replier ou déplier ' + gLabel);      // (la flèche est dessinée en CSS : elle ne fait pas partie du texte du titre)
       const applyCollapsed = c => { group.classList.toggle('collapsed', c); tg.setAttribute('aria-expanded', String(!c)); tg.title = (c ? 'Déplier « ' : 'Replier « ') + gLabel + ' »'; };
-      h3.insertBefore(tg, h3.firstChild); applyCollapsed(collapsedSet.has(tier));
-      tg.addEventListener('click', () => { const c = !group.classList.contains('collapsed'); applyCollapsed(c); const st = getCollapsed(); if (c) st.add(tier); else st.delete(tier); setCollapsed(st); });
+      h3.insertBefore(tg, h3.firstChild); applyCollapsed(isFolded(collapsedSet, tier, cardsOfTier.length, view));
+      tg.addEventListener('click', () => { const c = !group.classList.contains('collapsed'); applyCollapsed(c); const st = getCollapsed(); rememberFold(st, tier, c); setCollapsed(st); });
       const grid = document.createElement('div'); grid.className = 'collection-grid';
       cardsOfTier.forEach(card => {
         const wrap = document.createElement('div'); wrap.className = 'card-wrap';
@@ -3050,7 +3065,7 @@
   });
   function setAllCollapsed(c){
     const groups = [...document.querySelectorAll('#collectionByTier .tier-group')], st = getCollapsed();
-    groups.forEach(g => { g.classList.toggle('collapsed', c); const t = g.querySelector('.tier-toggle'); if (t) t.setAttribute('aria-expanded', String(!c)); if (c) st.add(g.dataset.tier); else st.delete(g.dataset.tier); });
+    groups.forEach(g => { g.classList.toggle('collapsed', c); const t = g.querySelector('.tier-toggle'); if (t) t.setAttribute('aria-expanded', String(!c)); rememberFold(st, g.dataset.tier, c); });
     setCollapsed(st);
   }
   document.getElementById('collFold').addEventListener('click', () => setAllCollapsed(true));
@@ -3129,11 +3144,11 @@
   // pack ultra : les chances de chaque groupe de cartes (calculées en direct par le serveur)
   function ultraOddsHTML(rules){
     const u = rules.packs.ultra; if (!u || !u.slots) return '';
-    const heads = { toutes: '6 cartes<br>probas classiques', rare_plus: '2 cartes<br>rare ou mieux', edition_min: '1 carte<br>édition limitée ou mieux', epique_legendaire: '1 carte<br>épique ou légendaire' };
+    const heads = { toutes: '6 cartes<br>probas classiques', rare_plus: '2 cartes<br>rare ou mieux', edition_min: '1 carte<br>gold, édition limitée ou mieux', epique_legendaire: '1 carte<br>épique ou légendaire' };
     const tiers = rules.tier_order.filter(t => u.slots.some(sl => (sl.odds[t] || 0) > 0));
     let html = '<h3>Le pack ultra, carte par carte</h3><table class="odds"><thead><tr><th>Rareté</th>' + u.slots.map(sl => '<th>' + heads[sl.rule] + '</th>').join('') + '</tr></thead><tbody>';
     tiers.forEach(t => { html += '<tr><td><span class="help-tier" style="background:' + TIER_COLORS[t] + '"></span>' + TIER_NAMES_PL[t] + '</td>' + u.slots.map(sl => { const v = sl.odds[t]; return '<td>' + (v ? String(v).replace('.', ',') + ' %' : '<span class="odds-dash">—</span>') + '</td>'; }).join('') + '</tr>'; });
-    return html + '</tbody></table><p class="help-note">Les 10 cartes d\'un pack ultra sont toujours <b>différentes</b>. Pour chaque groupe, les raretés autorisées gardent entre elles les mêmes rapports que dans un pack classique. L\'édition limitée en cours compte dans les cartes « édition limitée ou mieux ».</p>';
+    return html + '</tbody></table><p class="help-note">Les 10 cartes d\'un pack ultra sont toujours <b>différentes</b>. Pour chaque groupe, les raretés autorisées gardent entre elles les mêmes rapports que dans un pack classique. L\'édition limitée en cours compte dans la carte « gold, édition limitée ou mieux », avec le gold, l\'épique et la légendaire.</p>';
   }
   function guaranteedPacksHTML(rules){
     return '<ul>' + ['rare', 'epique', 'legendaire', 'ultra'].map(k => '<li><b>' + escapeHtml(rules.packs[k].label) + '</b> (' + rules.packs[k].price + ' crédits) : ' + escapeHtml(rules.packs[k].description) + (rules.packs[k].available ? '' : ' <i>(pas encore disponible : aucune carte de cette rareté n\'existe)</i>') + '</li>').join('') + '</ul>';
@@ -3160,19 +3175,19 @@
         '<li><b>Missions du jour</b> (sous les packs) : 3 missions par jour, une de chaque sorte (cartes, marché, matchs 1v1), qui rapportent des crédits. Elles changent à minuit, heure de Paris. Quand tu as récupéré les 3, un <b>pack classique</b> t\'est offert en bonus.</li>' +
         '<li><b>Série de connexion</b> : récupère ta récompense chaque jour sans en rater un. Elle grandit jusqu\'au 7e jour (qui offre en plus un <b>pack rare</b>), puis le cycle recommence. Un jour raté remet la série à zéro.</li>' +
         '<li><b>Pack match</b> : il se gagne en remportant un match 1v1. C\'est le seul où sortent les cartes <b>spéciales</b>, avec de meilleures chances. Celui qui perd, ou qui fait match nul, reçoit un <b>pack classique</b>.</li></ul>' +
-        (r.editions.filter(e => e.status === 'active' && e.cards > 0).map(e => '<h3>' + e.icon + ' Édition limitée en cours</h3><p><b>' + escapeHtml(e.label) + '</b> : ses ' + e.cards + ' cartes sortent des packs <b>jusqu\'au ' + formatDay(e.end) + ' inclus</b> (' + Math.round(100 * 0.08) + ' % des cartes d\'un pack classique, ' + Math.round(100 * 0.10) + ' % d\'un pack match). Après cette date, elles ne sortent plus.</p>').join('')) +
+        (r.editions.filter(e => e.status === 'active' && e.cards > 0).map(e => '<h3>' + e.icon + ' Édition limitée en cours</h3><p><b>' + escapeHtml(e.label) + '</b> : ses ' + e.cards + ' cartes sortent des packs <b>jusqu\'au ' + formatDay(e.end) + ' inclus</b> (' + String((r.edition_share_pct || {}).classique ?? 3.5).replace('.', ',') + ' % des cartes d\'un pack classique, ' + String((r.edition_share_pct || {}).match ?? 6).replace('.', ',') + ' % d\'un pack match). Après cette date, elles ne sortent plus.</p>').join('')) +
         '<h3>Tes chances de tirage</h3>' + oddsTableHTML(r, ['classique', 'match']) +
         '<h3>Être prévenu</h3><p>Touche 🔔 en haut de la page pour recevoir une notification quand ton pack est prêt, quand une nouvelle carte arrive, quand ton défi 1v1 est joué ou quand ta carte est vendue.</p>' +
         '<h3>Et les doublons ?</h3><p>Rien n\'est perdu : tu peux les revendre, ou les garder pour remplir la jauge de la carte secrète du même joueur (voir l\'aide de la Collection).</p>';
     } },
     collection: { title: 'Ta collection', async html(){
       const r = await getGameRules(), sv = r.sell_values;
-      return '<h3>Tes cartes</h3><p>Les cartes sont rangées de la plus rare à la plus commune. Une carte grisée avec un « ? » n\'est pas encore à toi. Clique sur une carte pour voir sa fiche. La petite flèche ▾ à côté du nom d\'une rareté la <b>replie</b> ou la <b>déplie</b> : replie celles que tu ne veux plus voir, pour te repérer plus vite (ton choix est gardé sur cet appareil). Au-dessus des cartes : une <b>recherche</b>, un <b>tri</b>, des filtres (<b>Possédées</b>, <b>Doublons</b>, <b>Manquantes</b>), « Tout replier / Tout déplier » et « <b>Vendre tous les doublons</b> » (une fenêtre te demande de confirmer ; tu peux garder les doublons qui servent encore aux cartes secrètes).</p>' +
+      return '<h3>Tes cartes</h3><p>Les cartes sont rangées de la plus rare à la plus commune. Une carte grisée avec un « ? » n\'est pas encore à toi. Clique sur une carte pour voir sa fiche. La petite flèche ▾ à côté du nom d\'une rareté la <b>replie</b> ou la <b>déplie</b> : replie celles que tu ne veux plus voir, pour te repérer plus vite (ton choix est gardé sur cet appareil). Une rareté de plus de 40 cartes (souvent les gold) est repliée au départ : touche la flèche pour la voir. Une recherche montre toujours ses résultats. Au-dessus des cartes : une <b>recherche</b>, un <b>tri</b>, des filtres (<b>Possédées</b>, <b>Doublons</b>, <b>Manquantes</b>), « Tout replier / Tout déplier » et « <b>Vendre tous les doublons</b> » (une fenêtre te demande de confirmer ; tu peux garder les doublons qui servent encore aux cartes secrètes).</p>' +
         '<h3>Partager une carte</h3><p>Sur la fiche d\'une carte que tu possèdes, le bouton « 📤 Partager cette carte » crée une <b>image</b> (format post Instagram) avec ton pseudo. Sur téléphone, tu peux l\'envoyer directement à une appli ; sinon, télécharge-la.</p>' +
         '<h3>Les raretés, de la plus commune à la plus rare</h3><ul>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.commune + '"></span><b>Commune</b> et <span class="help-tier" style="background:' + TIER_COLORS.rare + '"></span><b>Rare</b> : les cartes de base de chaque joueur.</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.halloween + '"></span><b>Édition limitée</b> (Halloween, Noël…) : quelques cartes par thème, <b>disponibles dans les packs seulement pendant leurs dates</b>. Ensuite elles restent à ceux qui les ont, et ne s\'obtiennent plus qu\'en échange. Note 85 (comme une rare), ou +11 % pour un fan.</li>' +
-        '<li><span class="help-tier" style="background:' + TIER_COLORS.gold + '"></span><b>Gold</b> : un moment mémorable d\'un vrai match (petit pont, sauvetage…).</li>' +
+        '<li><span class="help-tier" style="background:' + TIER_COLORS.gold + '"></span><b>Gold</b> : un moment mémorable d\'un vrai match (petit pont, sauvetage…). Il y en a beaucoup (une dizaine par match) : environ 8 % des cartes d\'un pack classique, 10 % d\'un pack match.</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.secrete + '"></span><b>Secrète</b> : une par joueur, fan et mascotte. Elle ne sort jamais d\'un pack (voir plus bas).</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.speciale + '"></span><b>Spéciale</b> : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine. Elle ne sort que des packs match.</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.epique + '"></span><b>Épique</b> : le joueur qui marque dans un vrai match. Sa note vaut 85 au premier but, puis +2 par but.</li>' +

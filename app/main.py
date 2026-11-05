@@ -1304,6 +1304,45 @@ def admin_set_player_notes(payload: schemas.AdminSetPlayerNotesRequest, db: Sess
     }
 
 
+def create_moment_card(db: Session, player_name: str, action: str, day: datetime) -> tuple:
+    """Un moment mémorable donne naissance à une carte GOLD : une 'fiche' de poste MOMENT (« Petit pont — Mathis ») avec sa carte.
+    Même action pour le même joueur : on distingue par la date (« (12/10) »), puis par des « + ». Renvoie (fiche, joueur réel, action)."""
+    actor = db.query(Player).filter_by(name=player_name).first()
+    if not actor:
+        raise HTTPException(status_code=404, detail=f"Joueur introuvable : {player_name}")
+    if game_logic.card_kind(actor) != "joueur":
+        raise HTTPException(status_code=400, detail=player_name + " n'est pas un joueur de l'effectif")
+    action = " ".join((action or "").split())
+    if not action:
+        raise HTTPException(status_code=400, detail="Un moment mémorable doit avoir une action (ex. « Petit pont »)")
+    name = action + " — " + actor.name
+    if db.query(Player).filter_by(name=name).first():                    # même action, même joueur : on distingue par la date
+        name = name + " (" + day.strftime("%d/%m") + ")"
+    while db.query(Player).filter_by(name=name).first():
+        name += "+"
+    moment_player = Player(name=name, poste="MOMENT", photo_url=actor.photo_url)
+    db.add(moment_player)
+    db.flush()
+    db.add(Card(player_id=moment_player.id, tier=Tier.gold, vitesse=0, tir=0))
+    return moment_player, actor, action
+
+
+@app.post("/admin/create-gold", dependencies=[Depends(require_admin)])
+def admin_create_gold(payload: schemas.AdminCreateGoldRequest, db: Session = Depends(get_db)):
+    """Ajoute des cartes GOLD (moments mémorables) sans enregistrer de match : même règle que les moments du formulaire
+    d'un match (« Petit pont — Mathis », photo du joueur). Rien n'est créé si une ligne est invalide."""
+    if not payload.moments:
+        raise HTTPException(status_code=400, detail="Ajoute au moins un moment (joueur et action)")
+    try:
+        day = datetime.fromisoformat(payload.date) if payload.date else datetime.utcnow()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="date doit être au format AAAA-MM-JJ")
+    created = [create_moment_card(db, e.player_name, e.action, day)[0].name for e in payload.moments]
+    db.commit()
+    push.safe(db, push.notify_cards_from_match, [], [{"action": e.action, "player": e.player_name} for e in payload.moments], False, None)
+    return {"status": "ok", "gold_cards_created": created, "total_gold": db.query(Card).filter_by(tier=Tier.gold).count()}
+
+
 @app.post("/admin/record-match", dependencies=[Depends(require_admin)])
 def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = Depends(get_db)):
     try:
@@ -1360,23 +1399,9 @@ def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = D
     # Moments mémorables : chacun donne naissance à une carte GOLD (une 'fiche' de poste MOMENT, avec sa carte).
     moment_cards = []
     for entry in payload.moments:
-        actor = find_player(entry.player_name)
-        if game_logic.card_kind(actor) != "joueur":
-            raise HTTPException(status_code=400, detail=entry.player_name + " n'est pas un joueur de l'effectif")
-        action = " ".join(entry.action.split())
-        if not action:
-            raise HTTPException(status_code=400, detail="Un moment mémorable doit avoir une action (ex. « Petit pont »)")
-        name = action + " — " + actor.name
-        if db.query(Player).filter_by(name=name).first():                    # même action, même joueur : on distingue par la date
-            name = name + " (" + match_date.strftime("%d/%m") + ")"
-        while db.query(Player).filter_by(name=name).first():
-            name += "+"
-        moment_player = Player(name=name, poste="MOMENT", photo_url=actor.photo_url)
-        db.add(moment_player)
-        db.flush()
-        db.add(Card(player_id=moment_player.id, tier=Tier.gold, vitesse=0, tir=0))
+        moment_player, actor, action = create_moment_card(db, entry.player_name, entry.action, match_date)
         db.add(MatchMoment(match_id=match.id, moment_player_id=moment_player.id, real_player_name=actor.name, action=action))
-        moment_cards.append(name)
+        moment_cards.append(moment_player.name)
 
     epics_created = []
     scorers_notes = {}
