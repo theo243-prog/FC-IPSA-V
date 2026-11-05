@@ -810,7 +810,7 @@ def leaderboard(db: Session = Depends(get_db)):
     total_levels = profiles.total_levels()
     avatar_stamps = avatars.stamps(db)                 # version de la photo de profil de chacun (le site l'affiche à côté du pseudo)
     cos = cosmetics.display_map(db)                    # titre et cadre choisis par chacun
-    pdisp = battlepass.display_map(db)                 # badge, couleur de pseudo et étoiles du Pass
+    pdisp = battlepass.display_map(db)                 # badge, couleur de pseudo, bannière et étoiles du Pass
     rows = []
     for u in users:
         owned_count = (
@@ -819,7 +819,7 @@ def leaderboard(db: Session = Depends(get_db)):
             .count()
         )
         completion = round(100 * owned_count / total_cards, 1) if total_cards else 0.0
-        rows.append({"pseudo": u.pseudo, "completion_pct": completion, "achievements": achieved.get(u.id, 0), "achievements_total": total_levels, "avatar": avatar_stamps.get(u.id), "title": cos.get(u.id, (None, None))[0], "frame": cos.get(u.id, (None, None))[1], "badge": pdisp.get(u.id, {}).get("badge"), "name_color": pdisp.get(u.id, {}).get("name_color"), "stars": pdisp.get(u.id, {}).get("stars", 0),
+        rows.append({"pseudo": u.pseudo, "completion_pct": completion, "achievements": achieved.get(u.id, 0), "achievements_total": total_levels, "avatar": avatar_stamps.get(u.id), "title": cos.get(u.id, (None, None))[0], "frame": cos.get(u.id, (None, None))[1], "badge": pdisp.get(u.id, {}).get("badge"), "name_color": pdisp.get(u.id, {}).get("name_color"), "banner": pdisp.get(u.id, {}).get("banner"), "stars": pdisp.get(u.id, {}).get("stars", 0),
                      "credits": u.credits + reserved.get(u.id, 0)})
     rows.sort(key=lambda r: (-r["completion_pct"], -r["achievements"], -r["credits"]))      # à égalité de collection, les succès départagent (puis les crédits)
     return rows

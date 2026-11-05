@@ -198,13 +198,13 @@
   .profile-head.has-banner{color:#fff;position:relative;overflow:hidden;border-radius:14px;padding:12px;text-shadow:0 1px 3px rgba(0,0,0,.6);} .profile-head.has-banner .profile-meta,.profile-head.has-banner .profile-title{color:#fff;}
   .banner-deco{position:absolute;right:6px;top:2px;font-size:30px;opacity:.28;letter-spacing:4px;pointer-events:none;white-space:nowrap;}
   /* ---- Cosmétiques holographiques du shop (palier 5) : mêmes couleurs que la feuille des cartes légendaires ---- */
-  .profile-head.banner-holo,.shopc-banner.banner-holo{background-size:100% 100%,300% 300% !important;animation:holoBanner 6s ease-in-out infinite alternate;}
-  .profile-head.banner-holo::after,.shopc-banner.banner-holo::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(115deg,rgba(255,255,255,0) 38%,rgba(255,255,255,.45) 50%,rgba(255,255,255,0) 62%);background-size:240% 100%;background-repeat:no-repeat;animation:holoSheen 3.8s ease-in-out infinite;}
+  .profile-head.banner-holo,.shopc-banner.banner-holo,.lb-name.banner-holo{background-size:100% 100%,300% 300% !important;animation:holoBanner 6s ease-in-out infinite alternate;}
+  .profile-head.banner-holo::after,.shopc-banner.banner-holo::after,.lb-name.banner-holo::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(115deg,rgba(255,255,255,0) 38%,rgba(255,255,255,.45) 50%,rgba(255,255,255,0) 62%);background-size:240% 100%;background-repeat:no-repeat;animation:holoSheen 3.8s ease-in-out infinite;}
   @keyframes holoBanner{from{background-position:0 0,0% 0%;}to{background-position:0 0,100% 100%;}}
   @keyframes holoSheen{0%,30%{background-position:130% 0;}100%{background-position:-30% 0;}}
   @keyframes shopHoloText{to{background-position:300% 0;}}
   @keyframes shopHoloRing{0%,100%{box-shadow:0 0 0 3px #fff,0 0 0 6px #FF6FC4,0 0 16px 5px #FFD36A;}25%{box-shadow:0 0 0 3px #fff,0 0 0 6px #6CFFC4,0 0 16px 5px #6CB6FF;}50%{box-shadow:0 0 0 3px #fff,0 0 0 6px #6CB6FF,0 0 16px 5px #C46CFF;}75%{box-shadow:0 0 0 3px #fff,0 0 0 6px #C46CFF,0 0 16px 5px #FF6FC4;}}
-  @media (prefers-reduced-motion: reduce){.profile-head.banner-holo,.shopc-banner.banner-holo,.profile-head.banner-holo::after,.shopc-banner.banner-holo::after,[class*="nc-shop-"],[class*="fr-shop-"]{animation:none !important;}}
+  @media (prefers-reduced-motion: reduce){.profile-head.banner-holo,.shopc-banner.banner-holo,.lb-name.banner-holo,.profile-head.banner-holo::after,.shopc-banner.banner-holo::after,.lb-name.banner-holo::after,[class*="nc-shop-"],[class*="fr-shop-"]{animation:none !important;}}
   /* ---- Shop : pistes de cosmétiques à paliers ---- */
   .shopc-head{font-weight:800;font-size:16px;margin:22px 0 4px;} .shopc-sub{font-size:12.5px;color:var(--text-muted);margin:0 0 10px;}
   .shopc-track{background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px;}
@@ -747,8 +747,18 @@
   table.leaderboard tr.me{background:var(--bg-sunk);}
   .rank-num{font-family:var(--font-head);font-size:18px;color:var(--text-muted);width:30px;display:inline-block;}
 
-  table.leaderboard .pseudo-link{background:none;border:none;padding:0;font:inherit;color:var(--text);cursor:pointer;text-decoration:underline;text-decoration-color:var(--border);}
-  table.leaderboard .pseudo-link:hover{color:var(--accent);}
+  table.leaderboard .pseudo-link{background-color:transparent;border:none;padding:0;font:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:var(--border);}
+  table.leaderboard .pseudo-link:not([class*=" nc-"]){color:var(--text);}      /* sans couleur de pseudo choisie : couleur du texte ; sinon la couleur du Pass ou du shop */
+  table.leaderboard .pseudo-link:not([class*=" nc-"]):hover{color:var(--accent);}
+  table.leaderboard .pseudo-link[class*=" nc-"]{text-decoration:none;}
+  /* bannière du Pass ou du shop derrière le nom, dans le classement */
+  .lb-name.has-banner{position:relative;overflow:hidden;border-radius:10px;padding:6px 10px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);}
+  .lb-name.has-banner > *{position:relative;z-index:1;}
+  .lb-name.has-banner .lb-title{color:#fff;}
+  .lb-name.has-banner .lb-who{background:rgba(0,0,0,.42);border-radius:7px;padding:2px 7px;}      /* fond sombre derrière le nom : lisible même si sa couleur ressemble à la bannière */
+  .lb-name.has-banner .pseudo-link:not([class*=" nc-"]){color:#fff;text-decoration-color:rgba(255,255,255,.5);}
+  .lb-name.has-banner .pseudo-link{filter:drop-shadow(0 1px 1px rgba(0,0,0,.9)) drop-shadow(0 0 3px rgba(0,0,0,.55));}      /* pseudo coloré lisible sur n'importe quelle bannière */
+  .lb-name .banner-deco{position:absolute;z-index:0;right:6px;top:50%;transform:translateY(-50%);font-size:22px;letter-spacing:3px;}
 
   .modal-overlay{position:fixed;inset:0;background:var(--scrim);display:none;align-items:center;justify-content:center;z-index:90;padding:16px;}
   .modal-box{background:var(--bg-elevated);border-top:6px solid var(--accent);border-radius:0 0 10px 10px;padding:20px;max-width:620px;width:100%;max-height:82vh;overflow-y:auto;box-shadow:var(--shadow);}
@@ -2029,7 +2039,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.05.2';
+  const SITE_VERSION = '2026.11.05.3';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3746,9 +3756,10 @@
       if (!rows.length) { root.innerHTML = '<div class="empty-state">Personne n\'a encore de collection.</div>'; return; }
       let html = '<table class="leaderboard"><thead><tr><th></th><th>Pseudo</th><th>Collection</th><th title="Niveaux de succès validés">Succès</th><th>Crédits</th></tr></thead><tbody>';
       rows.forEach((r, i) => {
-        const mine = r.pseudo === myPseudo;
+        const mine = r.pseudo === myPseudo, bnr = passItem(r.banner);          // bannière choisie (Pass ou shop) : derrière le nom
+        const bnrAttr = bnr ? ' has-banner' + (bnr.style.holo ? ' banner-holo' : '') + '" style="background:' + bnr.style.bg + ';' : '';
         html += '<tr class="' + (mine ? 'me' : '') + '"><td><span class="rank-num">#' + (i+1) + '</span></td>' +
-          '<td><div class="lb-name">' + avatarHTML(r.pseudo, r.avatar, r.frame) + '<span class="lb-who"><button class="pseudo-link' + ncClass(r.name_color) + '" data-pseudo="' + escapeHtml(r.pseudo) + '">' + badgeHTML(r.badge) + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') + '</button>' + starsHTML(r.stars) + (r.title ? '<small class="lb-title">' + escapeHtml(r.title) + '</small>' : '') + '</span></div></td>' +
+          '<td><div class="lb-name' + bnrAttr + '">' + (bnr ? '<span class="banner-deco" aria-hidden="true">' + bnr.style.emoji.repeat(3) + '</span>' : '') + avatarHTML(r.pseudo, r.avatar, r.frame) + '<span class="lb-who"><button class="pseudo-link' + ncClass(r.name_color) + '" data-pseudo="' + escapeHtml(r.pseudo) + '">' + badgeHTML(r.badge) + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') + '</button>' + starsHTML(r.stars) + (r.title ? '<small class="lb-title">' + escapeHtml(r.title) + '</small>' : '') + '</span></div></td>' +
           '<td>' + r.completion_pct + '%</td><td title="Niveaux de succès validés">' + (r.achievements || 0) + '/' + (r.achievements_total || 47) + '</td><td>' + r.credits + '</td></tr>';
       });
       html += '</tbody></table><p class="duel-hint" style="margin-top:10px;">À égalité de collection, ce sont les succès validés qui départagent (puis les crédits). Pour ajouter ta photo : touche ton pseudo, puis 📷.</p>';
