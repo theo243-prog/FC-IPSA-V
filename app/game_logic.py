@@ -457,6 +457,8 @@ def card_note(player: Player, tier: str, card=None) -> int:
         return EPIC_BASE_NOTE + EPIC_NOTE_PER_EXTRA_GOAL * max(0, (player.buts or 0) - 1)
     if tier == "speciale":
         return (card.note if card is not None and card.note else SPECIAL_BASE_NOTE)
+    if tier == "legendaire" and card is not None and card.note:      # légendaire : sa propre note (homme du match : +2, sans plafond)
+        return card.note
     return CARD_NOTE.get(tier, 75)
 
 

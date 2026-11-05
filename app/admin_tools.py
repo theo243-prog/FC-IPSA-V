@@ -76,6 +76,12 @@ def summarize(path: str, payload) -> str:
         if name == "set-password": return "Nouveau mot de passe pour %s (tous ses appareils déconnectés)" % who
         if name == "first-steps-reset": return "Premiers pas : récupération de la récompense effacée pour %s" % who
         if name == "shop-cosmetics-refund": return "Cosmétique du shop %s remboursé à %s" % (_s(p, "item_id"), who)
+        if name == "motm-extend": return "Vote homme du match prolongé de %s h" % _s(p, "hours", 0)
+        if name == "motm-close": return "Vote homme du match clôturé tout de suite"
+        if name == "motm-cancel": return "Vote homme du match annulé"
+        if name == "motm-season-create": return "Saison des votes « %s » créée (%s → %s)" % (_s(p, "name"), _s(p, "starts"), _s(p, "ends"))
+        if name == "motm-season-close": return "Saison des votes clôturée (classement figé)"
+        if name == "motm-season-publish": return "Podium de la saison des votes publié dans le chat"
         if name == "chat-silent": return "Annonces automatiques du chat %s pour %s" % ("coupées" if p.get("enabled", True) else "rétablies", who)
         if name == "club-reset": return "Défi du club : essais et récompenses du jour remis à zéro pour %s" % who
         if name == "tournament-cancel": return "Tournoi du mois annulé (droits d'entrée remboursés)"

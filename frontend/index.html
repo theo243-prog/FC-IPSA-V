@@ -114,6 +114,16 @@
   .tab{appearance:none;border:none;background:none;color:var(--text-muted);font-family:var(--font-head);font-weight:700;font-size:20px;letter-spacing:.4px;padding:10px 14px 16px;cursor:pointer;position:relative;white-space:nowrap;}
   .tab:hover{color:var(--text);}
   .tab.active{color:var(--text);}
+  /* ---- Homme du match (onglet Actualité) ---- */
+  .motm-vote{margin-bottom:12px;} .motm-vote + .motm-vote{border-top:1px solid var(--border);padding-top:12px;}
+  .motm-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px;margin-bottom:6px;} .motm-head b{font-size:14px;}
+  .motm-meta{font-size:12px;color:var(--text-muted);margin:0 0 8px;}
+  .motm-players{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+  .motm-p{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);border-radius:999px;padding:6px 11px;background:var(--bg-sunk);color:var(--text);font:inherit;font-size:13px;cursor:pointer;}
+  .motm-p.on{background:var(--accent);color:var(--accent-text);border-color:var(--accent);}
+  .motm-place{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.18);font-size:11px;font-weight:800;}
+  .motm-podium{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 6px;} .motm-podium span{background:var(--bg-sunk);border-radius:8px;padding:4px 8px;font-size:13px;}
+  .motm-card{font-size:12.5px;margin:2px 0;} .motm-old{font-size:12.5px;padding:6px 0;border-top:1px solid var(--border);}
   .tab-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#E5484D;margin-left:5px;vertical-align:super;box-shadow:0 0 0 2px var(--bg);}
   .tab-dot[hidden]{display:none;}
   /* missions du jour et série de connexion */
@@ -986,7 +996,7 @@
     <button class="tab" data-tab="marche">Marché</button>
     <button class="tab" data-tab="shop">Shop</button>
     <button class="tab" data-tab="classement">Classement</button>
-    <button class="tab" data-tab="actualite">Actualité</button>
+    <button class="tab" data-tab="actualite">Actualité<span class="tab-dot" id="newsDot" hidden></span></button>
     <button class="tab" data-tab="duels">Matchs 1v1</button>
     <button class="tab" data-tab="tournoi">Tournoi<span class="tab-dot" id="tournoiDot" hidden></span></button>
     <button class="tab" data-tab="chat">Chat<span class="tab-dot" id="chatDot" hidden></span></button>
@@ -1142,6 +1152,10 @@
           <h2>🎯 Pronostics</h2>
           <p class="duel-hint" style="margin-bottom:8px;">Mise des crédits sur le score des prochains matchs du club : les mises forment une cagnotte, partagée entre les bons pronostics quand le résultat est enregistré. Appuie sur « Pronostiquer » dans « Prochains matchs ».</p>
           <div id="pronoEl"></div>
+        </div>
+        <div class="panel-box">
+          <h2>🏅 Homme du match</h2>
+          <div id="motmEl"></div>
         </div>
         </div>
         <div class="panel-box">
@@ -1409,7 +1423,7 @@
       if (btn.dataset.tab === 'tournoi') startTournament(); else stopTournament();
       if (btn.dataset.tab === 'shop') loadShop();
       if (btn.dataset.tab === 'classement') loadLeaderboard();
-      if (btn.dataset.tab === 'actualite') loadNews();
+      if (btn.dataset.tab === 'actualite') { loadNews(); updateNewsDot(); }
       if (btn.dataset.tab === 'duels') { loadDuelsTab(); setTimeout(fitDuelCells, 600); setTimeout(fitDuelCells, 1800); }
     });
   });
@@ -2040,7 +2054,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.05.4';
+  const SITE_VERSION = '2026.11.05.5';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2374,6 +2388,70 @@
     } catch(e) { root.innerHTML = '<div class="empty-state">Pronostics indisponibles pour le moment.</div>'; }
   }
 
+  // ---------- Homme du match : vote 24 h après un match officiel ----------
+  // Pendant le vote, l'API ne donne ni classement ni point : seulement les présents, le nombre de votants, l'échéance et mon bulletin.
+  let motmData = null, motmTimer = null;
+  const motmPicks = {};                                  // vote -> mes 3 choix en cours (avant validation)
+  const MEDALS = ['🥇', '🥈', '🥉'];
+  function updateNewsDot(){ const dot = byId('newsDot'); if (dot && meInfo) dot.hidden = !meInfo.motm_todo || byId('tab-actualite').classList.contains('active'); }
+  async function loadMotm(){
+    const root = byId('motmEl'); if (!root) return;
+    try { motmData = await api('/motm'); } catch(e) { root.innerHTML = '<div class="empty-state">Vote indisponible pour le moment.</div>'; return; }
+    renderMotm(); updateNewsDot();
+    clearInterval(motmTimer);
+    if (motmData.current.length) motmTimer = setInterval(() => {      // compte à rebours ; à l'échéance, on recharge pour voir le podium
+      if (!byId('tab-actualite').classList.contains('active')) return;
+      let ended = false;
+      document.querySelectorAll('#motmEl [data-left]').forEach(el => { if (new Date(el.dataset.left + 'Z') <= new Date()) ended = true; else el.textContent = untilText(el.dataset.left); });
+      if (ended) { clearInterval(motmTimer); loadMotm(); }
+    }, 30000);
+  }
+  function motmResultHTML(v){
+    if (v.status === 'no_result') return '<div class="motm-card">Pas assez de votes (' + v.voters + ' bulletin' + (v.voters > 1 ? 's' : '') + ') : pas de résultat cette fois.</div>';
+    let h = '<div class="motm-podium">' + (v.podium || []).map(p => '<span>' + MEDALS[p.rank - 1] + ' <b>' + escapeHtml(p.player) + '</b> · ' + p.points + ' pts</span>').join('') + '</div>';
+    if (v.created) h += '<div class="motm-card">🃏 Nouvelle carte <b>légendaire</b> : ' + escapeHtml(v.created.player) + ' (note ' + v.created.note + ')</div>';
+    if (v.boosted && v.boosted.length) h += '<div class="motm-card">⬆️ Légendaire +2 : ' + v.boosted.map(b => escapeHtml(b.player) + ' (' + b.note + ')').join(', ') + '</div>';
+    return h + '<div class="motm-meta" style="margin:2px 0 0;">' + v.voters + ' votant' + (v.voters > 1 ? 's' : '') + '</div>';
+  }
+  function renderMotm(){
+    const root = byId('motmEl'), d = motmData;
+    let html = '';
+    d.current.forEach(v => {
+      const picks = motmPicks[v.id] || (v.my_ballot ? v.my_ballot.slice() : []);
+      motmPicks[v.id] = picks;
+      html += '<div class="motm-vote" data-vote="' + v.id + '"><div class="motm-head"><b>' + escapeHtml(v.match) + '</b><span>⏳ fin <span data-left="' + v.closes_at + '">' + untilText(v.closes_at) + '</span></span></div>' +
+        '<p class="motm-meta">Touche 3 joueurs dans l\'ordre : 1er = ' + d.points[0] + ' points, 2e = ' + d.points[1] + ', 3e = ' + d.points[2] + '. ' + v.voters + ' votant' + (v.voters > 1 ? 's' : '') + ' pour l\'instant. Résultats à la fin du chrono.</p>' +
+        '<div class="motm-players">' + v.players.map(p => { const i = picks.indexOf(p.name); return '<button type="button" class="motm-p' + (i >= 0 ? ' on' : '') + '" data-name="' + escapeHtml(p.name) + '">' + (i >= 0 ? '<span class="motm-place">' + (i + 1) + '</span>' : '') + escapeHtml(p.name) + '</button>'; }).join('') + '</div>' +
+        (v.my_ballot ? '<p class="motm-meta">Ton vote : ' + v.my_ballot.map((n, i) => MEDALS[i] + ' ' + escapeHtml(n)).join(' · ') + '. Tu peux le modifier jusqu\'à la fin.</p>' : '') +
+        '<button type="button" class="btn-primary motm-go"' + (picks.length === 3 ? '' : ' disabled') + '>' + (v.my_ballot ? 'Modifier mon vote' : 'Valider mon vote') + '</button></div>';
+    });
+    const past = d.history;
+    if (past.length) {
+      html += '<div class="prono-sub"' + (d.current.length ? '' : ' style="margin-top:0;"') + '>Derniers votes</div>';
+      past.slice(0, 6).forEach((v, i) => {
+        html += i === 0 ? '<div class="motm-vote"><div class="motm-head"><b>' + escapeHtml(v.match) + '</b><span>' + escapeHtml(v.date.split('-').reverse().join('/')) + '</span></div>' + motmResultHTML(v) + '</div>'
+                        : '<div class="motm-old">' + escapeHtml(v.date.split('-').reverse().join('/')) + ' · ' + escapeHtml(v.match) + ' : ' + (v.status === 'no_result' ? 'pas assez de votes' : MEDALS[0] + ' <b>' + escapeHtml(v.podium[0].player) + '</b> (' + v.podium[0].points + ' pts)') + '</div>';
+      });
+    }
+    if (!html) html = '<div class="empty-state">Aucun vote pour l\'instant. Après chaque match officiel, vous avez 24 h pour élire l\'homme du match.</div>';
+    root.innerHTML = html;
+    root.querySelectorAll('.motm-vote[data-vote]').forEach(box => {
+      const vid = box.dataset.vote;
+      box.querySelectorAll('.motm-p').forEach(b => b.addEventListener('click', () => {
+        const picks = motmPicks[vid], i = picks.indexOf(b.dataset.name);
+        if (i >= 0) picks.splice(i, 1); else if (picks.length < 3) picks.push(b.dataset.name); else { toast('Tu as déjà choisi 3 joueurs : touche un nom pour le retirer.'); return; }
+        renderMotm();
+      }));
+      const go = box.querySelector('.motm-go');
+      go.addEventListener('click', async () => {
+        const p = motmPicks[vid]; if (p.length !== 3) return;
+        go.disabled = true;
+        try { await api('/motm/' + encodeURIComponent(vid) + '/vote', { method: 'POST', body: JSON.stringify({ first: p[0], second: p[1], third: p[2] }) }); toast('Vote enregistré 🏅'); delete motmPicks[vid]; await refreshMe(); loadMotm(); }
+        catch(e) { toast(e.message); go.disabled = false; loadMotm(); }
+      });
+    });
+  }
+
   // ---------- Échanges de cartes entre joueurs ----------
   async function loadSwaps(){
     const root = byId('swapsEl'); if (!root) return;
@@ -2705,6 +2783,7 @@
       if (meInfo.welcome) showWelcome(meInfo.welcome);        // compte tout neuf : pop-up de bienvenue
       updateChatDot();                                         // point rouge de l'onglet Chat
       updateTournamentDot();                                   // point rouge de l'onglet Tournoi (un match à composer)
+      updateNewsDot();                                         // point rouge de l'onglet Actualité (un vote « homme du match » à faire)
       document.getElementById('chipCredits').textContent = meInfo.credits;
       const bonusTotal = Object.values(meInfo.pack_tokens || {}).reduce((a, b) => a + b, 0);
       document.getElementById('chipPacks').textContent = meInfo.stored_packs + '/3' + (bonusTotal ? (' +' + bonusTotal + ' bonus') : '');
@@ -3097,7 +3176,7 @@
         '<li><span class="help-tier" style="background:' + TIER_COLORS.secrete + '"></span><b>Secrète</b> : une par joueur, fan et mascotte. Elle ne sort jamais d\'un pack (voir plus bas).</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.speciale + '"></span><b>Spéciale</b> : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine. Elle ne sort que des packs match.</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.epique + '"></span><b>Épique</b> : le joueur qui marque dans un vrai match. Sa note vaut 85 au premier but, puis +2 par but.</li>' +
-        '<li><span class="help-tier" style="background:' + TIER_COLORS.legendaire + '"></span><b>Légendaire</b> : la plus rare, holographique et animée.</li></ul>' +
+        '<li><span class="help-tier" style="background:' + TIER_COLORS.legendaire + '"></span><b>Légendaire</b> : la plus rare, holographique et animée. Note 95, qui peut monter de +2 grâce au vote de l\'homme du match (voir l\'aide de l\'onglet Actualité).</li></ul>' +
         '<h3>Les doublons</h3><ul><li><b>Les revendre</b> avec « Vendre doublon » (une fenêtre te demande de confirmer : la vente est <b>définitive</b>, sans retour) : commune ' + sv.commune + ' crédit, rare ' + sv.rare + ', gold ' + sv.gold + ', spéciale ' + sv.speciale + ', épique ' + sv.epique + ', légendaire ' + sv.legendaire + '.</li>' +
         '<li><b>Débloquer une carte secrète</b> : la carte secrète d\'un joueur affiche une jauge. Chaque doublon <b>commune</b> de ce joueur vaut <b>1 point</b>, chaque doublon <b>rare</b> vaut <b>' + r.secret_fusion.rare_value + ' points</b>. À <b>' + r.secret_fusion.cost + ' points</b>, le bouton « Débloquer » apparaît : les doublons nécessaires sont consommés (tu gardes toujours ton premier exemplaire de chaque carte).</li></ul>' +
         '<h3>Les autres types de cartes</h3><ul><li><b>Fans</b>, <b>Le Loup</b> (la mascotte) et <b>équipements</b> : pas de note, ils donnent un bonus d\'équipe en 1v1.</li><li><b>Stades</b> et <b>moments gold</b> : des cartes de collection.</li></ul>';
@@ -3133,11 +3212,13 @@
         '<li><b>Pronostics</b> : sur chaque match à venir, tu peux miser 1 à 50 crédits sur le score. Les mises forment une cagnotte partagée quand le résultat est enregistré : 70 % pour les scores exacts, 30 % pour ceux qui ont le bon résultat (victoire, nul, défaite). Si personne ne trouve le résultat, tout le monde est remboursé. Tu peux modifier ou retirer ton pronostic jusqu\'au coup d\'envoi.</li>' +
         '<li><b>Prochains matchs</b> : les rencontres à venir du club. Un match passé dont le résultat n\'est pas encore saisi est signalé « Résultat à venir ».</li>' +
         '<li><b>Stats des joueurs</b> : les vraies statistiques de la saison. M = matchs joués, ⚽ = buts, PD = passes décisives, 🏅 = homme du match. Clique sur un joueur pour sa fiche.</li>' +
-        '<li><b>Résultats</b> : le score, le stade, les buteurs, les passeurs et les moments mémorables de chaque match.</li></ul>' +
+        '<li><b>Résultats</b> : le score, le stade, les buteurs, les passeurs et les moments mémorables de chaque match.</li>' +
+        '<li><b>🏅 Homme du match</b> : après chaque match officiel, vous avez <b>24 h</b> pour voter parmi les joueurs présents. Classe 3 joueurs différents : 1er = 5 points, 2e = 3, 3e = 1. Tu peux modifier ton vote jusqu\'à la fin. Personne ne voit le classement avant la fin du chrono ; ensuite, le podium est révélé. Il faut au moins 3 votants, sinon pas de résultat. Un point rouge sur l\'onglet te rappelle de voter.</li></ul>' +
         '<h3>Ce que chaque match fait gagner au jeu</h3><ul>' +
         '<li>Un joueur qui marque reçoit sa carte <b>épique</b> (note 85 au premier but, puis +2 par but supplémentaire).</li>' +
         '<li>Un moment mémorable crée une carte <b>gold</b>.</li>' +
-        '<li>Un nouveau stade crée sa carte commune.</li></ul>';
+        '<li>Un nouveau stade crée sa carte commune.</li>' +
+        '<li><b>Homme du match</b> : on parcourt le classement du vote, du 1er au dernier. Chaque joueur qui a déjà sa carte <b>légendaire</b> gagne <b>+2</b> de note (sans plafond : elle peut dépasser 99), jusqu\'au premier qui n\'en a pas : sa légendaire est créée et on s\'arrête là. La nouvelle note vaut pour tous ceux qui ont la carte.</li></ul>';
     } },
     duels: { title: 'Les matchs 1v1', async html(){
       const [r, cfg] = [await getGameRules(), await loadDuelConfig()];
@@ -3776,7 +3857,7 @@
   function localDay(iso){ const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); }
 
   async function loadNews(){
-    await Promise.all([loadUpcoming(), loadPlayerStats(), loadMatches(), loadProno()]);
+    await Promise.all([loadUpcoming(), loadPlayerStats(), loadMatches(), loadProno(), loadMotm()]);
   }
 
   async function loadUpcoming(){
