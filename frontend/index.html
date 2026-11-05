@@ -643,6 +643,7 @@
   .card-deco-web.tl{left:0;} .card-deco-web.tr{right:0;transform:scaleX(-1);}
   .card-deco-pk{right:6px;bottom:7px;width:19px;height:19px;z-index:2;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));}
   .card-deco-snow{left:0;right:0;bottom:0;width:100%;height:37%;z-index:1;}
+  .has-photo .card-deco-snow{z-index:0;}      /* carte avec photo : la neige reste derrière le joueur (elle est placée avant la photo) */
   .card-deco-flake{z-index:1;}
   .card-stats .tag-limitee{font-size:6.5px;font-weight:800;letter-spacing:.3px;padding:2px 4px;border-radius:4px;margin-left:4px;align-self:center;white-space:nowrap;}
   .tier-halloween .card-stats .tag-limitee{background:#FF8A1F;color:#1A0B00;}
@@ -1553,7 +1554,7 @@
     else if (bgPhoto) midHTML = '';
     else if (kind === 'equipement' || kind === 'stade' || kind === 'moment') midHTML = itemMedalHTML(card);
     else midHTML = '<span class="ball-fallback">⚽</span>';
-    return bgPhoto + (kind === 'trophee' ? '' : editionDecor(card.tier)) + '<div class="card-top"><span class="card-tier-label">'+(kind === 'trophee' && trophyParts(card).rank >= 4 ? (trophyParts(card).rank === 6 ? 'Pass' : 'Tournoi') : tierLabel(card.tier))+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
+    return (kind === 'trophee' ? '' : editionDecor(card.tier)) + bgPhoto + '<div class="card-top"><span class="card-tier-label">'+(kind === 'trophee' && trophyParts(card).rank >= 4 ? (trophyParts(card).rank === 6 ? 'Pass' : 'Tournoi') : tierLabel(card.tier))+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
       '<div class="card-mid">'+midHTML+'</div>'+
       '<div><div class="card-name"></div>'+statsRow+'</div>'+
       crestIco('card-watermark');
@@ -2039,7 +2040,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.05.3';
+  const SITE_VERSION = '2026.11.05.4';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
