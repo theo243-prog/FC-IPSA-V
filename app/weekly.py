@@ -1,6 +1,8 @@
 """
 Tâches planifiées. Chaque VENDREDI à 17h00 (heure de Paris), le jeu crée des cartes SPÉCIALES pour les stars
-du 1v1 de la semaine écoulée : la carte de joueur la plus utilisée, le meilleur buteur et le meilleur passeur.
+du 1v1 de la semaine écoulée : la carte de joueur la plus utilisée DANS CHAQUE GROUPE DE RARETÉ (commune, rare,
+épique, légendaire, édition limitée), le meilleur buteur et le meilleur passeur (toutes raretés confondues).
+Au plus 7 cartes spéciales par semaine (5 groupes + buteur + passeur).
 
 - La carte spéciale d'un joueur est créée avec une note de 80 ; si elle existe déjà, sa note gagne +1.
 - Elles ne sortent que des packs gagnés en 1v1 (voir game_logic.PACK_TYPES["match"]).
@@ -18,6 +20,23 @@ from . import game_logic
 
 JOB_NAME = "weekly_specials"
 CATEGORY_LABELS = {"most_used": "la plus utilisée", "top_scorer": "meilleur buteur", "top_assister": "meilleur passeur"}
+
+# Groupes de rareté pour « la plus utilisée » : un gagnant par groupe. Les éditions limitées (Halloween, Noël et les
+# éditions personnalisées ed1 à ed12) forment un seul groupe. Gold, secrète, spéciale et trophée de saison sont ignorées.
+RARITY_GROUPS = [
+    ("commune", "commune", ("commune",)),
+    ("rare", "rare", ("rare",)),
+    ("epique", "épique", ("epique",)),
+    ("legendaire", "légendaire", ("legendaire",)),
+    ("edition", "édition limitée", tuple(game_logic.EDITION_TIERS)),
+]
+GROUP_LABELS = {g: label for g, label, _t in RARITY_GROUPS}
+_TIER_GROUP = {t: g for g, _l, tiers in RARITY_GROUPS for t in tiers}
+
+
+def tier_group(tier):
+    """Le groupe de rareté d'une carte pour « la plus utilisée » (None : rareté ignorée)."""
+    return _TIER_GROUP.get(tier)
 
 
 # ------------------------------------------------------------ heure de Paris ----
@@ -71,12 +90,20 @@ def _usage_rows(db: Session, start: datetime = None, end: datetime = None):
     return q.all()
 
 
-def window_stats(db: Session, start: datetime, end: datetime):
+def window_stats(db: Session, start: datetime, end: datetime, by_group: dict = None):
     """Sur les matchs 1v1 de ]start, end] : utilisations, buts et passes décisives PAR JOUEUR (toutes raretés confondues).
-    Les cartes alignées en tournoi et au défi du club comptent aussi dans les utilisations (jamais dans les buts ni les passes)."""
+    Les cartes alignées en tournoi et au défi du club comptent aussi dans les utilisations (jamais dans les buts ni les passes).
+    Si `by_group` (dict) est donné, il est rempli avec les utilisations par groupe de rareté : {groupe: Counter(joueur)}."""
     used, goals, assists = Counter(), Counter(), Counter()
-    for name, _tier in _usage_rows(db, start, end):
+
+    def use(name, tier):
         used[name] += 1
+        g = tier_group(tier)
+        if by_group is not None and g is not None:
+            by_group.setdefault(g, Counter())[name] += 1
+
+    for name, tier in _usage_rows(db, start, end):
+        use(name, tier)
     rows = db.query(Duel).filter(Duel.lineups_json.isnot(None), Duel.created_at > start, Duel.created_at <= end).all()
     for d in rows:
         try:
@@ -86,7 +113,7 @@ def window_stats(db: Session, start: datetime, end: datetime):
             continue
         for side in ("challenger", "defender"):
             for p in lineups.get(side, {}).get("players", []):
-                used[p["player"]] += 1
+                use(p["player"], p.get("tier"))
         for ev in events:
             if ev.get("kind") != "goal":
                 continue
@@ -118,13 +145,16 @@ def award_special(db: Session, player: Player) -> dict:
 
 
 def run_weekly_specials(db: Session, start: datetime, end: datetime, dry_run: bool = False) -> dict:
-    used, goals, assists, n_duels = window_stats(db, start, end)
-    picks = {"most_used": _best(db, used), "top_scorer": _best(db, goals), "top_assister": _best(db, assists)}
+    groups = {}
+    _used, goals, assists, n_duels = window_stats(db, start, end, by_group=groups)
+    picks = [("most_used", g, _best(db, groups.get(g, Counter()))) for g, _l, _t in RARITY_GROUPS]   # un gagnant par groupe de rareté
+    picks += [("top_scorer", None, _best(db, goals)), ("top_assister", None, _best(db, assists))]
     report = {"from": start.isoformat(), "to": end.isoformat(), "duels": n_duels, "dry_run": dry_run, "awards": []}
-    for category, (player, n) in picks.items():
-        if player is None:
+    for category, group, (player, n) in picks:
+        if player is None:                                 # groupe (ou catégorie) sans aucune utilisation : pas de carte
             continue
-        entry = {"category": category, "label": CATEGORY_LABELS[category], "player": player.name, "count": n}
+        label = CATEGORY_LABELS[category] + (" (%s)" % GROUP_LABELS[group] if group else "")
+        entry = {"category": category, "group": group, "group_label": GROUP_LABELS.get(group), "label": label, "player": player.name, "count": n}
         if not dry_run:
             entry.update(award_special(db, player))        # un joueur qui gagne 2 catégories reçoit 2 fois +1
         report["awards"].append(entry)
@@ -180,28 +210,31 @@ def window_tiers(db: Session, start: datetime, end: datetime) -> Counter:
 
 def week_board(db: Session, now: datetime = None, limit: int = 5) -> dict:
     """Les stars de la semaine en cours : depuis le dernier vendredi 17h, remis à zéro au prochain.
-    Compté PAR JOUEUR (toutes raretés confondues), exactement comme l'attribution des cartes spéciales :
-    le n°1 de chaque catégorie est celui qui recevra sa carte spéciale vendredi. Pour chaque joueur on
-    indique la rareté qu'il a le plus utilisée cette semaine (c'est la carte qu'on affiche)."""
+    Compté exactement comme l'attribution des cartes spéciales : « la plus utilisée » a un classement PAR GROUPE
+    DE RARETÉ (le n°1 de chaque groupe recevra sa carte spéciale vendredi) ; buts et passes sont comptés par joueur,
+    toutes raretés confondues. Pour chaque joueur on indique la rareté qu'il a le plus utilisée (c'est la carte
+    qu'on affiche), dans le groupe pour « la plus utilisée »."""
     now = now or datetime.utcnow()
     start = last_slot(now)
-    used, goals, assists, _n = window_stats(db, start, now)
+    groups = {}
+    _used, goals, assists, _n = window_stats(db, start, now, by_group=groups)
     tiers = window_tiers(db, start, now)
     rank = {t: i for i, t in enumerate(game_logic.TIER_ORDER)}
 
-    def display_tier(name):
-        mine = [(n, rank.get(t, 0), t) for (nm, t), n in tiers.items() if nm == name]
+    def display_tier(name, group=None):
+        mine = [(n, rank.get(t, 0), t) for (nm, t), n in tiers.items() if nm == name and (group is None or tier_group(t) == group)]
         return max(mine)[2] if mine else "commune"            # le plus utilisé ; à égalité, la plus rare
 
-    def top(counter):
+    def top(counter, group=None):
         out = []
         for name, n in sorted(counter.items(), key=lambda kv: (-kv[1], kv[0])):
             player = db.query(Player).filter_by(name=name).first()
             if player is not None and game_logic.card_kind(player) == "joueur":
-                out.append((name, display_tier(name), n))
+                out.append((name, display_tier(name, group), n))
             if len(out) >= limit:
                 break
         return out
 
     return {"since": start, "resets_at": next_slot(start),
-            "most_used": top(used), "top_scorers": top(goals), "top_assisters": top(assists)}
+            "most_used_groups": [{"group": g, "label": label, "entries": top(groups.get(g, Counter()), g)} for g, label, _t in RARITY_GROUPS],
+            "top_scorers": top(goals), "top_assisters": top(assists)}

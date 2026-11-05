@@ -614,7 +614,8 @@ def duel_recap(duel_id: str, db: Session = Depends(get_db)):
 def duel_card_stats(limit: int = 5, scope: str = "all", db: Session = Depends(get_db)):
     """Les cartes les plus utilisées / les plus décisives (buts, passes) dans les matchs 1v1.
     scope=all (défaut) : depuis le début, par carte. scope=week : la semaine en cours (remise à zéro chaque
-    vendredi 17h), par joueur comme pour les cartes spéciales."""
+    vendredi 17h), comptée comme les cartes spéciales : « la plus utilisée » par groupe de rareté (most_used_groups),
+    buts et passes par joueur."""
     limit = max(1, min(limit, 10))
     if scope == "week":
         board = weekly.week_board(db, datetime.utcnow(), limit)
@@ -637,7 +638,8 @@ def duel_card_stats(limit: int = 5, scope: str = "all", db: Session = Depends(ge
             return out
 
         return {"scope": "week", "since": board["since"].isoformat(), "resets_at": board["resets_at"].isoformat(),
-                "most_used": week_cards(board["most_used"]), "top_scorers": week_cards(board["top_scorers"]),
+                "most_used_groups": [{"group": g["group"], "label": g["label"], "cards": week_cards(g["entries"])} for g in board["most_used_groups"]],
+                "top_scorers": week_cards(board["top_scorers"]),
                 "top_assisters": week_cards(board["top_assisters"])}
     used, goals, assists = duel_engine.duel_card_stats(db)
 
