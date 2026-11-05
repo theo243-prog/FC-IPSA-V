@@ -52,6 +52,7 @@ ok(c.post("/cosmetics", json={"title": "shop-title-5", "frame": "shop-frame-5"},
 ok(c.post("/pass/equip", json={"banner": "shop-banner-5", "name_color": "shop-name_color-5", "badge": "shop-badge-5"}, headers=H["riche"]).status_code == 200, "on équipe la bannière et le pseudo holographiques, et le badge Pigeon")
 p = c.get("/users/riche/profile").json()
 ok(p.get("title") == "Pigeon du shop" and p.get("frame") == "shop-frame-5" and p.get("banner") == "shop-banner-5" and p.get("name_color") == "shop-name_color-5" and p.get("badge") == "shop-badge-5", "le profil public affiche le titre, le cadre, la bannière, la couleur et le badge")
+lb = {r["pseudo"]: r for r in c.get("/leaderboard").json()}; ok(lb["riche"]["banner"] == "shop-banner-5" and lb["riche"]["name_color"] == "shop-name_color-5" and lb["pauvre"]["banner"] is None, "le classement renvoie la bannière et la couleur du pseudo de chacun")
 ok(c.post("/cosmetics", json={"title": "shop-title-5"}, headers=H["pauvre"]).status_code == 400 and c.post("/pass/equip", json={"banner": "shop-banner-1"}, headers=H["pauvre"]).status_code == 400, "un cosmétique non acheté ne s'équipe pas")
 
 print("4) ADMINISTRATION")

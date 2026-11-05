@@ -221,10 +221,10 @@ def stars_map(db: Session) -> dict:
 
 
 def display_map(db: Session) -> dict:
-    """{joueur: {badge, name_color, stars}} : ce qui s'affiche à côté d'un pseudo (classement, chat, profil)."""
-    out = {uid: {"badge": None, "name_color": None, "stars": n} for uid, n in stars_map(db).items()}
+    """{joueur: {badge, name_color, banner, stars}} : ce qui s'affiche à côté d'un pseudo (classement, chat, profil)."""
+    out = {uid: {"badge": None, "name_color": None, "banner": None, "stars": n} for uid, n in stars_map(db).items()}
     for r in db.query(PassLoadout).all():
-        d = out.setdefault(r.user_id, {"badge": None, "name_color": None, "stars": 0}); d["badge"], d["name_color"] = r.badge, r.name_color
+        d = out.setdefault(r.user_id, {"badge": None, "name_color": None, "banner": None, "stars": 0}); d["badge"], d["name_color"], d["banner"] = r.badge, r.name_color, r.banner
     return out
 
 
