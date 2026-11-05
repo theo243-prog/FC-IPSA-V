@@ -150,6 +150,9 @@ m3 = c.post("/admin/add-upcoming-match", json={"date": fut.strftime("%Y-%m-%d") 
 c.post("/admin/delete-upcoming-match", json={"upcoming_id": m3}, headers=A); ok(credits("ana") == b0 + 25, "match supprimé sans résultat : remboursement")
 m4 = c.post("/admin/add-upcoming-match", json={"date": fut.strftime("%Y-%m-%d") + " 18:00", "opponent": "Seul FC"}, headers=A).json()["id"]; setc("ben", 100); bet(Hb, m4, 2, 2, 40)
 c.post("/admin/record-match", json={"date": fut.strftime("%Y-%m-%d"), "opponent": "Seul FC", "score_us": 1, "score_them": 1}, headers=A); ok(credits("ben") == 100, "un seul parieur avec le bon résultat reprend sa mise")
+rk = {r["pseudo"]: r for r in c.get("/prono/ranking").json()}; order = [r["pseudo"] for r in c.get("/prono/ranking").json()]
+ok({k: (rk[k]["played"], rk[k]["exact"], rk[k]["good"], rk[k]["wrong"], rk[k]["net"]) for k in ("ana", "ben", "cléo", "dan")} == {"ana": (2, 1, 0, 1, 32), "ben": (3, 0, 2, 1, -8), "cléo": (1, 0, 0, 1, -10), "dan": (1, 0, 1, 0, -4)}, "classement : tous les pronostiqueurs, matchs joués, exacts, bons résultats, mauvais (match remboursé = mauvais ; match supprimé = non compté) : %s" % rk)
+ok(order[:4] == ["ana", "ben", "dan", "cléo"], "ordre : scores exacts, puis bons résultats : %s" % order)
 ok(c.get("/prono").status_code == 401, "sans compte : 401")
 
 from app import battlepass as BPX
