@@ -154,6 +154,7 @@ class AdminRecordMatchRequest(BaseModel):
     cartons_rouges: List[str] = []
     stade: Optional[str] = None     # nom du stade ; sa carte (commune) est créée s'il n'existe pas encore
     moments: List["MomentEntry"] = []   # moments mémorables : chacun crée une carte GOLD
+    open_vote: bool = False             # match officiel : ouvre le vote « homme du match » (24 h) parmi les joueurs présents
 
 
 class AdminUpdateCardStatsRequest(BaseModel):

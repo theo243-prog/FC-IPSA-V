@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -60,6 +60,7 @@ app.include_router(prono.router)             # pronostics sur les vrais matchs
 app.include_router(avatars.router)            # photos de profil
 app.include_router(collection_tools.router)   # vendre tous les doublons d'un coup
 app.include_router(welcome.router)         # accueil des nouveaux comptes : pop-up de bienvenue et pack ultra offert
+app.include_router(motm.router)            # homme du match : vote après un match officiel, classement privé de la saison
 app.include_router(admin_page.router)      # la page d'administration (/admin-panel) et le numéro de version (/version)
 
 app.add_middleware(
@@ -171,6 +172,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "welcome": welcome_info,
             "chat_last_id": chat.last_id(db),
             "tournament_todo": tournament.todo(db, user),
+            "motm_todo": motm.todo(db, user),                     # un vote « homme du match » est ouvert et je n'ai pas voté
             "pass_todo": battlepass.claimable_count(db, user),
             "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
         }
@@ -186,6 +188,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "welcome": welcome_info,
             "chat_last_id": chat.last_id(db),
             "tournament_todo": tournament.todo(db, user),
+            "motm_todo": motm.todo(db, user),                     # un vote « homme du match » est ouvert et je n'ai pas voté
             "pass_todo": battlepass.claimable_count(db, user),
             "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
     }
@@ -872,6 +875,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     club.on_user_deleted(db, user.id)                                                     # ses matchs contre le club
     first_steps.on_user_deleted(db, user.id)                                              # sa récompense des Premiers pas
     shop_cosmetics.on_user_deleted(db, user.id)                                           # ses cosmétiques achetés au shop
+    motm.on_user_deleted(db, user.id)                                                     # ses bulletins des votes encore ouverts
     db.query(CardUsage).filter_by(user_id=user.id).delete()                               # ses cartes alignées (tournoi, défi du club), comme ses matchs 1v1
     db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
     db.query(Listing).filter_by(seller_id=user.id).delete()
@@ -1314,6 +1318,10 @@ def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = D
         return p
 
     motm_player = find_player(payload.homme_du_match) if payload.homme_du_match else None
+    if payload.open_vote:                                   # vote « homme du match » : vérifié avant de toucher à quoi que ce soit
+        vote_players = motm.eligible_players(db, payload.lineup)
+        if len(vote_players) < motm.MIN_PLAYERS:
+            raise HTTPException(status_code=400, detail="Pour ouvrir le vote de l'homme du match, il faut au moins %d joueurs présents (fans, mascotte et équipements exclus) : il y en a %d." % (motm.MIN_PLAYERS, len(vote_players)))
 
     # Le stade : même nom (sans tenir compte des majuscules ni des espaces en trop) = même stade.
     # Un nouveau stade reçoit sa carte commune ; un stade déjà connu ne crée rien.
@@ -1398,6 +1406,7 @@ def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = D
         motm_player.homme_du_match_count += 1
 
     match.epics_json = json.dumps(epics_created, ensure_ascii=False)
+    vote = motm.open_vote(db, match, payload.lineup) if payload.open_vote else None      # 24 h exactement à partir de maintenant
 
     # ce match n'est plus "à venir" : on retire l'annonce correspondante (même jour, même adversaire)
     removed_upcoming = 0
@@ -1408,6 +1417,8 @@ def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = D
             removed_upcoming += 1
 
     db.commit()
+    if vote is not None:
+        motm.notify_opened(db, vote)
     push.safe(db, push.notify_cards_from_match, epics_created,
               [{"action": e.action, "player": e.player_name} for e in payload.moments] if moment_cards else [],
               stade_created, stade_player.name if stade_player else None)
@@ -1415,7 +1426,8 @@ def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = D
             "epic_notes": scorers_notes,  # note actuelle de la carte épique de chaque buteur
             "upcoming_removed": removed_upcoming,
             "stade": stade_player.name if stade_player else None, "stade_card_created": stade_created,
-            "gold_cards_created": moment_cards}
+            "gold_cards_created": moment_cards,
+            "motm_vote": {"id": vote.id, "closes_at": vote.closes_at.isoformat(), "players": json.loads(vote.players_json)} if vote is not None else None}
 
 
 def _find_by_day_and_opponent(rows, date_str, opponent):
@@ -1460,6 +1472,8 @@ def admin_delete_match(payload: schemas.AdminDeleteMatchRequest, db: Session = D
     if match.motm_player:
         match.motm_player.homme_du_match_count = max(0, match.motm_player.homme_du_match_count - 1)
         reverted["homme_du_match"] = match.motm_player.name
+    if motm.cancel_for_match(db, match.id):                  # vote encore ouvert : annulé (un vote clôturé reste acquis)
+        reverted["vote_homme_du_match"] = "annulé"
 
     warnings = []
     if match.lineup_json is None:
@@ -1876,6 +1890,7 @@ def _tick(fn):
 def _background_tick():
     _tick(weekly.check_and_run)             # cartes spéciales du vendredi 17h
     _tick(auctions.tick)                    # fin des enchères
+    _tick(motm.tick)                        # fin des votes « homme du match » (24 h)
     _tick(backup.tick)                      # sauvegarde automatique (une fois par jour, à partir de 4h)
     _tick(battlepass.tick)                  # étoiles du Pass de la saison qui vient de finir
     _tick(tournament.tick)                  # tournoi mensuel : tirage, tours de 24 h, forfaits, cagnotte
