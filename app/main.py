@@ -487,6 +487,7 @@ def players_stats(db: Session = Depends(get_db)):
     return [{
         "name": p.name, "poste": p.poste, "matches_joues": p.matches_joues, "buts": p.buts,
         "passes_decisives": p.passes_decisives, "homme_du_match_count": p.homme_du_match_count,
+        "cartons_jaunes": p.cartons_jaunes or 0, "cartons_rouges": p.cartons_rouges or 0,
     } for p in players]
 
 
