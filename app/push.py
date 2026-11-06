@@ -307,11 +307,10 @@ def notify_cards_from_match(db: Session, epics, moments, stade_created, stade_na
 
 
 def notify_weekly_specials(db: Session, awards):
-    if awards:
-        used = [a for a in awards if a["category"] == "most_used"]
-        parts = ["Plus utilisées : " + ", ".join("%s (%s)" % (a["player"], a.get("group_label") or "?") for a in used)] if used else []
-        parts += ["%s : %s" % (a["label"].capitalize(), a["player"]) for a in awards if a["category"] != "most_used"]
-        body = " · ".join(parts)
+    """Une seule notification : les cartes créées puis les +1 de la semaine (jusqu'à 7 de chaque)."""
+    from .weekly import announce_text
+    body = announce_text(awards or [])
+    if body:
         notify_all(db, "cards", "Cartes spéciales de la semaine ⭐", body + ". Elles sortent des packs gagnés en 1v1.", url="/#pack", tag="cards")
 
 

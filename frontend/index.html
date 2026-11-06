@@ -1790,7 +1790,7 @@
           '</div>';
         if (p.tier === 'secrete' && (p.surnom || (p.numero != null && p.numero !== ''))) inner += '<p class="tm-hint" style="text-align:center;">' + (p.surnom ? 'Surnom : <b>' + escapeHtml(p.surnom) + '</b>' : '') + (p.surnom && p.numero != null && p.numero !== '' ? ' · ' : '') + (p.numero != null && p.numero !== '' ? 'Maillot n° <b>' + escapeHtml(String(p.numero)) + '</b>' : '') + '</p>';
         if (p.edition) inner += '<p class="tm-hint" style="text-align:center;">' + p.edition.icon + ' <b>Édition limitée ' + escapeHtml(p.edition.label) + '</b> : ' + (p.edition.status === 'active' ? 'ses cartes sortent des packs jusqu\'au ' + formatDay(p.edition.end) + ' inclus.' : p.edition.status === 'ended' ? 'terminée le ' + formatDay(p.edition.end) + '. Elle ne sort plus des packs : seuls les joueurs qui l\'ont déjà peuvent l\'échanger.' : 'à partir du ' + formatDay(p.edition.start) + '.') + '</p>';
-        if (p.tier === 'speciale') inner += '<p class="tm-hint" style="text-align:center;">Carte spéciale : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine. Elle ne sort que des packs gagnés en 1v1.</p>';
+        if (p.tier === 'speciale') inner += '<p class="tm-hint" style="text-align:center;">Carte spéciale : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine (note 80 à sa création, +1 quand son joueur est n°1 d\'une catégorie, 90 au maximum). Elle ne sort que des packs gagnés en 1v1.</p>';
         if (p.tier === 'secrete') inner += '<p class="tm-hint" style="text-align:center;">Carte secrète : elle ne sort jamais des packs. On la débloque en fusionnant 100 points de doublons (commune = 1, rare = 5).</p>';
       }
       body.innerHTML = photoHTML + '<div class="player-detail-poste">' + escapeHtml(posteText) + ' · ' + tierLabel(p.tier) + '</div>' + inner;
@@ -2175,7 +2175,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.06.12';
+  const SITE_VERSION = '2026.11.06.13';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3440,7 +3440,7 @@
         '<li>Tu peux avoir ' + cfg.max_open_proposals + ' défis ouverts au maximum. Aucun délai : tu peux rejouer tout de suite contre le même adversaire.</li>' +
         '<li><b>Classement</b> : par Elo. M = matchs, V = victoires, D = défaites, N = nuls, <b>Diff</b> = buts marqués moins buts encaissés.</li></ul>' +
         '<h3>Les cartes stars</h3><p>Deux classements, avec les 5 cartes les plus utilisées et les 5 plus décisives en buts et en passes :</p><ul>' +
-        '<li><b>De la semaine</b> : remis à zéro chaque <b>vendredi à 17h</b>. À ce moment, chaque n°1 (✨) reçoit une <b>carte spéciale</b> (note 80, puis +1 chaque fois qu\'il la regagne) : <b>la plus utilisée de chaque groupe de rareté</b> (commune, rare, épique, légendaire et édition limitée : Halloween, Noël et les autres éditions ensemble ; un groupe ne compte que ses propres cartes), plus le <b>meilleur buteur</b> et le <b>meilleur passeur</b>, toutes raretés confondues. Soit 7 cartes spéciales au plus par semaine. Un joueur n°1 dans plusieurs classements gagne +1 pour chacun.</li>' +
+        '<li><b>De la semaine</b> : remis à zéro chaque <b>vendredi à 17h</b>. À ce moment, 7 catégories sont récompensées : <b>la plus utilisée de chaque groupe de rareté</b> (commune, rare, épique, légendaire et édition limitée : Halloween, Noël et les autres éditions ensemble ; un groupe ne compte que ses propres cartes), plus le <b>meilleur buteur</b> et le <b>meilleur passeur</b>, toutes raretés confondues. Dans chaque catégorie : si le n°1 n\'a pas encore de <b>carte spéciale</b>, elle est créée pour lui (note 80) ; s\'il en a une, elle gagne <b>+1</b> (⬆️), puis le <b>premier joueur du classement qui n\'en a pas</b> reçoit la sienne (🆕). Un joueur gagne <b>un seul +1 par semaine</b>, même s\'il est n°1 de plusieurs catégories, et une carte spéciale ne dépasse jamais <b>90</b>. Soit au plus 7 nouvelles cartes et 7 « +1 » par semaine. Sous chaque classement, « Si la semaine finissait maintenant » montre qui en profiterait.</li>' +
         '<li><b>De tous les temps</b> : l\'historique complet, depuis le premier match.</li>' +
         '<li><b>Les plus utilisées</b> comptent aussi les cartes que tu alignes au <b>tournoi</b> et au <b>défi du club</b> (jamais celles de l\'équipe du club). Les buts et les passes ne viennent que des matchs 1v1.</li></ul>' +
         '<p>Les cartes spéciales ne sortent que des packs gagnés en 1v1 :</p>' +
@@ -4215,7 +4215,9 @@
     const plural = (n, one, many) => n + ' ' + (n > 1 ? many : one);
     const used = n => plural(n, 'match', 'matchs');
     // semaine : « la plus utilisée » a un classement par groupe de rareté (un gagnant chacun) ; on n'affiche que les groupes déjà joués
-    const usedBlocks = weekly ? (data.most_used_groups || []).filter(g => g.cards.length).map(g => ['Les plus utilisées · ' + g.label, g.cards, used])
+    // semaine : forecast = ce que vendredi donnerait si la semaine finissait maintenant (+1 au n°1, carte créée pour le premier qui n'en a pas)
+    const fc = {}; (weekly && data.forecast || []).forEach(f => { fc[f.category === 'most_used' ? 'g:' + f.group : f.category] = f; });
+    const usedBlocks = weekly ? (data.most_used_groups || []).filter(g => g.cards.length).map(g => ['Les plus utilisées · ' + g.label, g.cards, used, fc['g:' + g.group]])
                               : [['Les plus utilisées', data.most_used, used]];
     if (!usedBlocks.length || !usedBlocks.some(b => b[1].length)) {
       root.innerHTML = '<div class="empty-state">' + (weekly ? 'Aucun match 1v1 cette semaine : joue pour entrer au classement !' : 'Pas encore de statistiques : jouez des matchs !') + '</div>';
@@ -4223,11 +4225,11 @@
     }
     const blocks = [
       ...usedBlocks,
-      ['Les plus décisives en buts', data.top_scorers, n => plural(n, 'but', 'buts')],
-      ['Les plus décisives en passes', data.top_assisters, n => plural(n, 'passe décisive', 'passes décisives')],
+      ['Les plus décisives en buts', data.top_scorers, n => plural(n, 'but', 'buts'), fc.top_scorer],
+      ['Les plus décisives en passes', data.top_assisters, n => plural(n, 'passe décisive', 'passes décisives'), fc.top_assister],
     ];
     root.innerHTML = '';
-    blocks.forEach(([title, list, caption]) => {
+    blocks.forEach(([title, list, caption, f]) => {
       const block = document.createElement('div'); block.className = 'stars-block';
       const h = document.createElement('h3'); h.textContent = title; block.appendChild(h);
       const row = document.createElement('div'); row.className = 'stars-row';
@@ -4236,11 +4238,22 @@
         const item = document.createElement('div'); item.className = 'star-item';
         item.appendChild(makeMiniCard(entry.card, { hideCount: true }));
         const cap = document.createElement('div'); cap.className = 'star-caption';
-        cap.textContent = medals[i] + ' ' + caption(entry.count) + (weekly && i === 0 ? ' ✨' : '');
-        if (weekly && i === 0) cap.title = 'Recevra sa carte spéciale vendredi à 17h';
+        const nm = entry.card && entry.card.player_name;
+        const tag = !weekly || !f ? '' : nm === f.created ? ' 🆕' : nm === f.plus_one ? ' ⬆️+1' : '';
+        cap.textContent = medals[i] + ' ' + caption(entry.count) + tag;
+        if (tag) cap.title = nm === f.created ? 'Recevrait sa carte spéciale vendredi à 17h' : '+1 sur sa carte spéciale vendredi à 17h (note ' + f.plus_one_note + ')';
         item.appendChild(cap); row.appendChild(item);
       });
-      block.appendChild(row); root.appendChild(block);
+      block.appendChild(row);
+      if (weekly && f) {          // la prévision de la catégorie, en une ligne (le bénéficiaire peut être au-delà du top 5)
+        const bits = [];
+        if (f.plus_one) bits.push('⬆️ +1 pour <b>' + escapeHtml(f.plus_one) + '</b> (note ' + f.plus_one_note + ')');
+        else if (f.first_skipped) bits.push('Pas de +1 pour ' + escapeHtml(f.first_skipped.player) + ' (' + escapeHtml(f.first_skipped.reason) + ')');
+        if (f.created) bits.push('🆕 carte créée pour <b>' + escapeHtml(f.created) + '</b>' + (f.created_rank > 1 ? ' (' + f.created_rank + 'e du classement, le premier sans carte spéciale)' : ''));
+        else bits.push('aucune création : tout le classement a déjà sa carte spéciale');
+        block.insertAdjacentHTML('beforeend', '<p class="duel-hint star-forecast">Si la semaine finissait maintenant : ' + bits.join(' · ') + '.</p>');
+      }
+      root.appendChild(block);
     });
   }
   // « dans 3 j 4 h », « dans 5 h 12 min »...
@@ -4258,7 +4271,7 @@
       ]);
       renderStars(byId('duelStarsEl'), all, false);
       renderStars(byId('duelWeekEl'), week, true);
-      byId('duelWeekHint').innerHTML = 'Remis à zéro <b>vendredi à 17h</b> (' + untilText(week.resets_at) + '). À ce moment, chaque n°1 ✨ reçoit sa <b>carte spéciale</b> : la plus utilisée de chaque rareté, le meilleur buteur et le meilleur passeur.';
+      byId('duelWeekHint').innerHTML = 'Remis à zéro <b>vendredi à 17h</b> (' + untilText(week.resets_at) + '). Dans chaque catégorie (la plus utilisée de chaque rareté, meilleur buteur, meilleur passeur), le n°1 gagne <b>+1</b> sur sa carte spéciale (⬆️, jusqu\'à 90) et le premier joueur du classement qui n\'en a pas encore <b>reçoit la sienne</b> (🆕).';
     } catch(e) { toast(e.message); }
   }
 

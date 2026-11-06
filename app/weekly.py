@@ -2,9 +2,11 @@
 Tâches planifiées. Chaque VENDREDI à 17h00 (heure de Paris), le jeu crée des cartes SPÉCIALES pour les stars
 du 1v1 de la semaine écoulée : la carte de joueur la plus utilisée DANS CHAQUE GROUPE DE RARETÉ (commune, rare,
 épique, légendaire, édition limitée), le meilleur buteur et le meilleur passeur (toutes raretés confondues).
-Au plus 7 cartes spéciales par semaine (5 groupes + buteur + passeur).
+7 catégories (5 groupes + buteur + passeur) : au plus 7 créations et 7 « +1 » par semaine.
 
-- La carte spéciale d'un joueur est créée avec une note de 80 ; si elle existe déjà, sa note gagne +1.
+- Pour chaque catégorie (voir plan_awards) : le 1er reçoit sa carte s'il ne l'a pas (et c'est fini), sinon +1 ; puis le premier
+  joueur du classement qui n'a pas de carte spéciale la reçoit. Création à 80 (SPECIAL_BASE_NOTE), +1 au plus une fois par joueur
+  et par semaine, jamais au-delà de 90 (SPECIAL_MAX_NOTE). Une carte ne baisse jamais.
 - Elles ne sortent que des packs gagnés en 1v1 (voir game_logic.PACK_TYPES["match"]).
 - Le créneau traité est mémorisé en base (table job_runs) : un redémarrage du serveur ne fait ni rater ni
   répéter la tâche. Si le serveur était éteint à 17h, elle est rattrapée dès son retour.
@@ -123,46 +125,114 @@ def window_stats(db: Session, start: datetime, end: datetime, by_group: dict = N
     return used, goals, assists, len(rows)
 
 
-def _best(db: Session, counter: Counter):
-    """Le premier (le plus fort, puis par ordre alphabétique) qui est un vrai joueur de l'effectif."""
+def _ranked(counter: Counter, players: dict) -> list:
+    """Le classement complet d'une catégorie : (joueur, points), du plus fort au plus faible, puis par ordre alphabétique.
+    Seuls les vrais joueurs de l'effectif comptent (ni fans, ni mascottes, ni moments…) ; au moins 1 point."""
+    out = []
     for name, n in sorted(counter.items(), key=lambda kv: (-kv[1], kv[0])):
-        player = db.query(Player).filter_by(name=name).first()
-        if player is not None and game_logic.card_kind(player) == "joueur":
-            return player, n
-    return None, 0
+        player = players.get(name)
+        if n > 0 and player is not None and game_logic.card_kind(player) == "joueur":
+            out.append((player, n))
+    return out
 
 
-def award_special(db: Session, player: Player) -> dict:
-    """Crée la carte spéciale du joueur (note 80) ou, si elle existe déjà, lui ajoute +1."""
-    card = db.query(Card).filter_by(player_id=player.id, tier=Tier.speciale).first()
-    if card is None:
-        card = Card(player_id=player.id, tier=Tier.speciale, vitesse=0, tir=0, note=game_logic.SPECIAL_BASE_NOTE)
-        db.add(card)
-        db.flush()
-        return {"player": player.name, "created": True, "note": card.note}
-    card.note = (card.note or game_logic.SPECIAL_BASE_NOTE) + 1
-    return {"player": player.name, "created": False, "note": card.note}
+def category_rankings(db: Session, start: datetime, end: datetime):
+    """Les 7 catégories dans l'ordre de l'attribution (groupes du plus commun au plus rare, buteur, passeur), avec leur
+    classement complet, et le nombre de matchs 1v1 de la fenêtre."""
+    groups = {}
+    _used, goals, assists, n_duels = window_stats(db, start, end, by_group=groups)
+    players = {p.name: p for p in db.query(Player).all()}
+    cats = [("most_used", g, _ranked(groups.get(g, Counter()), players)) for g, _l, _t in RARITY_GROUPS]
+    cats += [("top_scorer", None, _ranked(goals, players)), ("top_assister", None, _ranked(assists, players))]
+    return cats, n_duels
+
+
+def plan_awards(db: Session, cats) -> list:
+    """Ce que l'attribution du vendredi ferait, SANS rien modifier. Pour chaque catégorie, on parcourt le classement :
+      1. le 1er sans carte spéciale : elle est créée, et c'est fini pour la catégorie ;
+         le 1er qui en a une : +1 (au plus un +1 par joueur et par semaine, note plafonnée à SPECIAL_MAX_NOTE), puis on continue ;
+      2. on descend : le premier joueur sans carte spéciale la reçoit et c'est fini ; ceux qui en ont une sont sautés (rien) ;
+      3. une carte créée plus tôt dans la même attribution compte comme déjà possédée (son propriétaire peut donc prendre
+         le +1 s'il est 1er d'une catégorie suivante)."""
+    base, cap = game_logic.SPECIAL_BASE_NOTE, game_logic.SPECIAL_MAX_NOTE
+    notes = {pid: (note or base) for pid, note in db.query(Card.player_id, Card.note).filter(Card.tier == Tier.speciale).all()}
+    bumped, entries = set(), []
+    for category, group, ranked in cats:
+        if not ranked:                                      # catégorie sans aucun point cette semaine : rien
+            continue
+        first, n = ranked[0]
+        entry = {"category": category, "group": group, "group_label": GROUP_LABELS.get(group),
+                 "label": CATEGORY_LABELS[category] + (" (%s)" % GROUP_LABELS[group] if group else ""),
+                 "player": first.name, "count": n, "actions": [], "plus_one": None, "created": None, "created_rank": None}
+        act = lambda kind, p, pts, **kw: entry["actions"].append({"action": kind, "player": p.name, "count": pts, **kw})
+        if first.id not in notes:
+            notes[first.id] = base; act("created", first, n, note=base, rank=1)
+            entry.update(created=first.name, created_rank=1)
+            entries.append(entry); continue
+        if first.id in bumped:
+            act("skipped", first, n, reason="déjà +1 cette semaine", note=notes[first.id])
+        elif notes[first.id] >= cap:
+            act("skipped", first, n, reason="note maximale de %d atteinte" % cap, note=notes[first.id])
+        else:
+            notes[first.id] += 1; bumped.add(first.id)
+            act("plus_one", first, n, note=notes[first.id]); entry.update(plus_one=first.name, plus_one_note=notes[first.id])
+        for rank, (p, pts) in enumerate(ranked[1:], start=2):
+            if p.id in notes:
+                act("skipped", p, pts, reason="a déjà sa carte spéciale", note=notes[p.id], rank=rank)
+                continue
+            notes[p.id] = base; act("created", p, pts, note=base, rank=rank)
+            entry.update(created=p.name, created_rank=rank)
+            break
+        entries.append(entry)
+    return entries
+
+
+def _apply(db: Session, entries) -> None:
+    """Écrit les créations et les +1 décidés par plan_awards (sans commit)."""
+    by_name = {}
+    for e in entries:
+        for a in e["actions"]:
+            if a["action"] not in ("created", "plus_one"):
+                continue
+            player = by_name.get(a["player"]) or db.query(Player).filter_by(name=a["player"]).first()
+            by_name[a["player"]] = player
+            card = db.query(Card).filter_by(player_id=player.id, tier=Tier.speciale).first()
+            if a["action"] == "created" and card is None:
+                db.add(Card(player_id=player.id, tier=Tier.speciale, vitesse=0, tir=0, note=a["note"])); db.flush()
+            elif a["action"] == "plus_one" and card is not None:
+                card.note = max(card.note or game_logic.SPECIAL_BASE_NOTE, a["note"])   # jamais à la baisse
+
+
+def summary(entries) -> dict:
+    """Les créations et les +1 de l'attribution, dans l'ordre des catégories (pour les annonces)."""
+    return {"created": [e["created"] for e in entries if e["created"]],
+            "plus_one": [{"player": e["plus_one"], "note": e["plus_one_note"]} for e in entries if e["plus_one"]]}
+
+
+def announce_text(entries) -> str:
+    s = summary(entries)
+    parts = []
+    if s["created"]:
+        parts.append("🆕 Nouvelles cartes : " + ", ".join(s["created"]))
+    if s["plus_one"]:
+        parts.append("⬆️ +1 : " + ", ".join("%s (%d)" % (x["player"], x["note"]) for x in s["plus_one"]))
+    return " · ".join(parts)
 
 
 def run_weekly_specials(db: Session, start: datetime, end: datetime, dry_run: bool = False) -> dict:
-    groups = {}
-    _used, goals, assists, n_duels = window_stats(db, start, end, by_group=groups)
-    picks = [("most_used", g, _best(db, groups.get(g, Counter()))) for g, _l, _t in RARITY_GROUPS]   # un gagnant par groupe de rareté
-    picks += [("top_scorer", None, _best(db, goals)), ("top_assister", None, _best(db, assists))]
-    report = {"from": start.isoformat(), "to": end.isoformat(), "duels": n_duels, "dry_run": dry_run, "awards": []}
-    for category, group, (player, n) in picks:
-        if player is None:                                 # groupe (ou catégorie) sans aucune utilisation : pas de carte
-            continue
-        label = CATEGORY_LABELS[category] + (" (%s)" % GROUP_LABELS[group] if group else "")
-        entry = {"category": category, "group": group, "group_label": GROUP_LABELS.get(group), "label": label, "player": player.name, "count": n}
-        if not dry_run:
-            entry.update(award_special(db, player))        # un joueur qui gagne 2 catégories reçoit 2 fois +1
-        report["awards"].append(entry)
+    cats, n_duels = category_rankings(db, start, end)
+    entries = plan_awards(db, cats)
+    report = {"from": start.isoformat(), "to": end.isoformat(), "duels": n_duels, "dry_run": dry_run, "awards": entries, **summary(entries)}
     if not dry_run:
+        _apply(db, entries)
+        text = announce_text(entries)
+        if text:
+            from . import chat
+            chat.add_event(db, "⭐ Cartes spéciales de la semaine · " + text)
         db.commit()
-        if report["awards"]:
+        if text:
             from . import push            # (import ici pour éviter une dépendance circulaire)
-            push.safe(db, push.notify_weekly_specials, report["awards"])
+            push.safe(db, push.notify_weekly_specials, entries)
     return report
 
 
@@ -235,6 +305,15 @@ def week_board(db: Session, now: datetime = None, limit: int = 5) -> dict:
                 break
         return out
 
+    # si la semaine finissait maintenant : qui aurait +1, pour qui une carte serait créée (même calcul que vendredi, sans rien écrire)
+    players = {p.name: p for p in db.query(Player).all()}
+    cats = [("most_used", g, _ranked(groups.get(g, Counter()), players)) for g, _l, _t in RARITY_GROUPS]
+    cats += [("top_scorer", None, _ranked(goals, players)), ("top_assister", None, _ranked(assists, players))]
+    forecast = [{k: e.get(k) for k in ("category", "group", "label", "plus_one", "plus_one_note", "created", "created_rank")}
+                | {"created_count": next((a["count"] for a in e["actions"] if a["action"] == "created"), None),
+                   "first_skipped": next(({"player": a["player"], "reason": a["reason"]} for a in e["actions"]      # le 1er sans +1 (déjà +1, plafond)
+                                          if a["action"] == "skipped" and a.get("rank") is None), None)}
+                for e in plan_awards(db, cats)]
     return {"since": start, "resets_at": next_slot(start),
             "most_used_groups": [{"group": g, "label": label, "entries": top(groups.get(g, Counter()), g)} for g, label, _t in RARITY_GROUPS],
-            "top_scorers": top(goals), "top_assisters": top(assists)}
+            "top_scorers": top(goals), "top_assisters": top(assists), "forecast": forecast}

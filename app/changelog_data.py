@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-speciales-v2", "date": "2026-11-06", "category": "cartes", "title": "Cartes spéciales : une carte de plus par catégorie, note maximale 90",
+     "text": "Chaque vendredi, le n°1 de chaque catégorie gagne +1 sur sa carte spéciale s'il l'a déjà, et le premier joueur du classement qui n'en a pas encore reçoit la sienne. Un seul +1 par joueur et par semaine, et la note d'une carte spéciale s'arrête à 90."},
     {"id": "2026-11-niveaux-sans-limite", "date": "2026-11-06", "category": "cartes", "title": "Plus de limite d'évolutions par jour",
      "text": "Tu peux faire évoluer autant de cartes que tu veux dans la journée. Il faut toujours des doublons et des crédits, et le niveau 5 reste le maximum."},
     {"id": "2026-11-possession", "date": "2026-11-06", "category": "autre", "title": "Combien de joueurs ont cette carte",

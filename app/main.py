@@ -676,7 +676,8 @@ def duel_card_stats(limit: int = 5, scope: str = "all", db: Session = Depends(ge
         return {"scope": "week", "since": board["since"].isoformat(), "resets_at": board["resets_at"].isoformat(),
                 "most_used_groups": [{"group": g["group"], "label": g["label"], "cards": week_cards(g["entries"])} for g in board["most_used_groups"]],
                 "top_scorers": week_cards(board["top_scorers"]),
-                "top_assisters": week_cards(board["top_assisters"])}
+                "top_assisters": week_cards(board["top_assisters"]),
+                "forecast": board["forecast"]}             # si la semaine finissait maintenant : +1 et créations par catégorie
     used, goals, assists = duel_engine.duel_card_stats(db)
 
     def top(counter):
