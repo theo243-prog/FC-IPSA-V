@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -284,6 +284,7 @@ def get_collection(user: User = Depends(get_current_user), db: Session = Depends
     all_cards = db.query(Card).all()
     owned_rows = {o.card_id: o.quantity for o in db.query(OwnedCard).filter_by(user_id=user.id).all()}
     lv = card_levels.levels_for(db, user.id)               # copies évoluées : +niveau sur la note
+    fm = fatigue.forms_for(db, user.id)                    # forme du jour en 1v1 (100 % si la carte n'a pas joué aujourd'hui)
     qty_by_player = {}                      # joueur -> quantités possédées en commune / rare (pour la jauge de fusion)
     for c in all_cards:
         if c.tier in (Tier.commune, Tier.rare):
@@ -297,6 +298,8 @@ def get_collection(user: User = Depends(get_current_user), db: Session = Depends
             continue                                   # un trophée de saison n'est visible que de ceux qui l'ont gagné
         qty = owned_rows.get(c.id, 0)
         row = {**(with_level(card_out(c), lv.get(c.id, 0) if qty > 0 else 0) if (qty > 0 or reveal) else locked_out(c)), "quantity": qty}
+        if qty > 0:
+            row["form"] = round(fm.get(c.id, 1.0) * 100)
         if c.tier == Tier.secrete:
             q = qty_by_player.get(c.player_id, {})
             points = game_logic.fusion_points(q.get("commune", 0), q.get("rare", 0))
@@ -869,6 +872,7 @@ def purge_card_rows(db: Session, card_ids: list):
     db.query(Listing).filter(Listing.card_id.in_(card_ids)).delete(synchronize_session=False)
     db.query(OwnedCard).filter(OwnedCard.card_id.in_(card_ids)).delete(synchronize_session=False)
     card_levels.on_cards_deleted(db, card_ids)          # niveaux de ces cartes
+    fatigue.on_cards_deleted(db, card_ids)              # leur forme du jour
     card_levels.cleanup_orphans(db)                     # niveaux des annonces et enchères disparues
     db.query(TeamSlot).filter(TeamSlot.card_id.in_(card_ids)).delete(synchronize_session=False)      # ancien 1v1
     db.query(Team).filter(Team.fan_card_id.in_(card_ids)).update({"fan_card_id": None}, synchronize_session=False)
@@ -904,6 +908,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     shop_cosmetics.on_user_deleted(db, user.id)                                           # ses cosmétiques achetés au shop
     motm.on_user_deleted(db, user.id)                                                     # ses bulletins des votes encore ouverts
     card_levels.on_user_deleted(db, user.id)                                              # ses cartes évoluées
+    fatigue.on_user_deleted(db, user.id)                                                  # la forme de ses cartes
     db.query(CardUsage).filter_by(user_id=user.id).delete()                               # ses cartes alignées (tournoi, défi du club), comme ses matchs 1v1
     db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
     db.query(Listing).filter_by(seller_id=user.id).delete()

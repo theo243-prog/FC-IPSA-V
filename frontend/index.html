@@ -128,6 +128,10 @@
   table.prono-rank th{position:sticky;top:0;background:var(--bg-elevated);text-align:left;font-size:11px;color:var(--text-muted);font-weight:700;padding:5px 6px;border-bottom:1px solid var(--border);}
   table.prono-rank td{padding:6px;border-bottom:1px solid var(--border);} table.prono-rank .num{text-align:center;font-weight:700;} table.prono-rank tr.me{background:var(--bg-sunk);}
   table.prono-rank .pseudo-link{background:none;border:none;padding:0;font:inherit;color:var(--text);cursor:pointer;text-decoration:underline;text-decoration-color:var(--border);} table.prono-rank .pseudo-link:hover{color:var(--accent);}
+  /* ---- Forme des cartes en 1v1 (barre de fatigue) ---- */
+  .form-bar{position:absolute;left:8%;right:8%;bottom:3px;height:4px;border-radius:3px;background:rgba(0,0,0,.35);z-index:4;overflow:hidden;pointer-events:none;}
+  .form-bar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#E5484D,#F5A524 50%,#30A46C);background-size:200% 100%;}
+  .tm-auto{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0 8px;} .tm-auto .tm-hint{margin:0;}
   /* ---- Niveaux de cartes ---- */
   .card-stats .lvl-chip{background:linear-gradient(135deg,#FFD36A,#F08A24) !important;color:#3A1B00 !important;font-weight:800;}
   .lvl-box{margin-top:14px;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--bg-sunk);font-size:13px;}
@@ -1242,6 +1246,7 @@
     <div class="form-row" id="tmStakeRow"><label>Mise (1 à 10 crédits)</label><input id="tmStake" type="number" min="1" max="10" value="2"></div>
     <div class="form-row" id="tmRefRow"><label>Enveloppe pour l'arbitre (crédits, 0 = aucune)</label><input id="tmReferee" type="number" min="0" step="1" value="0"><div class="tm-hint" id="tmRefHint"></div></div>
     <div class="tm-section">Les 5 joueurs</div>
+    <div class="tm-auto"><button class="btn-small" type="button" id="tmAuto">⚡ Meilleure équipe</button><span class="tm-hint" id="tmAutoHint">Remplit chaque poste avec tes meilleures notes du moment.</span></div>
     <div id="tmSlots"></div>
     <div class="form-row"><label id="tmCaptainLabel">Capitaine</label><select id="tmCaptain"></select></div>
     <div class="form-row"><label>Fan (optionnel, apporte un bonus à toute l'équipe)</label><select id="tmFan"></select></div>
@@ -1572,7 +1577,8 @@
       statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🎉 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span>' + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
       posteLabel = '🎉';
     } else {
-      statsRow = '<div class="card-stats"><span>⭐ ' + (card.display_note ? card.display_note.value : '') + '</span>' + (card.level ? '<span class="lvl-chip" title="Carte évoluée : +' + card.level + ' de note">Niv. ' + card.level + '</span>' : '') + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
+      statsRow = (card.form != null && card.form < 100 ? '<div class="form-bar" title="Forme en 1v1 : ' + card.form + ' % (remise à 100 % à minuit)"><i style="width:' + card.form + '%;background-position:' + (100 - card.form) + '% 0;"></i></div>' : '') +
+        '<div class="card-stats"><span>⭐ ' + (card.display_note ? card.display_note.value : '') + '</span>' + (card.level ? '<span class="lvl-chip" title="Carte évoluée : +' + card.level + ' de note">Niv. ' + card.level + '</span>' : '') + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
       posteLabel = escapeHtml(card.poste);
     }
     const bgPhoto = usesBgPhoto(card) ? '<img class="card-bgphoto" src="' + escapeHtml(card.player_photo_url) + '" alt=""><span class="card-scrim" aria-hidden="true"></span>' : '';
@@ -2105,7 +2111,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.06.6';
+  const SITE_VERSION = '2026.11.06.7';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3299,6 +3305,11 @@
         '<li><b>1 Fan</b> : ' + range(cfg.fan_bonus, ['commune', 'rare', 'epique', 'secrete', 'legendaire']) + ' %, édition limitée +' + Math.round(cfg.fan_bonus.halloween * 100) + ' %.</li>' +
         '<li><b>1 Loup</b> (la mascotte) : mêmes bonus que le Fan.</li>' +
         '<li><b>' + cfg.max_equipment + ' Équipement</b> : ' + range(cfg.equipment_bonus, ['commune', 'rare', 'epique', 'legendaire']) + ' %.</li></ul>' +
+        '<h3>La forme des cartes 💪</h3><ul>' +
+        '<li>Chaque carte de joueur que tu alignes dans un <b>match 1v1</b> perd <b>1 % de forme</b> (sa note est multipliée par sa forme : 85 à 97 % de forme vaut 82,5). Une petite barre sous la note montre la forme d\'une carte qui a déjà joué aujourd\'hui.</li>' +
+        '<li>La forme revient à <b>100 % chaque jour à minuit</b> (heure de Paris) et ne descend jamais sous 50 %. Les deux équipes d\'un défi se fatiguent.</li>' +
+        '<li>Le <b>tournoi</b> et le <b>défi du club</b> jouent toujours à 100 % et ne fatiguent pas.</li>' +
+        '<li>Pour garder une bonne note, <b>fais tourner tes cartes</b>, gardien compris. Le bouton <b>« ⚡ Meilleure équipe »</b> remplit chaque poste avec tes meilleures notes du moment.</li></ul>' +
         '<h3>Le niveau compte, le hasard un peu</h3><ul>' +
         '<li>Ton attaque contre la défense adverse donne les <b>buts attendus</b> de ton équipe : environ 2 par équipe en 1-2-1 à niveau égal (1,4 en 2-1-1, 2,6 en 1-1-2). Un écart de niveau entre les deux équipes se voit vite sur le score.</li>' +
         '<li>Une partie des buts attendus est <b>acquise</b> : avec 2,8 buts attendus, tu marques au moins 1 but, le reste se joue au hasard. Le nombre moyen de buts ne change pas, mais les surprises sont plus rares.</li>' +
@@ -4276,6 +4287,7 @@
     byId('tmEquip').innerHTML = tm.equip.length ? Array.from({ length: cfg.max_equipment }, () => '<select>' + equipOptions + '</select>').join('') : '';
     refreshTeamBonus();
 
+    byId('tmAutoHint').textContent = tmUsesForm() ? 'Remplit chaque poste avec tes meilleures notes du moment (forme du jour comprise).' : 'Remplit chaque poste avec tes meilleures notes (ici, toutes les cartes sont à 100 % de forme).';
     renderTmSlots('1-2-1', null);
     applyLastTeam(cfg);
     await fillTargets(mode);          // défi privé : la liste des joueurs défiables (et le préréglage d'une revanche)
@@ -4342,13 +4354,18 @@
   //   2. les cartes sans poste défini (« X ») : jamais pénalisées ;
   //   3. les autres postes (hors poste = pénalité), un groupe par poste, chacun de la meilleure note à la moins bonne.
   const POSTE_GROUPES = { GB: 'Gardiens', DEF: 'Défenseurs', MC: 'Milieux', ATT: 'Attaquants' };
+  // Forme en 1v1 : chaque match fait perdre 1 % à une carte, jusqu'à minuit. Le tournoi et le défi du club jouent toujours à 100 %.
+  const tmUsesForm = () => tm.mode !== 'tournament' && tm.mode !== 'club';
+  const tmForm = c => tmUsesForm() && c.form != null ? c.form : 100;
+  const tmNote = c => Math.round(c.display_note.value * tmForm(c) / 10) / 10;          // note du moment (forme comprise), à 0,1 près
+  const tmNoteTxt = c => String(tmNote(c)).replace('.', ',');
   function slotOptionsHTML(cat){
     const cfg = duelConfig, malus = Math.round(cfg.out_of_position_malus * 100);
     const naturalOf = c => cfg.poste_category[(c.poste || '').toUpperCase()] || null;
-    const byNote = (a, b) => b.display_note.value - a.display_note.value || a.player_name.localeCompare(b.player_name, 'fr') || a.tier.localeCompare(b.tier);
+    const byNote = (a, b) => tmNote(b) - tmNote(a) || a.player_name.localeCompare(b.player_name, 'fr') || a.tier.localeCompare(b.tier);
     const option = c => {
       const off = naturalOf(c) && naturalOf(c) !== cat;
-      return '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' · ⭐' + c.display_note.value + (c.level ? ' (Niv. ' + c.level + ')' : '') + ' · ' + escapeHtml(c.poste) + ' · ' + tierLabel(c.tier) + (off ? ' · ⚠ −' + malus + ' %' : '') + '</option>';
+      return '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' · ⭐' + tmNoteTxt(c) + (tmForm(c) < 100 ? ' (forme ' + tmForm(c) + ' %)' : '') + (c.level ? ' (Niv. ' + c.level + ')' : '') + ' · ' + escapeHtml(c.poste) + ' · ' + tierLabel(c.tier) + (off ? ' · ⚠ −' + malus + ' %' : '') + '</option>';
     };
     const groups = [];
     groups.push([POSTE_GROUPES[cat] || cat, tm.owned.filter(c => naturalOf(c) === cat).sort(byNote)]);
@@ -4384,6 +4401,24 @@
     refreshCaptain(sels);
   }
   byId('tmCaptain').addEventListener('change', () => { byId('tmCaptain').dataset.touched = '1'; });
+  // « Meilleure équipe » : chaque case reçoit la meilleure note du moment (niveau et forme compris) parmi les cartes de son poste ;
+  // s'il n'y en a plus, la meilleure carte restante (un poste « X » n'est jamais pénalisé, un autre poste perd 10 %). Capitaine : la meilleure.
+  function autoFillTeam(){
+    const cfg = duelConfig, malus = cfg.out_of_position_malus, sels = tmSelects();
+    const naturalOf = c => cfg.poste_category[(c.poste || '').toUpperCase()] || null;
+    const used = new Set(), pick = {};
+    const best = (cat, strict) => tm.owned.filter(c => !used.has(c.id) && (strict ? naturalOf(c) === cat : true))
+      .map(c => [c, tmNote(c) * (naturalOf(c) && naturalOf(c) !== cat ? 1 - malus : 1)]).sort((a, b) => b[1] - a[1] || a[0].player_name.localeCompare(b[0].player_name, 'fr'))[0];
+    [true, false].forEach(strict => sels.forEach((sel, i) => {
+      if (pick[i]) return; const b = best(sel.dataset.category, strict); if (b) { pick[i] = b[0].id; used.add(b[0].id); }
+    }));
+    sels.forEach((sel, i) => { sel.value = pick[i] || ''; });
+    byId('tmCaptain').dataset.touched = ''; onTmChange();
+    const tired = sels.map(s => tm.byId[s.value]).filter(c => c && tmForm(c) < 100).length;
+    byId('tmAutoHint').textContent = (Object.keys(pick).length < sels.length ? 'Pas assez de cartes pour remplir tous les postes. ' : 'Équipe remplie avec tes meilleures notes du moment. ') +
+      (tmUsesForm() ? (tired ? tired + ' carte' + (tired > 1 ? 's ont' : ' a') + ' déjà joué aujourd\'hui (forme en baisse).' : 'Toutes tes cartes sont en pleine forme.') : 'Ici, toutes les cartes sont à 100 % de forme.');
+  }
+  byId('tmAuto').addEventListener('click', autoFillTeam);
   byId('tmReferee').addEventListener('input', () => { tm.refConfirmed = null; if (tm.mode) byId('tmSubmit').textContent = tmSubmitLabel(); byId('tmError').textContent = ''; });      // changer le montant annule la confirmation
   function refreshCaptain(sels){
     const sel = byId('tmCaptain'), prev = sel.value;
@@ -4392,7 +4427,7 @@
       '<option value="' + c.id + '">' + escapeHtml(c.card.player_name) + ' (' + duelConfig.slot_labels[c.cat].toLowerCase() + ')</option>').join('');
     if (chosen.some(c => c.id === prev)) sel.value = prev;
     else if (sel.dataset.touched === '1') sel.value = '';
-    else if (chosen.length) sel.value = chosen.slice().sort((a, b) => b.card.display_note.value - a.card.display_note.value)[0].id;
+    else if (chosen.length) sel.value = chosen.slice().sort((a, b) => tmNote(b.card) - tmNote(a.card))[0].id;
   }
 
   byId('tmSubmit').addEventListener('click', async () => {
@@ -4507,7 +4542,7 @@
         (t.equipment && t.equipment.length ? ' · Équipement ' + t.equipment.map(e => escapeHtml(e.player)).join(', ') + ' (+' + t.equipment.reduce((n, e) => n + e.bonus_pct, 0) + ' %)' : '') + '</div>';
       players.forEach(p => {
         html += '<div class="lu-row"><span>' + SLOT_ICON[p.slot] + ' ' + escapeHtml(p.player) + (p.captain ? ' <span class="lu-flag" title="Capitaine">©</span>' : '') +
-          (p.level ? '<span class="lu-lvl" title="Carte évoluée : +' + p.level + ' de note">Niv.' + p.level + '</span>' : '') + (p.out_of_position ? ' <span class="lu-flag" title="Hors de son poste">⚠</span>' : '') + '</span><span>' + Math.round(p.effective_note) + '</span></div>';
+          (p.level ? '<span class="lu-lvl" title="Carte évoluée : +' + p.level + ' de note">Niv.' + p.level + '</span>' : '') + (p.form != null && p.form < 100 ? '<span class="lu-lvl" title="Forme du jour en 1v1" style="color:#B54708;">' + p.form + ' %</span>' : '') + (p.out_of_position ? ' <span class="lu-flag" title="Hors de son poste">⚠</span>' : '') + '</span><span>' + Math.round(p.effective_note) + '</span></div>';
       });
       box.innerHTML = html; root.appendChild(box);
     });
