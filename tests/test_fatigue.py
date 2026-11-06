@@ -68,8 +68,25 @@ lv = c.get("/club", headers=H["ana"]).json()["levels"][0]["level"]
 r = c.post("/club/%s/play" % lv, json=team, headers=H["ana"])
 ok(r.status_code == 200 and all(m["form"] == 100 for m in r.json()["lineups"]["challenger"]["players"]) and forms("ana") == before, "défi du club : 100 % de forme et aucune fatigue")
 DE.draw_goals = real_draw
-
-print("5) NETTOYAGE")
+print("5) FAN, LOUP ET ÉQUIPEMENT SE FATIGUENT AUSSI")
+GL.today_paris = lambda: real_today() + timedelta(days=3)
+fanp = Player(name="Fan Fatigue", poste="FAN"); eqp = Player(name="Gourde Test", poste="EQUIPEMENT"); db.add_all([fanp, eqp]); db.flush()
+fcard = Card(player_id=fanp.id, tier=Tier.rare, vitesse=0, tir=0); ecard = Card(player_id=eqp.id, tier=Tier.rare, vitesse=0, tir=0); db.add_all([fcard, ecard]); db.flush()
+db.add(OwnedCard(user_id=U("ana").id, card_id=fcard.id, quantity=1)); db.add(OwnedCard(user_id=U("ana").id, card_id=ecard.id, quantity=1)); db.commit()
+fteam = {**team, "fan_card_id": fcard.id, "equipment_card_ids": [ecard.id]}
+for i in range(3):
+    DE.draw_goals = lambda xg: 1; pid = c.post("/duel/proposals", json={**fteam, "stake": 1}, headers=H["ana"]).json()["id"]; r = c.post("/duel/proposals/%s/play" % pid, json=team, headers=H["bob"]).json()
+fa = forms("ana")
+ok(abs(fa.get(fcard.id, 1) - 0.97) < 1e-9 and abs(fa.get(ecard.id, 1) - 0.97) < 1e-9, "après 3 matchs : le Fan et l'équipement sont à 97 %")
+ok(r["lineups"]["defender"]["fan"]["form"] == 98 and r["lineups"]["defender"]["equipment"][0]["form"] == 98, "3e match : joué avec un Fan et un équipement à 98 % (affiché dans le récit)")
+cf = {x["player_name"]: x for x in c.get("/collection", headers=H["ana"]).json() if x.get("quantity")}
+ok(cf["Fan Fatigue"]["form"] == 97 and cf["Gourde Test"]["form"] == 97, "la collection montre leur forme (barre de fatigue)")
+mem = [{"slot": "ATT", "effective": 80}, {"slot": "GB", "effective": 80}]
+a0 = DE.team_powers(mem, fcard, 1.0, [ecard], None, 0.0)[0]; a1 = DE.team_powers(mem, fcard, 1.0, [ecard], None, 0.0, {fcard.id: 0.5, ecard.id: 0.5})[0]
+fb, eb = GL.TIER_FAN_BONUS["rare"], GL.TIER_EQUIPMENT_BONUS["rare"]
+ok(abs(a1 / a0 - (1 + (fb + eb) * 0.5) / (1 + fb + eb)) < 1e-9, "le bonus du Fan et de l'équipement est multiplié par leur forme")
+GL.today_paris = real_today
+print("6) NETTOYAGE")
 ok(c.get("/duel/config").json().get("form_loss_per_match") == 0.01, "le site reçoit la règle (1 % par match)")
 c.post("/admin/delete-user", json={"pseudo": "bob"}, headers={"X-Admin-Key": "k"}); db.expire_all()
 ok(db.query(FA.CardFatigue).filter(~FA.CardFatigue.user_id.in_([u.id for u in db.query(User).all()])).count() == 0, "compte supprimé : la forme de ses cartes aussi")
