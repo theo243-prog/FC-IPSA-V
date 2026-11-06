@@ -17,6 +17,9 @@ Ce que comptent les calculs :
 - 1 seule carte Équipement : +1 % / +2 % / +3 % / +5 % à toute l'équipe (s'additionne au Fan et au Loup) ;
 - la tactique (pierre-feuille-ciseaux) : +6 % à toute l'équipe pour celle qui l'emporte ;
 - la disposition (2-1-1, 1-2-1, 1-1-2) qui répartit la force entre attaque et défense.
+
+Les buts : expected_goals (attaque contre défense adverse, exposant XG_EXPONENT 3) puis draw_goals (une part acquise + un tirage
+de Poisson sur le reste). À cartes égales ~40 % / 20 % / 40 % ; une équipe à 90 contre une à 80 gagne ~70 % de ses matchs.
 """
 import json
 import random
@@ -78,9 +81,15 @@ DEFENSE_WEIGHT = {"ATT": 0.0, "MC": 0.5, "DEF": 1.0, "GB": 1.5}
 # La disposition donne un "style" : offensive = plus de buts des deux côtés, prudente = moins.
 # Elle ne rend pas l'équipe plus forte en soi (attaque x défense reste constant) : elle décide
 # surtout quelles cartes comptent le plus (attaquants en 1-1-2, défenseurs/gardien en 2-1-1).
-FORMATION_SKEW = 0.5
+# Moteur « moins aléatoire » : le niveau des cartes et les choix pèsent davantage, sans changer le nombre moyen de buts.
+# - XG_EXPONENT 3 (au lieu de 1,5) : un écart de niveau creuse davantage les buts attendus.
+# - FORMATION_SKEW 0,25 (au lieu de 0,5) : avec l'exposant 3, les buts attendus par formation restent les mêmes
+#   (le style compte comme r^(skew x exposant) = r^0,75 dans les deux cas) : 1,4 (2-1-1), 2,0 (1-2-1), 2,6 (1-1-2) par équipe.
+# - FIXED_GOALS_SHARE 0,5 : une part des buts attendus est « acquise » (voir draw_goals) : même moyenne, moins de hasard.
+FORMATION_SKEW = 0.25
 BASE_XG = 3.0                    # donne ~2 buts par équipe dans un match équilibré (1-2-1 contre 1-2-1)
-XG_EXPONENT = 1.5                # plus il est grand, plus l'écart de niveau pèse sur le score
+XG_EXPONENT = 3.0                # plus il est grand, plus l'écart de niveau pèse sur le score
+FIXED_GOALS_SHARE = 0.5          # part des buts attendus marqués à coup sûr (arrondie vers le bas)
 
 
 class DuelError(Exception):
@@ -129,6 +138,13 @@ def poisson_random(lam: float) -> int:
         p *= random.random()
         if p <= limit:
             return min(9, k - 1)
+
+
+def draw_goals(xg: float) -> int:
+    """Les buts d'une équipe : une part acquise (floor(FIXED_GOALS_SHARE x xg)) plus un tirage de Poisson sur le reste.
+    La moyenne reste xg, seule la variance baisse. Ex. xg 2,8 : 1 but acquis + Poisson(1,8). Sous 2 buts attendus : Poisson pur."""
+    fixed = int(FIXED_GOALS_SHARE * xg)                      # (xg est toujours positif : int() arrondit vers le bas)
+    return min(9, fixed + poisson_random(xg - fixed))
 
 
 def elo_update(elo_a: int, elo_b: int, result_a: float, k: int = ELO_K):
@@ -538,7 +554,7 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
 
     xg_c = expected_goals(att_c, def_d)
     xg_d = expected_goals(att_d, def_c)
-    score_c, score_d = poisson_random(xg_c), poisson_random(xg_d)
+    score_c, score_d = draw_goals(xg_c), draw_goals(xg_d)
     events = build_events(side_c, side_d, score_c, score_d, xg_c, xg_d, winner_tactic)
 
     if score_c > score_d:

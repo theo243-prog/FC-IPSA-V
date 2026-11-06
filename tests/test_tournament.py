@@ -15,7 +15,7 @@ def ok(cond, msg):
     if not cond: FAILS.append(msg)
 NOW = [datetime(2026, 11, 20, 10, 0)]; TN.now_paris = lambda: NOW[0]
 def at(y, mo, d, h=0, mi=0): NOW[0] = datetime(y, mo, d, h, mi)
-db = SessionLocal(); real_poisson = DE.poisson_random
+db = SessionLocal(); real_draw = DE.draw_goals
 card = lambda n, t: db.query(Card).join(Player).filter(Player.name == n, Card.tier == Tier(t)).first()
 CORE = [("Lucas", "GB"), ("Hugo", "DEF"), ("Nathan", "MC"), ("Léo", "MC"), ("Enzo", "ATT")]
 def mk(p, elo, credits=100):
@@ -74,8 +74,8 @@ ok(c.post(f"/tournament/matches/{m45}/team", json=team("t4"), headers=H["t3"]).s
 bad = team("t4"); bad["slots"][0]["card_id"] = card("Tom", "commune").id; r = c.post(f"/tournament/matches/{m45}/team", json=bad, headers=H["t4"]); ok(r.status_code == 400 and "possèdes pas" in r.json()["detail"], "une carte qu'on n'a pas : refusé « " + r.json()["detail"] + " »")
 r = c.post(f"/tournament/matches/{m45}/team", json=team("t4"), headers=H["t4"]); ok(r.status_code == 200 and r.json()["resolved"] is False, "t4 valide son équipe : le match attend t5")
 g = info(H["t5"]); ok(g["me"]["match"]["submitted"] == [True, False] and g["me"]["match"]["my_team_ready"] is False and g["me"]["match"]["state"] == "open", "t5 sait que t4 est prêt (sans voir son équipe)")
-DE.poisson_random = lambda lam: 1                                       # on force une égalité : tirs au but
-r = c.post(f"/tournament/matches/{m45}/team", json=team("t5", "contre"), headers=H["t5"]); DE.poisson_random = real_poisson; res = r.json()
+DE.draw_goals = lambda xg: 1                                           # on force une égalité (1-1) : tirs au but
+r = c.post(f"/tournament/matches/{m45}/team", json=team("t5", "contre"), headers=H["t5"]); DE.draw_goals = real_draw; res = r.json()
 ok(r.status_code == 200 and res["resolved"] and res["recap"]["score_challenger"] == 1 and res["recap"]["score_defender"] == 1 and res["pens"] and res["pens"][0] != res["pens"][1], f"dès que les 2 ont validé, le match se joue : 1–1, départagé aux tirs au but {res['pens'][0]}–{res['pens'][1]}")
 rc = res["recap"]; ok(rc["tournament"]["round_name"] == "Quarts de finale" and rc["tournament"]["pens"] == res["pens"] and rc["events"] and rc["lineups"]["challenger"]["pseudo"] == "t4" and rc["duel_id"] is None, "le récit complet est disponible (événements, compositions) et marqué « tournoi »")
 winner45 = rc["tournament"]["winner"]; ok(winner45 == ("t4" if res["pens"][0] > res["pens"][1] else "t5"), f"le vainqueur aux tirs au but est {winner45}")
