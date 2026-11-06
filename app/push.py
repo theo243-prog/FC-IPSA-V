@@ -156,9 +156,13 @@ def deliver(db: Session, user_id: str, payload: dict) -> dict:
 # --------------------------------------------------------- file d'attente ----
 
 def enqueue(db: Session, user_id: str, kind: str, title: str, body: str, url: str = "/", tag: str = None,
-            meta: dict = None, now: datetime = None, force: bool = False) -> bool:
-    """Dépose une notification pour un joueur (si elle l'intéresse). Ne fait pas de commit."""
+            meta: dict = None, now: datetime = None, force: bool = False, inbox: bool = True) -> bool:
+    """Dépose une notification pour un joueur (si elle l'intéresse). Ne fait pas de commit.
+    Un message personnel est aussi rangé dans l'encadré « Notifications » du site (inbox), même sans téléphone abonné."""
     now = now or datetime.utcnow()
+    if inbox:
+        from . import inbox as _inbox
+        _inbox.add(db, user_id, kind, title, body, url)
     if device_count(db, user_id) == 0:
         return False
     if kind in KINDS and not prefs_dict(db, user_id)[kind]:
@@ -170,6 +174,8 @@ def enqueue(db: Session, user_id: str, kind: str, title: str, body: str, url: st
 
 
 def notify_users(db: Session, user_ids, kind: str, title: str, body: str, **kw) -> int:
+    """Un message envoyé à plusieurs joueurs (annonce générale) : notification du téléphone seulement, pas dans l'encadré du site."""
+    kw.setdefault("inbox", False)
     return sum(1 for uid in set(user_ids) if enqueue(db, uid, kind, title, body, **kw))
 
 

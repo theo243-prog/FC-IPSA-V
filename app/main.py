@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -60,6 +60,7 @@ app.include_router(prono.router)             # pronostics sur les vrais matchs
 app.include_router(avatars.router)            # photos de profil
 app.include_router(collection_tools.router)   # vendre tous les doublons d'un coup
 app.include_router(welcome.router)         # accueil des nouveaux comptes : pop-up de bienvenue et pack ultra offert
+app.include_router(inbox.router)           # encadré « Notifications » du site (défi relevé, carte vendue, enchère dépassée…)
 app.include_router(card_levels.router)     # niveaux de cartes : faire évoluer une copie (+1 de note par niveau, 5 au plus)
 app.include_router(motm.router)            # homme du match : vote après un match officiel, classement privé de la saison
 app.include_router(admin_page.router)      # la page d'administration (/admin-panel) et le numéro de version (/version)
@@ -181,6 +182,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "chat_last_id": chat.last_id(db),
             "tournament_todo": tournament.todo(db, user),
             "motm_todo": motm.todo(db, user),                     # un vote « homme du match » est ouvert et je n'ai pas voté
+            "notices_unread": inbox.unread_count(db, user.id),   # encadré « Notifications » du site
             "pass_todo": battlepass.claimable_count(db, user),
             "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
         }
@@ -197,6 +199,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "chat_last_id": chat.last_id(db),
             "tournament_todo": tournament.todo(db, user),
             "motm_todo": motm.todo(db, user),                     # un vote « homme du match » est ouvert et je n'ai pas voté
+            "notices_unread": inbox.unread_count(db, user.id),   # encadré « Notifications » du site
             "pass_todo": battlepass.claimable_count(db, user),
             "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
     }
@@ -909,6 +912,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     motm.on_user_deleted(db, user.id)                                                     # ses bulletins des votes encore ouverts
     card_levels.on_user_deleted(db, user.id)                                              # ses cartes évoluées
     fatigue.on_user_deleted(db, user.id)                                                  # la forme de ses cartes
+    inbox.on_user_deleted(db, user.id)                                                    # ses notifications du site
     db.query(CardUsage).filter_by(user_id=user.id).delete()                               # ses cartes alignées (tournoi, défi du club), comme ses matchs 1v1
     db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
     db.query(Listing).filter_by(seller_id=user.id).delete()

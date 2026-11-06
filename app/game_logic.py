@@ -394,7 +394,7 @@ def open_pack_for_user(db: Session, user: User, pack_type: str = "free") -> dict
 
 CARD_NOTE = {"commune": 75, "rare": 85, "halloween": 85, "noel": 85, "secrete": 90, "saison": 92, "legendaire": 95}
 SPECIAL_BASE_NOTE = 80      # note d'une carte spéciale à sa création ; +1 à chaque nouvelle récompense
-TIER_FAN_BONUS = {"commune": 0.05, "rare": 0.10, "halloween": 0.11, "noel": 0.11, "epique": 0.12, "secrete": 0.13, "saison": 0.14, "legendaire": 0.15}  # bonus % apporté par le Fan
+TIER_FAN_BONUS = {"commune": 0.05, "rare": 0.10, "halloween": 0.08, "noel": 0.08, "epique": 0.12, "secrete": 0.13, "saison": 0.14, "legendaire": 0.15}  # bonus % apporté par le Fan
 TIER_MASCOT_BONUS = dict(TIER_FAN_BONUS)       # la mascotte (Le Loup) a son propre emplacement, mêmes bonus que le Fan
 
 # Cartes Équipement : un bonus d'équipe en 1v1, qui s'ajoute à ceux du Fan et du Loup. Un seul équipement par équipe.
@@ -651,4 +651,5 @@ for _slot in CUSTOM_EDITION_SLOTS:
     DUPLICATE_SELL_VALUE[_slot] = DUPLICATE_SELL_VALUE["halloween"]
     CARD_NOTE[_slot] = CARD_NOTE["halloween"]
     TIER_FAN_BONUS[_slot] = TIER_FAN_BONUS["halloween"]
+    TIER_MASCOT_BONUS[_slot] = TIER_MASCOT_BONUS["halloween"]
 TIER_ORDER[TIER_ORDER.index("noel") + 1:TIER_ORDER.index("noel") + 1] = list(CUSTOM_EDITION_SLOTS)
