@@ -13,7 +13,7 @@ c = TestClient(app); A = {"X-Admin-Key": "k"}; FAILS = []
 def ok(cond, msg):
     print(("  OK   " if cond else "  ÉCHEC ") + msg)
     if not cond: FAILS.append(msg)
-db = SessionLocal(); CORE = ["Lucas", "Hugo", "Nathan", "Léo", "Enzo"]; real_poisson, real_today = DE.poisson_random, GL.today_paris
+db = SessionLocal(); CORE = ["Lucas", "Hugo", "Nathan", "Léo", "Enzo"]; real_draw, real_today = DE.draw_goals, GL.today_paris
 card = lambda n: db.query(Card).join(Player).filter(Player.name == n, Card.tier == Tier.commune).first()
 def mk(p):
     t = c.post("/auth/register", json={"pseudo": p, "password": "test1234"}).json()["token"]; u = db.query(User).filter_by(pseudo=p).first(); u.credits = 500
@@ -23,8 +23,8 @@ H = {"alice": mk("alice"), "bob": mk("bob")}
 team = {"formation": "1-2-1", "tactic": "pressing", "slots": [{"card_id": card(n).id, "slot_category": cat} for n, cat in zip(CORE, ["GB", "DEF", "MC", "MC", "ATT"])]}
 MODE = {"v": "bob"}
 SEQ = {"bob": [3, 0], "alice": [0, 3], "nul": [1, 1]}; cyc = {}
-def poisson(lam): return next(cyc[MODE["v"]])
-DE.poisson_random = poisson
+def goals(xg): return next(cyc[MODE["v"]])            # remplace draw_goals : le score exact du match est imposé (part acquise comprise)
+DE.draw_goals = goals
 def match(winner):
     """alice publie un défi, bob le joue. winner : « bob » (le challenger gagne), « alice » (le créateur gagne) ou « nul »."""
     MODE["v"] = winner; cyc[winner] = itertools.cycle(SEQ[winner])
@@ -60,5 +60,5 @@ ok(vs["wins"] == 13 and vs["losses"] == 6 and vs["draws"] == 1 and vs["goals_for
 ok(vs["last"]["result"] == "victoire" and vs["streak"] == {"type": "victoire", "count": 6} and vs["best_win"]["mine"] - vs["best_win"]["theirs"] == 3 and len(vs["recent"]) == 5, "dernier match, série en cours (6 victoires de suite), plus large victoire (3-0), 5 derniers matchs")
 va = c.get("/users/bob/versus", headers=H["alice"]).json(); ok(va["wins"] == 6 and va["losses"] == 13 and va["goals_for"] == 19 and va["streak"]["type"] == "défaite", "vu d'alice, c'est l'inverse (6 victoires, 13 défaites, série de défaites)")
 ok(c.get("/users/alice/versus", headers=H["alice"]).status_code == 400 and c.get("/users/inconnu/versus", headers=H["bob"]).status_code == 404 and c.get("/users/alice/versus").status_code == 401, "contre soi-même : 400 ; inconnu : 404 ; sans compte : 401")
-DE.poisson_random = real_poisson; GL.today_paris = real_today
+DE.draw_goals = real_draw; GL.today_paris = real_today
 print(); print("BILAN (limite des packs match par jour) :", "TOUT EST VERT" if not FAILS else f"{len(FAILS)} ÉCHEC(S) : {FAILS}")

@@ -2068,7 +2068,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.06.2';
+  const SITE_VERSION = '2026.11.06.3';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3255,6 +3255,10 @@
         '<li><b>1 Fan</b> : ' + range(cfg.fan_bonus, ['commune', 'rare', 'epique', 'secrete', 'legendaire']) + ' %, édition limitée +' + Math.round(cfg.fan_bonus.halloween * 100) + ' %.</li>' +
         '<li><b>1 Loup</b> (la mascotte) : mêmes bonus que le Fan.</li>' +
         '<li><b>' + cfg.max_equipment + ' Équipement</b> : ' + range(cfg.equipment_bonus, ['commune', 'rare', 'epique', 'legendaire']) + ' %.</li></ul>' +
+        '<h3>Le niveau compte, le hasard un peu</h3><ul>' +
+        '<li>Ton attaque contre la défense adverse donne les <b>buts attendus</b> de ton équipe : environ 2 par équipe en 1-2-1 à niveau égal (1,4 en 2-1-1, 2,6 en 1-1-2). Un écart de niveau entre les deux équipes se voit vite sur le score.</li>' +
+        '<li>Une partie des buts attendus est <b>acquise</b> : avec 2,8 buts attendus, tu marques au moins 1 but, le reste se joue au hasard. Le nombre moyen de buts ne change pas, mais les surprises sont plus rares.</li>' +
+        '<li><b>Le favori gagne le plus souvent, mais pas toujours</b> : à cartes égales, c\'est environ 40 % de victoires, 20 % de nuls et 40 % de défaites ; une équipe à 90 contre une à 80 gagne environ 7 matchs sur 10 et en perd environ 1 sur 7. La tactique, les bonus, le capitaine et les postes font la différence.</li></ul>' +
         '<h3>Le défi du club</h3><ul>' +
         '<li>Un défi <b>permanent</b> contre l\'équipe du club, contrôlée par le jeu. Trois niveaux : <b>🟢 Facile</b> (cartes communes et rares), <b>🟠 Normal</b> (rares et épiques), <b>🔴 Difficile</b> (légendaires et éditions limitées).</li>' +
         '<li>Chaque jour à minuit (heure de Paris), chaque niveau reçoit une <b>nouvelle équipe</b>, tirée au hasard parmi les cartes qui existent dans le jeu, avec sa formation et sa tactique. C\'est la même pour tout le monde toute la journée. S\'il manque une rareté (par exemple aucune légendaire), le club aligne les meilleures cartes existantes en dessous.</li>' +

@@ -213,7 +213,7 @@ def simulate(prep_a, prep_b) -> dict:
     att_a, def_a, *_ = duel_engine.team_powers(side_a["members"], fan_a, ma, eq_a, mas_a, side_a.get("team_bonus", 0.0))
     att_b, def_b, *_ = duel_engine.team_powers(side_b["members"], fan_b, mb, eq_b, mas_b, side_b.get("team_bonus", 0.0))
     xg_a, xg_b = duel_engine.expected_goals(att_a, def_b), duel_engine.expected_goals(att_b, def_a)
-    sa, sb = duel_engine.poisson_random(xg_a), duel_engine.poisson_random(xg_b)
+    sa, sb = duel_engine.draw_goals(xg_a), duel_engine.draw_goals(xg_b)        # même tirage que le 1v1 (part acquise + Poisson)
     events = duel_engine.build_events(side_a, side_b, sa, sb, xg_a, xg_b, wt)
     pens = _shootout(att_a + def_a, att_b + def_b) if sa == sb else None
     none_ref = {"challenger": 0, "defender": 0, "winner": None, "bonus_pct": 0}
