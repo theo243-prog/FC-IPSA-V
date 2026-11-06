@@ -1548,7 +1548,7 @@
   }
 
   // bonus d'équipe (en %) apporté par une carte Fan en match 1v1, selon sa rareté
-  const FAN_BONUS_PCT = { commune: 5, rare: 10, halloween: 11, noel: 11, epique: 12, secrete: 13, saison: 14, legendaire: 15 };
+  const FAN_BONUS_PCT = { commune: 5, rare: 10, halloween: 8, noel: 8, epique: 12, secrete: 13, saison: 14, legendaire: 15 };
   const ED_SLOTS = Array.from({ length: 12 }, (_, i) => 'ed' + (i + 1));          // 12 emplacements d'éditions libres, créés depuis l'administration
   // Une édition libre reçoit automatiquement un style à 2 couleurs. Pour lui donner un habillage dessiné à la main (comme les toiles d'Halloween
   // ou les flocons de Noël), on écrit son CSS dans cette page et on ajoute ici sa clé (ex. 'ed3') : le style automatique s'efface alors pour elle.
@@ -2122,7 +2122,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.06.8';
+  const SITE_VERSION = '2026.11.06.9';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3220,7 +3220,7 @@
 
   // ---------- Aide : un bouton « ? Aide » par onglet ----------
   // Les pourcentages de tirage et les chiffres du 1v1 viennent du serveur : l'aide ne peut pas être en retard sur les règles.
-  ED_SLOTS.forEach(k => { FAN_BONUS_PCT[k] = 11; });
+  ED_SLOTS.forEach(k => { FAN_BONUS_PCT[k] = FAN_BONUS_PCT.halloween; });      // éditions personnalisées : même bonus que Halloween (+8 %)
   const TIER_COLORS = { saison: '#0F7A93', commune: '#C9965F', rare: '#B8C2C8', halloween: '#FF8A1F', noel: '#C8202C', gold: '#E0A21B', secrete: '#4B3FA0', speciale: '#2FA45E', epique: '#7A3FC9', legendaire: '#F0C84B' };
   const TIER_NAMES_PL = { saison: 'Saison (podium)', commune: 'Commune', rare: 'Rare', halloween: 'Halloween (édition limitée)', noel: 'Noël (édition limitée)', gold: 'Gold', secrete: 'Secrète', speciale: 'Spéciale', epique: 'Épique', legendaire: 'Légendaire' };
   ED_SLOTS.forEach((k, n) => { TIER_NAMES_PL[k] = 'Édition libre ' + (n + 1); });
