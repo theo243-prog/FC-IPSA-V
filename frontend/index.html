@@ -414,6 +414,16 @@
   .help-body{font-size:14px;line-height:1.55;}
   .help-body h3{font-family:var(--font-head);font-weight:800;font-size:21px;margin:18px 0 4px;}
   .help-body h3:first-child{margin-top:0;}
+  .changelog-box{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;}
+  .cl-month{font-family:var(--font-head);font-weight:800;font-size:19px;margin:16px 0 6px;text-transform:capitalize;}
+  .cl-month:first-child{margin-top:0;}
+  .cl-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line, rgba(127,127,127,.25));}
+  .cl-item:last-child{border-bottom:none;}
+  .cl-ico{flex:0 0 auto;font-size:20px;line-height:1.2;}
+  .cl-main{flex:1 1 auto;min-width:0;}
+  .cl-meta{font-size:12px;color:var(--text-muted);}
+  .cl-title{font-weight:700;margin:1px 0 2px;}
+  .cl-text{margin:0;overflow-wrap:anywhere;}
   .help-body p{margin:6px 0;}
   .help-body ul{margin:6px 0 6px 18px;padding:0;}
   .help-body li{margin:3px 0;}
@@ -1006,6 +1016,7 @@
         <span class="stat-pill" id="chipPseudo">…</span>
         <button class="sound-btn" id="soundBtn" type="button" aria-pressed="true" aria-label="Couper le son" title="Couper le son">🔊</button>
         <button class="sound-btn inbox-btn" id="inboxBtn" type="button" aria-label="Mes notifications" title="Mes notifications">📬<span class="tab-dot" id="inboxDot" hidden></span></button>
+        <button class="sound-btn inbox-btn" id="changelogBtn" type="button" aria-label="Nouveautés du jeu" title="Nouveautés du jeu">📜<span class="tab-dot" id="changelogDot" hidden></span></button>
         <button class="sound-btn" id="notifBtn" type="button" aria-label="Notifications" title="Notifications">🔕</button>
         <button class="logout-btn" id="logoutBtn">déconnexion</button>
       </div>
@@ -1290,6 +1301,15 @@
       <button class="modal-close" id="notifClose" type="button" aria-label="Fermer les notifications">✕</button>
     </div>
     <div id="notifBody" class="help-body"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="changelogModal">
+  <div class="modal-box help-box changelog-box" role="dialog" aria-modal="true" aria-labelledby="changelogTitle">
+    <div class="modal-header">
+      <h2 id="changelogTitle">📜 Nouveautés</h2>
+      <button class="modal-close" id="changelogClose" type="button" aria-label="Fermer les nouveautés">✕</button>
+    </div>
+    <div id="changelogBody" class="help-body"></div>
   </div>
 </div>
 <div class="modal-overlay" id="helpModal">
@@ -2122,7 +2142,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.06.10';
+  const SITE_VERSION = '2026.11.06.11';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3335,6 +3355,7 @@
         '<li><b>Pronostics</b> : sur chaque match à venir, tu peux miser 1 à 50 crédits sur le score. Les mises forment une cagnotte partagée quand le résultat est enregistré : 70 % pour les scores exacts, 30 % pour ceux qui ont le bon résultat (victoire, nul, défaite). Si personne ne trouve le résultat, tout le monde est remboursé. Tu peux modifier ou retirer ton pronostic jusqu\'au coup d\'envoi. Le classement des pronostiqueurs montre tous ceux qui ont pronostiqué : matchs joués, 🎯 scores exacts, ✅ bons résultats (bon vainqueur ou bon nul), ❌ mauvais pronostics et 💰 gain net ; il est rangé par scores exacts, puis bons résultats, puis gain.</li>' +
         '<li><b>Prochains matchs</b> : les rencontres à venir du club. Un match passé dont le résultat n\'est pas encore saisi est signalé « Résultat à venir ».</li>' +
         '<li><b>Stats des joueurs</b> : les vraies statistiques de la saison. M = matchs joués, ⚽ = buts, PD = passes décisives, 🏅 = homme du match, 🟨 = cartons jaunes, 🟥 = cartons rouges. Clique sur un joueur pour sa fiche.</li>' +
+        '<li><b>📜 Nouveautés</b> : le bouton en haut de l\'écran liste les changements apportés au jeu (règles, cartes, modes, économie), du plus récent au plus ancien. Un point rouge signale ce que tu n\'as pas encore lu.</li>' +
         '<li><b>Résultats</b> : le score, le stade, les buteurs, les passeurs et les moments mémorables de chaque match.</li>' +
         '<li><b>🏅 Homme du match</b> : après chaque match officiel, vous avez <b>24 h</b> pour voter parmi les joueurs présents. Classe 3 joueurs différents : 1er = 5 points, 2e = 3, 3e = 1. Tu peux modifier ton vote jusqu\'à la fin. Personne ne voit le classement avant la fin du chrono ; ensuite, le podium est révélé. Il faut au moins 3 votants, sinon pas de résultat. Un point rouge sur l\'onglet te rappelle de voter.</li></ul>' +
         '<h3>Ce que chaque match fait gagner au jeu</h3><ul>' +
@@ -4819,6 +4840,53 @@
   document.getElementById('notifClose').addEventListener('click', closeNotif);
   document.getElementById('notifModal').addEventListener('click', e => { if (e.target.id === 'notifModal') closeNotif(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('notifModal').style.display === 'flex') closeNotif(); });
+
+  // ---------- 📜 Nouveautés : historique des changements du jeu (GET /changelog, public) ----------
+  // Les identifiants déjà vus sont gardés dans ce navigateur (clé fca5_changelog_seen) ; le point rouge signale une entrée jamais vue.
+  const CL_ICONS = { 'règles': '🧮', 'cartes': '🃏', 'modes': '⚽', 'économie': '💰', 'autre': '✨' };
+  const CL_MONTHS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  let changelogItems = null;
+  function changelogSeen(){ try { const v = JSON.parse(localStorage.getItem('fca5_changelog_seen') || '[]'); return new Set(Array.isArray(v) ? v : []); } catch(e) { return new Set(); } }
+  function markChangelogSeen(){ try { localStorage.setItem('fca5_changelog_seen', JSON.stringify((changelogItems || []).map(e => e.id))); } catch(e) {} refreshChangelogDot(); }
+  function refreshChangelogDot(){
+    const seen = changelogSeen();
+    document.getElementById('changelogDot').hidden = !(changelogItems || []).some(e => !seen.has(e.id));
+  }
+  async function loadChangelog(){
+    try { const r = await api('/changelog'); changelogItems = (r && r.items) || []; } catch(e) { if (changelogItems === null) return; }
+    refreshChangelogDot();
+  }
+  function changelogHTML(items){
+    if (!items.length) return '<p class="help-note">Aucun changement pour l\'instant.</p>';
+    let h = '', month = '';
+    for (const e of items) {
+      const [y, m, d] = String(e.date || '').split('-');
+      const key = y + '-' + m;
+      if (key !== month) { month = key; h += '<h3 class="cl-month">' + escapeHtml((CL_MONTHS[Number(m) - 1] || '') + ' ' + (y || '')) + '</h3>'; }
+      h += '<div class="cl-item"><span class="cl-ico" aria-hidden="true">' + (CL_ICONS[e.category] || '✨') + '</span><div class="cl-main">' +
+        '<div class="cl-meta">' + escapeHtml(Number(d) + ' ' + (CL_MONTHS[Number(m) - 1] || '') + ' · ' + (e.category || 'autre')) + '</div>' +
+        '<div class="cl-title">' + escapeHtml(e.title || '') + '</div><p class="cl-text">' + escapeHtml(e.text || '') + '</p></div></div>';
+    }
+    return h;
+  }
+  async function openChangelog(){
+    const body = document.getElementById('changelogBody');
+    body.innerHTML = '<p class="help-note">Chargement…</p>';
+    document.getElementById('changelogModal').style.display = 'flex';
+    document.getElementById('changelogClose').focus();
+    await loadChangelog();
+    if (changelogItems === null) { body.innerHTML = '<p>Impossible de charger les nouveautés pour le moment.</p>'; return; }
+    body.innerHTML = changelogHTML(changelogItems);
+    document.querySelector('#changelogModal .modal-box').scrollTop = 0;
+    markChangelogSeen();
+  }
+  function closeChangelog(){ document.getElementById('changelogModal').style.display = 'none'; document.getElementById('changelogBtn').focus(); }
+  document.getElementById('changelogBtn').addEventListener('click', openChangelog);
+  document.getElementById('changelogClose').addEventListener('click', closeChangelog);
+  document.getElementById('changelogModal').addEventListener('click', e => { if (e.target.id === 'changelogModal') closeChangelog(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('changelogModal').style.display === 'flex') closeChangelog(); });
+  loadChangelog();
+  setInterval(() => { if (!document.hidden) loadChangelog(); }, 15 * 60000);
 
   // toucher une notification ouvre le site directement sur le bon onglet
   function openTab(key){ const b = document.querySelector('.tab[data-tab="' + key + '"]'); if (b) b.click(); }

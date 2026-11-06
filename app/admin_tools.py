@@ -78,6 +78,8 @@ def summarize(path: str, payload) -> str:
         if name == "shop-cosmetics-refund": return "Cosmétique du shop %s remboursé à %s" % (_s(p, "item_id"), who)
         if name == "set-card-level": return "Niveau %s pour %s (%s) de %s" % (_s(p, "level", 0), _s(p, "player_name"), _s(p, "tier"), who)
         if name == "create-gold": return "%d carte(s) gold ajoutée(s) sans match" % len(p.get("moments") or [])
+        if name == "changelog-add": return "Historique : note « %s » (%s) publiée" % (_s(p, "title"), _s(p, "category", "autre"))
+        if name == "changelog-delete": return "Historique : note %s supprimée" % _s(p, "note_id")
         if name == "motm-extend": return "Vote homme du match prolongé de %s h" % _s(p, "hours", 0)
         if name == "motm-close": return "Vote homme du match clôturé tout de suite"
         if name == "motm-cancel": return "Vote homme du match annulé"

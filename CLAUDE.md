@@ -17,6 +17,7 @@ Site web (PWA) où les membres du club ouvrent des packs de cartes des vrais jou
 - Avant toute fusion ou envoi, récupérer d'abord ce qui a changé sur GitHub (j'y ajoute parfois des photos et des sons directement).
 - Ne JAMAIS envoyer une modification de `API_BASE` dans `frontend/index.html`. Pour tester en local, servir une copie temporaire du site (hors du dépôt) dont l'adresse de l'API pointe vers le serveur local, avec une base SQLite jetable et des comptes de test.
 - Ne pas créer de fichiers audio ou image soi-même : seulement le code.
+- À chaque modification de règle de jeu visible par les joueurs (équilibrage, nouvelle fonction, changement de récompense), ajouter une entrée à app/changelog_data.py dans le même commit ; présenter le texte à Théo avant de l'écrire.
 
 ## Décisions de jeu (à respecter, ne pas « corriger »)
 - Prix boutique : classique 50, rare 100, épique 300, légendaire 500, ultra 500 crédits.
@@ -37,6 +38,11 @@ Site web (PWA) où les membres du club ouvrent des packs de cartes des vrais jou
 - Chances des packs (`game_logic.py`) : gold fréquent, éditions limitées rares. Pendant une édition en cours, par carte tirée : pack classique gold 8 %, édition 3,5 % ; pack match gold 10 %, édition 6 % (`EDITION_SHARE` = 0,035 / 0,06). Poids de départ (total 100) : classique `TIER_WEIGHTS` commune 71,21, rare 18, gold 8,29 (= 8 / 0,965), épique 2, légendaire 0,5 ; match commune 46,36, rare 30, gold 10,64 (= 10 / 0,94), spéciale 8, épique 4, légendaire 1. La commune absorbe la différence. Pack ultra : structure inchangée, sa case « gold, édition limitée ou mieux » tire parmi gold, édition, épique et légendaire avec ces poids (édition ≈ 25 % de cette case pendant une édition). Vérifié par `tests/test_pack_odds.py`.
 - Cartes gold sans match : `POST /admin/create-gold {moments: [{player_name, action}], date?}` (formulaire « Ajouter des cartes gold (sans match) », onglet Matchs réels, une ligne « Joueur ; Action »). Même fonction que les moments d'un match (`main.create_moment_card`) : fiche MOMENT « Action — Joueur » avec la photo du joueur, date ajoutée si le nom existe déjà ; tout ou rien. Collection : une rareté de plus de 40 cartes est repliée par défaut (sauf recherche ou choix du joueur) et résumée dans l'image de partage (4 rangées puis « +N autres »).
 - Moteur de match moins aléatoire (`duel_engine.py`) : `XG_EXPONENT` 3,0 (avant 1,5), `FORMATION_SKEW` 0,25 (avant 0,5), `BASE_XG` 3,0, `FIXED_GOALS_SHARE` 0,5. Les buts d'une équipe se tirent avec `draw_goals(xg)` = floor(0,5 × xg) buts acquis + Poisson(le reste) : même moyenne, moins de variance (Poisson pur sous 2 buts attendus). Raison : le niveau des cartes et les choix pèsent davantage sans changer les buts (avec l'exposant 3, le skew 0,25 garde le même effet de formation, r^0,75 : 1,4 / 2,0 / 2,6 buts par équipe en 2-1-1 / 1-2-1 / 1-1-2 à cartes égales, 1,9 en 1-1-2 contre 2-1-1). Résultats : cartes égales ~40 / 20 / 39 ; favori 90 contre 80 ~70 % de victoires (53 % avant), ~14 % de défaites. Utilisé par le 1v1 (`play_proposal`) et `tournament.simulate` (tournoi et défi du club) ; les tirs au but ne changent pas. Les tests qui imposent un score remplacent `duel_engine.draw_goals`. Vérifié par `tests/test_engine_variance.py`.
+- Classement des pronostiqueurs (`GET /prono/ranking`) : TOUS ceux qui ont pronostiqué, sans limite, avec matchs joués, scores exacts, bons résultats (bon vainqueur ou bon nul), mauvais pronostics et gain net. Un match où tout le monde est remboursé compte en mauvais pronostics ; un match supprimé sans résultat ne compte pas. Ordre : scores exacts, bons résultats, gain net, moins d'erreurs, pseudo.
+- Stats des joueurs (onglet Actualité, `/players/stats`) : colonnes cartons jaunes 🟨 et rouges 🟥, en plus de M, ⚽, PD et 🏅.
+- Onglet Classement : la bannière (Pass ou shop) s'affiche derrière le nom de chaque joueur, avec la couleur de son pseudo (fond sombre derrière le nom pour rester lisible) ; `/leaderboard` renvoie `banner`.
+- Photos des cartes : la photo du joueur remplit toute la carte (voile sombre en bas pour le nom), recadrée sur la partie visible de la photo détourée avec de l'air au-dessus de la tête ; la taille réelle de la carte est mesurée (pas celle à l'écran pendant qu'elle se retourne). Sur les cartes Noël avec photo, la neige du bas passe derrière la photo.
+- Prochain match en double (même date, même adversaire) : le retirer par son identifiant (`/matches/upcoming` puis `POST /admin/delete-upcoming-match {upcoming_id}`).
 - **Jamais de taxe** (marché, enchères, mises, cagnotte) pour retirer des crédits : seulement des dépenses volontaires.
 - Tests : dossier tests/, lancer `python tests/run_tests.py` avant tout envoi.
 - Défi permanent « Affronter l'équipe du club » : décidé et réalisé (section « Défi du club » ci-dessous).
@@ -94,6 +100,12 @@ Site web (PWA) où les membres du club ouvrent des packs de cartes des vrais jou
 - Routes : `GET /first-steps` (`{"visible": false}` si le compte n'y a pas droit), `POST /first-steps/claim`, admin `POST /admin/first-steps-reset {pseudo}` (efface la récupération ; un compte de plus de 14 jours reste invisible).
 - Site : carte « 🚀 Premiers pas · n/5 » au-dessus des missions de l'onglet Packs ; chaque objectif non fait mène au bon endroit.
 
+## Historique des changements (`app/changelog.py`, `app/changelog_data.py`)
+- Bouton « 📜 Nouveautés » de l'en-tête (à côté de 📬 et 🔕) : la liste des changements du jeu, en langage simple pour les joueurs, groupée par mois, avec un repère de catégorie (🧮 règles, 🃏 cartes, ⚽ modes, 💰 économie, ✨ autre). Point rouge tant qu'une entrée n'a pas été vue ; les identifiants vus sont gardés dans le navigateur (`fca5_changelog_seen`), l'ouverture marque tout comme lu.
+- `changelog_data.ENTRIES` : la plus récente en premier, `{id, date "AAAA-MM-JJ", title, text, category}` (catégories : règles, cartes, modes, économie, autre). Textes publics : rien d'interne ni de réservé à l'administration.
+- `GET /changelog` (public, sans compte) : le fichier fusionné avec les notes de l'administration (table `changelog_notes`, identifiants `note-N`), triés par date décroissante ; renvoie `latest` et `items`.
+- Admin (onglet Nouveautés) : `GET /admin/changelog` (les notes), `POST /admin/changelog-add {title, text, category}` (datée du jour de Paris, publiée sans déploiement), `POST /admin/changelog-delete {note_id}` (notes de l'administration seulement). Vérifié par `tests/test_changelog.py`.
+
 ## Mot de passe oublié
 - Les comptes n'ont pas d'e-mail : c'est l'administrateur qui donne un nouveau mot de passe, avec `POST /admin/set-password {pseudo, new_password}` (4 à 72 caractères, pseudo exact). Formulaire dans l'onglet Comptes de la page d'administration.
 - Le compte garde tout ; tous ses appareils sont déconnectés (sessions supprimées).
@@ -119,7 +131,7 @@ uv pip install --python .venv/Scripts/python.exe -r requirements.txt pytest http
 ```
 
 - **À lancer avant chaque proposition d'envoi.** Pour une seule suite : `.venv/Scripts/python.exe tests/run_tests.py test_pass`.
-- Le lanceur exécute les suites `test_pass`, `test_social2`, `test_tournament`, `test_duel_packs`, `test_backup`, `test_features2`, `test_club`, `test_first_steps`, `test_admin_password`, `test_shop_cosmetics`, `test_chat_silent`, `test_weekly_rarity`, `test_motm`, `test_pack_odds`, `test_engine_variance`, `test_card_levels`, `test_fatigue`, `test_inbox` et `test_smoke_routes`. Chacune tourne sur une base SQLite temporaire, remplie par `tests/seed_test_data.py` (joueurs fictifs, à ne pas confondre avec `app/seed_data.py`). La vraie base n'est jamais touchée.
+- Le lanceur exécute les suites `test_pass`, `test_social2`, `test_tournament`, `test_duel_packs`, `test_backup`, `test_features2`, `test_club`, `test_first_steps`, `test_admin_password`, `test_shop_cosmetics`, `test_chat_silent`, `test_weekly_rarity`, `test_motm`, `test_pack_odds`, `test_engine_variance`, `test_card_levels`, `test_fatigue`, `test_inbox`, `test_changelog` et `test_smoke_routes`. Chacune tourne sur une base SQLite temporaire, remplie par `tests/seed_test_data.py` (joueurs fictifs, à ne pas confondre avec `app/seed_data.py`). La vraie base n'est jamais touchée.
 - Résultat attendu : « TOUT EST VERT ». `test_smoke_routes` affiche « 0 vérifications » : c'est normal, car il n'imprime pas de lignes « OK ». Il appelle toutes les routes GET et échoue seulement en cas d'erreur 500.
 - `tests/ui_*.js` et `tests/prep_*_ui.py` servent aux tests d'interface, voir `tests/LISEZMOI.md`.
 - Pour les tests, `minigame.RNG` peut être remplacé et `FC_FAKE_NOW` simule la date.
@@ -145,9 +157,10 @@ uv pip install --python .venv/Scripts/python.exe -r requirements.txt pytest http
 | `offers.py`, `auctions.py`, `swaps.py`, `collection_tools.py` | Offres d'achat, enchères, échanges de cartes, vente des doublons en bloc |
 | `challenges.py`, `chat.py`, `prono.py`, `events.py`, `referral.py`, `welcome.py`, `minigame.py` | Défis privés, chat, pronostics, événements, parrainage, accueil, mini-jeu |
 | `motm.py` | Homme du match : vote 24 h après un match officiel, cartes légendaires ou +2, saison des votes privée |
-| `card_levels.py` | Niveaux de cartes : +1 de note par niveau (5 au plus), doublons requis non détruits, le niveau suit la carte au marché |
+| `card_levels.py` | Niveaux de cartes : +1 de note par niveau (5 au plus), crédits et doublons consommés, le niveau suit la carte au marché |
 | `fatigue.py` | Forme des cartes en 1v1 : -1 % par match, retour à 100 % à minuit, tournoi et défi du club à 100 % |
 | `inbox.py` | Notifications du site : encadré en haut de page avec les messages personnels (défis, ventes, enchères…) |
+| `changelog.py`, `changelog_data.py` | Historique des changements du jeu (bouton « 📜 Nouveautés ») : liste du code + notes de l'administration |
 | `push.py` | Web Push (VAPID, clés générées puis stockées en base), file `push_outbox` |
 | `backup.py`, `restore_backup.py` | Instantanés quotidiens en base, export, restauration dans une base vide |
 | `admin_page.py`, `admin_tools.py` | Page `/admin-panel` (HTML intégré), `/version`, journal et tableau de bord |
