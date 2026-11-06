@@ -316,12 +316,13 @@ def notify_duel_played(db: Session, result: dict):
         return
     mine, theirs, stake = result["score_defender"], result["score_challenger"], result["stake"]
     who = result["challenger"]
+    no_pack = result["defender"] in (result.get("pack_none_to") or [])        # 10 packs 1v1 déjà gagnés aujourd'hui
     if result["result"] == "défaite":       # le challenger a perdu : le créateur gagne
-        title, body = "%s a joué ton défi : victoire %d–%d ! 🏆" % (who, mine, theirs), "Tu gagnes %d crédits et %s." % (stake, "un pack classique (tu as déjà gagné tes 5 packs match du jour)" if result.get("pack_match_capped_to") == result["defender"] else "un pack match")
+        title, body = "%s a joué ton défi : victoire %d–%d ! 🏆" % (who, mine, theirs), "Tu gagnes %d crédits et %s." % (stake, "pas de pack (tu as déjà gagné tes 10 packs 1v1 du jour)" if no_pack else "un pack classique (tu as déjà gagné tes 5 packs match du jour)" if result.get("pack_match_capped_to") == result["defender"] else "un pack match")
     elif result["result"] == "victoire":
-        title, body = "%s a joué ton défi : défaite %d–%d" % (who, mine, theirs), "Tu perds ta mise de %d crédits mais tu reçois un pack classique. Une revanche ?" % stake
+        title, body = "%s a joué ton défi : défaite %d–%d" % (who, mine, theirs), "Tu perds ta mise de %d crédits%s. Une revanche ?" % (stake, " (pas de pack : tu as déjà gagné tes 10 packs 1v1 du jour)" if no_pack else " mais tu reçois un pack classique")
     else:
-        title, body = "%s a joué ton défi : match nul %d–%d" % (who, mine, theirs), "Ta mise de %d crédits t'est rendue et tu reçois un pack classique." % stake
+        title, body = "%s a joué ton défi : match nul %d–%d" % (who, mine, theirs), "Ta mise de %d crédits t'est rendue%s." % (stake, " (pas de pack : tu as déjà gagné tes 10 packs 1v1 du jour)" if no_pack else " et tu reçois un pack classique")
     ref = result.get("referee") or {}
     if ref.get("challenger") or ref.get("defender"):        # des enveloppes ont été mises : on les révèle maintenant
         mine_bid, their_bid = ref.get("defender", 0), ref.get("challenger", 0)
