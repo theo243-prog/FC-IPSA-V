@@ -32,7 +32,7 @@ from sqlalchemy.orm import Session
 from .game_logic import (card_note, TIER_FAN_BONUS, TIER_MASCOT_BONUS, TIER_EQUIPMENT_BONUS, MAX_EQUIPMENT,
                          card_kind, is_fan, is_equipment, is_mascot)
 from .models import User, Card, OwnedCard, MatchProposal, ProposalSlot, ProposalEquipment, Duel, CardUsage
-from . import card_levels
+from . import card_levels, fatigue
 
 # ----------------------------------------------------------------- Règles ----
 
@@ -127,6 +127,7 @@ def get_config() -> dict:
         "equipment_bonus": TIER_EQUIPMENT_BONUS,
         "max_equipment": MAX_EQUIPMENT,
         "referee_bonus": REFEREE_BONUS,
+        "form_loss_per_match": fatigue.FORM_LOSS_PER_MATCH, "min_form": fatigue.MIN_FORM,
     }
 
 
@@ -250,24 +251,26 @@ def validate_team(db: Session, user: User, formation: str, tactic: str, slots: l
 
 # ---------------------------------------------------------------- Calculs ----
 
-def build_members(cards_with_slots, captain_card_id, levels=None):
-    """Pour chaque carte : note de base (+ son niveau, voir card_levels), note effective (malus hors poste, puis bonus capitaine).
-    levels : {carte: niveau} des copies évoluées du propriétaire de l'équipe, au moment du match."""
+def build_members(cards_with_slots, captain_card_id, levels=None, forms=None):
+    """Pour chaque carte : note de base (+ son niveau, voir card_levels), puis la forme du jour (1v1 seulement, voir fatigue),
+    puis le malus hors poste, puis le bonus capitaine.
+    levels : {carte: niveau} des copies évoluées du propriétaire de l'équipe ; forms : {carte: forme 0,5 à 1} (absent = 100 %)."""
     members = []
-    levels = levels or {}
+    levels, forms = levels or {}, forms or {}
     for card, slot in cards_with_slots:
         level = levels.get(card.id, 0)
+        form = forms.get(card.id, 1.0)
         base = card_note(card.player, card.tier.value, card) + level
         natural = poste_category(card.player.poste)
         out = natural is not None and natural != slot
-        effective = base * (1 - OUT_OF_POSITION_MALUS if out else 1.0)
+        effective = base * form * (1 - OUT_OF_POSITION_MALUS if out else 1.0)
         is_captain = card.id == captain_card_id
         if is_captain:
             effective *= (1 + CAPTAIN_BONUS)
         members.append({
             "slot": slot, "player": card.player.name, "tier": card.tier.value,
             "poste": card.player.poste, "base_note": base, "effective": effective,
-            "out_of_position": out, "captain": is_captain, "level": level,
+            "out_of_position": out, "captain": is_captain, "level": level, "form": round(form * 100),
         })
     return members
 
@@ -423,7 +426,7 @@ def _lineup_snapshot(side, fan_card, equipment_cards=(), mascot_card=None, refer
         "pseudo": side["pseudo"], "formation": side["formation"], "tactic": side["tactic"],
         "players": [{
             "slot": m["slot"], "player": m["player"], "tier": m["tier"], "poste": m["poste"],
-            "base_note": m["base_note"], "effective_note": round(m["effective"], 1), "level": m.get("level", 0),
+            "base_note": m["base_note"], "effective_note": round(m["effective"], 1), "level": m.get("level", 0), "form": m.get("form", 100),
             "out_of_position": m["out_of_position"], "captain": m["captain"],
         } for m in side["members"]],
         "fan": ({"player": fan_card.player.name, "tier": fan_card.tier.value,
@@ -543,9 +546,11 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
                         "il a été annulé et sa mise remboursée. Choisis-en un autre.")
 
     side_c = {"pseudo": challenger.pseudo, "formation": formation, "tactic": tactic,
-              "members": build_members(cards_c, captain_c.id if captain_c else None, card_levels.levels_for(db, challenger.id))}
+              "members": build_members(cards_c, captain_c.id if captain_c else None, card_levels.levels_for(db, challenger.id), fatigue.forms_for(db, challenger.id))}
     side_d = {"pseudo": creator.pseudo, "formation": proposal.formation, "tactic": proposal.tactic,
-              "members": build_members(cards_d, captain_d.id if captain_d else None, card_levels.levels_for(db, creator.id))}       # niveaux des deux équipes, au moment du match
+              "members": build_members(cards_d, captain_d.id if captain_d else None, card_levels.levels_for(db, creator.id), fatigue.forms_for(db, creator.id))}       # niveaux et forme des deux équipes, au moment du match
+    fatigue.record_match(db, challenger.id, [c.id for c, _ in cards_c])        # chaque carte alignée perd 1 % de forme (jusqu'à minuit)
+    fatigue.record_match(db, creator.id, [c.id for c, _ in cards_d])
 
     winner_tactic = tactic_advantage(tactic, proposal.tactic)          # 'a' = challenger, 'b' = créateur
     mult_c = 1 + TACTIC_BONUS if winner_tactic == "a" else 1.0
