@@ -17,6 +17,7 @@ Site web (PWA) où les membres du club ouvrent des packs de cartes des vrais jou
 - Avant toute fusion ou envoi, récupérer d'abord ce qui a changé sur GitHub (j'y ajoute parfois des photos et des sons directement).
 - Ne JAMAIS envoyer une modification de `API_BASE` dans `frontend/index.html`. Pour tester en local, servir une copie temporaire du site (hors du dépôt) dont l'adresse de l'API pointe vers le serveur local, avec une base SQLite jetable et des comptes de test.
 - Ne pas créer de fichiers audio ou image soi-même : seulement le code.
+- À chaque modification de règle de jeu visible par les joueurs (équilibrage, nouvelle fonction, changement de récompense), ajouter une entrée à app/changelog_data.py dans le même commit ; présenter le texte à Théo avant de l'écrire.
 
 ## Décisions de jeu (à respecter, ne pas « corriger »)
 - Prix boutique : classique 50, rare 100, épique 300, légendaire 500, ultra 500 crédits.
@@ -99,6 +100,12 @@ Site web (PWA) où les membres du club ouvrent des packs de cartes des vrais jou
 - Routes : `GET /first-steps` (`{"visible": false}` si le compte n'y a pas droit), `POST /first-steps/claim`, admin `POST /admin/first-steps-reset {pseudo}` (efface la récupération ; un compte de plus de 14 jours reste invisible).
 - Site : carte « 🚀 Premiers pas · n/5 » au-dessus des missions de l'onglet Packs ; chaque objectif non fait mène au bon endroit.
 
+## Historique des changements (`app/changelog.py`, `app/changelog_data.py`)
+- Bouton « 📜 Nouveautés » de l'en-tête (à côté de 📬 et 🔕) : la liste des changements du jeu, en langage simple pour les joueurs, groupée par mois, avec un repère de catégorie (🧮 règles, 🃏 cartes, ⚽ modes, 💰 économie, ✨ autre). Point rouge tant qu'une entrée n'a pas été vue ; les identifiants vus sont gardés dans le navigateur (`fca5_changelog_seen`), l'ouverture marque tout comme lu.
+- `changelog_data.ENTRIES` : la plus récente en premier, `{id, date "AAAA-MM-JJ", title, text, category}` (catégories : règles, cartes, modes, économie, autre). Textes publics : rien d'interne ni de réservé à l'administration.
+- `GET /changelog` (public, sans compte) : le fichier fusionné avec les notes de l'administration (table `changelog_notes`, identifiants `note-N`), triés par date décroissante ; renvoie `latest` et `items`.
+- Admin (onglet Nouveautés) : `GET /admin/changelog` (les notes), `POST /admin/changelog-add {title, text, category}` (datée du jour de Paris, publiée sans déploiement), `POST /admin/changelog-delete {note_id}` (notes de l'administration seulement). Vérifié par `tests/test_changelog.py`.
+
 ## Mot de passe oublié
 - Les comptes n'ont pas d'e-mail : c'est l'administrateur qui donne un nouveau mot de passe, avec `POST /admin/set-password {pseudo, new_password}` (4 à 72 caractères, pseudo exact). Formulaire dans l'onglet Comptes de la page d'administration.
 - Le compte garde tout ; tous ses appareils sont déconnectés (sessions supprimées).
@@ -124,7 +131,7 @@ uv pip install --python .venv/Scripts/python.exe -r requirements.txt pytest http
 ```
 
 - **À lancer avant chaque proposition d'envoi.** Pour une seule suite : `.venv/Scripts/python.exe tests/run_tests.py test_pass`.
-- Le lanceur exécute les suites `test_pass`, `test_social2`, `test_tournament`, `test_duel_packs`, `test_backup`, `test_features2`, `test_club`, `test_first_steps`, `test_admin_password`, `test_shop_cosmetics`, `test_chat_silent`, `test_weekly_rarity`, `test_motm`, `test_pack_odds`, `test_engine_variance`, `test_card_levels`, `test_fatigue`, `test_inbox` et `test_smoke_routes`. Chacune tourne sur une base SQLite temporaire, remplie par `tests/seed_test_data.py` (joueurs fictifs, à ne pas confondre avec `app/seed_data.py`). La vraie base n'est jamais touchée.
+- Le lanceur exécute les suites `test_pass`, `test_social2`, `test_tournament`, `test_duel_packs`, `test_backup`, `test_features2`, `test_club`, `test_first_steps`, `test_admin_password`, `test_shop_cosmetics`, `test_chat_silent`, `test_weekly_rarity`, `test_motm`, `test_pack_odds`, `test_engine_variance`, `test_card_levels`, `test_fatigue`, `test_inbox`, `test_changelog` et `test_smoke_routes`. Chacune tourne sur une base SQLite temporaire, remplie par `tests/seed_test_data.py` (joueurs fictifs, à ne pas confondre avec `app/seed_data.py`). La vraie base n'est jamais touchée.
 - Résultat attendu : « TOUT EST VERT ». `test_smoke_routes` affiche « 0 vérifications » : c'est normal, car il n'imprime pas de lignes « OK ». Il appelle toutes les routes GET et échoue seulement en cas d'erreur 500.
 - `tests/ui_*.js` et `tests/prep_*_ui.py` servent aux tests d'interface, voir `tests/LISEZMOI.md`.
 - Pour les tests, `minigame.RNG` peut être remplacé et `FC_FAKE_NOW` simule la date.
@@ -153,6 +160,7 @@ uv pip install --python .venv/Scripts/python.exe -r requirements.txt pytest http
 | `card_levels.py` | Niveaux de cartes : +1 de note par niveau (5 au plus), crédits et doublons consommés, le niveau suit la carte au marché |
 | `fatigue.py` | Forme des cartes en 1v1 : -1 % par match, retour à 100 % à minuit, tournoi et défi du club à 100 % |
 | `inbox.py` | Notifications du site : encadré en haut de page avec les messages personnels (défis, ventes, enchères…) |
+| `changelog.py`, `changelog_data.py` | Historique des changements du jeu (bouton « 📜 Nouveautés ») : liste du code + notes de l'administration |
 | `push.py` | Web Push (VAPID, clés générées puis stockées en base), file `push_outbox` |
 | `backup.py`, `restore_backup.py` | Instantanés quotidiens en base, export, restauration dans une base vide |
 | `admin_page.py`, `admin_tools.py` | Page `/admin-panel` (HTML intégré), `/version`, journal et tableau de bord |
