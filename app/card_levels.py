@@ -7,7 +7,7 @@ Niveaux de cartes : un joueur fait monter UNE copie d'une de ses cartes de 5 niv
 - POUR ACHETER LE NIVEAU n : il faut AU MOMENT DE L'ACHAT au moins DUPES_REQUIRED[groupe][n-1] doublons de la carte (exemplaires au-delà
   du premier ; une copie mise en vente n'est plus dans la collection, donc ne compte pas). Ces doublons sont CONSOMMÉS : le joueur choisit
   entre faire évoluer ses cartes et garder ses doublons (revente, fusion des secrètes). La copie évoluée, elle, reste.
-  On paie COSTS[groupe][n-1] crédits. Au plus DAILY_UPGRADES améliorations par joueur et par jour (jour de Paris).
+  On paie COSTS[groupe][n-1] crédits. Pas de limite par jour (l'ancien compteur « card_levels » de missions.daily_count reste en base, inutilisé).
 - EN MATCH : note de base + niveau, puis malus hors poste et bonus de capitaine (duel_engine.build_members).
 - LE NIVEAU SUIT LA CARTE : un joueur a au plus une copie évoluée par carte (table card_levels). Quand cette copie est vendue (annonce,
   enchère, offre d'achat), son niveau voyage avec elle (tables listing_levels, auction_levels, trade_levels) et le vendeur repasse au
@@ -30,7 +30,6 @@ router = APIRouter()
 
 # ------------------------------------------------------------------ constantes réglables ----
 MAX_LEVEL = 5
-DAILY_UPGRADES = 2                       # améliorations par joueur et par jour (jour de Paris)
 DUPES_REQUIRED = {                       # doublons consommés pour acheter le niveau 1, 2, 3, 4, 5
     "commune": [5, 10, 20, 50, 100],
     "rare": [1, 3, 5, 12, 25],
@@ -42,7 +41,6 @@ COSTS = {                                # crédits du niveau 1, 2, 3, 4, 5
     "edition": [60, 120, 240, 400, 640],
 }
 GROUP_LABELS = {"commune": "commune", "rare": "rare", "edition": "édition limitée"}
-DAILY_KEY = "card_levels"
 
 
 class CardLevel(Base):
@@ -155,7 +153,7 @@ def info(db: Session, user: User, card: Card) -> dict:
     base = game_logic.card_note(card.player, card.tier.value, card)
     lvl = level_of(db, user.id, card.id)
     out = {"card_id": card.id, "level": lvl, "max_level": MAX_LEVEL, "base_note": base, "note": base + lvl, "eligible": False,
-           "can": False, "reason": None, "daily_left": max(0, DAILY_UPGRADES - _today_count(db, user))}
+           "can": False, "reason": None}
     reason = ineligible_reason(card)
     if reason:
         out["reason"] = reason
@@ -175,16 +173,9 @@ def info(db: Session, user: User, card: Card) -> dict:
         out["reason"] = "Il te faut %d doublon%s de cette carte pour le niveau %d : tu en as %d." % (need, "s" if need > 1 else "", lvl + 1, out["dupes"])
     elif user.credits < cost:
         out["reason"] = "Il te faut %d crédits : tu en as %d." % (cost, user.credits)
-    elif out["daily_left"] <= 0:
-        out["reason"] = "Tu as déjà fait évoluer %d cartes aujourd'hui : reviens demain (minuit, heure de Paris)." % DAILY_UPGRADES
     else:
         out["can"] = True
     return out
-
-
-def _today_count(db: Session, user: User) -> int:
-    from . import missions
-    return missions.daily_count(db, user, DAILY_KEY)
 
 
 def on_user_deleted(db: Session, user_id: str) -> None:
@@ -231,12 +222,10 @@ def evolve(card_id: str, user: User = Depends(get_current_user), db: Session = D
     i = info(db, user, card)
     if not i["can"]:
         raise HTTPException(status_code=400, detail=i["reason"] or "Évolution impossible")
-    from . import missions
     user.credits -= i["cost"]
     owned = db.query(OwnedCard).filter_by(user_id=user.id, card_id=card.id).first()
     owned.quantity -= i["dupes_needed"]                                   # les doublons demandés sont consommés (il reste toujours la copie évoluée)
     set_level(db, user.id, card.id, i["next_level"])
-    missions.daily_add(db, user, DAILY_KEY)
     db.commit()
     return {"status": "ok", "level": i["next_level"], "note": i["next_note"], "cost": i["cost"], "dupes_used": i["dupes_needed"], "credits": user.credits, **{"info": info(db, user, card)}}
 
