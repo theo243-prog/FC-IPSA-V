@@ -26,6 +26,7 @@ class SellDuplicateRequest(BaseModel):
 class CreateListingRequest(BaseModel):
     card_id: str
     price: int = Field(gt=0)
+    evolved: bool = False        # vendre sa copie évoluée (niveau) plutôt qu'un doublon normal ; la dernière copie part toujours avec son niveau
 
 
 class BuyShopItemRequest(BaseModel):

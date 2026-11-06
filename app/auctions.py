@@ -70,10 +70,18 @@ def _tell(db, user_id, title, body):
 def _settle(db: Session, a: Auction) -> None:
     card = db.get(Card, a.card_id); seller = db.get(User, a.seller_id); winner = db.get(User, a.top_bidder_id) if a.top_bidder_id else None
     name = offers._name(card) if card else "une carte"
+    from . import card_levels
+    lrow = db.get(card_levels.AuctionLevel, a.id); level = lrow.level if lrow else 0
+    if lrow is not None:
+        db.delete(lrow)
     if winner is not None and a.current_bid is not None and card is not None and seller is not None:
         seller.credits += a.current_bid
         game_logic.get_or_create_owned(db, winner, card).quantity += 1
-        db.add(offers.Trade(kind="enchère", seller_id=seller.id, buyer_id=winner.id, seller_pseudo=seller.pseudo, buyer_pseudo=winner.pseudo, card_id=card.id, card_tier=card.tier.value, price=a.current_bid))
+        card_levels.copy_arriving(db, winner.id, card.id, level)            # le niveau suit la carte (le gagnant garde son meilleur niveau)
+        t = offers.Trade(kind="enchère", seller_id=seller.id, buyer_id=winner.id, seller_pseudo=seller.pseudo, buyer_pseudo=winner.pseudo, card_id=card.id, card_tier=card.tier.value, price=a.current_bid)
+        db.add(t)
+        if level:
+            db.flush(); db.add(card_levels.TradeLevel(trade_id=t.id, level=level))
         _tell(db, winner.id, "Enchère remportée 🔨", "Tu remportes %s pour %d crédits." % (name, a.current_bid))
         _tell(db, seller.id, "Enchère terminée 💰", "%s remporte %s pour %d crédits." % (winner.pseudo, name, a.current_bid))
         if card.tier.value in ANNOUNCE_TIERS:
@@ -84,6 +92,7 @@ def _settle(db: Session, a: Auction) -> None:
             winner.credits += a.current_bid                       # (le vendeur ou la carte a disparu : on rembourse)
         if seller is not None and card is not None:
             game_logic.get_or_create_owned(db, seller, card).quantity += 1
+            card_levels.copy_arriving(db, seller.id, card.id, level)        # sans enchère : la carte revient avec son niveau
             _tell(db, seller.id, "Enchère terminée", "Personne n'a enchéri sur %s : la carte est revenue dans ta collection." % name)
         won = None
     seller_id = a.seller_id
@@ -127,8 +136,9 @@ def on_user_deleted(db: Session, user_id: str) -> None:
         a.top_bidder_id, a.current_bid, a.bids = None, None, 0
 
 
-def _out(a: Auction, card: Card, seller: User, bidder, now: datetime, viewer=None) -> dict:
-    return {"id": a.id, "card": card_out(card), "seller_pseudo": seller.pseudo if seller else "?", "start_price": a.start_price, "current_bid": a.current_bid, "bids": a.bids,
+def _out(a: Auction, card: Card, seller: User, bidder, now: datetime, viewer=None, level: int = 0) -> dict:
+    from .main import with_level
+    return {"id": a.id, "card": with_level(card_out(card), level), "level": level, "seller_pseudo": seller.pseudo if seller else "?", "start_price": a.start_price, "current_bid": a.current_bid, "bids": a.bids,
             "top_bidder": bidder.pseudo if bidder else None, "min_next_bid": min_next_bid(a), "seconds_left": max(0, int((a.ends_at - now).total_seconds())),
             "mine": bool(viewer and a.seller_id == viewer.id), "i_am_top": bool(viewer and a.top_bidder_id == viewer.id)}
 
@@ -136,11 +146,13 @@ def _out(a: Auction, card: Card, seller: User, bidder, now: datetime, viewer=Non
 @router.get("/auctions")
 def list_auctions(viewer=Depends(optional_user), db: Session = Depends(get_db)):
     settle_due(db); now = _now(); out = []
+    from .card_levels import AuctionLevel
+    lv = {r.auction_id: r.level for r in db.query(AuctionLevel).all()}
     for a in db.query(Auction).order_by(Auction.ends_at).all():
         card = db.get(Card, a.card_id)
         if card is None:
             continue
-        out.append(_out(a, card, db.get(User, a.seller_id), db.get(User, a.top_bidder_id) if a.top_bidder_id else None, now, viewer))
+        out.append(_out(a, card, db.get(User, a.seller_id), db.get(User, a.top_bidder_id) if a.top_bidder_id else None, now, viewer, lv.get(a.id, 0)))
     return {"durations": DURATIONS, "min_minutes": MIN_MINUTES, "max_minutes": MAX_MINUTES, "auctions": out}
 
 
@@ -148,6 +160,7 @@ class CreateAuction(BaseModel):
     card_id: str
     start_price: int = Field(ge=1, le=offers.PRICE_MAX)
     minutes: int = Field(ge=MIN_MINUTES, le=MAX_MINUTES)
+    evolved: bool = False                                         # vendre sa copie évoluée (niveau) plutôt qu'un doublon normal
 
 
 class BidRequest(BaseModel):
@@ -164,9 +177,14 @@ def create_auction(payload: CreateAuction, user: User = Depends(get_current_user
         raise HTTPException(status_code=400, detail="Les enchères sont réservées aux cartes rares ou mieux (ni communes, ni trophées)")
     if db.query(Auction).filter_by(seller_id=user.id).count() >= MAX_OPEN_PER_SELLER:
         raise HTTPException(status_code=400, detail="Tu as déjà %d enchères ouvertes : attends qu'une se termine" % MAX_OPEN_PER_SELLER)
+    from . import card_levels
+    level = card_levels.copy_leaving(db, user.id, payload.card_id, owned.quantity, payload.evolved)     # la copie évoluée part-elle ?
     owned.quantity -= 1                                           # la carte est mise de côté tant que l'enchère est ouverte
     a = Auction(seller_id=user.id, card_id=payload.card_id, start_price=payload.start_price, ends_at=_now() + timedelta(minutes=payload.minutes))
-    db.add(a); db.commit()
+    db.add(a); db.flush()
+    if level:
+        db.add(card_levels.AuctionLevel(auction_id=a.id, level=level))
+    db.commit()
     missions.safe_record(db, user, "market_list")
     return {"id": a.id, "seconds_left": payload.minutes * 60}
 
@@ -206,5 +224,10 @@ def cancel(auction_id: str, user: User = Depends(get_current_user), db: Session 
     if a.bids:
         raise HTTPException(status_code=400, detail="Il y a déjà une enchère : tu ne peux plus annuler")
     game_logic.get_or_create_owned(db, user, db.get(Card, a.card_id)).quantity += 1
+    from . import card_levels
+    lrow = db.get(card_levels.AuctionLevel, a.id)
+    if lrow is not None:                                          # l'enchère annulée rend la carte ET son niveau
+        card_levels.copy_arriving(db, user.id, a.card_id, lrow.level)
+        db.delete(lrow)
     db.delete(a); db.commit()
     return {"status": "ok"}
