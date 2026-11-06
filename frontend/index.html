@@ -128,6 +128,13 @@
   table.prono-rank th{position:sticky;top:0;background:var(--bg-elevated);text-align:left;font-size:11px;color:var(--text-muted);font-weight:700;padding:5px 6px;border-bottom:1px solid var(--border);}
   table.prono-rank td{padding:6px;border-bottom:1px solid var(--border);} table.prono-rank .num{text-align:center;font-weight:700;} table.prono-rank tr.me{background:var(--bg-sunk);}
   table.prono-rank .pseudo-link{background:none;border:none;padding:0;font:inherit;color:var(--text);cursor:pointer;text-decoration:underline;text-decoration-color:var(--border);} table.prono-rank .pseudo-link:hover{color:var(--accent);}
+  /* ---- Niveaux de cartes ---- */
+  .card-stats .lvl-chip{background:linear-gradient(135deg,#FFD36A,#F08A24) !important;color:#3A1B00 !important;font-weight:800;}
+  .lvl-box{margin-top:14px;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--bg-sunk);font-size:13px;}
+  .lvl-box h4{margin:0 0 6px;font-size:14px;} .lvl-box .lvl-pips{letter-spacing:3px;font-size:15px;}
+  .lvl-box table{width:100%;border-collapse:collapse;margin:6px 0;font-size:12px;} .lvl-box td,.lvl-box th{padding:3px 4px;text-align:center;border-bottom:1px solid var(--border);}
+  .lvl-box tr.cur{font-weight:800;} .lvl-box .lvl-why{color:var(--text-muted);margin:6px 0 0;}
+  .lu-lvl{font-size:10px;font-weight:800;color:#C25E00;margin-left:3px;}
   .tab-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#E5484D;margin-left:5px;vertical-align:super;box-shadow:0 0 0 2px var(--bg);}
   .tab-dot[hidden]{display:none;}
   /* missions du jour et série de connexion */
@@ -1065,6 +1072,7 @@
       <div class="panel-box">
         <h2>Proposer un échange</h2>
         <div class="form-row"><label>Ta carte à vendre</label><select id="offerSelect"></select></div>
+        <div class="form-row" id="offerCopyRow" hidden><label>Quelle copie ?</label><select id="offerCopy"></select></div>
         <div class="form-row"><label>Prix (en crédits)</label><input id="priceInput" type="number" min="1" value="10"></div>
         <button id="createListingBtn" class="btn-secondary">Mettre en vente</button>
       </div>
@@ -1072,6 +1080,7 @@
         <h2>🔨 Mettre une carte aux enchères</h2>
         <p class="duel-hint">Pour les cartes rares ou mieux. Tu choisis le prix de départ et la durée ; à la fin, la carte va au meilleur enchérisseur et tu reçois ses crédits.</p>
         <div class="form-row"><label>Ta carte</label><select id="auctionSelect"></select></div>
+        <div class="form-row" id="auctionCopyRow" hidden><label>Quelle copie ?</label><select id="auctionCopy"></select></div>
         <div class="form-row"><label>Prix de départ (en crédits)</label><input id="auctionPrice" type="number" min="1" value="10"></div>
         <div class="form-row"><label>Durée de l'enchère</label><div class="dur-btns" id="auctionDurations"></div></div>
         <button id="createAuctionBtn" class="btn-secondary">Lancer l'enchère</button>
@@ -1563,7 +1572,7 @@
       statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🎉 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span>' + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
       posteLabel = '🎉';
     } else {
-      statsRow = '<div class="card-stats"><span>⭐ ' + (card.display_note ? card.display_note.value : '') + '</span>' + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
+      statsRow = '<div class="card-stats"><span>⭐ ' + (card.display_note ? card.display_note.value : '') + '</span>' + (card.level ? '<span class="lvl-chip" title="Carte évoluée : +' + card.level + ' de note">Niv. ' + card.level + '</span>' : '') + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
       posteLabel = escapeHtml(card.poste);
     }
     const bgPhoto = usesBgPhoto(card) ? '<img class="card-bgphoto" src="' + escapeHtml(card.player_photo_url) + '" alt=""><span class="card-scrim" aria-hidden="true"></span>' : '';
@@ -1750,8 +1759,36 @@
         body.insertAdjacentHTML('beforeend', '<div class="share-actions" style="margin-top:16px;"><button class="btn-secondary" type="button" id="shareCardBtn">📤 Partager cette carte</button></div>');
         document.getElementById('shareCardBtn').addEventListener('click', () => openShareCard(card));
       }
+      if (card && card.quantity > 0 && !card._viewing && card.id && kind === 'joueur') loadLevelBox(body, card);      // faire évoluer cette carte
       document.getElementById('userCollectionModal').style.display = 'flex';
     } catch(e) { toast(e.message); }
+  }
+  // Niveaux de cartes : la fiche d'une de mes cartes montre son niveau, les paliers (doublons requis, jamais détruits ; crédits) et le bouton « Évoluer »
+  async function loadLevelBox(body, card){
+    let i; try { i = await api('/cards/' + encodeURIComponent(card.id) + '/level'); } catch(e) { return; }
+    if (!body.isConnected) return;
+    const box = document.createElement('div'); box.className = 'lvl-box';
+    if (!i.eligible) { box.innerHTML = '<h4>⬆️ Niveau de la carte</h4><p class="lvl-why" style="margin:0;">' + escapeHtml(i.reason) + '</p>'; body.appendChild(box); return; }
+    const pips = '★'.repeat(i.level) + '☆'.repeat(i.max_level - i.level);
+    let h = '<h4>⬆️ Niveau ' + i.level + ' / ' + i.max_level + ' <span class="lvl-pips">' + pips + '</span></h4>' +
+      '<div>Note en match : <b>' + i.note + '</b>' + (i.level ? ' (' + i.base_note + ' + ' + i.level + ')' : '') + '. Chaque niveau ajoute +1. Tu as <b>' + i.dupes + ' doublon' + (i.dupes > 1 ? 's' : '') + '</b> de cette carte (ils ne sont jamais détruits).</div>' +
+      '<table><tr><th>Niveau</th><th>Doublons requis</th><th>Crédits</th></tr>' + i.steps.map(st => '<tr class="' + (st.level === i.level + 1 ? 'cur' : '') + '"><td>' + (st.level <= i.level ? '✅ ' : '') + st.level + '</td><td>' + st.dupes + '</td><td>' + st.cost + '</td></tr>').join('') + '</table>';
+    if (i.next_level) h += '<div>Niveau ' + i.next_level + ' : <b>' + i.dupes + ' doublon' + (i.dupes > 1 ? 's' : '') + ' sur ' + i.dupes_needed + '</b> requis · <b>' + i.cost + ' crédits</b> · note ' + i.note + ' → ' + i.next_note + '</div>';
+    h += '<div style="margin-top:8px;"><button class="btn-primary" type="button" id="lvlGo"' + (i.can ? '' : ' disabled') + '>' + (i.next_level ? '⬆️ Évoluer au niveau ' + i.next_level : 'Niveau maximal') + '</button></div>';
+    if (i.reason) h += '<p class="lvl-why">' + escapeHtml(i.reason) + '</p>';
+    h += '<p class="lvl-why">' + i.daily_left + ' évolution' + (i.daily_left > 1 ? 's' : '') + ' encore possible' + (i.daily_left > 1 ? 's' : '') + ' aujourd\'hui. Le niveau suit la carte si tu la vends.</p>';
+    box.innerHTML = h; body.appendChild(box);
+    const go = box.querySelector('#lvlGo');
+    if (go && i.can) go.addEventListener('click', async () => {
+      if (!(await confirmDialog('Faire évoluer ' + escapeHtml(card.player_name) + ' ?', '<p style="margin:0;">Niveau ' + i.next_level + ' pour <b>' + i.cost + ' crédits</b> : note ' + i.note + ' → <b>' + i.next_note + '</b>. Tes ' + i.dupes + ' doublons sont seulement vérifiés : tu les gardes.</p>', 'Évoluer'))) return;
+      go.disabled = true;
+      try {
+        const r = await api('/cards/' + encodeURIComponent(card.id) + '/evolve', { method: 'POST' });
+        toast('⬆️ ' + card.player_name + ' passe au niveau ' + r.level + ' (note ' + r.note + ')');
+        await refreshMe(true); await loadCollection();
+        const fresh = myCollection.find(c => c.id === card.id) || card; openPlayerDetail(card.player_name, card.tier, fresh);
+      } catch(e) { toast(e.message); go.disabled = false; }
+    });
   }
   function statBox(num, label){
     return '<div class="stat-box"><div class="num">' + num + '</div><div class="lab">' + escapeHtml(label) + '</div></div>';
@@ -2068,7 +2105,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.06.5';
+  const SITE_VERSION = '2026.11.06.6';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3200,6 +3237,12 @@
         '<li><span class="help-tier" style="background:' + TIER_COLORS.legendaire + '"></span><b>Légendaire</b> : la plus rare, holographique et animée. Note 95, qui peut monter de +2 grâce au vote de l\'homme du match (voir l\'aide de l\'onglet Actualité).</li></ul>' +
         '<h3>Les doublons</h3><ul><li><b>Les revendre</b> avec « Vendre doublon » (une fenêtre te demande de confirmer : la vente est <b>définitive</b>, sans retour) : commune ' + sv.commune + ' crédit, rare ' + sv.rare + ', gold ' + sv.gold + ', spéciale ' + sv.speciale + ', épique ' + sv.epique + ', légendaire ' + sv.legendaire + '.</li>' +
         '<li><b>Débloquer une carte secrète</b> : la carte secrète d\'un joueur affiche une jauge. Chaque doublon <b>commune</b> de ce joueur vaut <b>1 point</b>, chaque doublon <b>rare</b> vaut <b>' + r.secret_fusion.rare_value + ' points</b>. À <b>' + r.secret_fusion.cost + ' points</b>, le bouton « Débloquer » apparaît : les doublons nécessaires sont consommés (tu gardes toujours ton premier exemplaire de chaque carte).</li></ul>' +
+        '<h3>Faire évoluer une carte ⬆️</h3><ul>' +
+        '<li>Les cartes de joueurs <b>communes</b>, <b>rares</b> et <b>éditions limitées</b> montent jusqu\'au <b>niveau 5</b>. Chaque niveau ajoute <b>+1</b> à la note de la carte en match (avant le malus hors poste et le bonus de capitaine). Les gold, secrètes, épiques, légendaires, spéciales, trophées, fans, mascottes et équipements n\'évoluent pas.</li>' +
+        '<li>Pour acheter un niveau, il faut <b>posséder</b> assez de <b>doublons</b> de cette carte : ils sont seulement vérifiés, <b>jamais détruits</b> (tu peux toujours les vendre ou les fusionner). Commune : 5, 10, 20, 50, 100 doublons ; rare : 1, 3, 5, 12, 25 ; édition limitée : 1, 3, 5, 8, 10.</li>' +
+        '<li>Coût en crédits des niveaux 1 à 5 : commune 30, 60, 120, 200, 320 ; rare 45, 90, 180, 300, 480 ; édition limitée 60, 120, 240, 400, 640. <b>2 évolutions par jour</b> au maximum.</li>' +
+        '<li>Tout se fait dans la <b>fiche de la carte</b> (touche-la dans ta collection) : niveau, doublons (« 7 sur 10 requis »), coût et bouton « Évoluer ». Un badge « Niv. N » s\'affiche sur la carte.</li>' +
+        '<li>Tu n\'as qu\'<b>une copie évoluée</b> par carte. <b>Le niveau suit la carte</b> : si tu la vends (annonce, enchère, offre d\'achat), l\'acheteur la reçoit avec son niveau, et tes autres copies repassent au niveau 0. Les échanges et la vente des doublons ne touchent jamais ta copie évoluée.</li></ul>' +
         '<h3>Les autres types de cartes</h3><ul><li><b>Fans</b>, <b>Le Loup</b> (la mascotte) et <b>équipements</b> : pas de note, ils donnent un bonus d\'équipe en 1v1.</li><li><b>Stades</b> et <b>moments gold</b> : des cartes de collection.</li></ul>';
     } },
     marche: { title: 'Le marché', html(){
@@ -3208,6 +3251,7 @@
         '<li><b>Annuler</b> une de tes annonces te rend la carte.</li>' +
         '<li><b>Acheter</b> : le prix est débité de tes crédits et versé au vendeur. Tu ne peux pas acheter tes propres annonces.</li>' +
         '<li><b>Enchères 🔨</b> : pour une carte rare ou mieux, tu choisis le prix de départ et la durée (de 15 minutes à 24 heures). Chaque enchère doit dépasser la précédente d\'au moins 5 %. Tes crédits sont mis de côté et rendus si quelqu\'un te dépasse. Une enchère dans les 2 dernières minutes prolonge l\'enchère de 2 minutes. À la fin, la carte va au meilleur enchérisseur ; sans enchère, elle te revient.</li></ul>' +
+        '<p class="help-note"><b>Cartes évoluées</b> : une carte « Niv. N » se vend avec son niveau. Si tu en as plusieurs copies, tu choisis de vendre ta carte évoluée ou un doublon normal. L\'acheteur garde toujours son meilleur niveau : s\'il a déjà cette carte au niveau N ou plus, le niveau reçu est perdu. Une annonce annulée ou une enchère sans preneur te rend la carte avec son niveau ; pour une offre d\'achat, tu donnes une copie normale si tu en as une.</p>' +
         '<p class="help-note">Pour garder une carte précieuse, vends plutôt tes doublons.</p>' +
         '<h3>L\'historique des échanges</h3><p>Tout en bas du marché, la liste des échanges entre joueurs (annonces achetées et offres acceptées), du plus récent au plus ancien : qui a vendu à qui, quelle carte, à quel prix. Le nom d\'une carte échangée par offre d\'achat n\'est montré qu\'aux joueurs de l\'échange et à ceux qui possèdent cette carte.</p>' +
         '<h3>Les offres d\'achat</h3><ul>' +
@@ -3573,8 +3617,9 @@
   function renderAuctionForm(){
     const sel = byId('auctionSelect'), btn = byId('createAuctionBtn'); if (!sel || !auctionsState) return;
     const owned = myCollection.filter(c => c.quantity > 0 && c.tier !== 'commune' && c.tier !== 'saison');
-    const keep = sel.value; sel.innerHTML = owned.length ? owned.map(c => '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' — ' + tierLabel(c.tier) + ' (×' + c.quantity + ')</option>').join('') : '<option value="">Aucune carte rare ou mieux disponible</option>';
+    const keep = sel.value; sel.innerHTML = owned.length ? owned.map(c => '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' — ' + tierLabel(c.tier) + ' (×' + c.quantity + ')' + (c.level ? ' · Niv. ' + c.level : '') + '</option>').join('') : '<option value="">Aucune carte rare ou mieux disponible</option>';
     if (keep && owned.some(c => c.id === keep)) sel.value = keep; sel.disabled = btn.disabled = !owned.length;
+    renderCopyChoice('auctionSelect', 'auctionCopyRow', 'auctionCopy');
     byId('auctionDurations').innerHTML = auctionsState.durations.map(m => '<button type="button" data-min="' + m + '" class="' + (m === auctionMinutes ? 'on' : '') + '">' + durLabel(m) + '</button>').join('');
     byId('auctionDurations').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { auctionMinutes = parseInt(b.dataset.min, 10); renderAuctionForm(); }));
   }
@@ -3584,7 +3629,7 @@
     root.innerHTML = ''; const wrap = document.createElement('div'); wrap.className = 'listings';
     list.forEach(a => {
       const row = document.createElement('div'); row.className = 'listing auction'; const end = auctionsState.t0 + a.seconds_left * 1000;
-      row.innerHTML = '<div class="mini-badge tier-' + a.card.tier + '">' + escapeHtml(a.card.player_name.slice(0, 2)) + '</div><div class="listing-text"><b>' + (a.mine ? 'Toi' : escapeHtml(a.seller_pseudo)) + '</b> met <b>' + escapeHtml(a.card.player_name) + '</b> (' + tierLabel(a.card.tier) + ') aux enchères' +
+      row.innerHTML = '<div class="mini-badge tier-' + a.card.tier + '">' + escapeHtml(a.card.player_name.slice(0, 2)) + '</div><div class="listing-text"><b>' + (a.mine ? 'Toi' : escapeHtml(a.seller_pseudo)) + '</b> met <b>' + escapeHtml(a.card.player_name) + '</b> (' + tierLabel(a.card.tier) + ')' + (a.level ? ' <b>Niv. ' + a.level + '</b>' : '') + ' aux enchères' + (a.level ? ' <span class="muted">(niveau ' + a.level + ', perdu si tu as déjà un niveau ≥ ' + a.level + ')</span>' : '') +
         '<div class="listing-meta">' + (a.current_bid === null ? 'Départ : ' + a.start_price + ' crédits · aucune enchère' : 'Meilleure enchère : <b>' + a.current_bid + ' crédits</b> par ' + (a.i_am_top ? 'toi 🏆' : escapeHtml(a.top_bidder)) + ' (' + a.bids + ' enchère' + (a.bids > 1 ? 's' : '') + ')') + ' · ⏱ <span class="auc-left" data-end="' + end + '">' + fmtLeft(a.seconds_left) + '</span></div></div>';
       const act = document.createElement('div'); act.className = 'auc-actions';
       if (a.mine) { if (!a.bids) { const b = document.createElement('button'); b.className = 'btn-small ghost'; b.textContent = 'Annuler'; b.addEventListener('click', () => cancelAuction(a.id)); act.appendChild(b); } }
@@ -3609,7 +3654,7 @@
   document.getElementById('createAuctionBtn').addEventListener('click', async () => {
     const card_id = byId('auctionSelect').value, start_price = parseInt(byId('auctionPrice').value, 10);
     if (!card_id || !start_price || start_price < 1) { toast('Choisis une carte et un prix de départ valide'); return; }
-    try { await api('/auctions', { method: 'POST', body: JSON.stringify({ card_id, start_price, minutes: auctionMinutes }) }); toast('🔨 Enchère lancée pour ' + durLabel(auctionMinutes)); await loadCollection(); renderMarketForm(); loadAuctions(); refreshMe(); }
+    try { await api('/auctions', { method: 'POST', body: JSON.stringify({ card_id, start_price, minutes: auctionMinutes, evolved: copyEvolved('auctionCopy') }) }); toast('🔨 Enchère lancée pour ' + durLabel(auctionMinutes)); await loadCollection(); renderMarketForm(); loadAuctions(); refreshMe(); }
     catch(e) { toast(e.message); }
   });
   setInterval(() => {
@@ -3707,6 +3752,17 @@
   (function(){ const r = new URLSearchParams(location.search).get('ref'); if (r) document.getElementById('refInput').value = r.toUpperCase().slice(0, 12); })();       // lien d'invitation : ?ref=CODE
 
   // ---------- Marché ----------
+  // Une carte évoluée : avec plusieurs copies, on choisit « ma carte évoluée » ou « un doublon normal » ; avec une seule, elle part avec son niveau.
+  function renderCopyChoice(selId, rowId, copyId){
+    const c = myCollection.find(x => x.id === byId(selId).value), row = byId(rowId), sel = byId(copyId); if (!row || !sel) return;
+    if (!c || !c.level) { row.hidden = true; sel.innerHTML = ''; return; }
+    row.hidden = false;
+    sel.innerHTML = c.quantity > 1 ? '<option value="0">Un doublon normal (tu gardes ta carte niveau ' + c.level + ')</option><option value="1">Ma carte évoluée (Niv. ' + c.level + ')</option>'
+                                   : '<option value="1">Ma carte évoluée (Niv. ' + c.level + ') : c\'est ta seule copie</option>';
+  }
+  function copyEvolved(copyId){ const sel = byId(copyId); return !!(sel && sel.value === '1' && !byId(copyId).closest('[hidden]')); }
+  document.getElementById('offerSelect').addEventListener('change', () => renderCopyChoice('offerSelect', 'offerCopyRow', 'offerCopy'));
+  document.getElementById('auctionSelect').addEventListener('change', () => renderCopyChoice('auctionSelect', 'auctionCopyRow', 'auctionCopy'));
   function renderMarketForm(){
     if (auctionsState) renderAuctionForm();
     const offerSel = document.getElementById('offerSelect');
@@ -3718,8 +3774,9 @@
     } else {
       offerSel.disabled = false;
       document.getElementById('createListingBtn').disabled = false;
-      offerSel.innerHTML = owned.map(c => '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' — ' + tierLabel(c.tier) + ' (×' + c.quantity + ')</option>').join('');
+      offerSel.innerHTML = owned.map(c => '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' — ' + tierLabel(c.tier) + ' (×' + c.quantity + ')' + (c.level ? ' · Niv. ' + c.level : '') + '</option>').join('');
     }
+    renderCopyChoice('offerSelect', 'offerCopyRow', 'offerCopy');
   }
 
   document.getElementById('createListingBtn').addEventListener('click', async () => {
@@ -3727,7 +3784,7 @@
     const price = parseInt(document.getElementById('priceInput').value, 10);
     if (!cardId || !price || price <= 0) { toast('Choisis une carte et un prix valide'); return; }
     try {
-      await api('/market/list', { method: 'POST', body: JSON.stringify({ card_id: cardId, price }) });
+      await api('/market/list', { method: 'POST', body: JSON.stringify({ card_id: cardId, price, evolved: copyEvolved('offerCopy') }) });
       toast('Mise en vente publiée');
       await loadCollection(); renderMarketForm();
       loadListings();
@@ -3756,7 +3813,7 @@
       row.innerHTML =
         '<div class="mini-badge tier-' + l.card.tier + '">' + escapeHtml(l.card.player_name.slice(0,2)) + '</div>' +
         '<div class="listing-text"><b>' + (mine ? 'Toi' : escapeHtml(l.seller_pseudo)) + '</b> vend <b>' + escapeHtml(l.card.player_name) + '</b> (' + tierLabel(l.card.tier) + ') pour <b>' + l.price + ' crédits</b>' +
-        '<div class="listing-meta">' + (l.card.display_note ? ('⭐ ' + l.card.display_note.value) : '🎉 Supporter') + '</div></div>';
+        '<div class="listing-meta">' + (l.card.display_note ? ('⭐ ' + l.card.display_note.value) : '🎉 Supporter') + (l.level ? ' · <b>Niv. ' + l.level + '</b> <span title="Si tu as déjà cette carte au niveau ' + l.level + ' ou plus, tu gardes ton niveau">(niveau ' + l.level + ', perdu si tu as déjà un niveau ≥ ' + l.level + ')</span>' : '') + '</div></div>';
       const btn = document.createElement('button');
       btn.className = 'btn-small' + (mine ? ' ghost' : '');
       if (mine) {
@@ -4291,7 +4348,7 @@
     const byNote = (a, b) => b.display_note.value - a.display_note.value || a.player_name.localeCompare(b.player_name, 'fr') || a.tier.localeCompare(b.tier);
     const option = c => {
       const off = naturalOf(c) && naturalOf(c) !== cat;
-      return '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' · ⭐' + c.display_note.value + ' · ' + escapeHtml(c.poste) + ' · ' + tierLabel(c.tier) + (off ? ' · ⚠ −' + malus + ' %' : '') + '</option>';
+      return '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' · ⭐' + c.display_note.value + (c.level ? ' (Niv. ' + c.level + ')' : '') + ' · ' + escapeHtml(c.poste) + ' · ' + tierLabel(c.tier) + (off ? ' · ⚠ −' + malus + ' %' : '') + '</option>';
     };
     const groups = [];
     groups.push([POSTE_GROUPES[cat] || cat, tm.owned.filter(c => naturalOf(c) === cat).sort(byNote)]);
@@ -4450,7 +4507,7 @@
         (t.equipment && t.equipment.length ? ' · Équipement ' + t.equipment.map(e => escapeHtml(e.player)).join(', ') + ' (+' + t.equipment.reduce((n, e) => n + e.bonus_pct, 0) + ' %)' : '') + '</div>';
       players.forEach(p => {
         html += '<div class="lu-row"><span>' + SLOT_ICON[p.slot] + ' ' + escapeHtml(p.player) + (p.captain ? ' <span class="lu-flag" title="Capitaine">©</span>' : '') +
-          (p.out_of_position ? ' <span class="lu-flag" title="Hors de son poste">⚠</span>' : '') + '</span><span>' + Math.round(p.effective_note) + '</span></div>';
+          (p.level ? '<span class="lu-lvl" title="Carte évoluée : +' + p.level + ' de note">Niv.' + p.level + '</span>' : '') + (p.out_of_position ? ' <span class="lu-flag" title="Hors de son poste">⚠</span>' : '') + '</span><span>' + Math.round(p.effective_note) + '</span></div>';
       });
       box.innerHTML = html; root.appendChild(box);
     });

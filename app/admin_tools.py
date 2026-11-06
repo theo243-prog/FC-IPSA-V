@@ -76,6 +76,7 @@ def summarize(path: str, payload) -> str:
         if name == "set-password": return "Nouveau mot de passe pour %s (tous ses appareils déconnectés)" % who
         if name == "first-steps-reset": return "Premiers pas : récupération de la récompense effacée pour %s" % who
         if name == "shop-cosmetics-refund": return "Cosmétique du shop %s remboursé à %s" % (_s(p, "item_id"), who)
+        if name == "set-card-level": return "Niveau %s pour %s (%s) de %s" % (_s(p, "level", 0), _s(p, "player_name"), _s(p, "tier"), who)
         if name == "create-gold": return "%d carte(s) gold ajoutée(s) sans match" % len(p.get("moments") or [])
         if name == "motm-extend": return "Vote homme du match prolongé de %s h" % _s(p, "hours", 0)
         if name == "motm-close": return "Vote homme du match clôturé tout de suite"

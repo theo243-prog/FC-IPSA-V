@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -60,6 +60,7 @@ app.include_router(prono.router)             # pronostics sur les vrais matchs
 app.include_router(avatars.router)            # photos de profil
 app.include_router(collection_tools.router)   # vendre tous les doublons d'un coup
 app.include_router(welcome.router)         # accueil des nouveaux comptes : pop-up de bienvenue et pack ultra offert
+app.include_router(card_levels.router)     # niveaux de cartes : faire évoluer une copie (+1 de note par niveau, 5 au plus)
 app.include_router(motm.router)            # homme du match : vote après un match officiel, classement privé de la saison
 app.include_router(admin_page.router)      # la page d'administration (/admin-panel) et le numéro de version (/version)
 
@@ -96,6 +97,13 @@ def card_out(card: Card) -> dict:
         "numero": card.player.numero,
         "trophy": seasons.trophy_info(card.player) if card.tier == Tier.saison else None,       # trophée de saison : rang, titre et mois
     }
+
+
+def with_level(row: dict, level: int) -> dict:
+    """Ajoute le niveau d'une copie évoluée à une carte envoyée au site : la note affichée devient note de base + niveau."""
+    if level and row.get("display_note"):
+        row = {**row, "display_note": {**row["display_note"], "value": row["display_note"]["value"] + level}, "base_note": row["display_note"]["value"]}
+    return {**row, "level": level or 0}
 
 
 @app.get("/health")
@@ -275,6 +283,7 @@ def get_collection(user: User = Depends(get_current_user), db: Session = Depends
     reveal = is_admin_key(x_admin_key)          # seul l'admin voit le détail des cartes pas encore débloquées
     all_cards = db.query(Card).all()
     owned_rows = {o.card_id: o.quantity for o in db.query(OwnedCard).filter_by(user_id=user.id).all()}
+    lv = card_levels.levels_for(db, user.id)               # copies évoluées : +niveau sur la note
     qty_by_player = {}                      # joueur -> quantités possédées en commune / rare (pour la jauge de fusion)
     for c in all_cards:
         if c.tier in (Tier.commune, Tier.rare):
@@ -287,7 +296,7 @@ def get_collection(user: User = Depends(get_current_user), db: Session = Depends
         if c.tier == Tier.saison and not owned_rows.get(c.id, 0) and not reveal:
             continue                                   # un trophée de saison n'est visible que de ceux qui l'ont gagné
         qty = owned_rows.get(c.id, 0)
-        row = {**(card_out(c) if (qty > 0 or reveal) else locked_out(c)), "quantity": qty}
+        row = {**(with_level(card_out(c), lv.get(c.id, 0) if qty > 0 else 0) if (qty > 0 or reveal) else locked_out(c)), "quantity": qty}
         if c.tier == Tier.secrete:
             q = qty_by_player.get(c.player_id, {})
             points = game_logic.fusion_points(q.get("commune", 0), q.get("rare", 0))
@@ -501,6 +510,7 @@ def get_user_collection(pseudo: str, db: Session = Depends(get_db), x_admin_key:
     reveal = is_admin_key(x_admin_key)
     all_cards = db.query(Card).all()
     owned_rows = {o.card_id: o.quantity for o in db.query(OwnedCard).filter_by(user_id=user.id).all()}
+    lv = card_levels.levels_for(db, user.id)               # ses copies évoluées
     upcoming = {k for k in game_logic.EDITION_TIERS if game_logic.edition_status(db, k) == "upcoming"}
     out = []
     for c in all_cards:
@@ -509,7 +519,7 @@ def get_user_collection(pseudo: str, db: Session = Depends(get_db), x_admin_key:
             continue                                   # une édition pas encore commencée reste une surprise pour tout le monde
         if c.tier == Tier.saison and not qty and not reveal:
             continue                                   # un trophée de saison n'est visible que de ceux qui l'ont gagné
-        out.append({**(card_out(c) if (qty > 0 or reveal) else locked_out(c)), "quantity": qty})
+        out.append({**(with_level(card_out(c), lv.get(c.id, 0) if qty > 0 else 0) if (qty > 0 or reveal) else locked_out(c)), "quantity": qty})
     return out
 
 
@@ -518,12 +528,14 @@ def get_user_collection(pseudo: str, db: Session = Depends(get_db), x_admin_key:
 @app.get("/market/listings")
 def list_listings(db: Session = Depends(get_db)):
     listings = db.query(Listing).order_by(Listing.created_at.desc()).all()
+    lvls = {r.listing_id: r.level for r in db.query(card_levels.ListingLevel).all()}
     return [
         {
             "id": l.id,
             "seller_pseudo": l.seller.pseudo,
-            "card": card_out(l.card),
+            "card": with_level(card_out(l.card), lvls.get(l.id, 0)),
             "price": l.price,
+            "level": lvls.get(l.id, 0),                # niveau de la carte vendue (gardé par l'acheteur s'il n'a pas déjà mieux)
         }
         for l in listings
     ]
@@ -540,9 +552,13 @@ def create_listing(
         raise HTTPException(status_code=400, detail="Tu ne possèdes pas cette carte")
     if owned.card.tier == Tier.saison:
         raise HTTPException(status_code=400, detail="Un trophée de saison ne se vend pas : c'est un souvenir")
+    level = card_levels.copy_leaving(db, user.id, payload.card_id, owned.quantity, payload.evolved)     # la copie évoluée part-elle ?
     owned.quantity -= 1  # la carte est réservée tant que l'annonce est ouverte
     listing = Listing(seller_id=user.id, card_id=payload.card_id, price=payload.price)
     db.add(listing)
+    db.flush()
+    if level:
+        db.add(card_levels.ListingLevel(listing_id=listing.id, level=level))
     db.commit()
     missions.safe_record(db, user, "market_list")
     return {"id": listing.id}
@@ -563,13 +579,17 @@ def buy_listing(listing_id: str, user: User = Depends(get_current_user), db: Ses
     seller.credits += listing.price
     buyer_owned = game_logic.get_or_create_owned(db, user, listing.card)
     buyer_owned.quantity += 1
+    lrow = db.get(card_levels.ListingLevel, listing.id); level = lrow.level if lrow else 0
+    kept = card_levels.copy_arriving(db, user.id, listing.card_id, level)       # le niveau suit la carte (l'acheteur garde son meilleur niveau)
+    if lrow is not None:
+        db.delete(lrow)
     sold_card, sold_price, seller_id = listing.card, listing.price, listing.seller_id
     db.delete(listing)
     db.commit()
-    offers.record_trade(db, "annonce", seller, user, sold_card, sold_price)       # historique des échanges du marché
+    offers.record_trade(db, "annonce", seller, user, sold_card, sold_price, level)       # historique des échanges du marché
     push.safe(db, push.notify_listing_sold, seller_id, user.pseudo, sold_card, sold_price)     # prévient le vendeur
     missions.safe_record(db, user, "market_buy")
-    return {"status": "ok"}
+    return {"status": "ok", "level": level, "level_kept": bool(level) and kept}
 
 
 @app.delete("/market/listings/{listing_id}")
@@ -579,6 +599,10 @@ def cancel_listing(listing_id: str, user: User = Depends(get_current_user), db: 
         raise HTTPException(status_code=404, detail="Offre introuvable")
     owned = game_logic.get_or_create_owned(db, user, listing.card)
     owned.quantity += 1
+    lrow = db.get(card_levels.ListingLevel, listing.id)
+    if lrow is not None:                                     # l'annonce annulée rend la carte ET son niveau
+        card_levels.copy_arriving(db, user.id, listing.card_id, lrow.level)
+        db.delete(lrow)
     db.delete(listing)
     db.commit()
     return {"status": "ok"}
@@ -844,6 +868,8 @@ def purge_card_rows(db: Session, card_ids: list):
     auctions.cancel_for_cards(db, card_ids)        # enchères sur ces cartes : annulées, meilleur enchérisseur remboursé
     db.query(Listing).filter(Listing.card_id.in_(card_ids)).delete(synchronize_session=False)
     db.query(OwnedCard).filter(OwnedCard.card_id.in_(card_ids)).delete(synchronize_session=False)
+    card_levels.on_cards_deleted(db, card_ids)          # niveaux de ces cartes
+    card_levels.cleanup_orphans(db)                     # niveaux des annonces et enchères disparues
     db.query(TeamSlot).filter(TeamSlot.card_id.in_(card_ids)).delete(synchronize_session=False)      # ancien 1v1
     db.query(Team).filter(Team.fan_card_id.in_(card_ids)).update({"fan_card_id": None}, synchronize_session=False)
 
@@ -877,6 +903,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     first_steps.on_user_deleted(db, user.id)                                              # sa récompense des Premiers pas
     shop_cosmetics.on_user_deleted(db, user.id)                                           # ses cosmétiques achetés au shop
     motm.on_user_deleted(db, user.id)                                                     # ses bulletins des votes encore ouverts
+    card_levels.on_user_deleted(db, user.id)                                              # ses cartes évoluées
     db.query(CardUsage).filter_by(user_id=user.id).delete()                               # ses cartes alignées (tournoi, défi du club), comme ses matchs 1v1
     db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
     db.query(Listing).filter_by(seller_id=user.id).delete()

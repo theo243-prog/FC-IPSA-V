@@ -200,7 +200,9 @@ def _prepare(db, user, spec):
                                                                     spec.get("fan_card_id"), spec.get("equipment_card_ids"), spec.get("mascot_card_id"))
     except duel_engine.DuelError:
         return None
-    side = {"pseudo": user.pseudo, "formation": spec["formation"], "tactic": spec["tactic"], "members": duel_engine.build_members(cards, cap.id if cap else None)}
+    from . import card_levels
+    side = {"pseudo": user.pseudo, "formation": spec["formation"], "tactic": spec["tactic"],
+            "members": duel_engine.build_members(cards, cap.id if cap else None, card_levels.levels_for(db, user.id))}      # niveaux au moment du match
     return side, fan, equip, mascot
 
 

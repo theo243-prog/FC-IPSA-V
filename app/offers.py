@@ -53,11 +53,15 @@ class Trade(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
-def record_trade(db: Session, kind: str, seller: User, buyer: User, card: Card, price: int) -> None:
-    """Note un échange dans l'historique du marché. Ne fait JAMAIS échouer la vente elle-même."""
+def record_trade(db: Session, kind: str, seller: User, buyer: User, card: Card, price: int, level: int = 0) -> None:
+    """Note un échange dans l'historique du marché (avec le niveau de la carte vendue). Ne fait JAMAIS échouer la vente elle-même."""
     try:
-        db.add(Trade(kind=kind, seller_id=seller.id, buyer_id=buyer.id, seller_pseudo=seller.pseudo, buyer_pseudo=buyer.pseudo,
-                     card_id=card.id, card_tier=card.tier.value, price=price))
+        t = Trade(kind=kind, seller_id=seller.id, buyer_id=buyer.id, seller_pseudo=seller.pseudo, buyer_pseudo=buyer.pseudo,
+                  card_id=card.id, card_tier=card.tier.value, price=price)
+        db.add(t)
+        if level:
+            from .card_levels import TradeLevel
+            db.flush(); db.add(TradeLevel(trade_id=t.id, level=level))
         db.commit()
     except Exception:
         try:
@@ -178,16 +182,19 @@ def accept_offer(offer_id: str, user: User = Depends(get_current_user), db: Sess
         db.commit()
         raise HTTPException(status_code=404, detail="Cette offre n'existe plus")
     price = o.price
+    from . import card_levels
+    level = card_levels.copy_leaving(db, user.id, card.id, mine.quantity, False)     # une copie normale si possible, sinon la dernière (évoluée)
     mine.quantity -= 1
     game_logic.get_or_create_owned(db, buyer, card).quantity += 1
+    card_levels.copy_arriving(db, buyer.id, card.id, level)
     user.credits += price                    # les crédits de l'offreur étaient déjà mis de côté
     db.delete(o)
     db.commit()
-    record_trade(db, "offre", user, buyer, card, price)
+    record_trade(db, "offre", user, buyer, card, price, level)
     push.safe(db, notify_sold, buyer.id, user.pseudo, card, price)
     missions.safe_record(db, buyer, "market_buy")
     missions.safe_record(db, user, "market_list")
-    return {"status": "ok", "credits_gained": price, "credits": user.credits, "buyer": buyer.pseudo}
+    return {"status": "ok", "credits_gained": price, "credits": user.credits, "buyer": buyer.pseudo, "level": level}
 
 
 @router.get("/market/history")
@@ -199,11 +206,13 @@ def market_history(limit: int = 100, viewer=Depends(optional_user), db: Session 
     rows = db.query(Trade).order_by(Trade.created_at.desc()).limit(limit).all()
     cards = {c.id: c for c in db.query(Card).filter(Card.id.in_({t.card_id for t in rows})).all()} if rows else {}
     mine = {o.card_id for o in db.query(OwnedCard).filter(OwnedCard.user_id == viewer.id, OwnedCard.quantity > 0).all()} if viewer is not None else set()
+    from .card_levels import TradeLevel
+    tl = {r.trade_id: r.level for r in db.query(TradeLevel).filter(TradeLevel.trade_id.in_([t.id for t in rows])).all()} if rows else {}
     out = []
     for t in rows:
         card = cards.get(t.card_id)
         involved = viewer is not None and viewer.id in (t.seller_id, t.buyer_id)
         shown = card is not None and (t.kind == "annonce" or involved or t.card_id in mine)
-        out.append({"id": t.id, "kind": t.kind, "created_at": t.created_at.isoformat(), "seller": t.seller_pseudo, "buyer": t.buyer_pseudo, "price": t.price,
+        out.append({"id": t.id, "kind": t.kind, "created_at": t.created_at.isoformat(), "seller": t.seller_pseudo, "buyer": t.buyer_pseudo, "price": t.price, "level": tl.get(t.id, 0),
                     "card": card_out(card) if shown else {"masked": True, "tier": t.card_tier, "deleted": card is None}})
     return out

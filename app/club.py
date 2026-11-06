@@ -32,7 +32,7 @@ from .models import Card, User, gen_id
 from .common import card_out, optional_user, require_admin
 from .schemas import TeamPayload
 from .security import get_current_user
-from . import battlepass, challenges, duel_engine, game_logic, profiles, tournament, weekly
+from . import battlepass, card_levels, challenges, duel_engine, game_logic, profiles, tournament, weekly
 
 router = APIRouter()
 
@@ -261,7 +261,7 @@ def play(level: str, payload: TeamPayload, user: User = Depends(get_current_user
     except duel_engine.DuelError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)
     mine = ({"pseudo": user.pseudo, "formation": payload.formation, "tactic": payload.tactic,
-             "members": duel_engine.build_members(cards, cap.id if cap else None)}, fan, equip, mascot)
+             "members": duel_engine.build_members(cards, cap.id if cap else None, card_levels.levels_for(db, user.id))}, fan, equip, mascot)      # (le club n'a pas de niveaux)
     row = team_of_day(db, level, day)
     res = tournament.simulate(mine, club_side(db, level, row))
     res["lineups"]["defender"]["club_bonus_pct"] = round(spec["bonus"] * 100)          # (affiché dans les compositions du récit)
