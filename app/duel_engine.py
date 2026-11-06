@@ -66,6 +66,7 @@ CAPTAIN_BONUS = 0.10
 TACTIC_BONUS = 0.06
 
 MATCH_PACK_DAILY_CAP = 5   # au plus 5 packs MATCH gagnés par jour et par joueur ; ensuite chaque match (gagné ou perdu) rapporte un pack classique
+DUEL_PACK_DAILY_CAP = 10   # au plus 10 packs gagnés en 1v1 par jour et par joueur (match + classiques, gagné, perdu ou nul) ; ensuite plus aucun pack jusqu'à minuit
 REFEREE_BONUS = 0.05     # bonus d'équipe (+5 %) donné par l'arbitre à celui qui a mis la plus grosse enveloppe
 STAKE_MIN, STAKE_MAX = 1, 10
 MAX_OPEN_PROPOSALS = 3
@@ -583,16 +584,32 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
         challenger.credits += stake
         creator.credits += stake
         classic_to = [challenger, creator]                    # les deux joueurs
+    from . import missions
     capped = None                                             # le gagnant qui a déjà gagné ses 5 packs match du jour
+    no_pack = []                                              # ceux qui ont déjà gagné leurs 10 packs 1v1 du jour : plus aucun pack
+    classic_won = []
+
+    def take_pack(player) -> bool:
+        """Le joueur peut-il encore gagner un pack en 1v1 aujourd'hui (10 au plus, tous types confondus) ? Si oui, il est compté."""
+        if missions.daily_count(db, player, "duel_packs") >= DUEL_PACK_DAILY_CAP:
+            no_pack.append(player)
+            return False
+        missions.daily_add(db, player, "duel_packs")
+        return True
+
     if pack_winner is not None:
-        from . import missions
-        if missions.daily_count(db, pack_winner, "match_packs") < MATCH_PACK_DAILY_CAP:
+        if not take_pack(pack_winner):
+            pack_winner = None
+        elif missions.daily_count(db, pack_winner, "match_packs") < MATCH_PACK_DAILY_CAP:
             pack_winner.pack_state.match_pack_tokens += 1     # le gagnant : un pack match
             missions.daily_add(db, pack_winner, "match_packs")
-        else:                                                 # limite du jour atteinte : un pack classique à la place (comme un perdant)
-            capped = pack_winner; classic_to.append(pack_winner); pack_winner = None
-    for player in classic_to:
-        player.pack_state.shop_pack_tokens += 1               # perdant ou nul : un pack classique (aucune limite par jour)
+        else:                                                 # 5 packs match déjà gagnés : un pack classique à la place (comme un perdant)
+            capped = pack_winner; classic_won.append(pack_winner); pack_winner = None
+    for player in classic_to:                                 # perdant ou nul : un pack classique (dans la limite des 10 packs 1v1 du jour)
+        if take_pack(player):
+            classic_won.append(player)
+    for player in classic_won:
+        player.pack_state.shop_pack_tokens += 1
     referee = {"challenger": referee_bid, "defender": bid_d, "winner": ref_winner, "bonus_pct": round(REFEREE_BONUS * 100) if ref_winner else 0}
     lineups = {"challenger": _lineup_snapshot(side_c, fan_c, equip_c, mascot_c, ref_c), "defender": _lineup_snapshot(side_d, fan_d, equip_d, mascot_d, ref_d),
                "referee": referee}                                      # (enregistré avec la composition : visible dans le récap APRÈS le match)
@@ -618,11 +635,13 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
         "credits_delta": {"victoire": stake, "défaite": -stake, "nul": 0}[outcome],
         "elo_challenger_before": elo_c_before, "elo_challenger_after": challenger.elo,
         "elo_defender_before": elo_d_before, "elo_defender_after": creator.elo,
-        "pack_match_won": outcome == "victoire" and capped is not challenger,       # le challenger gagne un pack match (sauf limite du jour atteinte)
+        "pack_match_won": pack_winner is challenger,                   # le challenger gagne un pack match (sauf limites du jour atteintes)
         "pack_match_capped_to": capped.pseudo if capped else None,     # le gagnant qui a atteint sa limite de 5 packs match du jour (il reçoit un pack classique)
-        "pack_classique_won": challenger in classic_to,                # le challenger a perdu ou fait match nul : pack classique
+        "pack_classique_won": challenger in classic_won,               # le challenger reçoit un pack classique (perdu, nul, ou 5 packs match déjà gagnés)
         "pack_match_to": pack_winner.pseudo if pack_winner else None,
-        "pack_classique_to": [p.pseudo for p in classic_to],
+        "pack_classique_to": [p.pseudo for p in classic_won],
+        "pack_none_to": [p.pseudo for p in no_pack],                   # 10 packs 1v1 déjà gagnés aujourd'hui : aucun pack pour ce match
+        "duel_pack_cap": DUEL_PACK_DAILY_CAP,
         "tactics": {"challenger": tactic, "defender": proposal.tactic,
                     "advantage": {"a": "challenger", "b": "defender"}.get(winner_tactic)},
         "referee": referee,
