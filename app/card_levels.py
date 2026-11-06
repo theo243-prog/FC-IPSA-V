@@ -5,7 +5,8 @@ Niveaux de cartes : un joueur fait monter UNE copie d'une de ses cartes de 5 niv
   Pas les gold, secrètes, épiques, légendaires, spéciales (leur note dépend déjà des résultats) ni les trophées, fans, mascottes,
   équipements, stades et moments.
 - POUR ACHETER LE NIVEAU n : il faut AU MOMENT DE L'ACHAT au moins DUPES_REQUIRED[groupe][n-1] doublons de la carte (exemplaires au-delà
-  du premier ; une copie mise en vente n'est plus dans la collection, donc ne compte pas). Les doublons ne sont JAMAIS détruits.
+  du premier ; une copie mise en vente n'est plus dans la collection, donc ne compte pas). Ces doublons sont CONSOMMÉS : le joueur choisit
+  entre faire évoluer ses cartes et garder ses doublons (revente, fusion des secrètes). La copie évoluée, elle, reste.
   On paie COSTS[groupe][n-1] crédits. Au plus DAILY_UPGRADES améliorations par joueur et par jour (jour de Paris).
 - EN MATCH : note de base + niveau, puis malus hors poste et bonus de capitaine (duel_engine.build_members).
 - LE NIVEAU SUIT LA CARTE : un joueur a au plus une copie évoluée par carte (table card_levels). Quand cette copie est vendue (annonce,
@@ -30,7 +31,7 @@ router = APIRouter()
 # ------------------------------------------------------------------ constantes réglables ----
 MAX_LEVEL = 5
 DAILY_UPGRADES = 2                       # améliorations par joueur et par jour (jour de Paris)
-DUPES_REQUIRED = {                       # doublons à posséder au moment d'acheter le niveau 1, 2, 3, 4, 5 (jamais détruits)
+DUPES_REQUIRED = {                       # doublons consommés pour acheter le niveau 1, 2, 3, 4, 5
     "commune": [5, 10, 20, 50, 100],
     "rare": [1, 3, 5, 12, 25],
     "edition": [1, 3, 5, 8, 10],
@@ -222,7 +223,7 @@ def card_level_info(card_id: str, user: User = Depends(get_current_user), db: Se
 
 @router.post("/cards/{card_id}/evolve")
 def evolve(card_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Fait monter d'un niveau la copie évoluée d'une carte : crédits payés, doublons seulement vérifiés (jamais détruits)."""
+    """Fait monter d'un niveau la copie évoluée d'une carte : crédits ET doublons payés (la copie évoluée reste)."""
     card = db.get(Card, card_id)
     if card is None:
         raise HTTPException(status_code=404, detail="Cette carte n'existe pas")
@@ -232,10 +233,12 @@ def evolve(card_id: str, user: User = Depends(get_current_user), db: Session = D
         raise HTTPException(status_code=400, detail=i["reason"] or "Évolution impossible")
     from . import missions
     user.credits -= i["cost"]
+    owned = db.query(OwnedCard).filter_by(user_id=user.id, card_id=card.id).first()
+    owned.quantity -= i["dupes_needed"]                                   # les doublons demandés sont consommés (il reste toujours la copie évoluée)
     set_level(db, user.id, card.id, i["next_level"])
     missions.daily_add(db, user, DAILY_KEY)
     db.commit()
-    return {"status": "ok", "level": i["next_level"], "note": i["next_note"], "cost": i["cost"], "credits": user.credits, **{"info": info(db, user, card)}}
+    return {"status": "ok", "level": i["next_level"], "note": i["next_note"], "cost": i["cost"], "dupes_used": i["dupes_needed"], "credits": user.credits, **{"info": info(db, user, card)}}
 
 
 class AdminSetLevel(BaseModel):

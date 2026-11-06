@@ -128,6 +128,15 @@
   table.prono-rank th{position:sticky;top:0;background:var(--bg-elevated);text-align:left;font-size:11px;color:var(--text-muted);font-weight:700;padding:5px 6px;border-bottom:1px solid var(--border);}
   table.prono-rank td{padding:6px;border-bottom:1px solid var(--border);} table.prono-rank .num{text-align:center;font-weight:700;} table.prono-rank tr.me{background:var(--bg-sunk);}
   table.prono-rank .pseudo-link{background:none;border:none;padding:0;font:inherit;color:var(--text);cursor:pointer;text-decoration:underline;text-decoration-color:var(--border);} table.prono-rank .pseudo-link:hover{color:var(--accent);}
+  /* ---- Encadré « Notifications » en haut du site ---- */
+  .inbox-btn{position:relative;} .inbox-btn .tab-dot{position:absolute;top:2px;right:2px;margin:0;}
+  .notice-box{margin:10px 0 4px;border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:12px;background:var(--bg-elevated);padding:10px 12px;box-shadow:var(--shadow);}
+  .notice-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;} .notice-head b{font-size:14px;}
+  .notice-head .acts{display:flex;gap:6px;}
+  .notice-item{display:block;width:100%;text-align:left;font:inherit;color:var(--text);background:none;border:none;border-top:1px solid var(--border);padding:7px 2px;cursor:pointer;font-size:13px;line-height:1.35;}
+  .notice-item:first-of-type{border-top:none;} .notice-item:hover{background:var(--bg-sunk);}
+  .notice-item.new b::before{content:"● ";color:#E5484D;} .notice-item small{display:block;color:var(--text-muted);font-size:11px;margin-top:1px;}
+  .notice-empty{font-size:13px;color:var(--text-muted);padding:4px 0;}
   /* ---- Forme des cartes en 1v1 (barre de fatigue) ---- */
   .form-bar{position:absolute;left:8%;right:8%;bottom:3px;height:4px;border-radius:3px;background:rgba(0,0,0,.35);z-index:4;overflow:hidden;pointer-events:none;}
   .form-bar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#E5484D,#F5A524 50%,#30A46C);background-size:200% 100%;}
@@ -996,6 +1005,7 @@
         <span class="stat-pill"><span class="lab">Packs</span> <span id="chipPacks">0/3</span></span>
         <span class="stat-pill" id="chipPseudo">…</span>
         <button class="sound-btn" id="soundBtn" type="button" aria-pressed="true" aria-label="Couper le son" title="Couper le son">🔊</button>
+        <button class="sound-btn inbox-btn" id="inboxBtn" type="button" aria-label="Mes notifications" title="Mes notifications">📬<span class="tab-dot" id="inboxDot" hidden></span></button>
         <button class="sound-btn" id="notifBtn" type="button" aria-label="Notifications" title="Notifications">🔕</button>
         <button class="logout-btn" id="logoutBtn">déconnexion</button>
       </div>
@@ -1005,6 +1015,7 @@
 
   <div class="wrap">
   <div class="events-bar" id="eventsBar" hidden></div>
+  <section class="notice-box" id="noticeBox" hidden aria-live="polite"></section>
   <nav class="tabs">
     <button class="tab active" data-tab="pack">Packs<span class="tab-dot" id="packsDot" hidden></span></button>
     <button class="tab" data-tab="collection">Collection</button>
@@ -1769,7 +1780,7 @@
       document.getElementById('userCollectionModal').style.display = 'flex';
     } catch(e) { toast(e.message); }
   }
-  // Niveaux de cartes : la fiche d'une de mes cartes montre son niveau, les paliers (doublons requis, jamais détruits ; crédits) et le bouton « Évoluer »
+  // Niveaux de cartes : la fiche d'une de mes cartes montre son niveau, les paliers (doublons et crédits utilisés) et le bouton « Évoluer »
   async function loadLevelBox(body, card){
     let i; try { i = await api('/cards/' + encodeURIComponent(card.id) + '/level'); } catch(e) { return; }
     if (!body.isConnected) return;
@@ -1777,16 +1788,16 @@
     if (!i.eligible) { box.innerHTML = '<h4>⬆️ Niveau de la carte</h4><p class="lvl-why" style="margin:0;">' + escapeHtml(i.reason) + '</p>'; body.appendChild(box); return; }
     const pips = '★'.repeat(i.level) + '☆'.repeat(i.max_level - i.level);
     let h = '<h4>⬆️ Niveau ' + i.level + ' / ' + i.max_level + ' <span class="lvl-pips">' + pips + '</span></h4>' +
-      '<div>Note en match : <b>' + i.note + '</b>' + (i.level ? ' (' + i.base_note + ' + ' + i.level + ')' : '') + '. Chaque niveau ajoute +1. Tu as <b>' + i.dupes + ' doublon' + (i.dupes > 1 ? 's' : '') + '</b> de cette carte (ils ne sont jamais détruits).</div>' +
-      '<table><tr><th>Niveau</th><th>Doublons requis</th><th>Crédits</th></tr>' + i.steps.map(st => '<tr class="' + (st.level === i.level + 1 ? 'cur' : '') + '"><td>' + (st.level <= i.level ? '✅ ' : '') + st.level + '</td><td>' + st.dupes + '</td><td>' + st.cost + '</td></tr>').join('') + '</table>';
-    if (i.next_level) h += '<div>Niveau ' + i.next_level + ' : <b>' + i.dupes + ' doublon' + (i.dupes > 1 ? 's' : '') + ' sur ' + i.dupes_needed + '</b> requis · <b>' + i.cost + ' crédits</b> · note ' + i.note + ' → ' + i.next_note + '</div>';
+      '<div>Note en match : <b>' + i.note + '</b>' + (i.level ? ' (' + i.base_note + ' + ' + i.level + ')' : '') + '. Chaque niveau ajoute +1. Tu as <b>' + i.dupes + ' doublon' + (i.dupes > 1 ? 's' : '') + '</b> de cette carte : chaque niveau en consomme (ta carte évoluée, elle, reste).</div>' +
+      '<table><tr><th>Niveau</th><th>Doublons utilisés</th><th>Crédits</th></tr>' + i.steps.map(st => '<tr class="' + (st.level === i.level + 1 ? 'cur' : '') + '"><td>' + (st.level <= i.level ? '✅ ' : '') + st.level + '</td><td>' + st.dupes + '</td><td>' + st.cost + '</td></tr>').join('') + '</table>';
+    if (i.next_level) h += '<div>Niveau ' + i.next_level + ' : <b>' + i.dupes + ' doublon' + (i.dupes > 1 ? 's' : '') + ' sur ' + i.dupes_needed + '</b> nécessaires (ils seront utilisés) · <b>' + i.cost + ' crédits</b> · note ' + i.note + ' → ' + i.next_note + '</div>';
     h += '<div style="margin-top:8px;"><button class="btn-primary" type="button" id="lvlGo"' + (i.can ? '' : ' disabled') + '>' + (i.next_level ? '⬆️ Évoluer au niveau ' + i.next_level : 'Niveau maximal') + '</button></div>';
     if (i.reason) h += '<p class="lvl-why">' + escapeHtml(i.reason) + '</p>';
     h += '<p class="lvl-why">' + i.daily_left + ' évolution' + (i.daily_left > 1 ? 's' : '') + ' encore possible' + (i.daily_left > 1 ? 's' : '') + ' aujourd\'hui. Le niveau suit la carte si tu la vends.</p>';
     box.innerHTML = h; body.appendChild(box);
     const go = box.querySelector('#lvlGo');
     if (go && i.can) go.addEventListener('click', async () => {
-      if (!(await confirmDialog('Faire évoluer ' + escapeHtml(card.player_name) + ' ?', '<p style="margin:0;">Niveau ' + i.next_level + ' pour <b>' + i.cost + ' crédits</b> : note ' + i.note + ' → <b>' + i.next_note + '</b>. Tes ' + i.dupes + ' doublons sont seulement vérifiés : tu les gardes.</p>', 'Évoluer'))) return;
+      if (!(await confirmDialog('Faire évoluer ' + escapeHtml(card.player_name) + ' ?', '<p style="margin:0;">Niveau ' + i.next_level + ' pour <b>' + i.cost + ' crédits</b> et <b>' + i.dupes_needed + ' doublon' + (i.dupes_needed > 1 ? 's' : '') + '</b> (il t\'en restera ' + (i.dupes - i.dupes_needed) + ') : note ' + i.note + ' → <b>' + i.next_note + '</b>. Les doublons utilisés ne pourront plus être vendus ni servir aux cartes secrètes.</p>', 'Évoluer'))) return;
       go.disabled = true;
       try {
         const r = await api('/cards/' + encodeURIComponent(card.id) + '/evolve', { method: 'POST' });
@@ -2111,7 +2122,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.06.7';
+  const SITE_VERSION = '2026.11.06.8';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2446,6 +2457,46 @@
       root.querySelectorAll('.pseudo-link').forEach(b => b.addEventListener('click', () => openProfile(b.dataset.pseudo)));
     } catch(e) { root.innerHTML = '<div class="empty-state">Pronostics indisponibles pour le moment.</div>'; }
   }
+
+  // ---------- Encadré « Notifications » : ce qui me concerne (défi relevé, carte vendue, enchère dépassée…) ----------
+  // Les nouvelles notifications s'affichent en haut du site ; le bouton 📬 de l'en-tête ouvre l'historique (les 30 dernières).
+  var noticeData = null, noticeHistory = false, noticeSeen = null;      // (var : lus par refreshMe, qui peut tourner avant cette ligne)
+  var NOTICE_TABS = { '#marche': 'marche', '#duels': 'duels', '#actualite': 'actualite', '#tournoi': 'tournoi', '#pack': 'pack', '#collection': 'collection', '#chat': 'chat' };
+  function agoText(iso){
+    const min = Math.max(0, Math.round((Date.now() - new Date(iso + 'Z').getTime()) / 60000));
+    if (min < 1) return 'à l\'instant'; if (min < 60) return 'il y a ' + min + ' min';
+    const h = Math.round(min / 60); if (h < 24) return 'il y a ' + h + ' h';
+    return new Date(iso + 'Z').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+  }
+  async function loadNotices(){
+    if (!token) return;
+    try { noticeData = await api('/notifications?limit=30'); } catch(e) { return; }
+    noticeSeen = noticeData.unread; renderNotices();
+  }
+  function renderNotices(){
+    const box = byId('noticeBox'), d = noticeData; if (!box || !d) return;
+    const dot = byId('inboxDot'); if (dot) dot.hidden = !d.unread;
+    const list = noticeHistory ? d.items : d.items.filter(n => !n.read).slice(0, 5);
+    if (!list.length && !noticeHistory) { box.hidden = true; return; }
+    box.hidden = false;
+    box.innerHTML = '<div class="notice-head"><b>🔔 ' + (noticeHistory ? 'Mes notifications' : d.unread + ' nouvelle' + (d.unread > 1 ? 's' : '') + ' notification' + (d.unread > 1 ? 's' : '')) + '</b><span class="acts">' +
+      (d.unread ? '<button class="btn-small ghost" type="button" id="noticeReadAll">Tout marquer comme lu</button>' : '') +
+      '<button class="btn-small ghost" type="button" id="noticeToggle">' + (noticeHistory ? 'Fermer' : 'Historique') + '</button></span></div>' +
+      (list.length ? list.map(n => '<button type="button" class="notice-item' + (n.read ? '' : ' new') + '" data-id="' + n.id + '" data-url="' + escapeHtml(n.url || '') + '"><b>' + escapeHtml(n.title) + '</b> ' + escapeHtml(n.body) + '<small>' + agoText(n.at) + '</small></button>').join('')
+                   : '<div class="notice-empty">Aucune notification pour l\'instant : défis relevés, ventes, enchères et échanges apparaîtront ici.</div>');
+    box.querySelectorAll('.notice-item').forEach(b => b.addEventListener('click', async () => {
+      const tab = NOTICE_TABS[(b.dataset.url || '').replace(/^\//, '')]; if (tab) openTab(tab);          // « /#marche » → onglet Marché
+      try { const r = await api('/notifications/read', { method: 'POST', body: JSON.stringify({ ids: [parseInt(b.dataset.id, 10)] }) }); d.unread = r.unread; } catch(e) { /* rien */ }
+      d.items.forEach(n => { if (n.id === parseInt(b.dataset.id, 10)) n.read = true; }); noticeSeen = d.unread; renderNotices();
+    }));
+    const all = byId('noticeReadAll'); if (all) all.addEventListener('click', async () => {
+      try { await api('/notifications/read', { method: 'POST', body: JSON.stringify({ ids: [] }) }); } catch(e) { toast(e.message); return; }
+      d.items.forEach(n => { n.read = true; }); d.unread = 0; noticeSeen = 0; renderNotices();
+    });
+    byId('noticeToggle').addEventListener('click', () => { noticeHistory = !noticeHistory; renderNotices(); });
+  }
+  document.getElementById('inboxBtn').addEventListener('click', async () => { noticeHistory = !noticeHistory || byId('noticeBox').hidden; await loadNotices(); if (noticeHistory) byId('noticeBox').scrollIntoView({ block: 'nearest' }); });
+  setInterval(() => { if (token && !document.hidden) loadNotices(); }, 60000);
 
   // ---------- Homme du match : vote 24 h après un match officiel ----------
   // Pendant le vote, l'API ne donne ni classement ni point : seulement les présents, le nombre de votants, l'échéance et mon bulletin.
@@ -2842,6 +2893,7 @@
       if (meInfo.welcome) showWelcome(meInfo.welcome);        // compte tout neuf : pop-up de bienvenue
       updateChatDot();                                         // point rouge de l'onglet Chat
       updateTournamentDot();                                   // point rouge de l'onglet Tournoi (un match à composer)
+      if (meInfo.notices_unread !== noticeSeen) loadNotices();  // encadré « Notifications » : du nouveau
       updateNewsDot();                                         // point rouge de l'onglet Actualité (un vote « homme du match » à faire)
       document.getElementById('chipCredits').textContent = meInfo.credits;
       const bonusTotal = Object.values(meInfo.pack_tokens || {}).reduce((a, b) => a + b, 0);
@@ -3235,7 +3287,7 @@
         '<h3>Partager une carte</h3><p>Sur la fiche d\'une carte que tu possèdes, le bouton « 📤 Partager cette carte » crée une <b>image</b> (format post Instagram) avec ton pseudo. Sur téléphone, tu peux l\'envoyer directement à une appli ; sinon, télécharge-la.</p>' +
         '<h3>Les raretés, de la plus commune à la plus rare</h3><ul>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.commune + '"></span><b>Commune</b> et <span class="help-tier" style="background:' + TIER_COLORS.rare + '"></span><b>Rare</b> : les cartes de base de chaque joueur.</li>' +
-        '<li><span class="help-tier" style="background:' + TIER_COLORS.halloween + '"></span><b>Édition limitée</b> (Halloween, Noël…) : quelques cartes par thème, <b>disponibles dans les packs seulement pendant leurs dates</b>. Ensuite elles restent à ceux qui les ont, et ne s\'obtiennent plus qu\'en échange. Note 85 (comme une rare), ou +11 % pour un fan.</li>' +
+        '<li><span class="help-tier" style="background:' + TIER_COLORS.halloween + '"></span><b>Édition limitée</b> (Halloween, Noël…) : quelques cartes par thème, <b>disponibles dans les packs seulement pendant leurs dates</b>. Ensuite elles restent à ceux qui les ont, et ne s\'obtiennent plus qu\'en échange. Note 85 (comme une rare), ou +8 % pour un fan.</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.gold + '"></span><b>Gold</b> : un moment mémorable d\'un vrai match (petit pont, sauvetage…). Il y en a beaucoup (une dizaine par match) : environ 8 % des cartes d\'un pack classique, 10 % d\'un pack match.</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.secrete + '"></span><b>Secrète</b> : une par joueur, fan et mascotte. Elle ne sort jamais d\'un pack (voir plus bas).</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.speciale + '"></span><b>Spéciale</b> : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine. Elle ne sort que des packs match.</li>' +
@@ -3245,9 +3297,9 @@
         '<li><b>Débloquer une carte secrète</b> : la carte secrète d\'un joueur affiche une jauge. Chaque doublon <b>commune</b> de ce joueur vaut <b>1 point</b>, chaque doublon <b>rare</b> vaut <b>' + r.secret_fusion.rare_value + ' points</b>. À <b>' + r.secret_fusion.cost + ' points</b>, le bouton « Débloquer » apparaît : les doublons nécessaires sont consommés (tu gardes toujours ton premier exemplaire de chaque carte).</li></ul>' +
         '<h3>Faire évoluer une carte ⬆️</h3><ul>' +
         '<li>Les cartes de joueurs <b>communes</b>, <b>rares</b> et <b>éditions limitées</b> montent jusqu\'au <b>niveau 5</b>. Chaque niveau ajoute <b>+1</b> à la note de la carte en match (avant le malus hors poste et le bonus de capitaine). Les gold, secrètes, épiques, légendaires, spéciales, trophées, fans, mascottes et équipements n\'évoluent pas.</li>' +
-        '<li>Pour acheter un niveau, il faut <b>posséder</b> assez de <b>doublons</b> de cette carte : ils sont seulement vérifiés, <b>jamais détruits</b> (tu peux toujours les vendre ou les fusionner). Commune : 5, 10, 20, 50, 100 doublons ; rare : 1, 3, 5, 12, 25 ; édition limitée : 1, 3, 5, 8, 10.</li>' +
+        '<li>Un niveau se paie en <b>crédits</b> et en <b>doublons</b> de cette carte, qui sont <b>utilisés</b> : à toi de choisir entre faire évoluer tes cartes ou garder tes doublons pour les vendre ou débloquer les cartes secrètes. Doublons utilisés pour les niveaux 1 à 5 : commune 5, 10, 20, 50, 100 ; rare 1, 3, 5, 12, 25 ; édition limitée 1, 3, 5, 8, 10. Ta carte évoluée, elle, reste.</li>' +
         '<li>Coût en crédits des niveaux 1 à 5 : commune 30, 60, 120, 200, 320 ; rare 45, 90, 180, 300, 480 ; édition limitée 60, 120, 240, 400, 640. <b>2 évolutions par jour</b> au maximum.</li>' +
-        '<li>Tout se fait dans la <b>fiche de la carte</b> (touche-la dans ta collection) : niveau, doublons (« 7 sur 10 requis »), coût et bouton « Évoluer ». Un badge « Niv. N » s\'affiche sur la carte.</li>' +
+        '<li>Tout se fait dans la <b>fiche de la carte</b> (touche-la dans ta collection) : niveau, doublons (« 7 sur 10 nécessaires »), coût et bouton « Évoluer ». Un badge « Niv. N » s\'affiche sur la carte.</li>' +
         '<li>Tu n\'as qu\'<b>une copie évoluée</b> par carte. <b>Le niveau suit la carte</b> : si tu la vends (annonce, enchère, offre d\'achat), l\'acheteur la reçoit avec son niveau, et tes autres copies repassent au niveau 0. Les échanges et la vente des doublons ne touchent jamais ta copie évoluée.</li></ul>' +
         '<h3>Les autres types de cartes</h3><ul><li><b>Fans</b>, <b>Le Loup</b> (la mascotte) et <b>équipements</b> : pas de note, ils donnent un bonus d\'équipe en 1v1.</li><li><b>Stades</b> et <b>moments gold</b> : des cartes de collection.</li></ul>';
     } },

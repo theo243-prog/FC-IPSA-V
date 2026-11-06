@@ -58,17 +58,23 @@ for t, g in (("commune", "commune"), ("rare", "rare"), ("halloween", "edition"))
 ok(good, "pour chaque rareté et chaque niveau : exactement le nombre de doublons demandé, le bon coût")
 give("ana", LC, 6); cr0 = U("ana").credits
 r = c.post("/cards/%s/evolve" % LC.id, headers=H["ana"])
-ok(r.status_code == 200 and r.json()["level"] == 1 and U("ana").credits == cr0 - 30 and qty("ana", LC) == 6, "niveau 1 d'une commune : 30 crédits débités, les 5 doublons ne sont PAS détruits (toujours 6 exemplaires)")
+ok(r.status_code == 200 and r.json()["level"] == 1 and r.json()["dupes_used"] == 5 and U("ana").credits == cr0 - 30 and qty("ana", LC) == 1, "niveau 1 d'une commune : 30 crédits ET 5 doublons utilisés (il reste la copie évoluée)")
 i = c.get("/cards/%s/level" % LC.id, headers=H["ana"]).json()
-ok(i["level"] == 1 and i["next_level"] == 2 and i["dupes"] == 5 and i["dupes_needed"] == 10 and "tu en as 5" in i["reason"], "niveau 2 : « il te faut 10 doublons… tu en as 5 »")
+ok(i["level"] == 1 and i["next_level"] == 2 and i["dupes"] == 0 and i["dupes_needed"] == 10 and "tu en as 0" in i["reason"], "niveau 2 : « il te faut 10 doublons… tu en as 0 »")
+give("ana", LC, 12); r = c.post("/cards/%s/evolve" % LC.id, headers=H["ana"])
 give("dan", LR, 2); U("dan").credits = 10; db.commit()
 ok(c.post("/cards/%s/evolve" % LR.id, headers=H["dan"]).status_code == 400 and "crédits" in c.get("/cards/%s/level" % LR.id, headers=H["dan"]).json()["reason"], "pas assez de crédits : refusé")
 
+ok(r.status_code == 200 and lvl("ana", LC) == 2 and qty("ana", LC) == 2, "niveau 2 avec 11 doublons : 10 utilisés, il reste 1 doublon et la copie évoluée")
 print("3) LIMITE DE 2 PAR JOUR, NIVEAU 5 MAXIMUM")
 give("ana", LR, 30); give("ana", LH, 30)
-ok(c.post("/cards/%s/evolve" % LR.id, headers=H["ana"]).status_code == 200, "2e amélioration du jour : acceptée")
+GL.today_paris = lambda: real_today() + timedelta(days=10)
+ok(c.post("/cards/%s/evolve" % LR.id, headers=H["ana"]).status_code == 200 and c.post("/cards/%s/evolve" % LR.id, headers=H["ana"]).status_code == 200, "un autre jour : 2 améliorations acceptées")
+GL.today_paris = real_today
+GL.today_paris = lambda: real_today() + timedelta(days=10)
 r = c.post("/cards/%s/evolve" % LH.id, headers=H["ana"]); ok(r.status_code == 400 and "aujourd'hui" in r.json()["detail"], "3e amélioration du jour : refusée")
-GL.today_paris = lambda: real_today() + timedelta(days=1)
+GL.today_paris = real_today
+GL.today_paris = lambda: real_today() + timedelta(days=11)
 ok(c.post("/cards/%s/evolve" % LH.id, headers=H["ana"]).status_code == 200, "le lendemain : de nouveau possible")
 GL.today_paris = real_today
 CL.set_level(db, U("ana").id, LH.id, 5); db.commit()
