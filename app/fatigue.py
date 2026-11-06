@@ -1,7 +1,8 @@
 """
-Forme des cartes en 1v1 : chaque carte de joueur alignée dans un match 1v1 perd FORM_LOSS_PER_MATCH (1 %) de forme ; elle repart à
-100 % chaque jour à minuit (heure de Paris). La forme multiplie la note de la carte en 1v1 (note + niveau, puis forme, puis malus hors
-poste et capitaine). But : faire tourner les cartes utilisées, y compris le gardien.
+Forme des cartes en 1v1 : chaque carte utilisée dans un match 1v1 (les 5 joueurs, le Fan, le Loup et l'équipement) perd
+FORM_LOSS_PER_MATCH (1 %) de forme ; elle repart à 100 % chaque jour à minuit (heure de Paris). La forme multiplie la note d'un joueur
+(note + niveau, puis forme, puis malus hors poste et capitaine) et le bonus d'un Fan, d'un Loup ou d'un équipement.
+But : faire tourner les cartes utilisées, y compris le gardien et les bonus.
 
 - Compté par joueur du site et par carte (deux joueurs différents ont chacun leur forme pour la même carte).
 - Seul le 1v1 compte et fatigue : le tournoi et le défi du club jouent toujours à 100 % (et ne fatiguent pas).

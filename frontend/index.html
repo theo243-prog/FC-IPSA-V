@@ -1548,7 +1548,7 @@
   }
 
   // bonus d'équipe (en %) apporté par une carte Fan en match 1v1, selon sa rareté
-  const FAN_BONUS_PCT = { commune: 5, rare: 10, halloween: 11, noel: 11, epique: 12, secrete: 13, saison: 14, legendaire: 15 };
+  const FAN_BONUS_PCT = { commune: 5, rare: 10, halloween: 8, noel: 8, epique: 12, secrete: 13, saison: 14, legendaire: 15 };
   const ED_SLOTS = Array.from({ length: 12 }, (_, i) => 'ed' + (i + 1));          // 12 emplacements d'éditions libres, créés depuis l'administration
   // Une édition libre reçoit automatiquement un style à 2 couleurs. Pour lui donner un habillage dessiné à la main (comme les toiles d'Halloween
   // ou les flocons de Noël), on écrit son CSS dans cette page et on ajoute ici sa clé (ex. 'ed3') : le style automatique s'efface alors pour elle.
@@ -1588,8 +1588,7 @@
       statsRow = '<div class="card-stats" title="Bonus d\'équipe en match 1v1"><span>🎉 +' + (FAN_BONUS_PCT[card.tier] || 0) + ' %</span>' + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
       posteLabel = '🎉';
     } else {
-      statsRow = (card.form != null && card.form < 100 ? '<div class="form-bar" title="Forme en 1v1 : ' + card.form + ' % (remise à 100 % à minuit)"><i style="width:' + card.form + '%;background-position:' + (100 - card.form) + '% 0;"></i></div>' : '') +
-        '<div class="card-stats"><span>⭐ ' + (card.display_note ? card.display_note.value : '') + '</span>' + (card.level ? '<span class="lvl-chip" title="Carte évoluée : +' + card.level + ' de note">Niv. ' + card.level + '</span>' : '') + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
+      statsRow = '<div class="card-stats"><span>⭐ ' + (card.display_note ? card.display_note.value : '') + '</span>' + (card.level ? '<span class="lvl-chip" title="Carte évoluée : +' + card.level + ' de note">Niv. ' + card.level + '</span>' : '') + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
       posteLabel = escapeHtml(card.poste);
     }
     const bgPhoto = usesBgPhoto(card) ? '<img class="card-bgphoto" src="' + escapeHtml(card.player_photo_url) + '" alt=""><span class="card-scrim" aria-hidden="true"></span>' : '';
@@ -1598,7 +1597,8 @@
     else if (bgPhoto) midHTML = '';
     else if (kind === 'equipement' || kind === 'stade' || kind === 'moment') midHTML = itemMedalHTML(card);
     else midHTML = '<span class="ball-fallback">⚽</span>';
-    return (kind === 'trophee' ? '' : editionDecor(card.tier)) + bgPhoto + '<div class="card-top"><span class="card-tier-label">'+(kind === 'trophee' && trophyParts(card).rank >= 4 ? (trophyParts(card).rank === 6 ? 'Pass' : 'Tournoi') : tierLabel(card.tier))+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
+    const formBar = card.form != null && card.form < 100 ? '<div class="form-bar" title="Forme en 1v1 : ' + card.form + ' % (remise à 100 % à minuit)"><i style="width:' + card.form + '%;background-position:' + (100 - card.form) + '% 0;"></i></div>' : '';
+    return formBar + (kind === 'trophee' ? '' : editionDecor(card.tier)) + bgPhoto + '<div class="card-top"><span class="card-tier-label">'+(kind === 'trophee' && trophyParts(card).rank >= 4 ? (trophyParts(card).rank === 6 ? 'Pass' : 'Tournoi') : tierLabel(card.tier))+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
       '<div class="card-mid">'+midHTML+'</div>'+
       '<div><div class="card-name"></div>'+statsRow+'</div>'+
       crestIco('card-watermark');
@@ -2122,7 +2122,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.06.8';
+  const SITE_VERSION = '2026.11.06.10';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3220,7 +3220,7 @@
 
   // ---------- Aide : un bouton « ? Aide » par onglet ----------
   // Les pourcentages de tirage et les chiffres du 1v1 viennent du serveur : l'aide ne peut pas être en retard sur les règles.
-  ED_SLOTS.forEach(k => { FAN_BONUS_PCT[k] = 11; });
+  ED_SLOTS.forEach(k => { FAN_BONUS_PCT[k] = FAN_BONUS_PCT.halloween; });      // éditions personnalisées : même bonus que Halloween (+8 %)
   const TIER_COLORS = { saison: '#0F7A93', commune: '#C9965F', rare: '#B8C2C8', halloween: '#FF8A1F', noel: '#C8202C', gold: '#E0A21B', secrete: '#4B3FA0', speciale: '#2FA45E', epique: '#7A3FC9', legendaire: '#F0C84B' };
   const TIER_NAMES_PL = { saison: 'Saison (podium)', commune: 'Commune', rare: 'Rare', halloween: 'Halloween (édition limitée)', noel: 'Noël (édition limitée)', gold: 'Gold', secrete: 'Secrète', speciale: 'Spéciale', epique: 'Épique', legendaire: 'Légendaire' };
   ED_SLOTS.forEach((k, n) => { TIER_NAMES_PL[k] = 'Édition libre ' + (n + 1); });
@@ -3358,7 +3358,7 @@
         '<li><b>1 Loup</b> (la mascotte) : mêmes bonus que le Fan.</li>' +
         '<li><b>' + cfg.max_equipment + ' Équipement</b> : ' + range(cfg.equipment_bonus, ['commune', 'rare', 'epique', 'legendaire']) + ' %.</li></ul>' +
         '<h3>La forme des cartes 💪</h3><ul>' +
-        '<li>Chaque carte de joueur que tu alignes dans un <b>match 1v1</b> perd <b>1 % de forme</b> (sa note est multipliée par sa forme : 85 à 97 % de forme vaut 82,5). Une petite barre sous la note montre la forme d\'une carte qui a déjà joué aujourd\'hui.</li>' +
+        '<li>Chaque carte que tu utilises dans un <b>match 1v1</b> (les 5 joueurs, le Fan, le Loup et l\'équipement) perd <b>1 % de forme</b> : la note d\'un joueur est multipliée par sa forme (85 à 97 % de forme vaut 82,5), tout comme le bonus d\'un Fan, d\'un Loup ou d\'un équipement (+10 % à 97 % de forme vaut +9,7 %). Une petite barre sous la note montre la forme d\'une carte qui a déjà joué aujourd\'hui.</li>' +
         '<li>La forme revient à <b>100 % chaque jour à minuit</b> (heure de Paris) et ne descend jamais sous 50 %. Les deux équipes d\'un défi se fatiguent.</li>' +
         '<li>Le <b>tournoi</b> et le <b>défi du club</b> jouent toujours à 100 % et ne fatiguent pas.</li>' +
         '<li>Pour garder une bonne note, <b>fais tourner tes cartes</b>, gardien compris. Le bouton <b>« ⚡ Meilleure équipe »</b> remplit chaque poste avec tes meilleures notes du moment.</li></ul>' +
@@ -4325,7 +4325,7 @@
 
     const fans = myCollection.filter(c => c.quantity > 0 && cardKind(c) === 'fan');
     byId('tmFan').innerHTML = '<option value="">— aucun —</option>' + fans.map(c =>
-      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', +' + Math.round((cfg.fan_bonus[c.tier] || 0) * 100) + ' %)</option>').join('');
+      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', ' + bonusTxt(cfg.fan_bonus[c.tier], c) + ')</option>').join('');
 
     // équipements : jusqu'à cfg.max_equipment, tous différents, leur bonus s'ajoute à celui du Fan
     tm.equip = myCollection.filter(c => c.quantity > 0 && cardKind(c) === 'equipement')
@@ -4333,9 +4333,9 @@
     byId('tmEquipLabel').textContent = cfg.max_equipment > 1 ? 'Équipement (optionnel, ' + cfg.max_equipment + ' au maximum)' : 'Équipement (optionnel, un seul)';
     const mascots = myCollection.filter(c => c.quantity > 0 && cardKind(c) === 'mascotte');
     byId('tmMascot').innerHTML = '<option value="">— aucun —</option>' + mascots.map(c =>
-      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', +' + Math.round((cfg.mascot_bonus[c.tier] || 0) * 100) + ' %)</option>').join('');
+      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', ' + bonusTxt(cfg.mascot_bonus[c.tier], c) + ')</option>').join('');
     const equipOptions = '<option value="">— aucun —</option>' + tm.equip.map(c =>
-      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', +' + Math.round((cfg.equipment_bonus[c.tier] || 0) * 100) + ' %)</option>').join('');
+      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', ' + bonusTxt(cfg.equipment_bonus[c.tier], c) + ')</option>').join('');
     byId('tmEquip').innerHTML = tm.equip.length ? Array.from({ length: cfg.max_equipment }, () => '<select>' + equipOptions + '</select>').join('') : '';
     refreshTeamBonus();
 
@@ -4383,16 +4383,18 @@
     const cfg = duelConfig, sels = [...document.querySelectorAll('#tmEquip select')];
     const used = new Set(sels.map(s => s.value).filter(Boolean));
     sels.forEach(sel => [...sel.options].forEach(o => { o.disabled = !!o.value && used.has(o.value) && o.value !== sel.value; }));
-    const fan = tm.byId[byId('tmFan').value], fanPct = fan ? Math.round((cfg.fan_bonus[fan.tier] || 0) * 100) : 0;
-    const mascot = tm.byId[byId('tmMascot').value], mascotPct = mascot ? Math.round((cfg.mascot_bonus[mascot.tier] || 0) * 100) : 0;
-    const eqPct = sels.reduce((sum, s) => { const c = tm.byId[s.value]; return sum + (c ? Math.round((cfg.equipment_bonus[c.tier] || 0) * 100) : 0); }, 0);
+    const pctOf = (b, c) => Math.round((b || 0) * tmForm(c) * 100) / 100;           // bonus en %, forme du jour comprise (1v1)
+    const fan = tm.byId[byId('tmFan').value], fanPct = fan ? pctOf(cfg.fan_bonus[fan.tier], fan) : 0;
+    const mascot = tm.byId[byId('tmMascot').value], mascotPct = mascot ? pctOf(cfg.mascot_bonus[mascot.tier], mascot) : 0;
+    const eqPct = sels.reduce((sum, s) => { const c = tm.byId[s.value]; return sum + (c ? pctOf(cfg.equipment_bonus[c.tier], c) : 0); }, 0);
     const parts = [];
-    if (fan) parts.push('Fan +' + fanPct + ' %');
-    if (mascot) parts.push('Loup +' + mascotPct + ' %');
-    if (eqPct) parts.push('Équipement +' + eqPct + ' %');
+    const pt = x => String(x).replace('.', ',');
+    if (fan) parts.push('Fan +' + pt(fanPct) + ' %');
+    if (mascot) parts.push('Loup +' + pt(mascotPct) + ' %');
+    if (eqPct) parts.push('Équipement +' + pt(eqPct) + ' %');
     byId('tmEquipHint').textContent = !tm.equip.length && !parts.length
       ? 'Tu n\'as pas encore d\'équipement : ils sortent dans les packs.'
-      : (parts.length ? 'Bonus d\'équipe : ' + parts.join(' · ') + (parts.length > 1 ? ' = +' + (fanPct + mascotPct + eqPct) + ' %' : '') : 'Aucun bonus d\'équipe pour l\'instant.');
+      : (parts.length ? 'Bonus d\'équipe : ' + parts.join(' · ') + (parts.length > 1 ? ' = +' + String(Math.round((fanPct + mascotPct + eqPct) * 100) / 100).replace('.', ',') + ' %' : '') : 'Aucun bonus d\'équipe pour l\'instant.');
   }
   byId('tmEquip').addEventListener('change', refreshTeamBonus);
   byId('tmFan').addEventListener('change', refreshTeamBonus);
@@ -4411,6 +4413,8 @@
   const tmForm = c => tmUsesForm() && c.form != null ? c.form : 100;
   const tmNote = c => Math.round(c.display_note.value * tmForm(c) / 10) / 10;          // note du moment (forme comprise), à 0,1 près
   const tmNoteTxt = c => String(tmNote(c)).replace('.', ',');
+  // bonus d'un Fan, d'un Loup ou d'un équipement avec sa forme du jour (1v1) : « +7,76 % · forme 97 % »
+  function bonusTxt(b, c){ const f = tmForm(c), v = Math.round((b || 0) * f * 100) / 100; return '+' + String(v).replace('.', ',') + ' %' + (f < 100 ? ' · forme ' + f + ' %' : ''); }
   function slotOptionsHTML(cat){
     const cfg = duelConfig, malus = Math.round(cfg.out_of_position_malus * 100);
     const naturalOf = c => cfg.poste_category[(c.poste || '').toUpperCase()] || null;
@@ -4587,8 +4591,8 @@
       const tacticLabel = cfg && cfg.tactics[t.tactic] ? cfg.tactics[t.tactic].label : t.tactic;
       const box = document.createElement('div'); box.className = 'lineup';
       let html = '<h4>' + escapeHtml(t.pseudo) + '</h4><div class="lu-sub">' + escapeHtml(t.formation) + ' · ' + escapeHtml(tacticLabel || '') +
-        (t.fan ? ' · Fan ' + escapeHtml(t.fan.player) + ' (+' + t.fan.bonus_pct + ' %)' : '') +
-        (t.mascot ? ' · Loup ' + escapeHtml(t.mascot.player) + ' (+' + t.mascot.bonus_pct + ' %)' : '') +
+        (t.fan ? ' · Fan ' + escapeHtml(t.fan.player) + ' (+' + t.fan.bonus_pct + ' %' + (t.fan.form != null && t.fan.form < 100 ? ', forme ' + t.fan.form + ' %' : '') + ')' : '') +
+        (t.mascot ? ' · Loup ' + escapeHtml(t.mascot.player) + ' (+' + t.mascot.bonus_pct + ' %' + (t.mascot.form != null && t.mascot.form < 100 ? ', forme ' + t.mascot.form + ' %' : '') + ')' : '') +
         (t.referee_bonus_pct ? ' · Arbitre +' + t.referee_bonus_pct + ' %' : '') +
         (t.club_bonus_pct ? ' · Bonus du club +' + t.club_bonus_pct + ' %' : '') +
         (t.equipment && t.equipment.length ? ' · Équipement ' + t.equipment.map(e => escapeHtml(e.player)).join(', ') + ' (+' + t.equipment.reduce((n, e) => n + e.bonus_pct, 0) + ' %)' : '') + '</div>';

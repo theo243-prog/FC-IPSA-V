@@ -275,19 +275,22 @@ def build_members(cards_with_slots, captain_card_id, levels=None, forms=None):
     return members
 
 
-def equipment_bonus_total(equipment_cards) -> float:
-    return sum(TIER_EQUIPMENT_BONUS.get(c.tier.value, 0.0) for c in (equipment_cards or []))
+def equipment_bonus_total(equipment_cards, forms=None) -> float:
+    forms = forms or {}
+    return sum(TIER_EQUIPMENT_BONUS.get(c.tier.value, 0.0) * forms.get(c.id, 1.0) for c in (equipment_cards or []))
 
 
-def team_powers(members, fan_card, tactic_multiplier=1.0, equipment_cards=(), mascot_card=None, referee_bonus=0.0):
+def team_powers(members, fan_card, tactic_multiplier=1.0, equipment_cards=(), mascot_card=None, referee_bonus=0.0, forms=None):
+    """forms : forme du jour (1v1) des cartes de l'équipe ; le bonus du Fan, du Loup et de l'équipement est multiplié par leur forme."""
+    forms = forms or {}
     units_att = sum(ATTACK_WEIGHT[m["slot"]] for m in members)
     units_def = sum(DEFENSE_WEIGHT[m["slot"]] for m in members)
     attack_avg = sum(ATTACK_WEIGHT[m["slot"]] * m["effective"] for m in members) / units_att
     defense_avg = sum(DEFENSE_WEIGHT[m["slot"]] * m["effective"] for m in members) / units_def
     style = (units_att / units_def) ** (FORMATION_SKEW / 2)      # <1 prudente, >1 offensive
-    fan_bonus = TIER_FAN_BONUS.get(fan_card.tier.value, 0.0) if fan_card else 0.0
-    equipment_bonus = equipment_bonus_total(equipment_cards)
-    mascot_bonus = TIER_MASCOT_BONUS.get(mascot_card.tier.value, 0.0) if mascot_card else 0.0
+    fan_bonus = TIER_FAN_BONUS.get(fan_card.tier.value, 0.0) * forms.get(fan_card.id, 1.0) if fan_card else 0.0
+    equipment_bonus = equipment_bonus_total(equipment_cards, forms)
+    mascot_bonus = TIER_MASCOT_BONUS.get(mascot_card.tier.value, 0.0) * forms.get(mascot_card.id, 1.0) if mascot_card else 0.0
     mult = (1 + fan_bonus + mascot_bonus + equipment_bonus + referee_bonus) * tactic_multiplier      # Fan, Loup, équipement et arbitre s'additionnent
     return attack_avg * style * mult, defense_avg / style * mult, fan_bonus, equipment_bonus, mascot_bonus
 
@@ -420,7 +423,9 @@ def build_events(side_a, side_b, score_a, score_b, xg_a, xg_b, tactic_winner):
     return events
 
 
-def _lineup_snapshot(side, fan_card, equipment_cards=(), mascot_card=None, referee_bonus=0.0):
+def _lineup_snapshot(side, fan_card, equipment_cards=(), mascot_card=None, referee_bonus=0.0, forms=None):
+    forms = forms or {}
+    fp = lambda c: round(forms.get(c.id, 1.0) * 100)                     # forme du jour d'un Fan, d'un Loup ou d'un équipement (1v1)
     return {
         "referee_bonus_pct": round(referee_bonus * 100),
         "pseudo": side["pseudo"], "formation": side["formation"], "tactic": side["tactic"],
@@ -430,11 +435,11 @@ def _lineup_snapshot(side, fan_card, equipment_cards=(), mascot_card=None, refer
             "out_of_position": m["out_of_position"], "captain": m["captain"],
         } for m in side["members"]],
         "fan": ({"player": fan_card.player.name, "tier": fan_card.tier.value,
-                 "bonus_pct": round(TIER_FAN_BONUS.get(fan_card.tier.value, 0) * 100)} if fan_card else None),
+                 "bonus_pct": round(TIER_FAN_BONUS.get(fan_card.tier.value, 0) * 100), "form": fp(fan_card)} if fan_card else None),
         "mascot": ({"player": mascot_card.player.name, "tier": mascot_card.tier.value,
-                    "bonus_pct": round(TIER_MASCOT_BONUS.get(mascot_card.tier.value, 0) * 100)} if mascot_card else None),
+                    "bonus_pct": round(TIER_MASCOT_BONUS.get(mascot_card.tier.value, 0) * 100), "form": fp(mascot_card)} if mascot_card else None),
         "equipment": [{"player": c.player.name, "tier": c.tier.value,
-                       "bonus_pct": round(TIER_EQUIPMENT_BONUS.get(c.tier.value, 0) * 100)} for c in (equipment_cards or [])],
+                       "bonus_pct": round(TIER_EQUIPMENT_BONUS.get(c.tier.value, 0) * 100), "form": fp(c)} for c in (equipment_cards or [])],
     }
 
 
@@ -545,12 +550,15 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
         raise DuelError("Ce défi n'était plus valide (l'adversaire n'a plus toutes ses cartes) : "
                         "il a été annulé et sa mise remboursée. Choisis-en un autre.")
 
+    forms_c, forms_d = fatigue.forms_for(db, challenger.id), fatigue.forms_for(db, creator.id)      # forme du jour des deux équipes, AVANT ce match
     side_c = {"pseudo": challenger.pseudo, "formation": formation, "tactic": tactic,
-              "members": build_members(cards_c, captain_c.id if captain_c else None, card_levels.levels_for(db, challenger.id), fatigue.forms_for(db, challenger.id))}
+              "members": build_members(cards_c, captain_c.id if captain_c else None, card_levels.levels_for(db, challenger.id), forms_c)}
     side_d = {"pseudo": creator.pseudo, "formation": proposal.formation, "tactic": proposal.tactic,
-              "members": build_members(cards_d, captain_d.id if captain_d else None, card_levels.levels_for(db, creator.id), fatigue.forms_for(db, creator.id))}       # niveaux et forme des deux équipes, au moment du match
-    fatigue.record_match(db, challenger.id, [c.id for c, _ in cards_c])        # chaque carte alignée perd 1 % de forme (jusqu'à minuit)
-    fatigue.record_match(db, creator.id, [c.id for c, _ in cards_d])
+              "members": build_members(cards_d, captain_d.id if captain_d else None, card_levels.levels_for(db, creator.id), forms_d)}       # niveaux et forme des deux équipes, au moment du match
+    # chaque carte utilisée perd 1 % de forme (jusqu'à minuit) : les 5 joueurs, le Fan, le Loup et l'équipement
+    used = lambda cards, fan, mascot, equip: [c.id for c, _ in cards] + [x.id for x in ([fan, mascot] + list(equip or [])) if x is not None]
+    fatigue.record_match(db, challenger.id, used(cards_c, fan_c, mascot_c, equip_c))
+    fatigue.record_match(db, creator.id, used(cards_d, fan_d, mascot_d, equip_d))
 
     winner_tactic = tactic_advantage(tactic, proposal.tactic)          # 'a' = challenger, 'b' = créateur
     mult_c = 1 + TACTIC_BONUS if winner_tactic == "a" else 1.0
@@ -559,8 +567,8 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     ref_winner = referee_winner(referee_bid, bid_d)                     # l'arbitre favorise celui qui a mis le plus, personne si égalité
     ref_c = REFEREE_BONUS if ref_winner == "challenger" else 0.0
     ref_d = REFEREE_BONUS if ref_winner == "defender" else 0.0
-    att_c, def_c, _, _, _ = team_powers(side_c["members"], fan_c, mult_c, equip_c, mascot_c, ref_c)
-    att_d, def_d, _, _, _ = team_powers(side_d["members"], fan_d, mult_d, equip_d, mascot_d, ref_d)
+    att_c, def_c, _, _, _ = team_powers(side_c["members"], fan_c, mult_c, equip_c, mascot_c, ref_c, forms_c)
+    att_d, def_d, _, _, _ = team_powers(side_d["members"], fan_d, mult_d, equip_d, mascot_d, ref_d, forms_d)
 
     xg_c = expected_goals(att_c, def_d)
     xg_d = expected_goals(att_d, def_c)
@@ -621,7 +629,7 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
         player.credits += n
         credits_instead[player.pseudo] = n
     referee = {"challenger": referee_bid, "defender": bid_d, "winner": ref_winner, "bonus_pct": round(REFEREE_BONUS * 100) if ref_winner else 0}
-    lineups = {"challenger": _lineup_snapshot(side_c, fan_c, equip_c, mascot_c, ref_c), "defender": _lineup_snapshot(side_d, fan_d, equip_d, mascot_d, ref_d),
+    lineups = {"challenger": _lineup_snapshot(side_c, fan_c, equip_c, mascot_c, ref_c, forms_c), "defender": _lineup_snapshot(side_d, fan_d, equip_d, mascot_d, ref_d, forms_d),
                "referee": referee}                                      # (enregistré avec la composition : visible dans le récap APRÈS le match)
     duel = Duel(
         challenger_id=challenger.id, defender_id=creator.id, stake=stake,
