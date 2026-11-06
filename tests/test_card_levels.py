@@ -1,5 +1,5 @@
 """
-Test : niveaux de cartes (1 à 5, +1 de note par niveau). Cartes éligibles, doublons requis (jamais détruits), coûts, limite de 2 par jour,
+Test : niveaux de cartes (1 à 5, +1 de note par niveau). Cartes éligibles, doublons requis (jamais détruits), coûts, aucune limite par jour,
 effet en match (avant le malus hors poste et le capitaine, pour les deux équipes), niveau qui suit la carte (annonce, enchère, offre
 d'achat), meilleur niveau chez l'acheteur, doublons vendus / échangés / fusionnés sans toucher au niveau, nettoyage. Lancé par tests/run_tests.py.
 """
@@ -66,21 +66,13 @@ give("dan", LR, 2); U("dan").credits = 10; db.commit()
 ok(c.post("/cards/%s/evolve" % LR.id, headers=H["dan"]).status_code == 400 and "crédits" in c.get("/cards/%s/level" % LR.id, headers=H["dan"]).json()["reason"], "pas assez de crédits : refusé")
 
 ok(r.status_code == 200 and lvl("ana", LC) == 2 and qty("ana", LC) == 2, "niveau 2 avec 11 doublons : 10 utilisés, il reste 1 doublon et la copie évoluée")
-print("3) LIMITE DE 2 PAR JOUR, NIVEAU 5 MAXIMUM")
+print("3) PAS DE LIMITE PAR JOUR, NIVEAU 5 MAXIMUM")
+ok(not hasattr(CL, "DAILY_UPGRADES") and "daily_left" not in c.get("/cards/%s/level" % LR.id, headers=H["ana"]).json(), "plus de limite par jour (ni constante, ni compteur dans la fiche)")
 give("ana", LR, 30); give("ana", LH, 30)
-GL.today_paris = lambda: real_today() + timedelta(days=10)
-ok(c.post("/cards/%s/evolve" % LR.id, headers=H["ana"]).status_code == 200 and c.post("/cards/%s/evolve" % LR.id, headers=H["ana"]).status_code == 200, "un autre jour : 2 améliorations acceptées")
-GL.today_paris = real_today
-GL.today_paris = lambda: real_today() + timedelta(days=10)
-r = c.post("/cards/%s/evolve" % LH.id, headers=H["ana"]); ok(r.status_code == 400 and "aujourd'hui" in r.json()["detail"], "3e amélioration du jour : refusée")
-GL.today_paris = real_today
-GL.today_paris = lambda: real_today() + timedelta(days=11)
-ok(c.post("/cards/%s/evolve" % LH.id, headers=H["ana"]).status_code == 200, "le lendemain : de nouveau possible")
-GL.today_paris = real_today
-CL.set_level(db, U("ana").id, LH.id, 5); db.commit()
-GL.today_paris = lambda: real_today() + timedelta(days=5)
+codes = [c.post("/cards/%s/evolve" % LR.id, headers=H["ana"]).status_code for _ in range(2)] + [c.post("/cards/%s/evolve" % LH.id, headers=H["ana"]).status_code for _ in range(5)]
+ok(codes == [200] * 7 and lvl("ana", LR) == 2 and lvl("ana", LH) == 5, "7 évolutions le même jour : toutes acceptées (rare au niveau 2, édition au niveau 5)")
+ok(qty("ana", LH) == 30 - 27 and qty("ana", LR) == 30 - 4, "les doublons demandés sont toujours consommés (édition 1+3+5+8+10, rare 1+3)")
 r = c.post("/cards/%s/evolve" % LH.id, headers=H["ana"]); ok(r.status_code == 400 and "maximal" in r.json()["detail"], "niveau 5 : maximum atteint")
-GL.today_paris = real_today
 
 print("4) EFFET EN MATCH")
 m = DE.build_members([(LC, "MC")], LC.id, {LC.id: 5})[0]                      # Lucas (ATT) au milieu, capitaine, niveau 5

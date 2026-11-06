@@ -414,6 +414,8 @@
   .help-body{font-size:14px;line-height:1.55;}
   .help-body h3{font-family:var(--font-head);font-weight:800;font-size:21px;margin:18px 0 4px;}
   .help-body h3:first-child{margin-top:0;}
+  .mini-badge.mini-link{cursor:pointer;} .mini-badge.mini-link:hover{filter:brightness(1.1);}
+  .owned-by{text-align:center;font-size:13px;color:var(--text-muted);margin:4px 0 8px;}
   .changelog-box{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;}
   .cl-month{font-family:var(--font-head);font-weight:800;font-size:19px;margin:16px 0 6px;text-transform:capitalize;}
   .cl-month:first-child{margin-top:0;}
@@ -1739,6 +1741,7 @@
     document.getElementById('modalTitle').textContent = card.player_name;
     const body = document.getElementById('modalBody');
     body.innerHTML = '<div style="text-align:center;font-size:64px;line-height:1.1;margin:6px 0;">' + trophyMedalOf(card) + '</div><p style="text-align:center;font-weight:700;">' + (preview ? 'Cette carte sera remise à la fin de la saison de ' + escapeHtml(t.label) + '.' : (t.rank === 6 ? 'Carte exclusive du Pass de ' : t.rank === 4 ? 'Trophée du tournoi de ' : t.rank === 5 ? 'Carte de finaliste du tournoi de ' : 'Trophée de la saison de ') + escapeHtml(t.label) + '.') + '</p><p class="muted" style="text-align:center;">Un trophée n\'est qu\'un souvenir : il n\'a ni note ni bonus, ne joue pas de match, ne se vend pas et ne s\'échange pas. Il ne compte pas dans le pourcentage de collection.</p>';
+    if (!preview && card.id && !card.locked) addOwnershipLine(body.querySelector('p'), card.id);      // « 👥 Possédée par N % des joueurs »
     if (!preview && card.quantity > 0 && !card._viewing) {
       body.insertAdjacentHTML('beforeend', '<div class="share-actions" style="margin-top:14px;"><button class="btn-secondary" type="button" id="shareCardBtn">📤 Partager ce trophée</button></div>');
       document.getElementById('shareCardBtn').addEventListener('click', () => openShareCard(card));
@@ -1791,6 +1794,7 @@
         if (p.tier === 'secrete') inner += '<p class="tm-hint" style="text-align:center;">Carte secrète : elle ne sort jamais des packs. On la débloque en fusionnant 100 points de doublons (commune = 1, rare = 5).</p>';
       }
       body.innerHTML = photoHTML + '<div class="player-detail-poste">' + escapeHtml(posteText) + ' · ' + tierLabel(p.tier) + '</div>' + inner;
+      if (card && card.id && !card.locked) addOwnershipLine(body.querySelector('.player-detail-poste'), card.id);      // « 👥 Possédée par N % des joueurs »
       if (card && card._viewing && card.id) addOfferForm(body, card);          // la carte d'un autre joueur : on peut proposer de l'acheter
       if (card && card.quantity > 0 && !card._viewing) {          // une carte que JE possède : on peut la partager en image
         body.insertAdjacentHTML('beforeend', '<div class="share-actions" style="margin-top:16px;"><button class="btn-secondary" type="button" id="shareCardBtn">📤 Partager cette carte</button></div>');
@@ -1799,6 +1803,35 @@
       if (card && card.quantity > 0 && !card._viewing && card.id && kind === 'joueur') loadLevelBox(body, card);      // faire évoluer cette carte
       document.getElementById('userCollectionModal').style.display = 'flex';
     } catch(e) { toast(e.message); }
+  }
+  // Possession : part des joueurs qui ont au moins un exemplaire de la carte (GET /cards/ownership : une requête pour toutes les cartes,
+  // rechargée au plus toutes les 60 s). Une carte absente de la réponse (secrète non débloquée…) n'affiche rien.
+  let ownershipData = null, ownershipAt = 0;
+  async function getOwnership(){
+    if (!token) return null;
+    if (ownershipData && Date.now() - ownershipAt < 60000) return ownershipData;
+    try { ownershipData = await api('/cards/ownership'); ownershipAt = Date.now(); } catch(e) { /* on garde l'ancienne réponse */ }
+    return ownershipData;
+  }
+  function ownershipText(n, total){
+    if (!n) return '👥 Possédée par personne';
+    const pct = total ? 100 * n / total : 0;
+    return '👥 Possédée par ' + (pct < 1 ? 'moins de 1 %' : Math.floor(pct) + ' %') + ' des joueurs (' + n + ' sur ' + total + ')';
+  }
+  // Marché et enchères : toucher la pastille d'une annonce ouvre la fiche de la carte (sans niveau, ni partage, ni offre d'achat)
+  function linkCardSheet(row, card){
+    const b = row.querySelector('.mini-badge');
+    if (!b || !card || !card.player_name || card.player_name === '?') return;
+    b.classList.add('mini-link'); b.setAttribute('role', 'button'); b.setAttribute('tabindex', '0'); b.title = 'Voir la fiche';
+    const open = () => cardKind(card) === 'trophee' ? openTrophySheet(Object.assign({}, card, { quantity: 0 })) : openPlayerDetail(card.player_name, card.tier, Object.assign({}, card, { quantity: 0 }));
+    b.addEventListener('click', open);
+    b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+  }
+  async function addOwnershipLine(anchor, cardId){
+    if (!anchor) return;
+    const d = await getOwnership();
+    if (!d || !d.cards || !(cardId in d.cards) || !anchor.isConnected) return;
+    anchor.insertAdjacentHTML('afterend', '<p class="owned-by">' + ownershipText(d.cards[cardId], d.total_players) + '</p>');
   }
   // Niveaux de cartes : la fiche d'une de mes cartes montre son niveau, les paliers (doublons et crédits utilisés) et le bouton « Évoluer »
   async function loadLevelBox(body, card){
@@ -1813,7 +1846,7 @@
     if (i.next_level) h += '<div>Niveau ' + i.next_level + ' : <b>' + i.dupes + ' doublon' + (i.dupes > 1 ? 's' : '') + ' sur ' + i.dupes_needed + '</b> nécessaires (ils seront utilisés) · <b>' + i.cost + ' crédits</b> · note ' + i.note + ' → ' + i.next_note + '</div>';
     h += '<div style="margin-top:8px;"><button class="btn-primary" type="button" id="lvlGo"' + (i.can ? '' : ' disabled') + '>' + (i.next_level ? '⬆️ Évoluer au niveau ' + i.next_level : 'Niveau maximal') + '</button></div>';
     if (i.reason) h += '<p class="lvl-why">' + escapeHtml(i.reason) + '</p>';
-    h += '<p class="lvl-why">' + i.daily_left + ' évolution' + (i.daily_left > 1 ? 's' : '') + ' encore possible' + (i.daily_left > 1 ? 's' : '') + ' aujourd\'hui. Le niveau suit la carte si tu la vends.</p>';
+    h += '<p class="lvl-why">Le niveau suit la carte si tu la vends.</p>';
     box.innerHTML = h; body.appendChild(box);
     const go = box.querySelector('#lvlGo');
     if (go && i.can) go.addEventListener('click', async () => {
@@ -2142,7 +2175,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.06.11';
+  const SITE_VERSION = '2026.11.06.12';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3303,7 +3336,7 @@
     } },
     collection: { title: 'Ta collection', async html(){
       const r = await getGameRules(), sv = r.sell_values;
-      return '<h3>Tes cartes</h3><p>Les cartes sont rangées de la plus rare à la plus commune. Une carte grisée avec un « ? » n\'est pas encore à toi. Clique sur une carte pour voir sa fiche. La petite flèche ▾ à côté du nom d\'une rareté la <b>replie</b> ou la <b>déplie</b> : replie celles que tu ne veux plus voir, pour te repérer plus vite (ton choix est gardé sur cet appareil). Une rareté de plus de 40 cartes (souvent les gold) est repliée au départ : touche la flèche pour la voir. Une recherche montre toujours ses résultats. Au-dessus des cartes : une <b>recherche</b>, un <b>tri</b>, des filtres (<b>Possédées</b>, <b>Doublons</b>, <b>Manquantes</b>), « Tout replier / Tout déplier » et « <b>Vendre tous les doublons</b> » (une fenêtre te demande de confirmer ; tu peux garder les doublons qui servent encore aux cartes secrètes).</p>' +
+      return '<h3>Tes cartes</h3><p>Les cartes sont rangées de la plus rare à la plus commune. Une carte grisée avec un « ? » n\'est pas encore à toi. Clique sur une carte pour voir sa fiche : elle indique aussi la part des joueurs qui la possèdent (« 👥 Possédée par 37 % des joueurs (12 sur 32) », un exemplaire suffit, seuls les joueurs qui ont au moins une carte comptent ; jamais de nom, et rien pour une carte secrète que tu n\'as pas encore). La petite flèche ▾ à côté du nom d\'une rareté la <b>replie</b> ou la <b>déplie</b> : replie celles que tu ne veux plus voir, pour te repérer plus vite (ton choix est gardé sur cet appareil). Une rareté de plus de 40 cartes (souvent les gold) est repliée au départ : touche la flèche pour la voir. Une recherche montre toujours ses résultats. Au-dessus des cartes : une <b>recherche</b>, un <b>tri</b>, des filtres (<b>Possédées</b>, <b>Doublons</b>, <b>Manquantes</b>), « Tout replier / Tout déplier » et « <b>Vendre tous les doublons</b> » (une fenêtre te demande de confirmer ; tu peux garder les doublons qui servent encore aux cartes secrètes).</p>' +
         '<h3>Partager une carte</h3><p>Sur la fiche d\'une carte que tu possèdes, le bouton « 📤 Partager cette carte » crée une <b>image</b> (format post Instagram) avec ton pseudo. Sur téléphone, tu peux l\'envoyer directement à une appli ; sinon, télécharge-la.</p>' +
         '<h3>Les raretés, de la plus commune à la plus rare</h3><ul>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.commune + '"></span><b>Commune</b> et <span class="help-tier" style="background:' + TIER_COLORS.rare + '"></span><b>Rare</b> : les cartes de base de chaque joueur.</li>' +
@@ -3318,7 +3351,7 @@
         '<h3>Faire évoluer une carte ⬆️</h3><ul>' +
         '<li>Les cartes de joueurs <b>communes</b>, <b>rares</b> et <b>éditions limitées</b> montent jusqu\'au <b>niveau 5</b>. Chaque niveau ajoute <b>+1</b> à la note de la carte en match (avant le malus hors poste et le bonus de capitaine). Les gold, secrètes, épiques, légendaires, spéciales, trophées, fans, mascottes et équipements n\'évoluent pas.</li>' +
         '<li>Un niveau se paie en <b>crédits</b> et en <b>doublons</b> de cette carte, qui sont <b>utilisés</b> : à toi de choisir entre faire évoluer tes cartes ou garder tes doublons pour les vendre ou débloquer les cartes secrètes. Doublons utilisés pour les niveaux 1 à 5 : commune 5, 10, 20, 50, 100 ; rare 1, 3, 5, 12, 25 ; édition limitée 1, 3, 5, 8, 10. Ta carte évoluée, elle, reste.</li>' +
-        '<li>Coût en crédits des niveaux 1 à 5 : commune 30, 60, 120, 200, 320 ; rare 45, 90, 180, 300, 480 ; édition limitée 60, 120, 240, 400, 640. <b>2 évolutions par jour</b> au maximum.</li>' +
+        '<li>Coût en crédits des niveaux 1 à 5 : commune 30, 60, 120, 200, 320 ; rare 45, 90, 180, 300, 480 ; édition limitée 60, 120, 240, 400, 640. Pas de limite par jour.</li>' +
         '<li>Tout se fait dans la <b>fiche de la carte</b> (touche-la dans ta collection) : niveau, doublons (« 7 sur 10 nécessaires »), coût et bouton « Évoluer ». Un badge « Niv. N » s\'affiche sur la carte.</li>' +
         '<li>Tu n\'as qu\'<b>une copie évoluée</b> par carte. <b>Le niveau suit la carte</b> : si tu la vends (annonce, enchère, offre d\'achat), l\'acheteur la reçoit avec son niveau, et tes autres copies repassent au niveau 0. Les échanges et la vente des doublons ne touchent jamais ta copie évoluée.</li></ul>' +
         '<h3>Les autres types de cartes</h3><ul><li><b>Fans</b>, <b>Le Loup</b> (la mascotte) et <b>équipements</b> : pas de note, ils donnent un bonus d\'équipe en 1v1.</li><li><b>Stades</b> et <b>moments gold</b> : des cartes de collection.</li></ul>';
@@ -3715,6 +3748,7 @@
       const row = document.createElement('div'); row.className = 'listing auction'; const end = auctionsState.t0 + a.seconds_left * 1000;
       row.innerHTML = '<div class="mini-badge tier-' + a.card.tier + '">' + escapeHtml(a.card.player_name.slice(0, 2)) + '</div><div class="listing-text"><b>' + (a.mine ? 'Toi' : escapeHtml(a.seller_pseudo)) + '</b> met <b>' + escapeHtml(a.card.player_name) + '</b> (' + tierLabel(a.card.tier) + ')' + (a.level ? ' <b>Niv. ' + a.level + '</b>' : '') + ' aux enchères' + (a.level ? ' <span class="muted">(niveau ' + a.level + ', perdu si tu as déjà un niveau ≥ ' + a.level + ')</span>' : '') +
         '<div class="listing-meta">' + (a.current_bid === null ? 'Départ : ' + a.start_price + ' crédits · aucune enchère' : 'Meilleure enchère : <b>' + a.current_bid + ' crédits</b> par ' + (a.i_am_top ? 'toi 🏆' : escapeHtml(a.top_bidder)) + ' (' + a.bids + ' enchère' + (a.bids > 1 ? 's' : '') + ')') + ' · ⏱ <span class="auc-left" data-end="' + end + '">' + fmtLeft(a.seconds_left) + '</span></div></div>';
+      linkCardSheet(row, a.card);
       const act = document.createElement('div'); act.className = 'auc-actions';
       if (a.mine) { if (!a.bids) { const b = document.createElement('button'); b.className = 'btn-small ghost'; b.textContent = 'Annuler'; b.addEventListener('click', () => cancelAuction(a.id)); act.appendChild(b); } }
       else {
@@ -3898,6 +3932,7 @@
         '<div class="mini-badge tier-' + l.card.tier + '">' + escapeHtml(l.card.player_name.slice(0,2)) + '</div>' +
         '<div class="listing-text"><b>' + (mine ? 'Toi' : escapeHtml(l.seller_pseudo)) + '</b> vend <b>' + escapeHtml(l.card.player_name) + '</b> (' + tierLabel(l.card.tier) + ') pour <b>' + l.price + ' crédits</b>' +
         '<div class="listing-meta">' + (l.card.display_note ? ('⭐ ' + l.card.display_note.value) : '🎉 Supporter') + (l.level ? ' · <b>Niv. ' + l.level + '</b> <span title="Si tu as déjà cette carte au niveau ' + l.level + ' ou plus, tu gardes ton niveau">(niveau ' + l.level + ', perdu si tu as déjà un niveau ≥ ' + l.level + ')</span>' : '') + '</div></div>';
+      linkCardSheet(row, l.card);
       const btn = document.createElement('button');
       btn.className = 'btn-small' + (mine ? ' ghost' : '');
       if (mine) {

@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -63,6 +63,7 @@ app.include_router(welcome.router)         # accueil des nouveaux comptes : pop-
 app.include_router(inbox.router)           # encadré « Notifications » du site (défi relevé, carte vendue, enchère dépassée…)
 app.include_router(card_levels.router)     # niveaux de cartes : faire évoluer une copie (+1 de note par niveau, 5 au plus)
 app.include_router(motm.router)            # homme du match : vote après un match officiel, classement privé de la saison
+app.include_router(ownership.router)        # part des joueurs qui possèdent chaque carte (fiche d'une carte)
 app.include_router(changelog.router)        # historique des changements du jeu (bouton « 📜 Nouveautés »)
 app.include_router(admin_page.router)      # la page d'administration (/admin-panel) et le numéro de version (/version)
 

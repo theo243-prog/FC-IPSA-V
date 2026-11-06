@@ -8,6 +8,10 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-niveaux-sans-limite", "date": "2026-11-06", "category": "cartes", "title": "Plus de limite d'évolutions par jour",
+     "text": "Tu peux faire évoluer autant de cartes que tu veux dans la journée. Il faut toujours des doublons et des crédits, et le niveau 5 reste le maximum."},
+    {"id": "2026-11-possession", "date": "2026-11-06", "category": "autre", "title": "Combien de joueurs ont cette carte",
+     "text": "La fiche d'une carte montre la part des joueurs qui la possèdent, par exemple « 👥 Possédée par 37 % des joueurs (12 sur 32) ». Les cartes secrètes que tu n'as pas encore restent cachées."},
     {"id": "2026-11-fatigue", "date": "2026-11-06", "category": "règles", "title": "La forme des cartes en 1v1",
      "text": "Chaque match 1v1 fait perdre 1 % de forme aux cartes alignées (joueurs, Fan, Loup et équipement), jusqu'à 50 % au plus bas, et tout le monde revient à 100 % à minuit. Le tournoi et le défi du club se jouent toujours à 100 %. Le bouton « ⚡ Meilleure équipe » compose l'équipe la plus en forme."},
     {"id": "2026-11-fan-edition-8", "date": "2026-11-06", "category": "cartes", "title": "Fan et Loup d'édition limitée à +8 %",
