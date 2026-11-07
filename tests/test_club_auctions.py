@@ -1,7 +1,7 @@
 """
 Test : enchères quotidiennes du club (cartes uniques Édition Noire, app/club_auctions.py), avec une horloge simulée (FC_FAKE_NOW).
-Séries pour tous (22 chacune, n° 1 réservé), création automatique à l'ajout d'une personne, activation différée (rien avant la date,
-section masquée sauf testadmin, teaser, lot de test avant la date), 5 enchères à 17h00 pour 5 personnes différentes, choix des moins
+Séries pour tous (5 chacune, n° 1 réservé), remplacement des anciennes séries de 22, création automatique à l'ajout d'une personne, activation différée (rien avant la date,
+section masquée sauf testadmin, teaser, lot de test avant la date), 1 enchère par jour par défaut ; réglée à 5 : 5 enchères à 17h00 pour 5 personnes différentes, choix des moins
 émises, numéros parmi les restants, fin à 16h00 le lendemain, prolongation plafonnée à +60 min, gagnant servi avec son numéro,
 crédits détruits, pas de limite de gains, sans offre : retour en réserve, idempotence (deux passages, redémarrage), rattrapage
 après 17h00, pause, moins de 5 personnes, séries épuisées, heure d'été et d'hiver. Lancé par tests/run_tests.py.
@@ -67,11 +67,12 @@ r = c.post("/admin/series-create-all", json={"dry_run": False}, headers=A).json(
 ok(r["status"] == "ok" and len(r["created"]) == 30, "30 séries créées")
 ok(c.post("/admin/series-create-all", json={"dry_run": False}, headers=A).json()["created"] == [], "relancer ne crée rien de plus")
 st = state()
-ok(len(st) == 31 and all(x["total"] == 22 and x["emitted"] == 0 and len(x["available"]) == 21 and 1 not in x["available"] and x["number_one"] == "reserve" for x in st.values()), "31 séries de 22, tout dans la réserve, 21 numéros pour les enchères (le n° 1 est réservé)")
+ok(len(st) == 31 and all(x["total"] == 5 and x["emitted"] == 0 and x["available"] == [2, 3, 4, 5] and x["number_one"] == "reserve" for x in st.values()), "31 séries de 5, tout dans la réserve, 4 numéros pour les enchères (le n° 1 est réservé)")
 r = c.post("/admin/create-player", json={"name": "Yasmine", "poste": "ATT"}, headers=A).json()
 ok(r.get("edition_noire") is True and "Yasmine" in state(), "une joueuse créée ensuite : sa série aussi")
 s_lucas = NB.find_series(db, "Édition Noire — Lucas")
-ok(s_lucas.total == CA.SERIES_TOTAL == 22, "SERIES_TOTAL = 22")
+ok(s_lucas.total == CA.SERIES_TOTAL == 5 and db.get(Player, db.get(__import__("app.models", fromlist=["x"]).Card, db.query(NB.NumberedCopy).filter_by(series_id=s_lucas.id, number=3).first().card_id).player_id).name == "Édition Noire — Lucas · n° 3/5", "SERIES_TOTAL = 5 (« Édition Noire — Lucas · n° 3/5 »)")
+ok(CA.get_settings(db)["per_day"] == 1 == CA.CLUB_AUCTIONS_PER_DAY, "une enchère par jour par défaut")
 
 print("2) AVANT LE DÉMARRAGE (lundi 9 novembre 2026, 17h00)")
 cfg = c.get("/admin/club-auctions", headers=A).json()
@@ -90,7 +91,7 @@ pv = c.get("/club-auctions", headers=H["testadmin"]).json()
 ok(pv["visible"] is True and pv["preview"] is True and pv["lots"] == [], "testadmin voit la section (aperçu)")
 nmsg = len(club_msgs())
 r = c.post("/admin/club-auctions-launch", json={"minutes": 5}, headers=A).json()
-ok(r["status"] == "ok" and r["count"] == 5 and r["public"] is False and r["note"] and "Test avant le démarrage" in r["note"], "lancer un lot tout de suite AVANT la date : 5 enchères, avec une note claire")
+ok(r["status"] == "ok" and r["count"] == 1 and r["public"] is False and r["note"] and "Test avant le démarrage" in r["note"], "lancer un lot tout de suite AVANT la date : 1 enchère (réglage par défaut), avec une note claire")
 ok(len(club_msgs()) == nmsg, "lot de test : aucune annonce dans le chat")
 test_lots = lots(batches()[0])
 ok(bid("ana", test_lots[0].auction_id, 20).status_code == 400, "lot de test : un joueur ne peut pas enchérir")
@@ -98,9 +99,13 @@ ok(bid("testadmin", test_lots[0].auction_id, 20).status_code == 200, "testadmin 
 ok(len(c.get("/auctions").json()["auctions"]) == 0, "les enchères du club ne sont pas dans la liste des enchères entre joueurs")
 at("2026-11-08T17:40:00"); tick()
 won_test = lots(batches()[0])
-ok(sum(1 for l in won_test if l.status == "won") == 1 and owner(test_lots[0].card_id) == ["testadmin"] and sum(1 for l in won_test if l.status == "unsold") == 4, "fin du lot de test : testadmin servi, les 4 autres sans preneur")
+ok(len(won_test) == 1 and won_test[0].status == "won" and owner(test_lots[0].card_id) == ["testadmin"], "fin du lot de test : testadmin servi")
 test_person = db.get(NB.NumberedSeries, test_lots[0].series_id).subject
 ok(state()[test_person]["emitted"] == 1, "la personne du lot de test a 1 exemplaire émis")
+
+ok("per_day" not in CA._raw_settings(db), "les réglages enregistrés ne gardent que ce qui a été réglé à la main (le reste suit le code)")
+c.post("/admin/club-auctions-settings", json={"per_day": 5}, headers=A)
+ok(CA.get_settings(db)["per_day"] == 5 and CA.get_settings(db)["teaser"] is True, "réglé à 5 enchères par jour pour la suite du test (le reste ne bouge pas)")
 
 print("3) PREMIER LOT : LUNDI 17h00")
 at("2026-11-09T16:59:00"); tick()
@@ -260,7 +265,57 @@ ok(c.post("/admin/club-auctions-launch", json={}, headers=A).status_code == 400,
 ok(all(r["number_one"] == "reserve" for r in CA.series_state(db)), "les n° 1 sont toujours dans la réserve")
 ok(c.post("/admin/series-mint", json={"series": "Édition Noire — Lucas", "pseudo": "ana", "number": 1}, headers=A).json().get("number") == 1, "le n° 1 se donne avec series-mint")
 
-print("11) HEURE D'ÉTÉ / D'HIVER (calcul de weekly.py)")
+print("11) REMPLACER LES ANCIENNES SÉRIES DE 22")
+from app.models import Card
+db.add_all([Player(name="Ancien", poste="ATT", photo_url="/photos/ancien.webp"), Player(name="Ancienne", poste="MIL")]); db.commit()
+old = NB.create_series(db, "Édition Noire", "Ancien", 22, photo_url="/photos/ancien-noire.webp")
+old2 = NB.create_series(db, "Édition Noire", "Ancienne", 22)
+db.commit(); OLD, OLD2 = old.id, old2.id
+ta = db.query(User).filter_by(pseudo="testadmin").first(); ta_cr = ta.credits
+cp7 = db.query(NB.NumberedCopy).filter_by(series_id=OLD, number=7).first()
+CID7 = cp7.card_id
+NB.mint(db, old, ta, 7)                                    # testadmin a « acheté » le n° 7 aux enchères du club (lot de test)
+db.add(CA.ClubAuctionBatch(manual=True, public=False, created_at=datetime(2026, 11, 7, 12, 0), count=2, announced=True)); db.flush()
+bt = db.query(CA.ClubAuctionBatch).order_by(CA.ClubAuctionBatch.id.desc()).first()
+db.add(CA.ClubAuctionLot(auction_id="x-old-7", batch_id=bt.id, series_id=OLD, number=7, card_id=cp7.card_id, base_end=datetime(2026, 11, 7, 16, 0), status="won", winner_id=ta.id, winner_pseudo="testadmin", price=30))
+cp9 = db.query(NB.NumberedCopy).filter_by(series_id=OLD, number=9).first()
+au = AU.Auction(seller_id="club", card_id=cp9.card_id, start_price=20, current_bid=25, top_bidder_id=ta.id, bids=1, ends_at=datetime(2026, 11, 19, 16, 0))
+db.add(au); db.flush()
+AUID = au.id
+db.add(CA.ClubAuctionLot(auction_id=au.id, batch_id=bt.id, series_id=OLD, number=9, card_id=cp9.card_id, base_end=datetime(2026, 11, 19, 16, 0), status="open"))
+ta.credits -= 25                                           # (sa mise de 25 est mise de côté)
+NB.mint(db, old2, db.query(User).filter_by(pseudo="bob").first(), 4)       # un vrai joueur a un exemplaire de l'autre série
+db.commit(); ta_cr = db.query(User).filter_by(pseudo="testadmin").first().credits
+dry = c.post("/admin/series-replace-black", json={"dry_run": True}, headers=A).json()
+rep = {x["series"]: x for x in dry["to_replace"]}
+ok(dry["status"] == "dry_run" and list(rep) == ["Édition Noire — Ancien"] and rep["Édition Noire — Ancien"]["test_copies_taken_back"] == [{"pseudo": "testadmin", "number": 7}]
+   and rep["Édition Noire — Ancien"]["credits_refunded"] == {"testadmin": 30} and rep["Édition Noire — Ancien"]["club_auctions_cancelled"] == [{"number": 9, "top_bid": 25}], "aperçu : la série de 22 d'Ancien serait remplacée (n° 7 de testadmin repris, 30 rendus, enchère du n° 9 annulée)")
+ok([b["series"] for b in dry["blocked"]] == ["Édition Noire — Ancienne"] and "bob" in dry["blocked"][0]["reason"], "une série dont un exemplaire est à un vrai joueur est refusée")
+ok(db.get(NB.NumberedSeries, OLD) is not None, "l'aperçu ne change rien")
+ok(c.post("/admin/series-replace-black", json={"dry_run": True}).status_code == 403, "sans clé admin : 403")
+r = c.post("/admin/series-replace-black", json={"dry_run": False}, headers=A).json()
+db.expire_all()
+new = NB.find_series(db, "Édition Noire — Ancien")
+ok(r["status"] == "ok" and new.total == 5 and new.photo_url == "/photos/ancien-noire.webp" and db.query(NB.NumberedCopy).filter_by(series_id=new.id).count() == 5 and db.query(NB.NumberedCopy).filter_by(series_id=new.id, status="reserve").count() == 5, "remplacée par une série de 5, tout dans la réserve, même image")
+ok(db.get(NB.NumberedSeries, OLD) is None and db.get(Card, CID7) is None and not db.query(Player).filter(Player.name.like("Édition Noire — Ancien · n° %/22")).count(), "l'ancienne série, ses 22 cartes et leurs fiches sont supprimées")
+ok(db.query(User).filter_by(pseudo="testadmin").first().credits == ta_cr + 30 + 25, "testadmin récupère ses 30 crédits et sa mise de 25")
+ok(db.get(AU.Auction, AUID) is None and not db.query(CA.ClubAuctionLot).filter_by(series_id=OLD).count(), "l'enchère du club et l'historique de l'ancienne série sont retirés")
+ok(NB.find_series(db, "Édition Noire — Ancienne").total == 22, "la série refusée reste telle quelle")
+ok(c.post("/admin/series-replace-black", json={"dry_run": True}, headers=A).json()["to_replace"] == [], "relancer : plus rien à remplacer (sauf la série refusée)")
+pub = c.get("/club-auctions").json()
+ok(pub["total"] == 5, "le site annonce 5 exemplaires par personne")
+
+import json as _json
+from app.models import AppSetting
+row = db.get(AppSetting, CA.SETTING_KEY)
+row.value = _json.dumps({"start_at": "2026-11-09T17:00", "paused": True, "per_day": 5, "start_price": 20, "teaser": True, "teaser_text": ""}); db.commit()
+st_old = CA.get_settings(db)
+ok(st_old["per_day"] == 1 and st_old["paused"] is True, "anciens réglages (tout enregistré, dont 5 par jour) : 1 par jour, ce qui avait été changé (pause) est gardé")
+c.post("/admin/club-auctions-settings", json={"paused": False}, headers=A)
+db.expire_all()
+ok(_json.loads(db.get(AppSetting, CA.SETTING_KEY).value) == {"paused": False, "_v": 2} and CA.get_settings(db)["per_day"] == 1, "réglage suivant : enregistré au nouveau format, toujours 1 par jour")
+
+print("12) HEURE D'ÉTÉ / D'HIVER (calcul de weekly.py)")
 del os.environ["FC_FAKE_NOW"]
 real = CA.datetime
 class FakeDT(datetime):
