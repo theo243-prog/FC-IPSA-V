@@ -299,6 +299,71 @@ def admin_series(db: Session = Depends(get_db)):
     return [series_out(db, s) for s in db.query(NumberedSeries).order_by(NumberedSeries.id).all()]
 
 
+def set_series_photo(db: Session, s: NumberedSeries, photo_url: Optional[str]) -> int:
+    """Donne la même image à la série et à TOUS ses exemplaires (sans commit). Vide : plus d'image. Renvoie le nombre d'exemplaires."""
+    s.photo_url = photo_url or None
+    ids = [cid for (cid,) in db.query(NumberedCopy.card_id).filter_by(series_id=s.id).all()]
+    players = db.query(Player).join(Card, Card.player_id == Player.id).filter(Card.id.in_(ids)).all() if ids else []
+    for p in players:
+        p.photo_url = s.photo_url
+    return len(players)
+
+
+class SeriesPhoto(BaseModel):
+    series: str
+    photo_url: Optional[str] = None             # vide : l'image actuelle du sujet (si c'est une personne du club)
+    from_subject: bool = False                  # True : reprendre l'image actuelle du sujet, même si photo_url est rempli
+
+
+@router.post("/admin/series-photo", dependencies=[Depends(require_admin)])
+def admin_series_photo(payload: SeriesPhoto, db: Session = Depends(get_db)):
+    """Change l'image d'une série et de tous ses exemplaires d'un coup (ex. « Édition Noire — Léo » et /photos/leo-noire.webp)."""
+    from .main import _photo_path
+    s = find_series(db, payload.series)
+    if payload.from_subject or not (payload.photo_url or "").strip():
+        who = db.query(Player).filter_by(name=s.subject).first()
+        if who is None:
+            raise HTTPException(status_code=400, detail="« %s » n'est pas une personne du club : donne une image (ex. /photos/nom.webp)" % s.subject)
+        photo, source = who.photo_url, "photo de %s" % s.subject
+    else:
+        photo, source = _photo_path(payload.photo_url), "image donnée"
+    n = set_series_photo(db, s, photo)
+    db.commit()
+    return {"status": "ok", "series": full_name(s), "photo_url": s.photo_url, "source": source, "copies": n}
+
+
+class SeriesPhotoSync(BaseModel):
+    title: str = "Édition Noire"                # les séries de ce titre ; vide : toutes les séries
+    dry_run: bool = True
+
+
+@router.post("/admin/series-photo-sync", dependencies=[Depends(require_admin)])
+def admin_series_photo_sync(payload: SeriesPhotoSync, db: Session = Depends(get_db)):
+    """Chaque série (du titre donné) reprend l'image ACTUELLE de son sujet, s'il est une personne du club. Aperçu par défaut :
+    la liste des séries dont l'image changerait. Les séries dont le sujet n'est pas une personne du club, ou n'a pas de photo,
+    ne changent pas."""
+    title = " ".join((payload.title or "").split())
+    q = db.query(NumberedSeries)
+    if title:
+        q = q.filter_by(title=title)
+    people = {p.name: p.photo_url for p in db.query(Player).filter(Player.name.in_([s.subject for s in q.all()])).all()}
+    changes, skipped, no_photo = [], [], []
+    for s in q.order_by(NumberedSeries.id).all():
+        if s.subject not in people:
+            skipped.append(full_name(s)); continue
+        if not people[s.subject]:                            # (un joueur sans photo n'efface pas l'image de sa série)
+            no_photo.append(full_name(s)); continue
+        copies = [p for (p,) in db.query(Player.photo_url).join(Card, Card.player_id == Player.id).join(NumberedCopy, NumberedCopy.card_id == Card.id).filter(NumberedCopy.series_id == s.id).all()]
+        new = people[s.subject] or None
+        if s.photo_url != new or any(c != new for c in copies):
+            changes.append({"series": full_name(s), "before": s.photo_url, "after": new})
+            if not payload.dry_run:
+                set_series_photo(db, s, new)
+    if not payload.dry_run:
+        db.commit()
+    return {"status": "dry_run" if payload.dry_run else "ok", "changed": changes, "unchanged_not_a_person": skipped, "unchanged_no_photo": no_photo}
+
+
 class SeriesReclaim(BaseModel):
     series: str
     number: int
