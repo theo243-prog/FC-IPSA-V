@@ -418,6 +418,8 @@ def card_kind(player) -> str:
         return "stade"
     if poste == "MOMENT":
         return "moment"
+    if poste == "ECUSSON":
+        return "ecusson"                  # écusson d'un club adverse : carte gold de collection (ni note, ni match)
     if poste == "TROPHEE":
         return "trophee"                  # trophée de saison : ni note, ni bonus, ni match, ni échange
     return "joueur"
@@ -432,7 +434,7 @@ def is_mascot(player) -> bool:
 
 
 def has_secret_card(player) -> bool:
-    """Chaque joueur, fan et la mascotte ont leur carte secrète (pas les équipements, stades ni moments gold)."""
+    """Chaque joueur, fan et la mascotte ont leur carte secrète (pas les équipements, stades, moments gold ni écussons)."""
     return card_kind(player) in ("joueur", "fan", "mascotte")
 
 
@@ -596,7 +598,7 @@ def pack_odds(db: Session) -> dict:
 # Postes : une faute de frappe ne doit pas casser une carte.
 # ---------------------------------------------------------------------
 VALID_POSTES = ("ATT", "MC", "DEF", "GB", "X", "FAN")
-RESERVED_POSTES = ("MASCOTTE", "EQUIPEMENT", "STADE", "MOMENT")
+RESERVED_POSTES = ("MASCOTTE", "EQUIPEMENT", "STADE", "MOMENT", "ECUSSON")
 
 
 def normalize_poste(raw: str) -> str:
@@ -606,7 +608,7 @@ def normalize_poste(raw: str) -> str:
     head, _, role = text.partition("/")
     head = head.strip().upper()
     if head in RESERVED_POSTES:
-        raise ValueError("« %s » est réservé : les mascottes, équipements et stades se créent avec leur propre commande" % head)
+        raise ValueError("« %s » est réservé : les mascottes, équipements, stades et écussons se créent avec leur propre commande" % head)
     if head not in VALID_POSTES:
         raise ValueError("Poste « %s » invalide : choisis parmi ATT, MC, DEF, GB, X (pas encore défini) ou FAN" % (raw or "").strip())
     if role.strip():

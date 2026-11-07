@@ -1187,7 +1187,7 @@ def admin_create_player(payload: schemas.AdminCreatePlayerRequest, db: Session =
 @app.get("/admin/players", dependencies=[Depends(require_admin)])
 def admin_list_players(kind: str = None, db: Session = Depends(get_db)):
     """Liste de TOUTES les cartes-personnages avec leur nom exact, poste, photo et raretés existantes.
-    Filtre facultatif : ?kind=joueur | fan | mascotte | equipement | stade | moment."""
+    Filtre facultatif : ?kind=joueur | fan | mascotte | equipement | stade | moment | ecusson."""
     order = {t: i for i, t in enumerate(game_logic.TIER_ORDER)}
     rows = []
     for p in db.query(Player).all():
@@ -1381,6 +1381,35 @@ def admin_create_gold(payload: schemas.AdminCreateGoldRequest, db: Session = Dep
     db.commit()
     push.safe(db, push.notify_cards_from_match, [], [{"action": e.action, "player": e.player_name} for e in payload.moments], False, None)
     return {"status": "ok", "gold_cards_created": created, "total_gold": db.query(Card).filter_by(tier=Tier.gold).count()}
+
+
+@app.post("/admin/create-crests", dependencies=[Depends(require_admin)])
+def admin_create_crests(payload: schemas.AdminCreateCrestsRequest, db: Session = Depends(get_db)):
+    """Ajoute des cartes GOLD « écusson » des clubs adverses : une fiche de poste ECUSSON au nom du club (avec l'image de
+    son écusson) et sa carte gold. Cartes de collection : elles sortent des packs avec les gold, se vendent et s'échangent,
+    mais ne jouent pas. Tout ou rien : un nom vide, déjà pris ou une image invalide et rien n'est créé."""
+    if not payload.clubs:
+        raise HTTPException(status_code=400, detail="Ajoute au moins un club")
+    taken = {n.casefold() for (n,) in db.query(Player.name).all()}      # comparé en Python : le lower() de SQLite ignore les accents
+    todo = []
+    for e in payload.clubs:                                             # 1) tout vérifier…
+        name = " ".join((e.name or "").split())
+        if not name:
+            raise HTTPException(status_code=400, detail="Un club doit avoir un nom")
+        if name.casefold() in taken:
+            raise HTTPException(status_code=400, detail="« %s » existe déjà (joueur, carte ou ligne en double) : choisis un autre nom" % name)
+        taken.add(name.casefold())
+        todo.append((name, _photo_path(e.photo_url) or None))
+    created = []
+    for name, photo in todo:                                            # 2) …puis tout créer
+        crest = Player(name=name, poste="ECUSSON", photo_url=photo)
+        db.add(crest)
+        db.flush()
+        db.add(Card(player_id=crest.id, tier=Tier.gold, vitesse=0, tir=0))
+        created.append({"name": name, "photo_url": photo})
+    db.commit()
+    push.safe(db, push.notify_all, "cards", "Nouvelles cartes au club ! 🛡️", "Écussons gold : " + ", ".join(c["name"] for c in created), url="/#collection", tag="cards")
+    return {"status": "ok", "crests_created": created, "total_gold": db.query(Card).filter_by(tier=Tier.gold).count()}
 
 
 @app.post("/admin/record-match", dependencies=[Depends(require_admin)])

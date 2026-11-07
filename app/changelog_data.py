@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-ecussons", "date": "2026-11-07", "category": "cartes", "title": "Les écussons des adversaires",
+     "text": "De nouvelles cartes gold arrivent : les écussons des clubs que nous affrontons. Ce sont des cartes de collection : elles ne jouent pas en match, mais se vendent et s'échangent comme les autres gold."},
     {"id": "2026-11-packs-plus-rares", "date": "2026-11-07", "category": "cartes", "title": "Épiques et légendaires plus rares",
      "text": "Les cartes épiques sortent moins souvent des packs, et les légendaires beaucoup moins. Le pack ultra garantit toujours une épique. Les éditions limitées et les gold ne changent pas."},
     {"id": "2026-11-speciales-v2", "date": "2026-11-06", "category": "cartes", "title": "Cartes spéciales : une carte de plus par catégorie, note maximale 90",

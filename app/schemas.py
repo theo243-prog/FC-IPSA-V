@@ -158,6 +158,15 @@ class AdminRecordMatchRequest(BaseModel):
     open_vote: bool = False             # match officiel : ouvre le vote « homme du match » (24 h) parmi les joueurs présents
 
 
+class CrestEntry(BaseModel):
+    name: str                       # le nom du club adverse (ex. « AS Saint-Étienne »)
+    photo_url: Optional[str] = None # l'image de l'écusson (ex. /photos/asse.webp), facultative
+
+
+class AdminCreateCrestsRequest(BaseModel):
+    clubs: List[CrestEntry] = []    # chaque club crée une carte GOLD « écusson » (carte de collection)
+
+
 class AdminCreateGoldRequest(BaseModel):
     moments: List[MomentEntry] = []     # chaque moment (joueur + action) crée une carte GOLD, sans match
     date: Optional[str] = None          # AAAA-MM-JJ, sert seulement à distinguer deux moments identiques (aujourd'hui par défaut)
