@@ -33,28 +33,40 @@ near = lambda a, b, eps=0.01: abs(a - b) <= eps
 print("1) PACK CLASSIQUE")
 p, _ = odds("classique", True)
 ok(near(p["gold"], 8.0) and near(p["halloween"], 3.5), "avec une édition : gold %.2f %% (8 %%), édition %.2f %% (3,5 %%)" % (p["gold"], p["halloween"]))
-ok(near(p["rare"] / p["epique"], 9) and near(p["epique"] / p["legendaire"], 4) and "speciale" not in p, "rare, épique et légendaire gardent leurs rapports (18 / 2 / 0,5) ; pas de spéciale")
+ok(near(p["rare"] / p["epique"], 12.5) and near(p["epique"] / p["legendaire"], 8) and "speciale" not in p, "rare, épique et légendaire dans les rapports 15 / 1,2 / 0,15 ; pas de spéciale")
 ok(near(sum(GL.TIER_WEIGHTS.values()), 100), "les poids de départ font 100 (la commune absorbe la différence)")
 q, _ = odds("classique", False)
-ok(near(q["gold"], 8.29) and "halloween" not in q and near(q["commune"], 71.21), "sans édition : gold 8,29 %%, commune 71,21 %% (%.2f)" % q["commune"])
+ok(near(q["gold"], 8.29) and "halloween" not in q and near(q["commune"], 75.36), "sans édition : gold 8,29 %%, commune 75,36 %% (%.2f)" % q["commune"])
+ok(GL.TIER_WEIGHTS == {"commune": 75.36, "rare": 15, "gold": 8.29, "epique": 1.2, "legendaire": 0.15}, "épique 1,2 (avant 2) et légendaire 0,15 (avant 0,5), rare 15 (avant 18), gold inchangé")
+pack3 = lambda pct: 100 * (1 - (1 - pct / 100) ** 3)
+ok(near(pack3(q["epique"]), 3.56, 0.01) and near(pack3(q["legendaire"]), 0.45, 0.01), "par pack de 3 : épique %.2f %% (1 sur 28), légendaire %.2f %% (1 sur 220)" % (pack3(q["epique"]), pack3(q["legendaire"])))
 
 print("2) PACK MATCH")
 p, _ = odds("match", True)
 ok(near(p["gold"], 10.0) and near(p["halloween"], 6.0), "avec une édition : gold %.2f %% (10 %%), édition %.2f %% (6 %%)" % (p["gold"], p["halloween"]))
 ok(near(GL.PACK_TYPES["match"]["weights"]["speciale"], 8) and near(p["speciale"], 7.52), "poids de la spéciale inchangé (8) : %.2f %% pendant une édition" % p["speciale"])
-ok(near(p["rare"] / p["epique"], 7.5) and near(p["epique"] / p["legendaire"], 4), "rare, épique et légendaire gardent leurs rapports (30 / 4 / 1)")
+ok(near(p["rare"] / p["epique"], 10.4) and near(p["epique"] / p["legendaire"], 2.5 / 0.3), "rare, épique et légendaire dans les rapports 26 / 2,5 / 0,3")
 q, _ = odds("match", False)
-ok(near(q["gold"], 10.64) and "halloween" not in q, "sans édition : gold 10,64 %")
+ok(near(q["gold"], 10.64) and "halloween" not in q and near(q["commune"], 52.56) and near(q["speciale"], 8), "sans édition : gold 10,64 %, spéciale 8 %, commune 52,56 %")
+ok(near(pack3(q["epique"]), 7.31, 0.01) and near(pack3(q["legendaire"]), 0.90, 0.01), "par pack de 3 : épique %.2f %%, légendaire %.2f %%" % (pack3(q["epique"]), pack3(q["legendaire"])))
 
 print("3) PACK ULTRA (case « gold, édition limitée ou mieux »)")
 _, w = odds("ultra", True)
 s = GL._slot_weights(w, "edition_min"); t = sum(s.values()); s = {k: 100 * v / t for k, v in s.items()}
 ok(set(s) == {"gold", "halloween", "epique", "legendaire"}, "la case tire parmi gold, édition, épique et légendaire")
-ok(near(s["halloween"], 25.16, 0.05) and near(s["gold"], 57.51, 0.05), "avec une édition : édition %.2f %%, gold %.2f %%, épique %.2f %%, légendaire %.2f %%" % (s["halloween"], s["gold"], s["epique"], s["legendaire"]))
+ok(near(s["halloween"], 27.34, 0.05) and near(s["gold"], 62.49, 0.05), "avec une édition : édition %.2f %%, gold %.2f %%, épique %.2f %%, légendaire %.2f %%" % (s["halloween"], s["gold"], s["epique"], s["legendaire"]))
 _, w = odds("ultra", False)
 s = GL._slot_weights(w, "edition_min"); t = sum(s.values()); s = {k: 100 * v / t for k, v in s.items()}
-ok(near(s["gold"], 76.83, 0.05) and near(s["epique"], 18.54, 0.05), "sans édition : gold %.2f %%, épique %.2f %%, légendaire %.2f %%" % (s["gold"], s["epique"], s["legendaire"]))
-ok(GL.PACK_TYPES["ultra"]["slots"] == [(1, "epique_legendaire"), (1, "edition_min"), (2, "rare_plus"), (6, "toutes")] and "1 gold, édition limitée ou mieux" in GL.PACK_TYPES["ultra"]["description"], "structure du pack ultra inchangée, description exacte")
+ok(near(s["gold"], 86.0, 0.05) and near(s["epique"], 12.45, 0.05), "sans édition : gold %.2f %%, épique %.2f %%, légendaire %.2f %%" % (s["gold"], s["epique"], s["legendaire"]))
+ok(GL.PACK_TYPES["ultra"]["slots"] == [(1, "epique"), (1, "edition_min"), (2, "rare_plus"), (6, "toutes")] and GL.PACK_TYPES["ultra"]["description"].endswith("1 gold, édition limitée ou mieux, 1 épique garantie"), "pack ultra : la case « épique ou légendaire » devient « épique garantie », description exacte")
+ok(GL._slot_weights(w, "epique") == {"epique": w["epique"]}, "la case épique ne tire que des épiques")
+no_leg = 1.0
+for n, rule in GL.PACK_TYPES["ultra"]["slots"]:
+    sw = GL._slot_weights(w, rule); no_leg *= (1 - sw.get("legendaire", 0) / sum(sw.values())) ** n
+ok(near(100 * (1 - no_leg), 3.6, 0.1), "une légendaire dans un pack ultra : %.2f %% (28,5 %% avant)" % (100 * (1 - no_leg)))
+ok(GL.pack_available({"epique": 1}, "ultra") and not GL.pack_available({"legendaire": 5}, "ultra"), "le pack ultra n'est en vente que s'il existe au moins une épique")
+r = c.get("/game/rules").json()["packs"]["ultra"]
+ok([sl["rule"] for sl in r["slots"]] == ["toutes", "rare_plus", "edition_min", "epique"], "aide du site : les 4 cases du pack ultra dans l'ordre d'affichage")
 
 print("4) RÈGLES INCHANGÉES")
 ok({k: GL.TIER_REF_COUNT[k] for k in ("gold", "speciale", "epique", "legendaire", "halloween", "noel")} == {"gold": 6, "speciale": 6, "epique": 6, "legendaire": 3, "halloween": 5, "noel": 5}, "réductions par nombre de cartes inchangées")
