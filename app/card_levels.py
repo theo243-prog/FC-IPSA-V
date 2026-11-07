@@ -90,7 +90,7 @@ def ineligible_reason(card: Card):
     """La raison pour laquelle cette carte ne peut pas évoluer (None si elle le peut)."""
     kind = game_logic.card_kind(card.player)
     if kind != "joueur":
-        labels = {"fan": "un fan", "mascotte": "la mascotte", "equipement": "un équipement", "stade": "un stade", "moment": "un moment mémorable"}
+        labels = {"fan": "un fan", "mascotte": "la mascotte", "equipement": "un équipement", "stade": "un stade", "moment": "un moment mémorable", "ecusson": "un écusson"}
         return "Seules les cartes de joueurs évoluent : celle-ci est %s." % labels.get(kind, "une carte spéciale")
     if group_of(card) is None:
         t = card.tier.value

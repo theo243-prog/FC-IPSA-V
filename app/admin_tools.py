@@ -77,6 +77,7 @@ def summarize(path: str, payload) -> str:
         if name == "first-steps-reset": return "Premiers pas : récupération de la récompense effacée pour %s" % who
         if name == "shop-cosmetics-refund": return "Cosmétique du shop %s remboursé à %s" % (_s(p, "item_id"), who)
         if name == "set-card-level": return "Niveau %s pour %s (%s) de %s" % (_s(p, "level", 0), _s(p, "player_name"), _s(p, "tier"), who)
+        if name == "create-crests": return "%d écusson(s) gold ajouté(s) : %s" % (len(p.get("clubs") or []), ", ".join(str((c or {}).get("name", "")) for c in (p.get("clubs") or [])))
         if name == "create-gold": return "%d carte(s) gold ajoutée(s) sans match" % len(p.get("moments") or [])
         if name == "changelog-add": return "Historique : note « %s » (%s) publiée" % (_s(p, "title"), _s(p, "category", "autre"))
         if name == "changelog-delete": return "Historique : note %s supprimée" % _s(p, "note_id")
