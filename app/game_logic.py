@@ -31,10 +31,10 @@ TIER_WEIGHTS = {"commune": 75.36, "rare": 15, "gold": 8.29, "epique": 1.2, "lege
 TIER_REF_COUNT = {"gold": 6, "speciale": 6, "epique": 6, "legendaire": 3, "halloween": 5, "noel": 5}
 
 # Valeur de revente d'un doublon, en crédits. Les spéciales et les secrètes valent autant que les épiques ; les éditions limitées autant que les gold.
-DUPLICATE_SELL_VALUE = {"commune": 1, "rare": 3, "halloween": 5, "noel": 5, "gold": 5, "secrete": 10, "speciale": 10, "epique": 10, "saison": 25, "legendaire": 50}
+DUPLICATE_SELL_VALUE = {"commune": 1, "rare": 3, "halloween": 5, "noel": 5, "gold": 5, "secrete": 10, "speciale": 10, "epique": 10, "saison": 25, "legendaire": 50, "numerotee": 0}      # une numérotée n'a jamais de doublon (une carte par exemplaire)
 
 # Ordre de rareté, de la plus commune à la plus rare.
-TIER_ORDER = ["commune", "rare", "halloween", "noel", "gold", "secrete", "speciale", "epique", "saison", "legendaire"]
+TIER_ORDER = ["commune", "rare", "halloween", "noel", "gold", "secrete", "speciale", "epique", "saison", "legendaire", "numerotee"]      # numérotée : hors packs, à part
 CUSTOM_EDITION_SLOTS = tuple("ed%d" % i for i in range(1, 13))       # 12 emplacements libres : tu les nommes toi-même (voir define_edition)
 EDITION_TIERS = ("halloween", "noel") + CUSTOM_EDITION_SLOTS      # les éditions limitées : plus rares que la rare, moins que les autres
 
@@ -418,6 +418,8 @@ def card_kind(player) -> str:
         return "stade"
     if poste == "MOMENT":
         return "moment"
+    if poste == "NUMEROTEE":
+        return "numerotee"                # exemplaire numéroté d'une série limitée (numbered.py) : collection, marché, enchères
     if poste == "ECUSSON":
         return "ecusson"                  # écusson d'un club adverse : carte gold de collection (ni note, ni match)
     if poste == "TROPHEE":
@@ -598,7 +600,7 @@ def pack_odds(db: Session) -> dict:
 # Postes : une faute de frappe ne doit pas casser une carte.
 # ---------------------------------------------------------------------
 VALID_POSTES = ("ATT", "MC", "DEF", "GB", "X", "FAN")
-RESERVED_POSTES = ("MASCOTTE", "EQUIPEMENT", "STADE", "MOMENT", "ECUSSON")
+RESERVED_POSTES = ("MASCOTTE", "EQUIPEMENT", "STADE", "MOMENT", "ECUSSON", "NUMEROTEE")
 
 
 def normalize_poste(raw: str) -> str:

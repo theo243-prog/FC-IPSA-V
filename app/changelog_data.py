@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-cartes-numerotees", "date": "2026-11-07", "category": "cartes", "title": "Cartes numérotées à tirage limité",
+     "text": "Des séries de cartes uniques, numérotées (par exemple n° 12/22), arrivent. Chaque exemplaire n'existe qu'une fois et appartient à un seul joueur. Elles se vendent au marché et aux enchères, mais ne jouent pas en match et ne sortent jamais des packs."},
     {"id": "2026-11-ecussons", "date": "2026-11-07", "category": "cartes", "title": "Les écussons des adversaires",
      "text": "De nouvelles cartes gold arrivent : les écussons des clubs que nous affrontons. Ce sont des cartes de collection : elles ne jouent pas en match, mais se vendent et s'échangent comme les autres gold."},
     {"id": "2026-11-packs-plus-rares", "date": "2026-11-07", "category": "cartes", "title": "Épiques et légendaires plus rares",

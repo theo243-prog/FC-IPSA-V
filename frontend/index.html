@@ -415,6 +415,19 @@
   .help-body h3{font-family:var(--font-head);font-weight:800;font-size:21px;margin:18px 0 4px;}
   .help-body h3:first-child{margin-top:0;}
   .mini-badge.mini-link{cursor:pointer;} .mini-badge.mini-link:hover{filter:brightness(1.1);}
+  /* exemplaires numérotés : fond sombre, liseré doré, badge « N° 12/22 » */
+  .card-front.tier-numerotee,.card.tier-numerotee:not(.locked){background:radial-gradient(110% 70% at 50% 0%,rgba(246,213,107,.28),rgba(246,213,107,0) 60%),linear-gradient(170deg,#2A2418 0%,#14110B 55%,#0B0A08 100%);color:#F6E7B8;box-shadow:var(--shadow),inset 0 0 0 2px #E9C46A,inset 0 0 12px rgba(233,196,106,.45);}
+  .tier-numerotee .card-tier-label{background:linear-gradient(90deg,#F6D56B,#C9A227);color:#1A1406;}
+  .tier-numerotee .card-poste{background:rgba(0,0,0,.45);color:#F6D56B;}
+  .tier-numerotee .card-name,.tier-numerotee.has-photo .card-name{color:#FFF3CC;text-shadow:0 0 6px rgba(0,0,0,.9),0 1px 2px rgba(0,0,0,.9);}
+  .tier-numerotee .card-stats span{background:rgba(0,0,0,.5);color:#F6D56B;}
+  .tier-numerotee .item-medal{background:radial-gradient(circle at 34% 28%,rgba(255,240,190,.35),rgba(0,0,0,.2) 70%);box-shadow:inset 0 0 0 3px #E9C46A,0 0 12px 2px rgba(233,196,106,.5);}
+  .mini-badge.tier-numerotee{background:linear-gradient(160deg,#2A2418,#0B0A08);color:#F6D56B;box-shadow:inset 0 0 0 2px #E9C46A;}
+  .num-badge{display:inline-block;font-weight:800;letter-spacing:.3px;border:1px solid #E9C46A;border-radius:6px;padding:0 5px;background:#14110B;color:#F6D56B;}
+  .num-badge.big{font-size:22px;padding:2px 10px;margin-bottom:4px;}
+  .series-box{margin:10px 0;text-align:center;} .series-count{margin:4px 0 8px;}
+  .series-holders{text-align:left;max-height:260px;overflow-y:auto;margin:8px auto 0;padding-left:0;list-style:none;max-width:340px;}
+  .series-holders li{padding:3px 0;border-bottom:1px dashed var(--border);} .series-holders li.me{font-weight:700;}
   .owned-by{text-align:center;font-size:13px;color:var(--text-muted);margin:4px 0 8px;}
   .changelog-box{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;}
   .cl-month{font-family:var(--font-head);font-weight:800;font-size:19px;margin:16px 0 6px;text-transform:capitalize;}
@@ -1524,6 +1537,7 @@
     if (poste === 'EQUIPEMENT') return 'equipement';
     if (poste === 'STADE') return 'stade';
     if (poste === 'MOMENT') return 'moment';
+    if (poste === 'NUMEROTEE') return 'numerotee';      // exemplaire numéroté d'une série limitée (« Titre — Sujet · n° 12/22 »)
     if (poste === 'ECUSSON') return 'ecusson';          // écusson d'un club adverse : carte gold de collection
     if (poste === 'TROPHEE') return 'trophee';
     return 'joueur';
@@ -1547,8 +1561,14 @@
     if (i < 0) return { action: name, who: '' };
     return { action: name.slice(0, i), who: name.slice(i + 3).replace(/ \(\d\d\/\d\d\)\+*$/, '').replace(/\++$/, '') };
   }
+  // un exemplaire numéroté s'appelle « Titre — Sujet · n° 12/22 » : le sujet en titre, le badge « N° 12/22 » en bas
+  function numberedParts(name){
+    const m = /^(.*) — (.*) · n° (\d+)\/(\d+)$/.exec(name || '');
+    return m ? { title: m[1], subject: m[2], number: +m[3], total: +m[4] } : { title: '', subject: name || '', number: 0, total: 0 };
+  }
+  const numBadgeText = card => { const n = numberedParts(card.player_name); return 'N° ' + n.number + '/' + n.total; };
   // Sur une carte SECRÈTE, c'est le surnom du joueur qui s'écrit (à défaut, son prénom) ; son numéro de maillot est dans la ligne du bas.
-  function cardDisplayName(card){ if (cardKind(card) === 'trophee') return trophyParts(card).title; if (cardKind(card) === 'moment') return momentParts(card.player_name).action; return (card.tier === 'secrete' && card.surnom) ? card.surnom : card.player_name; }
+  function cardDisplayName(card){ if (cardKind(card) === 'trophee') return trophyParts(card).title; if (cardKind(card) === 'moment') return momentParts(card.player_name).action; if (cardKind(card) === 'numerotee') return numberedParts(card.player_name).subject; return (card.tier === 'secrete' && card.surnom) ? card.surnom : card.player_name; }
   function numChip(card){ return (card.tier === 'secrete' && card.numero != null && card.numero !== '') ? '<span class="card-num" title="Numéro de maillot">#' + escapeHtml(String(card.numero)) + '</span>' : ''; }
   const EQUIP_BONUS_PCT = { commune: 1, rare: 2, epique: 3, legendaire: 5 };
   const ITEM_ICONS = {
@@ -1558,7 +1578,7 @@
   };
   function itemIcon(card){
     const key = (card.player_name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return ITEM_ICONS[key] || (cardKind(card) === 'stade' ? '🏟️' : cardKind(card) === 'moment' ? '🌟' : cardKind(card) === 'ecusson' ? '🛡️' : '🎒');
+    return ITEM_ICONS[key] || (cardKind(card) === 'stade' ? '🏟️' : cardKind(card) === 'moment' ? '🌟' : cardKind(card) === 'ecusson' ? '🛡️' : cardKind(card) === 'numerotee' ? '🔢' : '🎒');
   }
   function itemMedalHTML(card){
     const stade = cardKind(card) === 'stade';
@@ -1605,6 +1625,9 @@
     } else if (kind === 'moment') {
       statsRow = '<div class="card-stats" title="Moment mémorable d\'un match"><span>🌟 ' + escapeHtml(momentParts(card.player_name).who) + '</span></div>';
       posteLabel = '🌟';
+    } else if (kind === 'numerotee') {
+      statsRow = '<div class="card-stats" title="' + escapeHtml(numberedParts(card.player_name).title) + ' : exemplaire unique d\'une série limitée"><span class="num-badge">' + numBadgeText(card) + '</span></div>';
+      posteLabel = '🔢';
     } else if (kind === 'ecusson') {
       statsRow = '<div class="card-stats" title="Écusson d\'un club adverse : carte de collection"><span>🛡️ ÉCUSSON</span></div>';
       posteLabel = '🛡️';
@@ -1626,7 +1649,7 @@
     else if (kind === 'trophee') midHTML = trophyMedalHTML(card);
     else if (kind === 'ecusson') midHTML = crestImgHTML(card);
     else if (bgPhoto) midHTML = '';
-    else if (kind === 'equipement' || kind === 'stade' || kind === 'moment') midHTML = itemMedalHTML(card);
+    else if (kind === 'equipement' || kind === 'stade' || kind === 'moment' || kind === 'numerotee') midHTML = itemMedalHTML(card);
     else midHTML = '<span class="ball-fallback">⚽</span>';
     const formBar = card.form != null && card.form < 100 ? '<div class="form-bar" title="Forme en 1v1 : ' + card.form + ' % (remise à 100 % à minuit)"><i style="width:' + card.form + '%;background-position:' + (100 - card.form) + '% 0;"></i></div>' : '';
     return formBar + (kind === 'trophee' ? '' : editionDecor(card.tier)) + bgPhoto + '<div class="card-top"><span class="card-tier-label">'+(kind === 'trophee' && trophyParts(card).rank >= 4 ? (trophyParts(card).rank === 6 ? 'Pass' : 'Tournoi') : tierLabel(card.tier))+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
@@ -1679,7 +1702,7 @@
         const scrim = container.querySelector('.card-scrim'); if (scrim) scrim.remove();
         container.classList.remove('has-photo');
         const mid = container.querySelector('.card-mid');
-        if (mid) mid.innerHTML = (kind === 'equipement' || kind === 'stade' || kind === 'moment') ? itemMedalHTML(card) : '<span class="ball-fallback">⚽</span>';
+        if (mid) mid.innerHTML = (kind === 'equipement' || kind === 'stade' || kind === 'moment' || kind === 'numerotee') ? itemMedalHTML(card) : '<span class="ball-fallback">⚽</span>';
       }, { once: true });
     }
     const crest = container.querySelector('.crest-img');                // écusson introuvable : l'icône 🛡️
@@ -1699,7 +1722,7 @@
       img.replaceWith(span);
     }, { once: true });
   }
-  function tierLabel(t){ if (editionsInfo[t] && editionsInfo[t].label && !['halloween', 'noel'].includes(t)) return editionsInfo[t].label; return ({saison:'Saison', legendaire:'Légendaire', epique:'Épique', speciale:'Spéciale', secrete:'Secrète', gold:'Gold', halloween:'Halloween', noel:'Noël', rare:'Rare', commune:'Commune'})[t] || t; }
+  function tierLabel(t){ if (editionsInfo[t] && editionsInfo[t].label && !['halloween', 'noel'].includes(t)) return editionsInfo[t].label; return ({numerotee:'Numérotée', saison:'Saison', legendaire:'Légendaire', epique:'Épique', speciale:'Spéciale', secrete:'Secrète', gold:'Gold', halloween:'Halloween', noel:'Noël', rare:'Rare', commune:'Commune'})[t] || t; }
   // décor propre à une édition limitée (toiles et citrouille d'Halloween ; neige et flocons de Noël)
   const FLAKES = [[4,12,12,.85],[86,10,10,.7],[90,30,14,.9],[6,34,9,.6],[10,52,13,.8],[84,52,10,.75],[47,6,8,.6],[70,17,9,.55],[24,19,8,.5],[92,62,11,.8],[3,63,9,.7]];
   function editionDecor(tier){
@@ -1732,7 +1755,7 @@
     if (locked) return makeLockedCard(card);
     const el = document.createElement('div');
     el.className = 'card tier-' + card.tier + tourneyClass(card); applyCardTheme(el, card);
-    el.style.background = (EDITION_TIERS.includes(card.tier) || card.tier === 'saison') ? '' : 'linear-gradient(160deg, var(--' + (card.tier === 'legendaire' ? 'legend-2' : card.tier + '-2') + '), var(--' + (card.tier === 'legendaire' ? 'legend-1' : card.tier + '-1') + '))';
+    el.style.background = (EDITION_TIERS.includes(card.tier) || card.tier === 'saison' || card.tier === 'numerotee') ? '' : 'linear-gradient(160deg, var(--' + (card.tier === 'legendaire' ? 'legend-2' : card.tier + '-2') + '), var(--' + (card.tier === 'legendaire' ? 'legend-1' : card.tier + '-1') + '))';
     el.innerHTML = cardFrontHTML(card);
     markPhotoCard(el, card);
     setCardName(el, cardDisplayName(card));
@@ -1774,7 +1797,7 @@
       const kind = cardKind({ poste: p.poste });
       const role = kind === 'fan' ? (p.poste.split('/')[1] || '').trim() : '';
       const posteText = kind === 'fan' ? (role || 'Supporter') : kind === 'mascotte' ? 'Mascotte' : kind === 'equipement' ? 'Équipement'
-        : kind === 'stade' ? 'Stade' : kind === 'moment' ? 'Moment mémorable' : kind === 'ecusson' ? 'Écusson' : p.poste;
+        : kind === 'stade' ? 'Stade' : kind === 'moment' ? 'Moment mémorable' : kind === 'ecusson' ? 'Écusson' : kind === 'numerotee' ? 'Exemplaire numéroté' : p.poste;
       const maxEq = (duelConfig && duelConfig.max_equipment) || 1;
       let inner;
       if (kind === 'fan') {          // une carte Fan n'a ni stats ni note : elle apporte un bonus d'équipe en 1v1
@@ -1785,6 +1808,9 @@
         inner = '<div class="player-note">+' + (EQUIP_BONUS_PCT[p.tier] || 0) + ' %<small>Bonus d\'équipe en match 1v1. ' + (maxEq > 1 ? 'Jusqu\'à ' + maxEq + ' équipements par équipe' : 'Un seul équipement par équipe') + ', en plus du Fan et du Loup.</small></div>';
       } else if (kind === 'stade') {
         inner = '<div class="player-note">' + p.matches_joues + '<small>' + (p.matches_joues > 1 ? 'matchs joués' : 'match joué') + ' dans ce stade</small></div>';
+      } else if (kind === 'numerotee') {
+        const np = numberedParts(p.name);
+        inner = '<div class="player-note"><span class="num-badge big">N° ' + np.number + '/' + np.total + '</span><small>' + escapeHtml(np.title) + ' — ' + escapeHtml(np.subject) + ' · exemplaire unique d\'une série de ' + np.total + '. Il ne joue pas en match et ne sort jamais d\'un pack.</small></div><div class="series-box" id="seriesBox"></div>';
       } else if (kind === 'ecusson') {
         inner = '<div class="player-note">🛡️<small>Adversaire du club. Carte de collection : elle ne joue pas en match.</small></div>';
       } else if (kind === 'moment') {
@@ -1807,7 +1833,8 @@
         if (p.tier === 'secrete') inner += '<p class="tm-hint" style="text-align:center;">Carte secrète : elle ne sort jamais des packs. On la débloque en fusionnant 100 points de doublons (commune = 1, rare = 5).</p>';
       }
       body.innerHTML = photoHTML + '<div class="player-detail-poste">' + escapeHtml(posteText) + ' · ' + tierLabel(p.tier) + '</div>' + inner;
-      if (card && card.id && !card.locked) addOwnershipLine(body.querySelector('.player-detail-poste'), card.id);      // « 👥 Possédée par N % des joueurs »
+      if (card && card.id && !card.locked) addOwnershipLine(body.querySelector('.player-detail-poste'), card.id, kind === 'numerotee');
+      if (kind === 'numerotee' && card && card.id) loadSeriesBox(body.querySelector('#seriesBox'), card.id);      // « 18 / 22 attribués » et les détenteurs      // « 👥 Possédée par N % des joueurs »
       if (card && card._viewing && card.id) addOfferForm(body, card);          // la carte d'un autre joueur : on peut proposer de l'acheter
       if (card && card.quantity > 0 && !card._viewing) {          // une carte que JE possède : on peut la partager en image
         body.insertAdjacentHTML('beforeend', '<div class="share-actions" style="margin-top:16px;"><button class="btn-secondary" type="button" id="shareCardBtn">📤 Partager cette carte</button></div>');
@@ -1840,11 +1867,24 @@
     b.addEventListener('click', open);
     b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
   }
-  async function addOwnershipLine(anchor, cardId){
+  // Fiche d'un exemplaire numéroté : la série (« 18 / 22 attribués ») et, sur demande, ses détenteurs (pseudo et numéro)
+  async function loadSeriesBox(box, cardId){
+    if (!box) return;
+    let r; try { r = await fetch(API_BASE + '/cards/' + encodeURIComponent(cardId) + '/series').then(x => x.ok ? x.json() : null); } catch(e) { r = null; }
+    if (!r || !box.isConnected) return;
+    const se = r.series;
+    box.innerHTML = '<p class="series-count"><b>' + se.attributed + ' / ' + se.total + '</b> attribués · ' + se.reserve + ' dans la réserve du club</p>' +
+      '<button class="btn-small ghost" type="button">Voir les détenteurs</button><ol class="series-holders" hidden>' +
+      se.copies.map(c => '<li' + (c.number === r.number ? ' class="me"' : '') + '><span class="num-badge">N° ' + c.number + '/' + se.total + '</span> ' + (c.status === 'attribue' ? escapeHtml(c.holder || '?') + (c.where && c.where !== 'collection' ? ' <small>(' + escapeHtml(c.where) + ')</small>' : '') : '<i>réserve du club</i>') + '</li>').join('') + '</ol>';
+    const btn = box.querySelector('button'), list = box.querySelector('ol');
+    btn.addEventListener('click', () => { list.hidden = !list.hidden; btn.textContent = list.hidden ? 'Voir les détenteurs' : 'Masquer les détenteurs'; });
+  }
+  async function addOwnershipLine(anchor, cardId, numbered){
     if (!anchor) return;
     const d = await getOwnership();
     if (!d || !d.cards || !(cardId in d.cards) || !anchor.isConnected) return;
-    anchor.insertAdjacentHTML('afterend', '<p class="owned-by">' + ownershipText(d.cards[cardId], d.total_players) + '</p>');
+    const n = d.cards[cardId], txt = numbered ? (n ? '👥 1 joueur sur ' + d.total_players : '👥 Aucun joueur ne l\'a dans sa collection') : ownershipText(n, d.total_players);
+    anchor.insertAdjacentHTML('afterend', '<p class="owned-by">' + txt + '</p>');
   }
   // Niveaux de cartes : la fiche d'une de mes cartes montre son niveau, les paliers (doublons et crédits utilisés) et le bouton « Évoluer »
   async function loadLevelBox(body, card){
@@ -1890,6 +1930,7 @@
     if (tier === 'halloween') return { c1: '#2B1424', c2: '#0C0910', label: '#FF8A1F', labelText: '#1A0B00', border: '#FF8A1F', glow: '#FF8A1F' };
     if (tier === 'noel') return { c1: '#8E0A14', c2: '#D3202E', label: '#FFFFFF', labelText: '#B3121D', border: '#FFFFFF', glow: '#FF5C66' };
     if (editionsInfo[tier] && editionsInfo[tier].custom && editionsInfo[tier].c1) return { c1: editionsInfo[tier].c1, c2: editionsInfo[tier].c2, label: '#FFFFFF', labelText: editionsInfo[tier].c1, border: '#FFFFFF', glow: editionsInfo[tier].c2 };
+    if (tier === 'numerotee') return { c1: '#0B0A08', c2: '#2A2418', label: '#E9C46A', labelText: '#1A1406', border: '#E9C46A', glow: '#F6D56B' };
     if (tier === 'saison') return { c1: '#06243A', c2: '#0F5E73', label: '#F6D56B', labelText: '#3A2500', border: '#E9C46A', glow: '#2BB3C9' };
     const key = tier === 'legendaire' ? 'legend' : tier;
     const c1 = v('--' + key + '-1') || '#9C6B3E', c2 = v('--' + key + '-2') || '#D3A874';
@@ -1999,7 +2040,7 @@
   // une carte en miniature (même dégradé, même photo, même nom que dans le jeu) ; `big` ajoute l'étiquette de rareté
   function drawMiniCard(g, card, x, y, w, photos, fonts, big){
     const h = Math.round(w * 1.4286), r = Math.max(6, w * 0.063), pal = cardPalette(card), el = makeMiniCard(card, { hideCount: true });
-    const name = ((el.querySelector('.card-name') || {}).textContent || card.player_name).trim(), mid = ((el.querySelector('.card-mid') || {}).textContent || '').trim() || '⚽';
+    const name = ((el.querySelector('.card-name') || {}).textContent || card.player_name).trim() + (cardKind(card) === 'numerotee' ? ' · ' + numBadgeText(card) : ''), mid = ((el.querySelector('.card-mid') || {}).textContent || '').trim() || '⚽';
     const label = ((el.querySelector('.card-tier-label') || {}).textContent || tierLabel(card.tier)).trim();
     g.textAlign = 'left';                                           // (le dessin de la page peut avoir centré le texte : une carte s'écrit toujours à gauche)
     g.save(); const body = g.createLinearGradient(x, y, x + w * 0.5, y + h); body.addColorStop(0, pal.c2); body.addColorStop(1, pal.c1);
@@ -2188,7 +2229,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.07.2';
+  const SITE_VERSION = '2026.11.07.3';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3161,7 +3202,7 @@
     if (view.sort === 'nom') out.sort((a, b) => (!!b.quantity - !!a.quantity) || (a.quantity ? byName(a, b) : 0));
     else if (view.sort === 'note') out.sort((a, b) => (!!b.quantity - !!a.quantity) || (noteOf(b) - noteOf(a)) || byName(a, b));
     else if (view.sort === 'quantite') out.sort((a, b) => ((b.quantity || 0) - (a.quantity || 0)) || (a.quantity ? byName(a, b) : 0));
-    else out.sort((a, b) => (!!b.quantity - !!a.quantity) || (a.quantity ? a.player_name.localeCompare(b.player_name, 'fr') : a.id - b.id));      // d'abord celles qu'on a ; les inconnues ensuite, sans indice
+    else out.sort((a, b) => (!!b.quantity - !!a.quantity) || (a.quantity ? a.player_name.localeCompare(b.player_name, 'fr', { numeric: true }) : a.id - b.id));      // d'abord celles qu'on a (« n° 2/22 » avant « n° 12/22 ») ; les inconnues ensuite, sans indice
     return out;
   }
 
@@ -3172,7 +3213,7 @@
   function rememberFold(st, tier, c){ st.delete(c ? '+' + tier : tier); st.add(c ? tier : '+' + tier); }
   function buildTierGroups(cards, withSell, view){
     const frag = document.createDocumentFragment(), collapsedSet = getCollapsed();
-    ['saison','legendaire','epique','speciale','secrete','gold', ...ED_SLOTS.slice().reverse(), 'noel','halloween','rare','commune'].forEach(tier => {
+    ['numerotee','saison','legendaire','epique','speciale','secrete','gold', ...ED_SLOTS.slice().reverse(), 'noel','halloween','rare','commune'].forEach(tier => {
       const allOfTier = cards.filter(c => c.tier === tier);
       if (!allOfTier.length) return;
       const cardsOfTier = viewCards(allOfTier, view);
@@ -3182,8 +3223,8 @@
       const group = document.createElement('div'); group.className = 'tier-group' + (EDITION_TIERS.includes(tier) ? ' edition-group' : ''); group.dataset.tier = tier;
       const ed = editionsInfo[tier];
       const edNote = ed ? '<span class="edition-note">' + ed.icon + ' Édition limitée · ' + (ed.status === 'active' ? 'dans les packs jusqu\'au ' + formatDay(ed.end) : ed.status === 'ended' ? 'terminée le ' + formatDay(ed.end) : 'à partir du ' + formatDay(ed.start)) + '</span>' : '';
-      group.innerHTML = '<h3>' + (tier === 'saison' ? 'Trophées' : tierLabel(tier)) + (tier === 'saison' ? '' : ' <span style="color:var(--text-muted);font-size:14px;font-family:var(--font-body);">' + owned + '/' + allOfTier.length + '</span>') + edNote + '</h3>';
-      const h3 = group.querySelector('h3'), tg = document.createElement('button'), gLabel = (tier === 'saison' ? 'Trophées' : tierLabel(tier));
+      group.innerHTML = '<h3>' + (tier === 'saison' ? 'Trophées' : tier === 'numerotee' ? 'Éditions numérotées' : tierLabel(tier)) + (tier === 'saison' || tier === 'numerotee' ? '' : ' <span style="color:var(--text-muted);font-size:14px;font-family:var(--font-body);">' + owned + '/' + allOfTier.length + '</span>') + edNote + '</h3>';
+      const h3 = group.querySelector('h3'), tg = document.createElement('button'), gLabel = (tier === 'saison' ? 'Trophées' : tier === 'numerotee' ? 'Éditions numérotées' : tierLabel(tier));
       tg.type = 'button'; tg.className = 'tier-toggle'; tg.setAttribute('aria-label', 'Replier ou déplier ' + gLabel);      // (la flèche est dessinée en CSS : elle ne fait pas partie du texte du titre)
       const applyCollapsed = c => { group.classList.toggle('collapsed', c); tg.setAttribute('aria-expanded', String(!c)); tg.title = (c ? 'Déplier « ' : 'Replier « ') + gLabel + ' »'; };
       h3.insertBefore(tg, h3.firstChild); applyCollapsed(isFolded(collapsedSet, tier, cardsOfTier.length, view));
@@ -3287,8 +3328,8 @@
   // ---------- Aide : un bouton « ? Aide » par onglet ----------
   // Les pourcentages de tirage et les chiffres du 1v1 viennent du serveur : l'aide ne peut pas être en retard sur les règles.
   ED_SLOTS.forEach(k => { FAN_BONUS_PCT[k] = FAN_BONUS_PCT.halloween; });      // éditions personnalisées : même bonus que Halloween (+8 %)
-  const TIER_COLORS = { saison: '#0F7A93', commune: '#C9965F', rare: '#B8C2C8', halloween: '#FF8A1F', noel: '#C8202C', gold: '#E0A21B', secrete: '#4B3FA0', speciale: '#2FA45E', epique: '#7A3FC9', legendaire: '#F0C84B' };
-  const TIER_NAMES_PL = { saison: 'Saison (podium)', commune: 'Commune', rare: 'Rare', halloween: 'Halloween (édition limitée)', noel: 'Noël (édition limitée)', gold: 'Gold', secrete: 'Secrète', speciale: 'Spéciale', epique: 'Épique', legendaire: 'Légendaire' };
+  const TIER_COLORS = { numerotee: '#C9A227', saison: '#0F7A93', commune: '#C9965F', rare: '#B8C2C8', halloween: '#FF8A1F', noel: '#C8202C', gold: '#E0A21B', secrete: '#4B3FA0', speciale: '#2FA45E', epique: '#7A3FC9', legendaire: '#F0C84B' };
+  const TIER_NAMES_PL = { numerotee: 'Numérotée (série limitée)', saison: 'Saison (podium)', commune: 'Commune', rare: 'Rare', halloween: 'Halloween (édition limitée)', noel: 'Noël (édition limitée)', gold: 'Gold', secrete: 'Secrète', speciale: 'Spéciale', epique: 'Épique', legendaire: 'Légendaire' };
   ED_SLOTS.forEach((k, n) => { TIER_NAMES_PL[k] = 'Édition libre ' + (n + 1); });
   let gameRules = null;
   async function getGameRules(){
@@ -3367,7 +3408,7 @@
         '<li>Coût en crédits des niveaux 1 à 5 : commune 30, 60, 120, 200, 320 ; rare 45, 90, 180, 300, 480 ; édition limitée 60, 120, 240, 400, 640. Pas de limite par jour.</li>' +
         '<li>Tout se fait dans la <b>fiche de la carte</b> (touche-la dans ta collection) : niveau, doublons (« 7 sur 10 nécessaires »), coût et bouton « Évoluer ». Un badge « Niv. N » s\'affiche sur la carte.</li>' +
         '<li>Tu n\'as qu\'<b>une copie évoluée</b> par carte. <b>Le niveau suit la carte</b> : si tu la vends (annonce, enchère, offre d\'achat), l\'acheteur la reçoit avec son niveau, et tes autres copies repassent au niveau 0. Les échanges et la vente des doublons ne touchent jamais ta copie évoluée.</li></ul>' +
-        '<h3>Les autres types de cartes</h3><ul><li><b>Fans</b>, <b>Le Loup</b> (la mascotte) et <b>équipements</b> : pas de note, ils donnent un bonus d\'équipe en 1v1.</li><li><b>Stades</b>, <b>moments gold</b> et <b>écussons</b> 🛡️ des clubs adverses (gold) : des cartes de collection. Elles ne jouent pas en match, mais se vendent et s\'échangent.</li></ul>';
+        '<h3>Les autres types de cartes</h3><ul><li><b>Fans</b>, <b>Le Loup</b> (la mascotte) et <b>équipements</b> : pas de note, ils donnent un bonus d\'équipe en 1v1.</li><li><b>Éditions numérotées</b> 🔢 : des séries limitées à un nombre fixe d\'exemplaires (par exemple 22). Chaque exemplaire porte son numéro (« N° 12/22 »), n\'existe qu\'une fois et appartient à un seul joueur ; une fois tous attribués, il n\'y en aura jamais d\'autre. Ils ne sortent jamais d\'un pack, ne jouent pas en match et ne s\'échangent pas, mais se vendent au marché et aux enchères. Ta collection ne montre que ceux que tu possèdes ; leur fiche indique la série (« 18 / 22 attribués ») et ses détenteurs.</li><li><b>Stades</b>, <b>moments gold</b> et <b>écussons</b> 🛡️ des clubs adverses (gold) : des cartes de collection. Elles ne jouent pas en match, mais se vendent et s\'échangent.</li></ul>';
     } },
     marche: { title: 'Le marché', html(){
       return '<h3>Acheter et vendre entre joueurs</h3><ul>' +
@@ -3488,7 +3529,7 @@
   const PLACE_MS = 520;        // la carte vient se ranger sous le pack
   const NEXT_MS = 380;         // pause avant que la carte suivante apparaisse
   // du moins rare au plus rare : la meilleure carte est toujours la dernière
-  const TIER_RANK = ['commune', 'rare', 'halloween', 'noel', ...ED_SLOTS, 'gold', 'secrete', 'speciale', 'epique', 'legendaire'];
+  const TIER_RANK = ['commune', 'rare', 'halloween', 'noel', ...ED_SLOTS, 'gold', 'secrete', 'speciale', 'epique', 'legendaire', 'numerotee'];
   const rarityRank = card => { const i = TIER_RANK.indexOf(card.tier); return i < 0 ? TIER_RANK.length : i; };
   const noteOf = card => (card.display_note && card.display_note.value) || 0;
   function sortByRarity(cards){
@@ -3944,7 +3985,7 @@
       row.innerHTML =
         '<div class="mini-badge tier-' + l.card.tier + '">' + escapeHtml(l.card.player_name.slice(0,2)) + '</div>' +
         '<div class="listing-text"><b>' + (mine ? 'Toi' : escapeHtml(l.seller_pseudo)) + '</b> vend <b>' + escapeHtml(l.card.player_name) + '</b> (' + tierLabel(l.card.tier) + ') pour <b>' + l.price + ' crédits</b>' +
-        '<div class="listing-meta">' + (l.card.display_note ? ('⭐ ' + l.card.display_note.value) : '🎉 Supporter') + (l.level ? ' · <b>Niv. ' + l.level + '</b> <span title="Si tu as déjà cette carte au niveau ' + l.level + ' ou plus, tu gardes ton niveau">(niveau ' + l.level + ', perdu si tu as déjà un niveau ≥ ' + l.level + ')</span>' : '') + '</div></div>';
+        '<div class="listing-meta">' + (l.card.display_note ? ('⭐ ' + l.card.display_note.value) : cardKind(l.card) === 'fan' ? '🎉 Supporter' : cardKind(l.card) === 'numerotee' ? '<span class="num-badge">' + numBadgeText(l.card) + '</span>' : itemIcon(l.card) + ' Carte de collection') + (l.level ? ' · <b>Niv. ' + l.level + '</b> <span title="Si tu as déjà cette carte au niveau ' + l.level + ' ou plus, tu gardes ton niveau">(niveau ' + l.level + ', perdu si tu as déjà un niveau ≥ ' + l.level + ')</span>' : '') + '</div></div>';
       linkCardSheet(row, l.card);
       const btn = document.createElement('button');
       btn.className = 'btn-small' + (mine ? ' ghost' : '');
