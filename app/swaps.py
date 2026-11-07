@@ -42,7 +42,7 @@ class SwapRequest(BaseModel):
 
 
 def _tradeable(card: Card) -> bool:
-    return card.tier != Tier.saison and game_logic.card_kind(card.player) != "trophee"
+    return card.tier not in (Tier.saison, Tier.numerotee) and game_logic.card_kind(card.player) not in ("trophee", "numerotee")      # trophées et exemplaires numérotés : jamais échangés
 
 
 def _qty(db: Session, user_id: str, card_id: str) -> int:

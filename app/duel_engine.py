@@ -198,7 +198,7 @@ def validate_team(db: Session, user: User, formation: str, tactic: str, slots: l
             raise DuelError(card.player.name + " est la mascotte : place-la dans l'emplacement Loup")
         if kind == "equipement":
             raise DuelError(card.player.name + " est un équipement : place-le dans un emplacement Équipement")
-        if kind in ("stade", "moment", "ecusson"):
+        if kind in ("stade", "moment", "ecusson", "numerotee"):
             raise DuelError(card.player.name + " est une carte de collection : elle ne peut pas jouer sur le terrain")
         counts[cat] += 1
         cards.append((card, cat))

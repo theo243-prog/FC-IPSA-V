@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -63,6 +63,7 @@ app.include_router(welcome.router)         # accueil des nouveaux comptes : pop-
 app.include_router(inbox.router)           # encadré « Notifications » du site (défi relevé, carte vendue, enchère dépassée…)
 app.include_router(card_levels.router)     # niveaux de cartes : faire évoluer une copie (+1 de note par niveau, 5 au plus)
 app.include_router(motm.router)            # homme du match : vote après un match officiel, classement privé de la saison
+app.include_router(numbered.router)         # cartes numérotées à tirage limité (séries, exemplaires « n° 12/22 »)
 app.include_router(ownership.router)        # part des joueurs qui possèdent chaque carte (fiche d'une carte)
 app.include_router(changelog.router)        # historique des changements du jeu (bouton « 📜 Nouveautés »)
 app.include_router(admin_page.router)      # la page d'administration (/admin-panel) et le numéro de version (/version)
@@ -301,6 +302,8 @@ def get_collection(user: User = Depends(get_current_user), db: Session = Depends
             continue                                   # édition pas encore commencée : ses cartes restent une surprise
         if c.tier == Tier.saison and not owned_rows.get(c.id, 0) and not reveal:
             continue                                   # un trophée de saison n'est visible que de ceux qui l'ont gagné
+        if c.tier == Tier.numerotee and not owned_rows.get(c.id, 0):
+            continue                                   # exemplaire numéroté : seulement ceux qu'on possède (jamais de case « ? »)
         qty = owned_rows.get(c.id, 0)
         row = {**(with_level(card_out(c), lv.get(c.id, 0) if qty > 0 else 0) if (qty > 0 or reveal) else locked_out(c)), "quantity": qty}
         if qty > 0:
@@ -343,7 +346,7 @@ def sell_duplicate(
     return {"credits_gained": credits_gained, "credits_total": user.credits}
 
 
-@app.get("/players/{player_name}/detail")
+@app.get("/players/{player_name:path}/detail")      # « :path » : le nom d'un exemplaire numéroté contient « / » (« n° 12/22 »)
 def player_detail(player_name: str, tier: str = "commune", db: Session = Depends(get_db)):
     """Fiche d'un joueur. `tier` = rareté de la carte sur laquelle on a cliqué
     (détermine l'unique note affichée)."""
@@ -527,6 +530,8 @@ def get_user_collection(pseudo: str, db: Session = Depends(get_db), x_admin_key:
             continue                                   # une édition pas encore commencée reste une surprise pour tout le monde
         if c.tier == Tier.saison and not qty and not reveal:
             continue                                   # un trophée de saison n'est visible que de ceux qui l'ont gagné
+        if c.tier == Tier.numerotee and not qty:
+            continue                                   # exemplaire numéroté : seulement ceux qu'il possède
         out.append({**(with_level(card_out(c), lv.get(c.id, 0) if qty > 0 else 0) if (qty > 0 or reveal) else locked_out(c)), "quantity": qty})
     return out
 
@@ -838,7 +843,7 @@ def user_profile(pseudo: str, db: Session = Depends(get_db)):
 
 @app.get("/leaderboard")
 def leaderboard(db: Session = Depends(get_db)):
-    total_cards = db.query(Card).filter(Card.tier != Tier.saison).count()      # 100 % = TOUTES les cartes du jeu, sans exception (éditions limitées et secrètes comprises) ; sauf les cartes « Saison » (podium)
+    total_cards = db.query(Card).filter(Card.tier.notin_([Tier.saison, Tier.numerotee])).count()      # 100 % = TOUTES les cartes du jeu, sans exception (éditions limitées et secrètes comprises) ; sauf les cartes « Saison » (podium)
     reserved = dict(duel_engine.reserved_credits(db))   # crédits séquestrés dans les défis ouverts : comptés dans le total public (le montant d'une enveloppe reste secret)
     for uid, amount in offers.reserved_credits(db).items():        # … et ceux mis de côté dans les offres d'achat
         reserved[uid] = reserved.get(uid, 0) + amount
@@ -852,7 +857,7 @@ def leaderboard(db: Session = Depends(get_db)):
     for u in users:
         owned_count = (
             db.query(OwnedCard).join(Card, Card.id == OwnedCard.card_id)
-            .filter(OwnedCard.user_id == u.id, OwnedCard.quantity > 0, Card.tier != Tier.saison)
+            .filter(OwnedCard.user_id == u.id, OwnedCard.quantity > 0, Card.tier.notin_([Tier.saison, Tier.numerotee]))
             .count()
         )
         completion = round(100 * owned_count / total_cards, 1) if total_cards else 0.0
@@ -889,6 +894,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     user = db.query(User).filter_by(pseudo=payload.pseudo).first()
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    numbered.on_user_deleted(db, user)          # D'ABORD : ses exemplaires numérotés (ventes et enchères annulées) vont au compte de réserve (ou refus clair)
     db.query(PushSubscription).filter_by(user_id=user.id).delete()
     db.query(NotifPref).filter_by(user_id=user.id).delete()
     db.query(NotifState).filter_by(user_id=user.id).delete()

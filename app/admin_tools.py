@@ -77,6 +77,10 @@ def summarize(path: str, payload) -> str:
         if name == "first-steps-reset": return "Premiers pas : récupération de la récompense effacée pour %s" % who
         if name == "shop-cosmetics-refund": return "Cosmétique du shop %s remboursé à %s" % (_s(p, "item_id"), who)
         if name == "set-card-level": return "Niveau %s pour %s (%s) de %s" % (_s(p, "level", 0), _s(p, "player_name"), _s(p, "tier"), who)
+        if name == "series-create": return "Série numérotée « %s — %s » créée (%s exemplaires)" % (_s(p, "title"), _s(p, "subject"), _s(p, "total"))
+        if name == "series-mint": return "Exemplaire %sde la série %s donné à %s" % (("n° %s " % p["number"]) if p.get("number") else "", _s(p, "series"), who)
+        if name == "series-award-first": return "Série %s : n° 1 à %s aux premiers inscrits%s" % (_s(p, "series"), _s(p, "count"), " (aperçu)" if p.get("dry_run", True) else "")
+        if name == "series-reclaim": return "Série %s : n° %s remis dans la réserve" % (_s(p, "series"), _s(p, "number"))
         if name == "create-crests": return "%d écusson(s) gold ajouté(s) : %s" % (len(p.get("clubs") or []), ", ".join(str((c or {}).get("name", "")) for c in (p.get("clubs") or [])))
         if name == "create-gold": return "%d carte(s) gold ajoutée(s) sans match" % len(p.get("moments") or [])
         if name == "changelog-add": return "Historique : note « %s » (%s) publiée" % (_s(p, "title"), _s(p, "category", "autre"))

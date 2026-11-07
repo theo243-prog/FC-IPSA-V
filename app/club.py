@@ -44,7 +44,7 @@ LEVELS = {
 }
 TRIES_PER_DAY = 3
 TITLE_WINS = 10                         # victoires au niveau Difficile pour le titre « Tombeur du club »
-NEVER_PLAYED = {"secrete", "saison"}    # jamais dans l'équipe du club (la carte secrète et les trophées)
+NEVER_PLAYED = {"secrete", "saison", "numerotee"}    # jamais dans l'équipe du club (la carte secrète et les trophées)
 RNG = random.SystemRandom()              # (remplacé dans les tests)
 
 

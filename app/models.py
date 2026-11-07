@@ -52,6 +52,7 @@ class Tier(str, enum.Enum):
     ed10 = "ed10"
     ed11 = "ed11"
     ed12 = "ed12"
+    numerotee = "numerotee"  # exemplaire NUMÉROTÉ d'une série limitée (n° 12/22) : jamais dans les packs, une seule carte par exemplaire (voir numbered.py)
     saison = "saison"      # carte EXCLUSIVE du podium d'une saison 1v1 : jamais dans les packs (voir seasons.py)
     legendaire = "legendaire"
 
