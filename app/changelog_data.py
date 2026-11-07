@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-encheres-du-club", "date": "2026-11-07", "category": "modes", "title": "🖤 Enchères du club",
+     "text": "Chaque joueur et chaque fan a désormais 22 cartes uniques « Édition Noire », numérotées de 1 à 22. Chaque jour à 17h, le club en met 5 aux enchères, jusqu'au lendemain 16h, dans l'onglet Marché. Le gagnant garde la carte et son numéro pour toujours ; une carte sans enchère reviendra un autre jour."},
     {"id": "2026-11-cartes-numerotees", "date": "2026-11-07", "category": "cartes", "title": "Cartes numérotées à tirage limité",
      "text": "Des séries de cartes uniques, numérotées (par exemple n° 12/22), arrivent. Chaque exemplaire n'existe qu'une fois et appartient à un seul joueur. Elles se vendent au marché et aux enchères, mais ne jouent pas en match et ne sortent jamais des packs."},
     {"id": "2026-11-ecussons", "date": "2026-11-07", "category": "cartes", "title": "Les écussons des adversaires",

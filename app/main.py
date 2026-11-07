@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -63,6 +63,7 @@ app.include_router(welcome.router)         # accueil des nouveaux comptes : pop-
 app.include_router(inbox.router)           # encadré « Notifications » du site (défi relevé, carte vendue, enchère dépassée…)
 app.include_router(card_levels.router)     # niveaux de cartes : faire évoluer une copie (+1 de note par niveau, 5 au plus)
 app.include_router(motm.router)            # homme du match : vote après un match officiel, classement privé de la saison
+app.include_router(club_auctions.router)    # enchères quotidiennes du club (cartes uniques Édition Noire)
 app.include_router(numbered.router)         # cartes numérotées à tirage limité (séries, exemplaires « n° 12/22 »)
 app.include_router(ownership.router)        # part des joueurs qui possèdent chaque carte (fiche d'une carte)
 app.include_router(changelog.router)        # historique des changements du jeu (bouton « 📜 Nouveautés »)
@@ -879,6 +880,7 @@ def purge_card_rows(db: Session, card_ids: list):
         return
     duel_engine.purge_card_references(db, card_ids)
     offers.refund_for_cards(db, card_ids)          # offres d'achat visant ces cartes : annulées et remboursées
+    club_auctions.on_cards_deleted(db, card_ids)   # enchères du club sur ces cartes : marquées annulées
     auctions.cancel_for_cards(db, card_ids)        # enchères sur ces cartes : annulées, meilleur enchérisseur remboursé
     db.query(Listing).filter(Listing.card_id.in_(card_ids)).delete(synchronize_session=False)
     db.query(OwnedCard).filter(OwnedCard.card_id.in_(card_ids)).delete(synchronize_session=False)
@@ -913,6 +915,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     tournament.on_user_deleted(db, user.id)                                               # ses inscriptions au tournoi
     battlepass.on_user_deleted(db, user.id)
     auctions.on_user_deleted(db, user.id)                                                 # ses enchères (et ses mises en tête)
+    club_auctions.on_user_deleted(db, user.id)                                            # ses gains aux enchères du club (le pseudo reste dans l'historique)
     referral.on_user_deleted(db, user.id)                                                 # son code et ses parrainages
     minigame.on_user_deleted(db, user.id)                                                 # son mini-jeu du jour                                               # sa progression dans le Pass
     club.on_user_deleted(db, user.id)                                                     # ses matchs contre le club
@@ -1183,11 +1186,13 @@ def admin_create_player(payload: schemas.AdminCreatePlayerRequest, db: Session =
             game_logic.get_or_create_owned(db, user, card).quantity += 1
     db.commit()
     game_logic.ensure_secret_cards(db)                       # sa carte secrète (fusion)
+    black = club_auctions.ensure_series(db, player)          # sa série Édition Noire (22 exemplaires dans la réserve du club)
+    db.commit()
     push.safe(db, push.notify_all, "cards", "Nouveau %s au club ⚽" % ("fan" if is_fan else "joueur"),
               "%s rejoint les cartes à collectionner." % name, url="/#collection", tag="cards")
     return {"status": "ok", "player": player.name, "poste": player.poste, "type": "fan" if is_fan else "joueur",
             "cards_created": [t.value for t in tiers] + ["secrete"], "photo_url": player.photo_url,
-            "granted_to": user.pseudo if user else None}
+            "granted_to": user.pseudo if user else None, "edition_noire": bool(black)}
 
 
 @app.get("/admin/players", dependencies=[Depends(require_admin)])
@@ -1990,6 +1995,7 @@ def _tick(fn):
 def _background_tick():
     _tick(weekly.check_and_run)             # cartes spéciales du vendredi 17h
     _tick(auctions.tick)                    # fin des enchères
+    _tick(club_auctions.tick)               # enchères du club : résultats, lot du jour à 17h00 (à partir de la date de démarrage)
     _tick(motm.tick)                        # fin des votes « homme du match » (24 h)
     _tick(backup.tick)                      # sauvegarde automatique (une fois par jour, à partir de 4h)
     _tick(battlepass.tick)                  # étoiles du Pass de la saison qui vient de finir

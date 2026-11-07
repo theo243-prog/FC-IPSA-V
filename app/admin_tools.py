@@ -80,6 +80,17 @@ def summarize(path: str, payload) -> str:
         if name == "series-create": return "Série numérotée « %s — %s » créée (%s exemplaires)" % (_s(p, "title"), _s(p, "subject"), _s(p, "total"))
         if name == "series-mint": return "Exemplaire %sde la série %s donné à %s" % (("n° %s " % p["number"]) if p.get("number") else "", _s(p, "series"), who)
         if name == "series-award-first": return "Série %s : n° 1 à %s aux premiers inscrits%s" % (_s(p, "series"), _s(p, "count"), " (aperçu)" if p.get("dry_run", True) else "")
+        if name == "series-create-all": return "Séries Édition Noire de tous les joueurs et fans%s" % (" (aperçu)" if p.get("dry_run", True) else "")
+        if name == "club-auctions-launch": return "Enchères du club : lot lancé à la main%s" % ((" (%s min)" % p["minutes"]) if p.get("minutes") else "")
+        if name == "club-auctions-cancel": return "Enchères du club : enchère %s annulée" % str(_s(p, "auction_id"))[:8]
+        if name == "club-auctions-settings":
+            parts = []
+            if p.get("start_at"): parts.append("démarrage le %s" % p["start_at"])
+            if "paused" in p and p["paused"] is not None: parts.append("en pause" if p["paused"] else "reprise")
+            if p.get("per_day"): parts.append("%s enchères par jour" % p["per_day"])
+            if p.get("start_price"): parts.append("prix de départ %s" % p["start_price"])
+            if "teaser" in p: parts.append("teaser %s" % ("affiché" if p["teaser"] else "masqué"))
+            return "Enchères du club : " + (", ".join(parts) or "réglages")
         if name == "series-reclaim": return "Série %s : n° %s remis dans la réserve" % (_s(p, "series"), _s(p, "number"))
         if name == "create-crests": return "%d écusson(s) gold ajouté(s) : %s" % (len(p.get("clubs") or []), ", ".join(str((c or {}).get("name", "")) for c in (p.get("clubs") or [])))
         if name == "create-gold": return "%d carte(s) gold ajoutée(s) sans match" % len(p.get("moments") or [])

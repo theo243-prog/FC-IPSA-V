@@ -106,17 +106,22 @@ def find_series(db: Session, ref) -> NumberedSeries:
 
 # ------------------------------------------------------------------------- attribution ----
 
-def mint(db: Session, s: NumberedSeries, user: User, number: int = None) -> NumberedCopy:
-    """Donne un exemplaire de la réserve : le premier numéro libre, ou le numéro demandé (sans commit)."""
+def mint(db: Session, s: NumberedSeries, user: User, number: int = None, allow_auction: bool = False) -> NumberedCopy:
+    """Donne un exemplaire de la réserve : le premier numéro libre, ou le numéro demandé (sans commit). Un exemplaire de la réserve
+    mis aux enchères par le club n'est pas libre (sauf allow_auction : c'est la fin de cette enchère qui le donne)."""
+    from .auctions import Auction
     q = db.query(NumberedCopy).filter_by(series_id=s.id)
+    busy = set() if allow_auction else {cid for (cid,) in db.query(Auction.card_id).all()}
     if number is not None:
         if not (1 <= number <= s.total):
             raise HTTPException(status_code=400, detail="Le n° %d n'existe pas : la série « %s » a %d exemplaires" % (number, full_name(s), s.total))
         copy = q.filter_by(number=number).with_for_update().first()
         if copy is None or copy.status != "reserve":
             raise HTTPException(status_code=400, detail="Le n° %d/%d est déjà attribué" % (number, s.total))
+        if copy.card_id in busy:
+            raise HTTPException(status_code=400, detail="Le n° %d/%d est aux enchères du club : attends la fin de l'enchère" % (number, s.total))
     else:
-        copy = q.filter_by(status="reserve").order_by(NumberedCopy.number).with_for_update().first()
+        copy = next((c for c in q.filter_by(status="reserve").order_by(NumberedCopy.number).with_for_update().all() if c.card_id not in busy), None)
         if copy is None:
             raise HTTPException(status_code=400, detail="Série épuisée : les %d exemplaires de « %s » sont attribués" % (s.total, full_name(s)))
     copy.status, copy.attributed_at = "attribue", datetime.utcnow()
@@ -144,16 +149,18 @@ def _holders(db: Session, copies) -> dict:
 
 
 def series_out(db: Session, s: NumberedSeries) -> dict:
+    from .auctions import Auction
     copies = db.query(NumberedCopy).filter_by(series_id=s.id).order_by(NumberedCopy.number).all()
     who = _holders(db, copies)
+    club_sale = {cid for (cid,) in db.query(Auction.card_id).filter(Auction.seller_id == "club", Auction.card_id.in_([c.card_id for c in copies])).all()}
     rows = []
     for c in copies:
         pseudo, where = who.get(c.card_id, (None, None))
         rows.append({"number": c.number, "card_id": c.card_id, "status": c.status, "holder": pseudo if c.status == "attribue" else None,
-                     "where": where if c.status == "attribue" else "réserve du club"})
+                     "where": where if c.status == "attribue" else ("aux enchères du club" if c.card_id in club_sale else "réserve du club")})
     attributed = sum(1 for c in copies if c.status == "attribue")
     return {"id": s.id, "title": s.title, "subject": s.subject, "name": full_name(s), "total": s.total, "attributed": attributed,
-            "reserve": s.total - attributed, "description": s.description, "photo_url": s.photo_url,
+            "reserve": s.total - attributed, "in_club_auction": len(club_sale), "emitted": attributed + len(club_sale), "description": s.description, "photo_url": s.photo_url,
             "created_at": s.created_at.isoformat() if s.created_at else None, "copies": rows}
 
 
@@ -269,7 +276,9 @@ def admin_series_award_first(payload: SeriesAwardFirst, db: Session = Depends(ge
     s = find_series(db, payload.series)
     if payload.count > s.total:
         raise HTTPException(status_code=400, detail="La série « %s » n'a que %d exemplaires" % (full_name(s), s.total))
-    taken = [c.number for c in db.query(NumberedCopy).filter(NumberedCopy.series_id == s.id, NumberedCopy.number <= payload.count, NumberedCopy.status != "reserve").order_by(NumberedCopy.number).all()]
+    from .auctions import Auction
+    busy = {cid for (cid,) in db.query(Auction.card_id).all()}
+    taken = [c.number for c in db.query(NumberedCopy).filter(NumberedCopy.series_id == s.id, NumberedCopy.number <= payload.count).order_by(NumberedCopy.number).all() if c.status != "reserve" or c.card_id in busy]
     if taken:
         raise HTTPException(status_code=400, detail="Refusé : les n° %s sont déjà attribués" % ", ".join(str(n) for n in taken))
     excluded = {p.strip() for p in payload.exclude if p.strip()}

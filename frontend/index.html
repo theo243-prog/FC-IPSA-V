@@ -136,6 +136,7 @@
   .notice-item{display:block;width:100%;text-align:left;font:inherit;color:var(--text);background:none;border:none;border-top:1px solid var(--border);padding:7px 2px;cursor:pointer;font-size:13px;line-height:1.35;}
   .notice-item:first-of-type{border-top:none;} .notice-item:hover{background:var(--bg-sunk);}
   .notice-item.new b::before{content:"● ";color:#E5484D;} .notice-item small{display:block;color:var(--text-muted);font-size:11px;margin-top:1px;}
+  .notice-item.noir{background:#000;color:#E9C46A;border-radius:8px;padding:7px 8px;box-shadow:inset 0 0 0 1px #D4AF37;} .notice-item.noir small{color:#C9A85A;}
   .notice-empty{font-size:13px;color:var(--text-muted);padding:4px 0;}
   /* ---- Forme des cartes en 1v1 (barre de fatigue) ---- */
   .form-bar{position:absolute;left:8%;right:8%;bottom:3px;height:4px;border-radius:3px;background:rgba(0,0,0,.35);z-index:4;overflow:hidden;pointer-events:none;}
@@ -425,6 +426,31 @@
   .mini-badge.tier-numerotee{background:linear-gradient(160deg,#2A2418,#0B0A08);color:#F6D56B;box-shadow:inset 0 0 0 2px #E9C46A;}
   .num-badge{display:inline-block;font-weight:800;letter-spacing:.3px;border:1px solid #E9C46A;border-radius:6px;padding:0 5px;background:#14110B;color:#F6D56B;}
   .num-badge.big{font-size:22px;padding:2px 10px;margin-bottom:4px;}
+  /* Édition Noire (enchères du club) : fond entièrement noir, bordure et écritures en or, liseré brillant discret */
+  .card-front.edition-noire,.card.edition-noire:not(.locked){background:#000 !important;color:#E9C46A;box-shadow:var(--shadow),inset 0 0 0 2px #D4AF37,inset 0 0 0 3px #000,inset 0 0 0 4px rgba(246,213,107,.35);position:relative;overflow:hidden;}
+  .edition-noire::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(115deg,transparent 40%,rgba(255,236,170,.22) 50%,transparent 60%) no-repeat;background-size:250% 100%;animation:noirShine 6s ease-in-out infinite;z-index:3;}
+  @keyframes noirShine{0%,70%{background-position:130% 0;}100%{background-position:-130% 0;}}
+  @media (prefers-reduced-motion: reduce){.edition-noire::after{animation:none;background:none;}}
+  .edition-noire .card-tier-label{background:#000;color:#E9C46A;box-shadow:inset 0 0 0 1px #D4AF37;}
+  .edition-noire .card-poste,.edition-noire .card-stats span{background:#000;color:#E9C46A;box-shadow:inset 0 0 0 1px rgba(212,175,55,.7);}
+  .edition-noire .card-name,.edition-noire.has-photo .card-name{color:#F2D27A;text-shadow:0 0 6px #000,0 1px 2px #000;}
+  .edition-noire .card-scrim{background:linear-gradient(180deg,rgba(0,0,0,0) 45%,rgba(0,0,0,.92) 100%);}
+  .edition-noire .num-badge{background:#000;color:#F2D27A;border-color:#D4AF37;}
+  .edition-noire .item-medal{background:#000;box-shadow:inset 0 0 0 3px #D4AF37,0 0 10px 1px rgba(212,175,55,.45);}
+  .edition-noire .card-watermark{opacity:.08;filter:sepia(1) saturate(3);}
+  .edition-noire .noir-num{font-family:var(--font-head);font-weight:800;font-size:2em;color:#F2D27A;text-shadow:0 0 8px rgba(212,175,55,.6);}
+  .modal-box.noir-sheet{background:#000;color:#E9C46A;box-shadow:0 0 0 1px #D4AF37,0 20px 60px rgba(0,0,0,.6);} .noir-sheet h2,.noir-sheet .player-detail-poste,.noir-sheet .player-note,.noir-sheet .player-note small,.noir-sheet .series-count,.noir-sheet .series-holders,.noir-sheet p,.noir-sheet li,.noir-sheet i,.noir-sheet small{color:#E9C46A !important;} .noir-sheet .modal-close{color:#E9C46A;} .noir-sheet .btn-small,.noir-sheet button.btn-secondary,.noir-sheet .share-btn{background:#000;color:#F2D27A;border-color:#D4AF37;}
+  .mini-badge.edition-noire{background:#000;color:#E9C46A;box-shadow:inset 0 0 0 2px #D4AF37;}
+  .noir-panel{background:#000;color:#E9C46A;border:1px solid #D4AF37;border-radius:14px;padding:12px;margin:8px 0 14px;box-shadow:0 0 0 1px rgba(246,213,107,.15) inset;}
+  .noir-panel h3{margin:0 0 4px;color:#F2D27A;font-size:17px;} .noir-panel p{margin:2px 0;color:#D9BE73;font-size:13px;}
+  .noir-panel .noir-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px;}
+  .noir-lot{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;font-size:12.5px;color:#E9C46A;}
+  .noir-lot .card{margin:0 auto;} .noir-lot b{color:#F2D27A;} .noir-lot .auc-left{color:#F2D27A;}
+  .noir-lot .noir-bid{display:flex;gap:4px;justify-content:center;} .noir-panel .noir-lot input[type=number]{width:70px;background:#111;color:#F2D27A;border:1px solid #D4AF37;border-radius:6px;padding:4px;}
+  .noir-lot button{background:#000;color:#F2D27A;border:1px solid #D4AF37;border-radius:8px;padding:4px 10px;font-weight:700;cursor:pointer;}
+  .noir-lot button:hover{background:#1a1406;} .noir-lot button:disabled{opacity:.5;cursor:default;}
+  .noir-panel .noir-results{margin:4px 0 0;padding-left:18px;font-size:12.5px;color:#D9BE73;} .noir-panel .noir-preview{color:#000;background:#E9C46A;border-radius:6px;padding:3px 8px;display:inline-block;font-weight:700;font-size:12px;margin-bottom:4px;}
+  .noir-teaser{background:#000;color:#E9C46A;border:1px solid #D4AF37;border-radius:12px;padding:10px 12px;margin:8px 0 14px;font-weight:700;text-align:center;}
   .series-box{margin:10px 0;text-align:center;} .series-count{margin:4px 0 8px;}
   .series-holders{text-align:left;max-height:260px;overflow-y:auto;margin:8px auto 0;padding-left:0;list-style:none;max-width:340px;}
   .series-holders li{padding:3px 0;border-bottom:1px dashed var(--border);} .series-holders li.me{font-weight:700;}
@@ -1128,6 +1154,7 @@
         <div class="form-row"><label>Durée de l'enchère</label><div class="dur-btns" id="auctionDurations"></div></div>
         <button id="createAuctionBtn" class="btn-secondary">Lancer l'enchère</button>
       </div>
+      <div id="clubAuctionsEl"></div>
       <h3 class="section-h">🔨 Enchères en cours</h3>
       <div id="auctionsEl"></div>
       <h3 class="section-h">🏷️ Annonces à prix fixe</h3>
@@ -1551,7 +1578,9 @@
   }
   const isTourneyCard = card => card.tier === 'saison' && [4, 5].includes(trophyParts(card).rank);          // vainqueur ou finaliste d'un tournoi : carte violette et rose fluo
   const isPassCard = card => card.tier === 'saison' && trophyParts(card).rank === 6 && !!trophyParts(card).theme;          // carte exclusive du Pass : aux couleurs du thème du mois
-  const tourneyClass = card => isTourneyCard(card) ? ' trophy-tournoi' : isPassCard(card) ? ' trophy-pass' : '';
+  const isBlackCard = card => !!card && cardKind(card) === 'numerotee' && numberedParts(card.player_name).title === 'Édition Noire';      // carte unique des enchères du club
+  const noirClass = card => isBlackCard(card) ? ' edition-noire' : '';
+  const tourneyClass = card => (isTourneyCard(card) ? ' trophy-tournoi' : isPassCard(card) ? ' trophy-pass' : '') + noirClass(card);
   function applyCardTheme(el, card){ if (isPassCard(card)) { const th = trophyParts(card).theme; el.style.setProperty('--tp1', th.c1); el.style.setProperty('--tp2', th.c2); el.style.setProperty('--tpa', th.accent); el.style.setProperty('--tpg', th.c2 + '99'); } }
   const trophyMedalOf = card => { const t = trophyParts(card); return t.rank === 6 && t.theme ? t.theme.emoji : (TROPHY_MEDALS[t.rank] || '🏆'); };
   function trophyMedalHTML(card){ return '<div class="item-medal trophy-medal"><span class="item-icon" aria-hidden="true">' + trophyMedalOf(card) + '</span></div>'; }
@@ -1582,6 +1611,7 @@
   }
   function itemMedalHTML(card){
     const stade = cardKind(card) === 'stade';
+    if (isBlackCard(card)) return '<div class="item-medal"><span class="item-icon noir-num" aria-hidden="true">' + numberedParts(card.player_name).number + '</span></div>';     // Édition Noire sans photo : son numéro, en or
     return '<div class="item-medal' + (stade ? ' is-stade' : '') + '"><span class="item-icon" aria-hidden="true">' + itemIcon(card) + '</span></div>';
   }
   // les noms longs (« Chaussettes trouées ») rétrécissent pour tenir sur la carte
@@ -1627,7 +1657,7 @@
       posteLabel = '🌟';
     } else if (kind === 'numerotee') {
       statsRow = '<div class="card-stats" title="' + escapeHtml(numberedParts(card.player_name).title) + ' : exemplaire unique d\'une série limitée"><span class="num-badge">' + numBadgeText(card) + '</span></div>';
-      posteLabel = '🔢';
+      posteLabel = isBlackCard(card) ? 'N°' : '🔢';
     } else if (kind === 'ecusson') {
       statsRow = '<div class="card-stats" title="Écusson d\'un club adverse : carte de collection"><span>🛡️ ÉCUSSON</span></div>';
       posteLabel = '🛡️';
@@ -1784,6 +1814,8 @@
   }
 
   // ---------- Fiche détaillée d'un joueur ----------
+  // la fiche d'une carte Édition Noire est noire et or (le titre de la fenêtre est le nom de l'exemplaire)
+  (function(){ const t = document.getElementById('modalTitle'), box = t && t.closest('.modal-box'); if (!box) return; new MutationObserver(() => box.classList.toggle('noir-sheet', t.textContent.startsWith('Édition Noire — '))).observe(t, { childList: true, characterData: true, subtree: true }); })();
   async function openPlayerDetail(playerName, tier, card){
     try {
       const res = await fetch(API_BASE + '/players/' + encodeURIComponent(playerName) + '/detail?tier=' + encodeURIComponent(tier || 'commune'));
@@ -1810,7 +1842,7 @@
         inner = '<div class="player-note">' + p.matches_joues + '<small>' + (p.matches_joues > 1 ? 'matchs joués' : 'match joué') + ' dans ce stade</small></div>';
       } else if (kind === 'numerotee') {
         const np = numberedParts(p.name);
-        inner = '<div class="player-note"><span class="num-badge big">N° ' + np.number + '/' + np.total + '</span><small>' + escapeHtml(np.title) + ' — ' + escapeHtml(np.subject) + ' · exemplaire unique d\'une série de ' + np.total + '. Il ne joue pas en match et ne sort jamais d\'un pack.</small></div><div class="series-box" id="seriesBox"></div>';
+        inner = '<div class="player-note"><span class="num-badge big">N° ' + np.number + '/' + np.total + '</span><small>' + escapeHtml(np.title) + ' — ' + escapeHtml(np.subject) + ' · exemplaire unique d\'une série de ' + np.total + '. Il ne joue pas en match et ne sort jamais d\'un pack.' + (np.title === 'Édition Noire' ? ' Il s\'obtient aux 🖤 Enchères du club (onglet Marché).' : '') + '</small></div><div class="series-box" id="seriesBox"></div>';
       } else if (kind === 'ecusson') {
         inner = '<div class="player-note">🛡️<small>Adversaire du club. Carte de collection : elle ne joue pas en match.</small></div>';
       } else if (kind === 'moment') {
@@ -1873,9 +1905,11 @@
     let r; try { r = await fetch(API_BASE + '/cards/' + encodeURIComponent(cardId) + '/series').then(x => x.ok ? x.json() : null); } catch(e) { r = null; }
     if (!r || !box.isConnected) return;
     const se = r.series;
-    box.innerHTML = '<p class="series-count"><b>' + se.attributed + ' / ' + se.total + '</b> attribués · ' + se.reserve + ' dans la réserve du club</p>' +
+    const noir = se.title === 'Édition Noire';
+    box.innerHTML = (noir ? '<p class="series-count"><b>' + (se.emitted != null ? se.emitted : se.attributed) + ' / ' + se.total + '</b> émises' + (se.in_club_auction ? ' (dont ' + se.in_club_auction + ' aux enchères du club)' : '') + ' · le n° 1 est gardé par le club</p>'
+      : '<p class="series-count"><b>' + se.attributed + ' / ' + se.total + '</b> attribués · ' + se.reserve + ' dans la réserve du club</p>') +
       '<button class="btn-small ghost" type="button">Voir les détenteurs</button><ol class="series-holders" hidden>' +
-      se.copies.map(c => '<li' + (c.number === r.number ? ' class="me"' : '') + '><span class="num-badge">N° ' + c.number + '/' + se.total + '</span> ' + (c.status === 'attribue' ? escapeHtml(c.holder || '?') + (c.where && c.where !== 'collection' ? ' <small>(' + escapeHtml(c.where) + ')</small>' : '') : '<i>réserve du club</i>') + '</li>').join('') + '</ol>';
+      se.copies.map(c => '<li' + (c.number === r.number ? ' class="me"' : '') + '><span class="num-badge">N° ' + c.number + '/' + se.total + '</span> ' + (c.status === 'attribue' ? escapeHtml(c.holder || '?') + (c.where && c.where !== 'collection' ? ' <small>(' + escapeHtml(c.where) + ')</small>' : '') : '<i>' + escapeHtml(c.where || 'réserve du club') + '</i>') + '</li>').join('') + '</ol>';
     const btn = box.querySelector('button'), list = box.querySelector('ol');
     btn.addEventListener('click', () => { list.hidden = !list.hidden; btn.textContent = list.hidden ? 'Voir les détenteurs' : 'Masquer les détenteurs'; });
   }
@@ -1924,7 +1958,7 @@
   function loadImg(src, cross){ return new Promise(res => { const i = new Image(); if (cross) i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
   function roundRect(g, x, y, w, h, r){ g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
   // la palette d'une carte précise : celle de sa rareté, sauf les cartes de tournoi (violet et rose fluo)
-  function cardPalette(card){ if (isPassCard(card)) { const th = trophyParts(card).theme; return { c1: th.c2, c2: th.c1, label: th.accent, labelText: '#FFFFFF', border: th.accent, glow: th.c2 }; } return isTourneyCard(card) ? { c1: '#FF2FD1', c2: '#7B2FF7', label: '#FF9BEF', labelText: '#2A0540', border: '#FF7BE8', glow: '#FF2FD1' } : tierPalette(card.tier); }
+  function cardPalette(card){ if (isBlackCard(card)) return { c1: '#000000', c2: '#000000', label: '#E9C46A', labelText: '#000000', border: '#D4AF37', glow: '#F6D56B' }; if (isPassCard(card)) { const th = trophyParts(card).theme; return { c1: th.c2, c2: th.c1, label: th.accent, labelText: '#FFFFFF', border: th.accent, glow: th.c2 }; } return isTourneyCard(card) ? { c1: '#FF2FD1', c2: '#7B2FF7', label: '#FF9BEF', labelText: '#2A0540', border: '#FF7BE8', glow: '#FF2FD1' } : tierPalette(card.tier); }
   function tierPalette(tier){
     const v = n => cssVar(n);
     if (tier === 'halloween') return { c1: '#2B1424', c2: '#0C0910', label: '#FF8A1F', labelText: '#1A0B00', border: '#FF8A1F', glow: '#FF8A1F' };
@@ -2229,7 +2263,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.07.3';
+  const SITE_VERSION = '2026.11.07.4';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2589,7 +2623,7 @@
     box.innerHTML = '<div class="notice-head"><b>🔔 ' + (noticeHistory ? 'Mes notifications' : d.unread + ' nouvelle' + (d.unread > 1 ? 's' : '') + ' notification' + (d.unread > 1 ? 's' : '')) + '</b><span class="acts">' +
       (d.unread ? '<button class="btn-small ghost" type="button" id="noticeReadAll">Tout marquer comme lu</button>' : '') +
       '<button class="btn-small ghost" type="button" id="noticeToggle">' + (noticeHistory ? 'Fermer' : 'Historique') + '</button></span></div>' +
-      (list.length ? list.map(n => '<button type="button" class="notice-item' + (n.read ? '' : ' new') + '" data-id="' + n.id + '" data-url="' + escapeHtml(n.url || '') + '"><b>' + escapeHtml(n.title) + '</b> ' + escapeHtml(n.body) + '<small>' + agoText(n.at) + '</small></button>').join('')
+      (list.length ? list.map(n => '<button type="button" class="notice-item' + (n.read ? '' : ' new') + ((n.title || '').indexOf('🖤') >= 0 ? ' noir' : '') + '" data-id="' + n.id + '" data-url="' + escapeHtml(n.url || '') + '"><b>' + escapeHtml(n.title) + '</b> ' + escapeHtml(n.body) + '<small>' + agoText(n.at) + '</small></button>').join('')
                    : '<div class="notice-empty">Aucune notification pour l\'instant : défis relevés, ventes, enchères et échanges apparaîtront ici.</div>');
     box.querySelectorAll('.notice-item').forEach(b => b.addEventListener('click', async () => {
       const tab = NOTICE_TABS[(b.dataset.url || '').replace(/^\//, '')]; if (tab) openTab(tab);          // « /#marche » → onglet Marché
@@ -3416,6 +3450,12 @@
         '<li><b>Annuler</b> une de tes annonces te rend la carte.</li>' +
         '<li><b>Acheter</b> : le prix est débité de tes crédits et versé au vendeur. Tu ne peux pas acheter tes propres annonces.</li>' +
         '<li><b>Enchères 🔨</b> : pour une carte rare ou mieux, tu choisis le prix de départ et la durée (de 15 minutes à 24 heures). Chaque enchère doit dépasser la précédente d\'au moins 5 %. Tes crédits sont mis de côté et rendus si quelqu\'un te dépasse. Une enchère dans les 2 dernières minutes prolonge l\'enchère de 2 minutes. À la fin, la carte va au meilleur enchérisseur ; sans enchère, elle te revient.</li></ul>' +
+        '<h3>🖤 Les enchères du club (Édition Noire)</h3><ul>' +
+        '<li>Chaque joueur et chaque fan du club a sa série <b>Édition Noire</b> de <b>22 cartes uniques</b>, numérotées de 1 à 22 (« N° 12/22 »). Il n\'en existera jamais plus : chaque numéro n\'a qu\'un seul propriétaire. Le n° 1 est gardé par le club.</li>' +
+        '<li>Chaque jour à <b>17h00</b>, le club met <b>5 cartes</b> aux enchères, de 5 personnes différentes (celles qui ont le moins de cartes déjà sorties). Elles se terminent le <b>lendemain à 16h00</b>.</li>' +
+        '<li>Mêmes règles que les autres enchères : +5 % au moins, crédits mis de côté et rendus si on te dépasse, +2 minutes pour une enchère dans les 2 dernières minutes (jamais au-delà de 17h00).</li>' +
+        '<li>Le gagnant reçoit la carte avec son numéro. Les crédits payés vont au club : personne ne les reçoit. Une carte sans enchère retourne dans la réserve et reviendra un autre jour. Pas de limite : tu peux en gagner plusieurs le même jour.</li>' +
+        '<li>Ces cartes sont des pièces de collection : elles ne jouent pas en match et ne sortent jamais d\'un pack. Tu peux les revendre au marché ou aux enchères.</li></ul>' +
         '<p class="help-note"><b>Cartes évoluées</b> : une carte « Niv. N » se vend avec son niveau. Si tu en as plusieurs copies, tu choisis de vendre ta carte évoluée ou un doublon normal. L\'acheteur garde toujours son meilleur niveau : s\'il a déjà cette carte au niveau N ou plus, le niveau reçu est perdu. Une annonce annulée ou une enchère sans preneur te rend la carte avec son niveau ; pour une offre d\'achat, tu donnes une copie normale si tu en as une.</p>' +
         '<p class="help-note">Pour garder une carte précieuse, vends plutôt tes doublons.</p>' +
         '<h3>L\'historique des échanges</h3><p>Tout en bas du marché, la liste des échanges entre joueurs (annonces achetées et offres acceptées), du plus récent au plus ancien : qui a vendu à qui, quelle carte, à quel prix. Le nom d\'une carte échangée par offre d\'achat n\'est montré qu\'aux joueurs de l\'échange et à ceux qui possèdent cette carte.</p>' +
@@ -3781,7 +3821,55 @@
 
   // ---------- Enchères ----------
   const durLabel = m => m < 60 ? m + ' min' : (m / 60) + ' h';
+  // 🖤 Enchères du club : 5 cartes uniques Édition Noire chaque jour à 17h00, jusqu'au lendemain 16h00 (masquées avant le démarrage)
+  let clubAuc = null;
+  const hhmm = iso => { const d = new Date(iso); return d.getHours() + 'h' + String(d.getMinutes()).padStart(2, '0'); };
+  function dayWord(iso){ const d = new Date(iso), t = new Date(); const k = x => x.getFullYear() * 400 + x.getMonth() * 32 + x.getDate(); const diff = k(d) - k(t); return diff === 0 ? 'aujourd\'hui' : diff === 1 ? 'demain' : 'le ' + d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }); }
+  async function loadClubAuctions(){
+    try { clubAuc = await api('/club-auctions'); } catch(e) { return; }
+    clubAuc.t0 = Date.now(); renderClubAuctions();
+  }
+  function renderClubAuctions(){
+    const root = byId('clubAuctionsEl'); if (!root || !clubAuc) return;
+    const d = clubAuc;
+    if (!d.visible) { root.innerHTML = d.teaser ? '<div class="noir-teaser">🖤 ' + escapeHtml(d.teaser) + '</div>' : ''; return; }
+    const next = d.paused ? 'Programme en pause.' : d.next_lot_at ? 'Prochain lot ' + dayWord(d.next_lot_at) + ' à ' + hhmm(d.next_lot_at) + '.' : '';
+    root.innerHTML = '<section class="noir-panel" aria-label="Enchères du club"><h3>🖤 Enchères du club</h3>' +
+      (d.preview ? '<span class="noir-preview">Aperçu : visible seulement par toi jusqu\'au démarrage (' + escapeHtml(d.start_label) + ')</span>' : '') +
+      '<p>Chaque jour à ' + d.lot_hour + 'h00, le club met aux enchères des cartes <b>uniques</b> Édition Noire (' + d.total + ' exemplaires numérotés par personne, jamais plus). Fin le lendemain à ' + d.end_hour + 'h00. ' + next + '</p>' +
+      (d.lots.length ? '<div class="noir-grid"></div>' : '<p><i>Aucune enchère du club en cours.</i></p>') +
+      (d.results && d.results.length ? '<p style="margin-top:10px;"><b>Derniers gagnants</b></p><ul class="noir-results">' + d.results.map(r => '<li>' + escapeHtml(r.subject) + ' <span class="num-badge">N° ' + r.number + '/' + r.total + '</span> → <b>' + escapeHtml(r.winner || '?') + '</b> (' + r.price + ' crédits)</li>').join('') + '</ul>' : '') +
+      '</section>';
+    const grid = root.querySelector('.noir-grid'); if (!grid) return;
+    d.lots.forEach(l => {
+      const box = document.createElement('div'); box.className = 'noir-lot';
+      const end = d.t0 + l.seconds_left * 1000, ext = l.ends_at !== l.base_end;
+      const cardEl = l.card ? makeMiniCard(Object.assign({}, l.card, { quantity: 1 }), { hideCount: true }) : document.createElement('div');
+      if (l.card) { cardEl.style.cursor = 'pointer'; cardEl.title = 'Voir la fiche'; cardEl.addEventListener('click', () => openPlayerDetail(l.card.player_name, l.card.tier, Object.assign({}, l.card, { quantity: 0 }))); }
+      box.appendChild(cardEl);
+      const info = document.createElement('div');
+      info.innerHTML = '<div>' + (l.current_bid === null ? 'Départ : <b>' + l.start_price + ' crédits</b>' : '<b>' + l.current_bid + ' crédits</b> · ' + (l.i_am_top ? 'toi 🏆' : escapeHtml(l.top_bidder))) + '</div>' +
+        '<div>Se termine ' + dayWord(l.ends_at) + ' à ' + hhmm(l.ends_at) + (ext ? ' (prolongée)' : '') + '</div><div>⏱ <span class="auc-left" data-end="' + end + '">' + fmtLeft(l.seconds_left) + '</span></div>';
+      box.appendChild(info);
+      if (token) {
+        const row = document.createElement('div'); row.className = 'noir-bid';
+        const inp = document.createElement('input'); inp.type = 'number'; inp.min = l.min_next_bid; inp.value = l.min_next_bid; inp.setAttribute('aria-label', 'Ton enchère en crédits');
+        const b = document.createElement('button'); b.type = 'button'; b.textContent = l.i_am_top ? 'Relever' : 'Enchérir';
+        b.addEventListener('click', async () => {
+          const amount = parseInt(inp.value, 10);
+          if (!amount || amount < l.min_next_bid) { toast('Ton enchère doit être d\'au moins ' + l.min_next_bid + ' crédits'); return; }
+          b.disabled = true;
+          try { await api('/auctions/' + l.auction_id + '/bid', { method: 'POST', body: JSON.stringify({ amount }) }); toast('🖤 Enchère de ' + amount + ' crédits enregistrée'); await refreshMe(true); }
+          catch(e) { toast(e.message); }
+          loadClubAuctions();
+        });
+        row.appendChild(inp); row.appendChild(b); box.appendChild(row);
+      }
+      grid.appendChild(box);
+    });
+  }
   async function loadAuctions(){
+    loadClubAuctions();
     try { auctionsState = await api('/auctions'); } catch(e) { return; }
     auctionsState.t0 = Date.now(); renderAuctions(); renderAuctionForm();
   }
@@ -3800,7 +3888,7 @@
     root.innerHTML = ''; const wrap = document.createElement('div'); wrap.className = 'listings';
     list.forEach(a => {
       const row = document.createElement('div'); row.className = 'listing auction'; const end = auctionsState.t0 + a.seconds_left * 1000;
-      row.innerHTML = '<div class="mini-badge tier-' + a.card.tier + '">' + escapeHtml(a.card.player_name.slice(0, 2)) + '</div><div class="listing-text"><b>' + (a.mine ? 'Toi' : escapeHtml(a.seller_pseudo)) + '</b> met <b>' + escapeHtml(a.card.player_name) + '</b> (' + tierLabel(a.card.tier) + ')' + (a.level ? ' <b>Niv. ' + a.level + '</b>' : '') + ' aux enchères' + (a.level ? ' <span class="muted">(niveau ' + a.level + ', perdu si tu as déjà un niveau ≥ ' + a.level + ')</span>' : '') +
+      row.innerHTML = '<div class="mini-badge tier-' + a.card.tier + noirClass(a.card) + '">' + escapeHtml(a.card.player_name.slice(0, 2)) + '</div><div class="listing-text"><b>' + (a.mine ? 'Toi' : escapeHtml(a.seller_pseudo)) + '</b> met <b>' + escapeHtml(a.card.player_name) + '</b> (' + tierLabel(a.card.tier) + ')' + (a.level ? ' <b>Niv. ' + a.level + '</b>' : '') + ' aux enchères' + (a.level ? ' <span class="muted">(niveau ' + a.level + ', perdu si tu as déjà un niveau ≥ ' + a.level + ')</span>' : '') +
         '<div class="listing-meta">' + (a.current_bid === null ? 'Départ : ' + a.start_price + ' crédits · aucune enchère' : 'Meilleure enchère : <b>' + a.current_bid + ' crédits</b> par ' + (a.i_am_top ? 'toi 🏆' : escapeHtml(a.top_bidder)) + ' (' + a.bids + ' enchère' + (a.bids > 1 ? 's' : '') + ')') + ' · ⏱ <span class="auc-left" data-end="' + end + '">' + fmtLeft(a.seconds_left) + '</span></div></div>';
       linkCardSheet(row, a.card);
       const act = document.createElement('div'); act.className = 'auc-actions';
@@ -3983,7 +4071,7 @@
       const mine = l.seller_pseudo === myPseudo;
       const row = document.createElement('div'); row.className = 'listing';
       row.innerHTML =
-        '<div class="mini-badge tier-' + l.card.tier + '">' + escapeHtml(l.card.player_name.slice(0,2)) + '</div>' +
+        '<div class="mini-badge tier-' + l.card.tier + noirClass(l.card) + '">' + escapeHtml(l.card.player_name.slice(0,2)) + '</div>' +
         '<div class="listing-text"><b>' + (mine ? 'Toi' : escapeHtml(l.seller_pseudo)) + '</b> vend <b>' + escapeHtml(l.card.player_name) + '</b> (' + tierLabel(l.card.tier) + ') pour <b>' + l.price + ' crédits</b>' +
         '<div class="listing-meta">' + (l.card.display_note ? ('⭐ ' + l.card.display_note.value) : cardKind(l.card) === 'fan' ? '🎉 Supporter' : cardKind(l.card) === 'numerotee' ? '<span class="num-badge">' + numBadgeText(l.card) + '</span>' : itemIcon(l.card) + ' Carte de collection') + (l.level ? ' · <b>Niv. ' + l.level + '</b> <span title="Si tu as déjà cette carte au niveau ' + l.level + ' ou plus, tu gardes ton niveau">(niveau ' + l.level + ', perdu si tu as déjà un niveau ≥ ' + l.level + ')</span>' : '') + '</div></div>';
       linkCardSheet(row, l.card);

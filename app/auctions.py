@@ -28,6 +28,7 @@ DURATIONS = [15, 30, 60, 180, 360, 720, 1440]          # les boutons proposés a
 MAX_OPEN_PER_SELLER = 5
 SNIPE_WINDOW = 120                                      # secondes
 ANNOUNCE_TIERS = {"legendaire", "secrete"}              # les ventes de ces raretés sont annoncées dans le chat
+CLUB_SELLER = "club"                                    # vendeur réservé des enchères du club (club_auctions.py), sans compte
 
 
 def _now() -> datetime:
@@ -68,6 +69,9 @@ def _tell(db, user_id, title, body):
 
 
 def _settle(db: Session, a: Auction) -> None:
+    if a.seller_id == CLUB_SELLER:                              # enchère du club : pas de vendeur à créditer (crédits détruits)
+        from . import club_auctions
+        return club_auctions.settle(db, a)
     card = db.get(Card, a.card_id); seller = db.get(User, a.seller_id); winner = db.get(User, a.top_bidder_id) if a.top_bidder_id else None
     name = offers._name(card) if card else "une carte"
     from . import card_levels
@@ -148,7 +152,7 @@ def list_auctions(viewer=Depends(optional_user), db: Session = Depends(get_db)):
     settle_due(db); now = _now(); out = []
     from .card_levels import AuctionLevel
     lv = {r.auction_id: r.level for r in db.query(AuctionLevel).all()}
-    for a in db.query(Auction).order_by(Auction.ends_at).all():
+    for a in db.query(Auction).filter(Auction.seller_id != CLUB_SELLER).order_by(Auction.ends_at).all():     # (le club a sa section : /club-auctions)
         card = db.get(Card, a.card_id)
         if card is None:
             continue
@@ -196,6 +200,9 @@ def bid(auction_id: str, payload: BidRequest, user: User = Depends(get_current_u
         raise HTTPException(status_code=404, detail="Cette enchère est terminée ou n'existe plus")
     if a.seller_id == user.id:
         raise HTTPException(status_code=400, detail="Tu ne peux pas enchérir sur ta propre carte")
+    if a.seller_id == CLUB_SELLER:
+        from . import club_auctions
+        club_auctions.check_can_bid(db, user)                    # avant le démarrage du programme : seulement les comptes de test
     need = min_next_bid(a)
     if payload.amount < need:
         raise HTTPException(status_code=400, detail="Ton enchère doit être d'au moins %d crédits" % need)
@@ -212,6 +219,9 @@ def bid(auction_id: str, payload: BidRequest, user: User = Depends(get_current_u
     a.current_bid, a.top_bidder_id, a.bids = payload.amount, user.id, (a.bids or 0) + 1
     if (a.ends_at - _now()).total_seconds() < SNIPE_WINDOW:
         a.ends_at = _now() + timedelta(seconds=SNIPE_WINDOW)      # prolongation anti-« dernière seconde »
+        if a.seller_id == CLUB_SELLER:
+            from . import club_auctions
+            club_auctions.cap_end(db, a)                          # enchère du club : au plus 60 min après 16h00
     db.commit()
     return {"status": "ok", "credits": user.credits, "current_bid": a.current_bid, "min_next_bid": min_next_bid(a), "seconds_left": max(0, int((a.ends_at - _now()).total_seconds()))}
 
