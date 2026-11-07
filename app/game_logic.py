@@ -16,12 +16,13 @@ MAX_STORED_PACKS = 3                   # jamais plus de 3 packs gratuits en stoc
 CREDIT_WEIGHTS = {1: 40, 2: 25, 3: 18, 4: 12, 5: 5}         # plus le nombre est grand, plus c'est rare
 # Probas par carte tirée dans un pack classique. Les cartes secrètes n'y sont JAMAIS (fusion uniquement) et les
 # spéciales n'existent que dans les packs match.
-# Épiques et légendaires doivent avoir de la VALEUR : elles sont rares. Par pack de 3 cartes : une épique tombe environ
-# 1 fois sur 17 (6 %), une légendaire environ 1 fois sur 67 (1,5 %).
+# Épiques et légendaires doivent avoir de la VALEUR : elles sont rares (rendues plus rares le 7/11/2026 : épique 2 → 1,2,
+# légendaire 0,5 → 0,15, rare 18 → 15). Par pack de 3 cartes : une épique tombe environ 1 fois sur 28 (3,6 %), une légendaire
+# environ 1 fois sur 220 (0,45 %).
 # Le GOLD (souvenirs des vrais matchs, une dizaine par match) est fréquent : 8 % des cartes PENDANT une édition limitée.
 # Son poids de départ tient compte de la part réservée à l'édition (EDITION_SHARE) : 8 / (1 - 0,035) = 8,29 (8,29 % hors édition).
-# La commune absorbe la différence (total 100) ; rare, épique et légendaire gardent leurs rapports.
-TIER_WEIGHTS = {"commune": 71.21, "rare": 18, "gold": 8.29, "epique": 2, "legendaire": 0.5}
+# La commune absorbe la différence (total 100).
+TIER_WEIGHTS = {"commune": 75.36, "rare": 15, "gold": 8.29, "epique": 1.2, "legendaire": 0.15}
 # (une rareté dont aucune carte n'existe encore est ignorée au tirage, les autres se rééquilibrent)
 
 # Nombre de cartes à partir duquel une rareté atteint sa probabilité "pleine".
@@ -55,14 +56,14 @@ PACK_TYPES = {
     # un pack classique (voir SLOT_RULES). Les cases sont listées dans l'ordre où on les tire (les plus contraignantes d'abord).
     "ultra": {"label": "Pack ultra", "price": 500, "guaranteed": [],
               "token_field": "ultra_pack_tokens",
-              "slots": [(1, "epique_legendaire"), (1, "edition_min"), (2, "rare_plus"), (6, "toutes")],
-              "description": "10 cartes : 6 aux probabilités classiques, 2 rares ou mieux, 1 gold, édition limitée ou mieux, 1 épique ou légendaire"},
+              "slots": [(1, "epique"), (1, "edition_min"), (2, "rare_plus"), (6, "toutes")],      # 1 épique garantie (plus de case « épique ou légendaire »)
+              "description": "10 cartes : 6 aux probabilités classiques, 2 rares ou mieux, 1 gold, édition limitée ou mieux, 1 épique garantie"},
     # Récompense des matchs 1v1 : pas en vente (price None). Un peu mieux que le pack classique pour CHAQUE rareté
-    # (rare 30 contre 18, gold 10,64 contre 8,29, épique 4 contre 2, légendaire 1 contre 0,5), et le seul où sortent les spéciales (8).
+    # (rare 26 contre 15, gold 10,64 contre 8,29, épique 2,5 contre 1,2, légendaire 0,3 contre 0,15), et le seul où sortent les spéciales (8).
     # Gold : 10 % des cartes pendant une édition limitée (10 / (1 - 0,06) = 10,64) ; la commune absorbe la différence (total 100).
     "match": {"label": "Pack match", "price": None, "guaranteed": [],
               "token_field": "match_pack_tokens",
-              "weights": {"commune": 46.36, "rare": 30, "gold": 10.64, "speciale": 8, "epique": 4, "legendaire": 1},
+              "weights": {"commune": 52.56, "rare": 26, "gold": 10.64, "speciale": 8, "epique": 2.5, "legendaire": 0.3},
               "description": "3 cartes avec un peu plus de chances de rares que le pack classique, et le seul pack où sortent les cartes spéciales"},
 }
 
@@ -272,7 +273,8 @@ SLOT_RULES = {
     "toutes": None,
     "rare_plus": {"rare", "gold", "epique", "legendaire"} | set(EDITION_TIERS),          # pas de commune
     "edition_min": {"gold", "epique", "legendaire"} | set(EDITION_TIERS),                # gold, édition limitée ou mieux : pas de commune ni de rare
-    "epique_legendaire": {"epique", "legendaire"},
+    "epique": {"epique"},                                                             # la case « épique garantie » du pack ultra
+    "epique_legendaire": {"epique", "legendaire"},                                   # (repli seulement)
 }
 
 
@@ -289,10 +291,10 @@ def _slot_weights(weights: dict, rule: str) -> dict:
 
 def pack_available(counts: dict, pack_type: str) -> bool:
     """Un pack à carte garantie n'est disponible que si la rareté garantie existe déjà ; le pack ultra, que s'il existe au
-    moins une carte épique ou légendaire (sa dernière case)."""
+    moins une carte épique (sa case « épique garantie »)."""
     spec = PACK_TYPES[pack_type]
     if spec.get("slots"):
-        return counts.get("epique", 0) + counts.get("legendaire", 0) > 0
+        return counts.get("epique", 0) > 0
     return all(counts.get(t, 0) > 0 for t in set(spec["guaranteed"]))
 
 
@@ -559,10 +561,11 @@ def unlock_secret(db: Session, user: User, card_id: str) -> dict:
 
 def _percent(weights: dict) -> dict:
     total = sum(weights.values())
-    return {k: round(100 * w / total, 1) for k, w in weights.items()} if total else {}
+    # une décimale ; deux sous 1 % (sinon la légendaire à 0,15 % s'afficherait « 0,1 % »)
+    return {k: (round(100 * w / total, 2) if 100 * w / total < 1 else round(100 * w / total, 1)) for k, w in weights.items()} if total else {}
 
 
-ULTRA_DISPLAY_ORDER = ["toutes", "rare_plus", "edition_min", "epique_legendaire"]     # ordre d'affichage : cartes 1 à 6, 7-8, 9, 10
+ULTRA_DISPLAY_ORDER = ["toutes", "rare_plus", "edition_min", "epique", "epique_legendaire"]     # ordre d'affichage : cartes 1 à 6, 7-8, 9, 10
 
 
 def pack_odds(db: Session) -> dict:

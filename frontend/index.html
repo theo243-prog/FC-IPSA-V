@@ -1366,7 +1366,7 @@
       <div class="wl-item" style="--d:.5s"><div class="wl-ico">🧪</div><div><div class="wl-name">Léo &amp; Emrys</div><div class="wl-role">Ont aidé aux tests de développement</div></div></div>
       <div class="wl-item" style="--d:.8s"><div class="wl-ico">💡</div><div><div class="wl-name">Gaëtan</div><div class="wl-role">Pour ses idées</div></div></div>
     </div>
-    <div class="wl-gift" id="welcomeGift" hidden>🎁 <b>Cadeau de bienvenue</b> : tu fais partie des tout premiers inscrits ! Un <b>pack ULTRA</b> (10 cartes, dont une épique ou une légendaire) t'attend dans tes <b>packs bonus</b>, sous les boutons d'ouverture.</div>
+    <div class="wl-gift" id="welcomeGift" hidden>🎁 <b>Cadeau de bienvenue</b> : tu fais partie des tout premiers inscrits ! Un <b>pack ULTRA</b> (10 cartes, dont une épique garantie) t'attend dans tes <b>packs bonus</b>, sous les boutons d'ouverture.</div>
     <p class="wl-thanks">Merci d'être là. Bonne collection, et à très vite sur le terrain !</p>
     <button class="btn-primary wl-go" id="welcomeGo" type="button">C'est parti !</button>
   </div>
@@ -2175,7 +2175,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.06.13';
+  const SITE_VERSION = '2026.11.07.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3298,7 +3298,7 @@
   // pack ultra : les chances de chaque groupe de cartes (calculées en direct par le serveur)
   function ultraOddsHTML(rules){
     const u = rules.packs.ultra; if (!u || !u.slots) return '';
-    const heads = { toutes: '6 cartes<br>probas classiques', rare_plus: '2 cartes<br>rare ou mieux', edition_min: '1 carte<br>gold, édition limitée ou mieux', epique_legendaire: '1 carte<br>épique ou légendaire' };
+    const heads = { toutes: '6 cartes<br>probas classiques', rare_plus: '2 cartes<br>rare ou mieux', edition_min: '1 carte<br>gold, édition limitée ou mieux', epique: '1 carte<br>épique garantie', epique_legendaire: '1 carte<br>épique ou légendaire' };
     const tiers = rules.tier_order.filter(t => u.slots.some(sl => (sl.odds[t] || 0) > 0));
     let html = '<h3>Le pack ultra, carte par carte</h3><table class="odds"><thead><tr><th>Rareté</th>' + u.slots.map(sl => '<th>' + heads[sl.rule] + '</th>').join('') + '</tr></thead><tbody>';
     tiers.forEach(t => { html += '<tr><td><span class="help-tier" style="background:' + TIER_COLORS[t] + '"></span>' + TIER_NAMES_PL[t] + '</td>' + u.slots.map(sl => { const v = sl.odds[t]; return '<td>' + (v ? String(v).replace('.', ',') + ' %' : '<span class="odds-dash">—</span>') + '</td>'; }).join('') + '</tr>'; });
