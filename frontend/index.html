@@ -2263,7 +2263,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.07.5';
+  const SITE_VERSION = '2026.11.07.6';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3451,8 +3451,8 @@
         '<li><b>Acheter</b> : le prix est débité de tes crédits et versé au vendeur. Tu ne peux pas acheter tes propres annonces.</li>' +
         '<li><b>Enchères 🔨</b> : pour une carte rare ou mieux, tu choisis le prix de départ et la durée (de 15 minutes à 24 heures). Chaque enchère doit dépasser la précédente d\'au moins 5 %. Tes crédits sont mis de côté et rendus si quelqu\'un te dépasse. Une enchère dans les 2 dernières minutes prolonge l\'enchère de 2 minutes. À la fin, la carte va au meilleur enchérisseur ; sans enchère, elle te revient.</li></ul>' +
         '<h3>🖤 Les enchères du club (Édition Noire)</h3><ul>' +
-        '<li>Chaque joueur et chaque fan du club a sa série <b>Édition Noire</b> de <b>22 cartes uniques</b>, numérotées de 1 à 22 (« N° 12/22 »). Il n\'en existera jamais plus : chaque numéro n\'a qu\'un seul propriétaire. Le n° 1 est gardé par le club.</li>' +
-        '<li>Chaque jour à <b>17h00</b>, le club met <b>5 cartes</b> aux enchères, de 5 personnes différentes (celles qui ont le moins de cartes déjà sorties). Elles se terminent le <b>lendemain à 16h00</b>.</li>' +
+        '<li>Chaque joueur et chaque fan du club a sa série <b>Édition Noire</b> de <b>5 cartes uniques</b>, numérotées de 1 à 5 (« N° 3/5 »). Il n\'en existera jamais plus : chaque numéro n\'a qu\'un seul propriétaire. Le n° 1 est gardé par le club.</li>' +
+        '<li>Chaque jour à <b>17h00</b>, le club met <b>une carte</b> aux enchères, d\'une personne qui a le moins de cartes déjà sorties. L\'enchère se termine le <b>lendemain à 16h00</b>.</li>' +
         '<li>Mêmes règles que les autres enchères : +5 % au moins, crédits mis de côté et rendus si on te dépasse, +2 minutes pour une enchère dans les 2 dernières minutes (jamais au-delà de 17h00).</li>' +
         '<li>Le gagnant reçoit la carte avec son numéro. Les crédits payés vont au club : personne ne les reçoit. Une carte sans enchère retourne dans la réserve et reviendra un autre jour. Pas de limite : tu peux en gagner plusieurs le même jour.</li>' +
         '<li>Ces cartes sont des pièces de collection : elles ne jouent pas en match et ne sortent jamais d\'un pack. Tu peux les revendre au marché ou aux enchères.</li></ul>' +
@@ -3821,7 +3821,7 @@
 
   // ---------- Enchères ----------
   const durLabel = m => m < 60 ? m + ' min' : (m / 60) + ' h';
-  // 🖤 Enchères du club : 5 cartes uniques Édition Noire chaque jour à 17h00, jusqu'au lendemain 16h00 (masquées avant le démarrage)
+  // 🖤 Enchères du club : des cartes uniques Édition Noire chaque jour à 17h00, jusqu'au lendemain 16h00 (masquées avant le démarrage)
   let clubAuc = null;
   const hhmm = iso => { const d = new Date(iso); return d.getHours() + 'h' + String(d.getMinutes()).padStart(2, '0'); };
   function dayWord(iso){ const d = new Date(iso), t = new Date(); const k = x => x.getFullYear() * 400 + x.getMonth() * 32 + x.getDate(); const diff = k(d) - k(t); return diff === 0 ? 'aujourd\'hui' : diff === 1 ? 'demain' : 'le ' + d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }); }

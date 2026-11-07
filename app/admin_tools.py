@@ -82,6 +82,7 @@ def summarize(path: str, payload) -> str:
         if name == "series-award-first": return "Série %s : n° 1 à %s aux premiers inscrits%s" % (_s(p, "series"), _s(p, "count"), " (aperçu)" if p.get("dry_run", True) else "")
         if name == "series-photo": return "Image de la série %s : %s" % (_s(p, "series"), "photo du joueur" if p.get("from_subject") or not p.get("photo_url") else _s(p, "photo_url"))
         if name == "series-photo-sync": return "Séries %s : photo actuelle des joueurs%s" % (_s(p, "title", "Édition Noire"), " (aperçu)" if p.get("dry_run", True) else "")
+        if name == "series-replace-black": return "Séries Édition Noire remplacées par des séries de 5%s" % (" (aperçu)" if p.get("dry_run", True) else "")
         if name == "series-create-all": return "Séries Édition Noire de tous les joueurs et fans%s" % (" (aperçu)" if p.get("dry_run", True) else "")
         if name == "club-auctions-launch": return "Enchères du club : lot lancé à la main%s" % ((" (%s min)" % p["minutes"]) if p.get("minutes") else "")
         if name == "club-auctions-cancel": return "Enchères du club : enchère %s annulée" % str(_s(p, "auction_id"))[:8]

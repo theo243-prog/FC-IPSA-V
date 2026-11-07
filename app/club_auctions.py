@@ -1,11 +1,11 @@
 """
-ENCHÈRES QUOTIDIENNES DU CLUB : cartes uniques « Édition Noire » (« Édition Noire — Léo · n° 12/22 »).
+ENCHÈRES QUOTIDIENNES DU CLUB : cartes uniques « Édition Noire » (« Édition Noire — Léo · n° 3/5 »).
 
-- Chaque joueur et chaque fan (ni mascotte, ni équipement, ni moment gold) a sa série de SERIES_TOTAL = 22 exemplaires, créée avec le
+- Chaque joueur et chaque fan (ni mascotte, ni équipement, ni moment gold) a sa série de SERIES_TOTAL = 5 exemplaires, créée avec le
   mécanisme des séries limitées (numbered.py) : une carte par exemplaire, dans la réserve du club tant qu'elle n'a pas de propriétaire.
   Le n° 1 n'est JAMAIS mis aux enchères (il reste pour les récompenses de l'administration, commande series-mint).
 - Chaque jour à 17h00 (heure de Paris, même calcul d'heure d'été que weekly.py), la tâche de fond crée un LOT de CLUB_AUCTIONS_PER_DAY
-  enchères (réglable) : 5 personnes différentes parmi celles qui ont le moins d'exemplaires ÉMIS (attribués + en cours d'enchère),
+  enchère(s) (1 par défaut, réglable) : des personnes différentes parmi celles qui ont le moins d'exemplaires ÉMIS (attribués + en cours d'enchère),
   égalité au hasard ; pour chacune, un numéro au hasard parmi les restants (ni le n° 1, ni un numéro attribué ou aux enchères).
   Fin le LENDEMAIN à 16h00. Prolongation habituelle (+2 min), plafonnée à +60 min après 16h00 : jamais de chevauchement avec 17h00.
 - Même moteur que les enchères entre joueurs (auctions.py : hausse de 5 %, crédits mis de côté), vendeur réservé CLUB_SELLER sans
@@ -36,9 +36,9 @@ from . import chat, game_logic, numbered, push, weekly
 
 router = APIRouter()
 
-SERIES_TOTAL = 22                       # exemplaires par personne (réglable avant la création des séries)
+SERIES_TOTAL = 5                        # exemplaires par personne (avant : 22 ; series-replace-black remplace les anciennes séries)
 SERIES_TITLE = "Édition Noire"
-CLUB_AUCTIONS_PER_DAY = 5               # valeur par défaut (réglable depuis l'administration)
+CLUB_AUCTIONS_PER_DAY = 1               # valeur par défaut (réglable depuis l'administration)
 CLUB_START_PRICE = 20                   # valeur par défaut (réglable depuis l'administration)
 CLUB_SELLER = "club"                    # vendeur réservé : le club n'est pas un compte
 RESERVED_NUMBER = 1                     # le n° 1 n'est jamais mis aux enchères
@@ -101,14 +101,27 @@ def _label(dt: datetime, year: bool = False) -> str:
 
 # ------------------------------------------------------------------------------ réglages ----
 
-def get_settings(db: Session) -> dict:
+# valeurs par défaut de la première version (22 exemplaires, 5 enchères par jour), pour relire les réglages enregistrés avant
+_OLD_DEFAULTS = {"start_at": "2026-11-09T17:00", "paused": False, "per_day": 5, "start_price": 20, "teaser": True, "teaser_text": ""}
+
+
+def _raw_settings(db: Session) -> dict:
+    """Les réglages faits depuis l'administration (seulement ceux-là : les autres suivent les valeurs par défaut du code)."""
     row = db.get(AppSetting, SETTING_KEY)
-    raw = {}
-    if row is not None:
-        try:
-            raw = json.loads(row.value) or {}
-        except ValueError:
-            raw = {}
+    if row is None:
+        return {}
+    try:
+        raw = json.loads(row.value) or {}
+    except ValueError:
+        return {}
+    if raw.get("_v") != 2:                                   # ancien format : tout était enregistré, valeurs par défaut comprises
+        raw = {k: v for k, v in raw.items() if k in _OLD_DEFAULTS and v != _OLD_DEFAULTS[k]}     # on ne garde que ce qui avait été changé
+    raw.pop("_v", None)
+    return raw
+
+
+def get_settings(db: Session) -> dict:
+    raw = _raw_settings(db)
     s = {"start_at": START_AT_DEFAULT.strftime("%Y-%m-%dT%H:%M"), "paused": False, "per_day": CLUB_AUCTIONS_PER_DAY,
          "start_price": CLUB_START_PRICE, "teaser": True, "teaser_text": ""}
     s.update({k: v for k, v in raw.items() if k in s})
@@ -116,6 +129,7 @@ def get_settings(db: Session) -> dict:
 
 
 def _save_settings(db: Session, s: dict) -> None:
+    s = {**s, "_v": 2}                                       # format 2 : seulement les réglages faits à la main
     row = db.get(AppSetting, SETTING_KEY)
     if row is None:
         db.add(AppSetting(key=SETTING_KEY, value=json.dumps(s, ensure_ascii=False)))
@@ -467,7 +481,7 @@ class CreateAll(BaseModel):
 
 @router.post("/admin/series-create-all", dependencies=[Depends(require_admin)])
 def admin_series_create_all(payload: CreateAll, db: Session = Depends(get_db)):
-    """Crée la série Édition Noire (22 exemplaires, dans la réserve) de chaque joueur et fan qui n'en a pas encore. Aperçu par défaut."""
+    """Crée la série Édition Noire (SERIES_TOTAL exemplaires, dans la réserve) de chaque joueur et fan qui n'en a pas encore. Aperçu par défaut."""
     have = {s.subject for s in black_series(db)}
     todo = [p for p in people(db) if p.name not in have]
     plan = [{"name": p.name, "type": game_logic.card_kind(p)} for p in todo]
@@ -477,6 +491,72 @@ def admin_series_create_all(payload: CreateAll, db: Session = Depends(get_db)):
         numbered.create_series(db, SERIES_TITLE, p.name, SERIES_TOTAL, photo_url=p.photo_url)
     db.commit()
     return {"status": "ok", "total": SERIES_TOTAL, "created": plan, "already": sorted(have)}
+
+
+class ReplaceBlack(BaseModel):
+    dry_run: bool = True
+
+
+@router.post("/admin/series-replace-black", dependencies=[Depends(require_admin)])
+def admin_series_replace_black(payload: ReplaceBlack, db: Session = Depends(get_db)):
+    """Remplace chaque série Édition Noire dont le total n'est pas SERIES_TOTAL (les anciennes séries de 22) par une série de
+    SERIES_TOTAL exemplaires, avec la même image. Les exemplaires de test (détenus par un compte PREVIEW_PSEUDOS, ex. testadmin) sont
+    repris et ses crédits payés aux enchères du club lui sont rendus ; les enchères du club ouvertes sur la série sont annulées (le
+    meilleur enchérisseur est remboursé) si personne d'autre qu'un compte de test n'y a enchéri. Une série dont un exemplaire est à un
+    vrai joueur, ou sur laquelle un vrai joueur a enchéri, est refusée (elle reste telle quelle). Aperçu par défaut."""
+    from .auctions import Auction
+    from .models import Listing, OwnedCard
+    test_ids = {u.id for u in db.query(User).filter(User.pseudo.in_(list(PREVIEW_PSEUDOS))).all()}
+    plan, blocked = [], []
+    for s in black_series(db):
+        if s.total == SERIES_TOTAL:
+            continue
+        copies = db.query(numbered.NumberedCopy).filter_by(series_id=s.id).all()
+        ids = [c.card_id for c in copies]
+        holders = [(o.user_id, o.card_id) for o in db.query(OwnedCard).filter(OwnedCard.card_id.in_(ids), OwnedCard.quantity > 0).all()]
+        listed = [l.seller_id for l in db.query(Listing).filter(Listing.card_id.in_(ids)).all()]
+        open_auc = db.query(Auction).filter(Auction.card_id.in_(ids)).all()
+        real = sorted({db.get(User, uid).pseudo for uid, _ in holders if uid not in test_ids and db.get(User, uid)} |
+                      {db.get(User, uid).pseudo for uid in listed if uid not in test_ids and db.get(User, uid)} |
+                      {db.get(User, a.seller_id).pseudo for a in open_auc if a.seller_id != CLUB_SELLER and a.seller_id not in test_ids and db.get(User, a.seller_id)} |
+                      {db.get(User, a.top_bidder_id).pseudo for a in open_auc if a.top_bidder_id and a.top_bidder_id not in test_ids and db.get(User, a.top_bidder_id)})
+        if real:
+            blocked.append({"series": numbered.full_name(s), "total": s.total, "reason": "exemplaire ou enchère d'un vrai joueur : %s" % ", ".join(real)})
+            continue
+        num = {c.card_id: c.number for c in copies}
+        won = db.query(ClubAuctionLot).filter(ClubAuctionLot.series_id == s.id, ClubAuctionLot.status == "won", ClubAuctionLot.winner_id.in_(list(test_ids) or [""])).all()
+        refunds = {}
+        for l in won:
+            if any(uid == l.winner_id and cid == l.card_id for uid, cid in holders):
+                refunds[l.winner_id] = refunds.get(l.winner_id, 0) + (l.price or 0)
+        plan.append({"series": numbered.full_name(s), "old_total": s.total, "new_total": SERIES_TOTAL, "photo_url": s.photo_url,
+                     "test_copies_taken_back": [{"pseudo": db.get(User, uid).pseudo, "number": num.get(cid)} for uid, cid in holders if db.get(User, uid)],
+                     "credits_refunded": {db.get(User, uid).pseudo: v for uid, v in refunds.items() if db.get(User, uid)},
+                     "club_auctions_cancelled": [{"number": num.get(a.card_id), "top_bid": a.current_bid} for a in open_auc],
+                     "_s": s, "_ids": ids, "_refunds": refunds})
+    out = lambda: [{k: v for k, v in p.items() if not k.startswith("_")} for p in plan]
+    if payload.dry_run:
+        return {"status": "dry_run", "total": SERIES_TOTAL, "to_replace": out(), "blocked": blocked}
+    from .main import purge_card_rows
+    for p in plan:
+        s = p["_s"]
+        subject, photo = s.subject, s.photo_url
+        for uid, amount in p["_refunds"].items():                 # crédits de test rendus
+            u = db.get(User, uid)
+            if u is not None:
+                u.credits += amount
+        purge_card_rows(db, p["_ids"])                             # enchères annulées (meilleur enchérisseur remboursé), collections, annonces
+        db.flush()
+        for lot in db.query(ClubAuctionLot).filter(ClubAuctionLot.series_id == s.id).all():
+            db.delete(lot)
+        db.query(numbered.NumberedCopy).filter_by(series_id=s.id).delete(synchronize_session=False)
+        for pl in db.query(Player).join(Card, Card.player_id == Player.id).filter(Card.id.in_(p["_ids"])).all():
+            db.delete(pl)                                          # (supprime aussi sa carte)
+        db.delete(s)
+        db.flush()
+        numbered.create_series(db, SERIES_TITLE, subject, SERIES_TOTAL, photo_url=photo)
+    db.commit()
+    return {"status": "ok", "total": SERIES_TOTAL, "replaced": out(), "blocked": blocked}
 
 
 @router.get("/admin/club-auctions", dependencies=[Depends(require_admin)])
@@ -517,8 +597,9 @@ class ClubSettings(BaseModel):
 
 @router.post("/admin/club-auctions-settings", dependencies=[Depends(require_admin)])
 def admin_club_settings(payload: ClubSettings, db: Session = Depends(get_db)):
-    """Date de démarrage, pause / reprise, nombre d'enchères par jour, prix de départ, teaser. Seuls les champs remplis changent."""
-    s = get_settings(db)
+    """Date de démarrage, pause / reprise, nombre d'enchères par jour, prix de départ, teaser. Seuls les champs remplis changent
+    (et seuls eux sont enregistrés : les autres gardent la valeur par défaut du code)."""
+    s = _raw_settings(db)
     if payload.start_at is not None and payload.start_at.strip():
         txt = payload.start_at.strip().replace(" ", "T")
         if len(txt) == 10:
@@ -535,6 +616,7 @@ def admin_club_settings(payload: ClubSettings, db: Session = Depends(get_db)):
         s["teaser_text"] = payload.teaser_text.strip()
     _save_settings(db, s)
     db.commit()
+    s = get_settings(db)
     st = start_at(db, s)
     return {"status": "ok", "settings": s, "start_label": _label(st, year=True), "teaser": teaser_text(db, s)}
 
