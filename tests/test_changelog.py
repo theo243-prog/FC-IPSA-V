@@ -25,7 +25,7 @@ def valid_date(s):
 ok(all(valid_date(e.get("date", "")) for e in E), "dates valides (AAAA-MM-JJ)")
 ok(all(e.get("category") in CL.CATEGORIES for e in E), "catégories valides (%s)" % ", ".join(CL.CATEGORIES))
 ok(all(isinstance(e.get("title"), str) and e["title"].strip() and "\n" not in e["title"] and len(e["title"]) <= 120 for e in E), "un titre d'une ligne pour chaque entrée")
-ok(all(isinstance(e.get("text"), str) and e["text"].strip() and len(e["text"]) <= 600 for e in E), "un texte pour chaque entrée")
+ok(all(isinstance(e.get("text"), str) and e["text"].strip() and len(e["text"]) <= 800 for e in E), "un texte pour chaque entrée (800 caractères au plus)")
 ok(all(E[i]["date"] >= E[i + 1]["date"] for i in range(len(E) - 1)), "la plus récente en premier")
 ok(all(set(e) == {"id", "date", "title", "text", "category"} for e in E), "chaque entrée n'a que id, date, title, text, category")
 

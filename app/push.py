@@ -332,7 +332,8 @@ def notify_duel_played(db: Session, result: dict):
     ref = result.get("referee") or {}
     if ref.get("challenger") or ref.get("defender"):        # des enveloppes ont été mises : on les révèle maintenant
         mine_bid, their_bid = ref.get("defender", 0), ref.get("challenger", 0)
-        who_wins = {"defender": "tu as eu le bonus de l'arbitre (+5 %)", "challenger": "le bonus de l'arbitre (+5 %) est allé à " + who, None: "l'arbitre a empoché les deux enveloppes sans favoriser personne"}[ref.get("winner")]
+        pct = "+%d %%" % ref.get("bonus_pct", 2) if ref.get("bonus_pct") else "+2 %"
+        who_wins = {"defender": "tu as eu le bonus de l'arbitre (" + pct + ")", "challenger": "le bonus de l'arbitre (" + pct + ") est allé à " + who, None: "l'arbitre a empoché les deux enveloppes sans favoriser personne"}[ref.get("winner")]
         body += " Enveloppe pour l'arbitre : toi " + str(mine_bid) + ", " + who + " " + str(their_bid) + " : " + who_wins + "."
     enqueue(db, creator.id, "duels", title, body, url="/#duels", tag="duels")
 

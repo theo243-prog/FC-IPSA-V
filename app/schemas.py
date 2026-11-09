@@ -48,7 +48,7 @@ class TeamPayload(BaseModel):
     fan_card_id: Optional[str] = None
     equipment_card_ids: List[str] = []   # 1 carte Équipement au maximum (bonus d'équipe)
     mascot_card_id: Optional[str] = None  # carte Loup (la mascotte) : emplacement distinct du Fan
-    referee_bid: int = Field(default=0, ge=0, le=1000000)   # enveloppe pour l'arbitre (crédits, 0 = aucune) : le plus gros montant gagne +5 %
+    referee_bid: int = Field(default=0, ge=0, le=1000000)   # enveloppe pour l'arbitre (crédits, 0 = aucune) : le plus gros montant gagne +2 % (duel_engine.REFEREE_BONUS)
 
 
 class CreateProposalRequest(TeamPayload):

@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-reequilibrage-cartes-d-abord", "date": "2026-11-09", "category": "règles", "title": "Rééquilibrage du jeu : les cartes d'abord",
+     "text": "Tes joueurs comptent plus que tout : chaque niveau de carte rapporte maintenant +2, +3, +4, +6 puis +8 de note. Viennent ensuite la tactique (+4 %) et, nouveau, la synergie formation + tactique (+2 % : pressing en 1-1-2, possession en 1-2-1, contre en 2-1-1). Le Fan reste le seul bonus d'équipe (0,75 % à 3 %), l'arbitre passe à +2 %. Le Loup ne renforce plus l'équipe : il te rapporte 1 à 5 crédits par match 1v1 (10 premiers matchs du jour, 30 crédits par jour au maximum). L'équipement réduit la fatigue de tes cartes en 1v1 (−15 % à −60 %). Enfin, le profil de chaque joueur montre ses tactiques et formations préférées sur ses 20 derniers matchs. Le club Difficile passe de +15 % à +10 % de bonus."},
     {"id": "2026-11-encheres-du-club", "date": "2026-11-07", "category": "modes", "title": "🖤 Enchères du club",
      "text": "Chaque joueur et chaque fan a désormais 5 cartes uniques « Édition Noire », numérotées de 1 à 5. Chaque jour à 17h, le club en met une aux enchères, jusqu'au lendemain 16h, dans l'onglet Marché. Le gagnant garde la carte et son numéro pour toujours ; une carte sans enchère reviendra un autre jour."},
     {"id": "2026-11-cartes-numerotees", "date": "2026-11-07", "category": "cartes", "title": "Cartes numérotées à tirage limité",

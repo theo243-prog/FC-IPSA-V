@@ -8,7 +8,7 @@ Défi du club : un défi PERMANENT contre une équipe fictive du club, contrôl�
   du niveau, puis n'importe quelle carte du poste. Une édition limitée pas encore commencée n'est jamais choisie (elle reste une surprise).
   Le club n'utilise QUE des cartes qui existent : sans légendaire dans le jeu, le Difficile aligne les meilleures cartes existantes (épique, puis en dessous).
   Sa tactique reste secrète (le site ne la reçoit pas) : seul le récit d'un match la dévoile.
-- BONUS : le club Difficile a un bonus d'équipe de +15 % (comme un Fan), réglé par simulation.
+- BONUS : le club Difficile a un bonus d'équipe de +10 % (avant 15 %, baissé avec le rééquilibrage « les cartes d'abord »), réglé par simulation.
 - MATCH : moteur du 1v1, comme au tournoi (tournament.simulate : ni mise, ni arbitre) ; en cas d'égalité, tirs au but. 3 essais par niveau, par jour
   et par joueur, gagnés ou perdus.
 - RÉCOMPENSE : seulement la PREMIÈRE VICTOIRE du jour de chaque niveau : 5 / 10 / 15 crédits et 10 / 20 / 30 points de Pass (source « club »,
@@ -39,8 +39,8 @@ router = APIRouter()
 LEVELS = {
     "facile": {"label": "Facile", "icon": "🟢", "tiers": ["commune", "rare"], "credits": 5, "points": 10, "bonus": 0.0},
     "normal": {"label": "Normal", "icon": "🟠", "tiers": ["rare", "epique"], "credits": 10, "points": 20, "bonus": 0.0},
-    # bonus d'équipe du club Difficile (+15 %) : réglé par simulation pour qu'une équipe de légendaires gagne environ 35 à 50 % de ses matchs
-    "difficile": {"label": "Difficile", "icon": "🔴", "tiers": ["legendaire"] + list(game_logic.EDITION_TIERS), "credits": 15, "points": 30, "bonus": 0.15},
+    # bonus d'équipe du club Difficile (+10 %, avant 15 %) : réglé par simulation ; une équipe de légendaires avec un Fan légendaire gagne environ 32 % de ses matchs (46 % avec la bonne tactique et la synergie), tirs au but comptés
+    "difficile": {"label": "Difficile", "icon": "🔴", "tiers": ["legendaire"] + list(game_logic.EDITION_TIERS), "credits": 15, "points": 30, "bonus": 0.10},
 }
 TRIES_PER_DAY = 3
 TITLE_WINS = 10                         # victoires au niveau Difficile pour le titre « Tombeur du club »

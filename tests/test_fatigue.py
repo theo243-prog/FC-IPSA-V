@@ -46,7 +46,7 @@ ok(col("ana")["Hugo"]["form"] == 95, "après 5 matchs : forme 95 % dans la colle
 print("2) LA FORME DANS LE CALCUL DE LA NOTE")
 lc = card("Lucas")
 mem = DE.build_members([(lc, "MC")], lc.id, {lc.id: 5}, {lc.id: 0.9})[0]
-ok(abs(mem["effective"] - (75 + 5) * 0.9 * 0.9 * 1.1) < 1e-9 and mem["base_note"] == 80 and mem["form"] == 90, "note 75 + niveau 5 = 80, × forme 90 %, puis −10 % hors poste, puis +10 % capitaine")
+ok(abs(mem["effective"] - (75 + 8) * 0.9 * 0.9 * 1.1) < 1e-9 and mem["base_note"] == 83 and mem["form"] == 90, "note 75 + niveau 5 (+8) = 83, × forme 90 %, puis −10 % hors poste, puis +10 % capitaine")
 ok(DE.build_members([(lc, "ATT")], None)[0]["effective"] == 75, "sans forme indiquée : 100 %")
 
 print("3) JAMAIS SOUS 50 %, REMISE À 100 % À MINUIT")
@@ -77,10 +77,10 @@ fteam = {**team, "fan_card_id": fcard.id, "equipment_card_ids": [ecard.id]}
 for i in range(3):
     DE.draw_goals = lambda xg: 1; pid = c.post("/duel/proposals", json={**fteam, "stake": 1}, headers=H["ana"]).json()["id"]; r = c.post("/duel/proposals/%s/play" % pid, json=team, headers=H["bob"]).json()
 fa = forms("ana")
-ok(abs(fa.get(fcard.id, 1) - 0.97) < 1e-9 and abs(fa.get(ecard.id, 1) - 0.97) < 1e-9, "après 3 matchs : le Fan et l'équipement sont à 97 %")
+ok(abs(fa.get(fcard.id, 1) - 0.9775) < 1e-9 and abs(fa.get(ecard.id, 1) - 0.9775) < 1e-9, "après 3 matchs avec un équipement rare (-25 % de fatigue) : le Fan et l'équipement sont à 97,75 %")
 ok(r["lineups"]["defender"]["fan"]["form"] == 98 and r["lineups"]["defender"]["equipment"][0]["form"] == 98, "3e match : joué avec un Fan et un équipement à 98 % (affiché dans le récit)")
 cf = {x["player_name"]: x for x in c.get("/collection", headers=H["ana"]).json() if x.get("quantity")}
-ok(cf["Fan Fatigue"]["form"] == 97 and cf["Gourde Test"]["form"] == 97, "la collection montre leur forme (barre de fatigue)")
+ok(cf["Fan Fatigue"]["form"] == 98 and cf["Gourde Test"]["form"] == 98, "la collection montre leur forme arrondie (barre de fatigue : 98 %)")
 mem = [{"slot": "ATT", "effective": 80}, {"slot": "GB", "effective": 80}]
 a0 = DE.team_powers(mem, fcard, 1.0, [ecard], None, 0.0)[0]; a1 = DE.team_powers(mem, fcard, 1.0, [ecard], None, 0.0, {fcard.id: 0.5, ecard.id: 0.5})[0]
 fb, eb = GL.TIER_FAN_BONUS["rare"], GL.TIER_EQUIPMENT_BONUS["rare"]

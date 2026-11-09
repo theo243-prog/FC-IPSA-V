@@ -1,5 +1,7 @@
 """
-Niveaux de cartes : un joueur fait monter UNE copie d'une de ses cartes de 5 niveaux au plus ; chaque niveau ajoute +1 à la note en match.
+Niveaux de cartes : un joueur fait monter UNE copie d'une de ses cartes de 5 niveaux au plus. Bonus de note en match, cumulé
+(LEVEL_NOTE_BONUS) : niveau 1 = +2, 2 = +3, 3 = +4, 4 = +6, 5 = +8 (rééquilibrage « les cartes d'abord » : les niveaux, qui coûtent cher,
+pèsent plus que la tactique et le Fan ; les copies déjà montées profitent du barème tout de suite, la note étant calculée à chaque match).
 
 - CARTES CONCERNÉES : les vrais joueurs (card_kind == « joueur ») en commune, rare ou édition limitée (Halloween, Noël, ed1 à ed12).
   Pas les gold, secrètes, épiques, légendaires, spéciales (leur note dépend déjà des résultats) ni les trophées, fans, mascottes,
@@ -8,7 +10,7 @@ Niveaux de cartes : un joueur fait monter UNE copie d'une de ses cartes de 5 niv
   du premier ; une copie mise en vente n'est plus dans la collection, donc ne compte pas). Ces doublons sont CONSOMMÉS : le joueur choisit
   entre faire évoluer ses cartes et garder ses doublons (revente, fusion des secrètes). La copie évoluée, elle, reste.
   On paie COSTS[groupe][n-1] crédits. Pas de limite par jour (l'ancien compteur « card_levels » de missions.daily_count reste en base, inutilisé).
-- EN MATCH : note de base + niveau, puis malus hors poste et bonus de capitaine (duel_engine.build_members).
+- EN MATCH : (note de base + bonus du niveau) x forme du jour (1v1), puis malus hors poste et bonus de capitaine (duel_engine.build_members).
 - LE NIVEAU SUIT LA CARTE : un joueur a au plus une copie évoluée par carte (table card_levels). Quand cette copie est vendue (annonce,
   enchère, offre d'achat), son niveau voyage avec elle (tables listing_levels, auction_levels, trade_levels) et le vendeur repasse au
   niveau 0. L'acheteur garde son meilleur niveau (le niveau reçu est perdu s'il en a déjà un supérieur ou égal). Une annonce annulée
@@ -30,6 +32,7 @@ router = APIRouter()
 
 # ------------------------------------------------------------------ constantes réglables ----
 MAX_LEVEL = 5
+LEVEL_NOTE_BONUS = (0, 2, 3, 4, 6, 8)    # bonus de note cumulé au niveau 0, 1, 2, 3, 4, 5
 DUPES_REQUIRED = {                       # doublons consommés pour acheter le niveau 1, 2, 3, 4, 5
     "commune": [5, 10, 20, 50, 100],
     "rare": [1, 3, 5, 12, 25],
@@ -106,6 +109,11 @@ def level_of(db: Session, user_id: str, card_id: str) -> int:
     return row.level if row else 0
 
 
+def note_bonus(level) -> int:
+    """Bonus de note d'une copie au niveau donné (0 à MAX_LEVEL), voir LEVEL_NOTE_BONUS."""
+    return LEVEL_NOTE_BONUS[max(0, min(MAX_LEVEL, int(level or 0)))]
+
+
 def levels_for(db: Session, user_id: str) -> dict:
     """{carte: niveau} des copies évoluées d'un joueur."""
     return {r.card_id: r.level for r in db.query(CardLevel).filter_by(user_id=user_id).all() if r.level > 0}
@@ -152,7 +160,7 @@ def info(db: Session, user: User, card: Card) -> dict:
     """Tout ce que la fiche d'une carte affiche : niveau, prochain palier, coût, doublons, effet, et la raison si c'est impossible."""
     base = game_logic.card_note(card.player, card.tier.value, card)
     lvl = level_of(db, user.id, card.id)
-    out = {"card_id": card.id, "level": lvl, "max_level": MAX_LEVEL, "base_note": base, "note": base + lvl, "eligible": False,
+    out = {"card_id": card.id, "level": lvl, "max_level": MAX_LEVEL, "base_note": base, "note": base + note_bonus(lvl), "level_bonus": note_bonus(lvl), "level_bonuses": list(LEVEL_NOTE_BONUS), "eligible": False,
            "can": False, "reason": None}
     reason = ineligible_reason(card)
     if reason:
@@ -168,7 +176,7 @@ def info(db: Session, user: User, card: Card) -> dict:
         out["reason"] = "Cette carte est déjà au niveau maximal (%d)." % MAX_LEVEL
         return out
     need, cost = DUPES_REQUIRED[g][lvl], COSTS[g][lvl]
-    out.update(next_level=lvl + 1, next_note=base + lvl + 1, cost=cost, dupes_needed=need)
+    out.update(next_level=lvl + 1, next_note=base + note_bonus(lvl + 1), cost=cost, dupes_needed=need)
     if out["dupes"] < need:
         out["reason"] = "Il te faut %d doublon%s de cette carte pour le niveau %d : tu en as %d." % (need, "s" if need > 1 else "", lvl + 1, out["dupes"])
     elif user.credits < cost:
@@ -227,7 +235,7 @@ def evolve(card_id: str, user: User = Depends(get_current_user), db: Session = D
     owned.quantity -= i["dupes_needed"]                                   # les doublons demandés sont consommés (il reste toujours la copie évoluée)
     set_level(db, user.id, card.id, i["next_level"])
     db.commit()
-    return {"status": "ok", "level": i["next_level"], "note": i["next_note"], "cost": i["cost"], "dupes_used": i["dupes_needed"], "credits": user.credits, **{"info": info(db, user, card)}}
+    return {"status": "ok", "level": i["next_level"], "note": i["next_note"], "level_bonus": note_bonus(i["next_level"]), "cost": i["cost"], "dupes_used": i["dupes_needed"], "credits": user.credits, **{"info": info(db, user, card)}}
 
 
 class AdminSetLevel(BaseModel):
@@ -258,4 +266,4 @@ def admin_set_card_level(payload: AdminSetLevel, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="%s ne possède pas cette carte" % user.pseudo)
     set_level(db, user.id, card.id, payload.level)
     db.commit()
-    return {"status": "ok", "pseudo": user.pseudo, "card": card.player.name, "tier": card.tier.value, "level": payload.level}
+    return {"status": "ok", "pseudo": user.pseudo, "card": card.player.name, "tier": card.tier.value, "level": payload.level, "level_bonus": note_bonus(payload.level)}

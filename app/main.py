@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -105,9 +105,9 @@ def card_out(card: Card) -> dict:
 
 
 def with_level(row: dict, level: int) -> dict:
-    """Ajoute le niveau d'une copie évoluée à une carte envoyée au site : la note affichée devient note de base + niveau."""
+    """Ajoute le niveau d'une copie évoluée à une carte envoyée au site : la note affichée devient note de base + bonus du niveau (card_levels.LEVEL_NOTE_BONUS)."""
     if level and row.get("display_note"):
-        row = {**row, "display_note": {**row["display_note"], "value": row["display_note"]["value"] + level}, "base_note": row["display_note"]["value"]}
+        row = {**row, "display_note": {**row["display_note"], "value": row["display_note"]["value"] + card_levels.note_bonus(level)}, "base_note": row["display_note"]["value"]}
     return {**row, "level": level or 0}
 
 
@@ -824,8 +824,9 @@ def user_versus(pseudo: str, user: User = Depends(get_current_user), db: Session
 
 
 @app.get("/users/{pseudo}/profile")
-def user_profile(pseudo: str, db: Session = Depends(get_db)):
-    """Profil PUBLIC d'un joueur : collection en %, matchs 1v1, succès, vitrine. Ni crédits, ni nom de carte qu'il n'a pas."""
+def user_profile(pseudo: str, db: Session = Depends(get_db), authorization: str | None = Header(default=None)):
+    """Profil PUBLIC d'un joueur : collection en %, matchs 1v1, succès, vitrine. Ni crédits, ni nom de carte qu'il n'a pas.
+    Pour un joueur connecté : les tendances de tactiques et de formations (pourcentages sur les 20 derniers matchs, tactic_trends)."""
     user = db.query(User).filter_by(pseudo=pseudo).first()
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
@@ -839,6 +840,13 @@ def user_profile(pseudo: str, db: Session = Depends(get_db)):
     out["title"], out["frame"] = cosmetics.user_display(db, user.id)
     out.update(battlepass.user_display(db, user.id))      # bannière, badge, couleur de pseudo, étoiles de prestige
     out["players_ranked"] = len(rows)
+    viewer = None
+    if authorization:
+        try:
+            viewer = get_current_user(authorization, db)
+        except HTTPException:
+            viewer = None
+    out["tactic_trends"] = tactic_trends.trends(db, user.id) if viewer else None      # (visible par les joueurs connectés seulement)
     return out
 
 
@@ -924,6 +932,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     motm.on_user_deleted(db, user.id)                                                     # ses bulletins des votes encore ouverts
     card_levels.on_user_deleted(db, user.id)                                              # ses cartes évoluées
     fatigue.on_user_deleted(db, user.id)                                                  # la forme de ses cartes
+    tactic_trends.on_user_deleted(db, user.id)                                            # ses tendances de tactiques
     inbox.on_user_deleted(db, user.id)                                                    # ses notifications du site
     db.query(CardUsage).filter_by(user_id=user.id).delete()                               # ses cartes alignées (tournoi, défi du club), comme ses matchs 1v1
     db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
@@ -1738,7 +1747,7 @@ def admin_create_card(payload: schemas.AdminCreateCardRequest, db: Session = Dep
 @app.post("/admin/create-mascot", dependencies=[Depends(require_admin)])
 def admin_create_mascot(payload: schemas.AdminCreateMascotRequest, db: Session = Depends(get_db)):
     """Crée la mascotte du club : une carte « Mascotte » dans les 4 raretés de packs (commune, rare, épique,
-    légendaire), plus sa carte secrète. Elle a son propre emplacement « Loup » en 1v1 (+5 / +10 / +12 / +13 / +15 %),
+    légendaire), plus sa carte secrète. Elle a son propre emplacement « Loup » en 1v1 (des crédits après chaque match, game_logic.LOUP_CREDITS_BY_TIER),
     distinct de l'emplacement Fan. Peut être relancée sans risque : elle ne crée que ce qui manque, et passe
     une ancienne mascotte « FAN/Mascotte » au nouveau format."""
     player = db.query(Player).filter_by(name=payload.name).first()
@@ -2028,4 +2037,5 @@ async def _startup():
         print("Cartes secrètes : erreur ignorée au démarrage :", exc)
     finally:
         db.close()
+    tactic_trends.run_backfill(SessionLocal)              # tendances des tactiques : reprise des anciens matchs (une seule fois)
     asyncio.create_task(_weekly_loop())
