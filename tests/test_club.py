@@ -58,7 +58,7 @@ for k, x in lv.items():
     cats = {s: sum(1 for cd in cards if cd["slot"] == s) for s in need}
     postes_ok = all(DE.poste_category(cd["poste"]) == cd["slot"] or (cd["slot"] == "MC" and cd["poste"] == "MIL") for cd in cards)
     ok(cats == need and "tactic" not in x["team"] and postes_ok, f"{k} : formation {x['team']['formation']} respectée, chaque carte à son poste, tactique NON envoyée au site")
-    ok(x["bonus_pct"] == (15 if k == "difficile" else 0), f"{k} : bonus du club +{x['bonus_pct']} %")
+    ok(x["bonus_pct"] == (10 if k == "difficile" else 0), f"{k} : bonus du club +{x['bonus_pct']} %")
     ok(all(cd["tier"] in allowed[k] for cd in cards), f"{k} : raretés du niveau ({', '.join(sorted({cd['tier'] for cd in cards}))})")
     ok(len({cd["player_name"] for cd in cards}) == 5 and sum(1 for cd in cards if cd["captain"]) == 1, f"{k} : 5 joueurs différents, un capitaine")
 ok(all(x["tries_left"] == 3 and x["rewarded_today"] is False and x["my_wins"] == 0 for x in g["levels"]) and g["title"]["hard_wins"] == 0, "un joueur neuf : 3 essais par niveau, aucune récompense, aucune victoire")
@@ -70,9 +70,9 @@ ids = lambda d: [[cd["id"] for cd in x["team"]["cards"]] + [x["team"]["formation
 rows = {r.level: r for r in db.query(CL.ClubTeam).filter_by(day=DAY[0]).all()}
 ok(all(rows[k].tactic in DE.TACTICS for k in CL.LEVELS) and all(e["tactique"] in DE.TACTICS for e in c.get("/admin/club", headers=A).json()["equipes"]), "la tactique tirée est bien enregistrée en base (et visible de l'admin seulement)")
 sides = {k: CL.club_side(db, k, rows[k])[0] for k in CL.LEVELS}
-ok(sides["difficile"]["team_bonus"] == 0.15 and sides["normal"]["team_bonus"] == 0 and sides["facile"]["team_bonus"] == 0, "bonus d'équipe passé au moteur : +15 % au niveau Difficile seulement")
-a0 = DE.team_powers(sides["difficile"]["members"], None, 1.0, [], None, 0.0)[0]; a1 = DE.team_powers(sides["difficile"]["members"], None, 1.0, [], None, 0.15)[0]
-ok(abs(a1 / a0 - 1.15) < 1e-9, "le bonus de +15 % multiplie bien la force de l'équipe du club")
+ok(sides["difficile"]["team_bonus"] == 0.10 and sides["normal"]["team_bonus"] == 0 and sides["facile"]["team_bonus"] == 0, "bonus d'équipe passé au moteur : +10 % au niveau Difficile seulement")
+a0 = DE.team_powers(sides["difficile"]["members"], None, 1.0, [], None, 0.0)[0]; a1 = DE.team_powers(sides["difficile"]["members"], None, 1.0, [], None, 0.10)[0]
+ok(abs(a1 / a0 - 1.10) < 1e-9, "le bonus de +10 % multiplie bien la force de l'équipe du club")
 days = []
 for d in ("2026-11-13", "2026-11-14", "2026-11-15"):
     DAY[0] = d; days.append(ids(c.get("/club").json()))

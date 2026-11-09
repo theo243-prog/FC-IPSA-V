@@ -76,7 +76,7 @@ r = c.post("/cards/%s/evolve" % LH.id, headers=H["ana"]); ok(r.status_code == 40
 
 print("4) EFFET EN MATCH")
 m = DE.build_members([(LC, "MC")], LC.id, {LC.id: 5})[0]                      # Lucas (ATT) au milieu, capitaine, niveau 5
-ok(m["base_note"] == 80 and abs(m["effective"] - 80 * 0.9 * 1.1) < 1e-9 and m["level"] == 5, "commune 75 + niveau 5 = 80, puis -10 %% hors poste, puis +10 %% capitaine (%.2f)" % m["effective"])
+ok(m["base_note"] == 83 and abs(m["effective"] - 83 * 0.9 * 1.1) < 1e-9 and m["level"] == 5, "commune 75 + niveau 5 (+8) = 83, puis -10 %% hors poste, puis +10 %% capitaine (%.2f)" % m["effective"])
 ok(DE.build_members([(LC, "ATT")], None)[0]["base_note"] == 75, "sans niveau : 75")
 CORE = [("Mathis", "GB"), ("Nathan", "DEF"), ("Hugo", "MC"), ("Enzo", "MC"), ("Lucas", "ATT")]
 for p in ("cléo", "dan"):
@@ -87,16 +87,16 @@ DE.draw_goals = lambda xg: 1
 pid = c.post("/duel/proposals", json={**team, "stake": 1}, headers=H["cléo"]).json()["id"]
 res = c.post("/duel/proposals/%s/play" % pid, json=team, headers=H["dan"]).json(); DE.draw_goals = real_draw
 dm = {m["player"]: m for m in res["lineups"]["defender"]["players"]}; cm = {m["player"]: m for m in res["lineups"]["challenger"]["players"]}
-ok(dm["Hugo"]["level"] == 3 and dm["Hugo"]["base_note"] == 78 and cm["Lucas"]["level"] == 4 and cm["Lucas"]["base_note"] == 79 and cm["Hugo"]["level"] == 0, "défi 1v1 : le niveau de chaque joueur compte pour sa propre équipe (créateur Hugo 78, challenger Lucas 79)")
+ok(dm["Hugo"]["level"] == 3 and dm["Hugo"]["base_note"] == 79 and cm["Lucas"]["level"] == 4 and cm["Lucas"]["base_note"] == 81 and cm["Hugo"]["level"] == 0, "défi 1v1 : le niveau de chaque joueur compte pour sa propre équipe (créateur Hugo 75+4 = 79, challenger Lucas 75+6 = 81)")
 col = {(x["player_name"], x["tier"]): x for x in c.get("/collection", headers=H["dan"]).json() if x.get("quantity")}
-ok(col[("Lucas", "commune")]["level"] == 4 and col[("Lucas", "commune")]["display_note"]["value"] == 79 and col[("Lucas", "commune")]["base_note"] == 75, "collection : niveau 4 et note affichée 79 (base 75)")
+ok(col[("Lucas", "commune")]["level"] == 4 and col[("Lucas", "commune")]["display_note"]["value"] == 81 and col[("Lucas", "commune")]["base_note"] == 75, "collection : niveau 4 et note affichée 81 (base 75 + 6)")
 
 print("5) LE NIVEAU SUIT LA CARTE : ANNONCE")
 H["eve"] = mk("eve"); H["fred"] = mk("fred")
 give("eve", LR, 1); CL.set_level(db, U("eve").id, LR.id, 3); db.commit()
 lid = c.post("/market/list", json={"card_id": LR.id, "price": 10}, headers=H["eve"]).json()["id"]
 ls = {l["id"]: l for l in c.get("/market/listings").json()}[lid]
-ok(lvl("eve", LR) == 0 and ls["level"] == 3 and ls["card"]["display_note"]["value"] == 88, "seule copie évoluée mise en vente : l'annonce porte le niveau 3 (note 88), le vendeur n'a plus de niveau")
+ok(lvl("eve", LR) == 0 and ls["level"] == 3 and ls["card"]["display_note"]["value"] == 89, "seule copie évoluée mise en vente : l'annonce porte le niveau 3 (note 85 + 4 = 89), le vendeur n'a plus de niveau")
 ok(c.delete("/market/listings/%s" % lid, headers=H["eve"]).status_code == 200 and lvl("eve", LR) == 3 and qty("eve", LR) == 1, "annonce annulée : la carte revient avec son niveau 3")
 lid = c.post("/market/list", json={"card_id": LR.id, "price": 10}, headers=H["eve"]).json()["id"]
 r = c.post("/market/buy/%s" % lid, headers=H["fred"]).json()

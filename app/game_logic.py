@@ -397,12 +397,27 @@ def open_pack_for_user(db: Session, user: User, pack_type: str = "free") -> dict
 CARD_NOTE = {"commune": 75, "rare": 85, "halloween": 85, "noel": 85, "secrete": 90, "saison": 92, "legendaire": 95}
 SPECIAL_BASE_NOTE = 80      # note d'une carte spéciale à sa création ; +1 à chaque nouvelle récompense (weekly.plan_awards)
 SPECIAL_MAX_NOTE = 90       # les +1 du vendredi s'arrêtent à 90 (une carte déjà au-dessus n'est jamais baissée)
-TIER_FAN_BONUS = {"commune": 0.05, "rare": 0.10, "halloween": 0.08, "noel": 0.08, "epique": 0.12, "secrete": 0.13, "saison": 0.14, "legendaire": 0.15}  # bonus % apporté par le Fan
-TIER_MASCOT_BONUS = dict(TIER_FAN_BONUS)       # la mascotte (Le Loup) a son propre emplacement, mêmes bonus que le Fan
+# Rééquilibrage « les cartes d'abord » : dans un match, ce qui compte le plus est la note des cartes joueurs (et leurs niveaux),
+# puis la tactique, puis le Fan, devenu le SEUL bonus de puissance d'équipe (petit : 0,75 % à 3 %, multiplié par sa forme du jour).
+TIER_FAN_BONUS = {"commune": 0.0075, "rare": 0.015, "halloween": 0.015, "noel": 0.015, "epique": 0.02, "secrete": 0.02, "saison": 0.025, "legendaire": 0.03}  # bonus apporté par le Fan
+# Le Loup (mascotte) ne donne plus de puissance : il rapporte des crédits après chaque match 1v1 joué (duel_engine.play_proposal),
+# pendant les DUEL_PACK_DAILY_CAP (10) premiers matchs 1v1 du jour du joueur, LOUP_DAILY_CAP crédits par jour au plus. Sa forme n'y change rien.
+TIER_MASCOT_BONUS = {t: 0.0 for t in TIER_FAN_BONUS}      # (gardé à 0 pour l'affichage et les anciens appels : aucun bonus de puissance)
+LOUP_CREDITS_BY_TIER = {"commune": 1, "rare": 2, "halloween": 2, "noel": 2, "epique": 3, "secrete": 3, "saison": 4, "legendaire": 5}   # crédits par match 1v1
+LOUP_DAILY_CAP = 30                                      # crédits gagnés grâce au Loup : 30 par jour et par joueur au plus
 
-# Cartes Équipement : un bonus d'équipe en 1v1, qui s'ajoute à ceux du Fan et du Loup. Un seul équipement par équipe.
-TIER_EQUIPMENT_BONUS = {"commune": 0.01, "rare": 0.02, "epique": 0.03, "legendaire": 0.05}
+# Cartes Équipement : plus de bonus de puissance. Elles réduisent la fatigue (perte de forme par match 1v1, fatigue.FORM_LOSS_PER_MATCH)
+# de toutes les cartes utilisées dans le match. Utiles uniquement en 1v1 (le tournoi et le défi du club ne fatiguent pas).
+# Plusieurs pièces : les réductions s'additionnent, plafonnées à EQUIPMENT_FATIGUE_MAX. La forme de l'équipement ne change pas sa réduction.
+TIER_EQUIPMENT_BONUS = {"commune": 0.0, "rare": 0.0, "epique": 0.0, "legendaire": 0.0}     # (gardé à 0 : aucun bonus de puissance)
+EQUIPMENT_FATIGUE_REDUCTION = {"commune": 0.15, "rare": 0.25, "epique": 0.40, "legendaire": 0.60}
+EQUIPMENT_FATIGUE_MAX = 0.60
 MAX_EQUIPMENT = 1
+
+
+def equipment_fatigue_reduction(equipment_cards) -> float:
+    """Réduction de la perte de forme apportée par l'équipement d'une équipe (0 à EQUIPMENT_FATIGUE_MAX)."""
+    return min(EQUIPMENT_FATIGUE_MAX, sum(EQUIPMENT_FATIGUE_REDUCTION.get(c.tier.value, 0.0) for c in (equipment_cards or [])))
 
 # Les cartes "qui ne sont pas des joueurs" sont repérées par leur poste (comme les Fans) :
 #   FAN... -> supporter / mascotte ; EQUIPEMENT -> équipement ; STADE -> stade ; autre -> joueur.
@@ -652,7 +667,7 @@ def set_tier_photo(player, tier: str, url: str) -> None:
 
 # ---------------------------------------------------------------------
 # Les 12 emplacements d'édition libres (ed1 à ed12) suivent exactement les mêmes règles qu'Halloween et Noël :
-# même note, même bonus de fan, même prix de revente d'un doublon, même place dans l'ordre des raretés.
+# même note, même bonus de fan, mêmes crédits du Loup, même prix de revente d'un doublon, même place dans l'ordre des raretés.
 # ---------------------------------------------------------------------
 for _slot in CUSTOM_EDITION_SLOTS:
     TIER_REF_COUNT[_slot] = TIER_REF_COUNT["halloween"]
@@ -660,4 +675,5 @@ for _slot in CUSTOM_EDITION_SLOTS:
     CARD_NOTE[_slot] = CARD_NOTE["halloween"]
     TIER_FAN_BONUS[_slot] = TIER_FAN_BONUS["halloween"]
     TIER_MASCOT_BONUS[_slot] = TIER_MASCOT_BONUS["halloween"]
+    LOUP_CREDITS_BY_TIER[_slot] = LOUP_CREDITS_BY_TIER["halloween"]
 TIER_ORDER[TIER_ORDER.index("noel") + 1:TIER_ORDER.index("noel") + 1] = list(CUSTOM_EDITION_SLOTS)

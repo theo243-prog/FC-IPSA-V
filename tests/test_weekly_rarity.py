@@ -23,7 +23,7 @@ print("1) NOTES DES ÉDITIONS LIMITÉES")
 ok(GL.CARD_NOTE["halloween"] == 85 and GL.CARD_NOTE["noel"] == 85 and GL.CARD_NOTE["rare"] == 85, "Halloween et Noël : note 85, comme la rare")
 ok(all(GL.CARD_NOTE[s] == 85 for s in GL.CUSTOM_EDITION_SLOTS), "les 12 éditions personnalisées (ed1 à ed12) : note 85 aussi")
 ok(GL.card_note(db.query(Player).first(), "ed5") == 85, "card_note d'une édition personnalisée : 85")
-ok(GL.TIER_FAN_BONUS["halloween"] == 0.08 and GL.TIER_FAN_BONUS["ed1"] == 0.08 and GL.TIER_MASCOT_BONUS["noel"] == 0.08 and GL.TIER_MASCOT_BONUS["ed1"] == 0.08, "Fan et mascotte d'édition limitée : +8 % (Halloween, Noël, éditions personnalisées)")
+ok(GL.TIER_FAN_BONUS["halloween"] == 0.015 and GL.TIER_FAN_BONUS["ed1"] == 0.015 and GL.LOUP_CREDITS_BY_TIER["noel"] == 2 and GL.LOUP_CREDITS_BY_TIER["ed1"] == 2, "Fan d'édition limitée : +1,5 %, Loup d'édition : 2 crédits par match (Halloween, Noël, éditions personnalisées)")
 
 print("2) GROUPES DE RARETÉ")
 ok([WK.tier_group(t) for t in ("commune", "rare", "epique", "legendaire", "halloween", "noel", "ed3")] == ["commune", "rare", "epique", "legendaire", "edition", "edition", "edition"], "chaque rareté va dans son groupe ; Halloween, Noël et ed3 dans « édition limitée »")

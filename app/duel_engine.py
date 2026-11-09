@@ -9,13 +9,17 @@ et en cas de match nul chacun récupère sa mise ET reçoit un pack classique. A
 Aucun délai n'est imposé entre deux matchs des mêmes joueurs : on peut rejouer tout de suite.
 
 Ce que comptent les calculs :
-- la note de chaque carte (75 commune, 85 rare, 85+ épique, 95 légendaire) ;
+Rééquilibrage « les cartes d'abord » : par ordre d'importance, 1) la note des cartes joueurs (et leurs niveaux), 2) la tactique,
+3) le Fan, seul bonus de puissance d'équipe. Le Loup rapporte des crédits, l'équipement réduit la fatigue (1v1).
+- la note de chaque carte (75 commune, 85 rare, 85+ épique, 95 légendaire), plus le bonus de son niveau (+2 / +3 / +4 / +6 / +8) ;
 - -10 % si la carte joue HORS de son vrai poste (les postes "X" ne sont jamais pénalisés) ;
 - +10 % pour la carte capitaine ;
-- le Fan optionnel : +5 % / +10 % / +12 % / +15 % à toute l'équipe selon sa rareté ;
-- 1 carte Fan (supporter) et 1 carte Loup (la mascotte), chacune optionnelle : +5 % / +10 % / +12 % / +13 % / +15 % à toute l'équipe ;
-- 1 seule carte Équipement : +1 % / +2 % / +3 % / +5 % à toute l'équipe (s'additionne au Fan et au Loup) ;
-- la tactique (pierre-feuille-ciseaux) : +6 % à toute l'équipe pour celle qui l'emporte ;
+- le Fan optionnel : +0,75 % (commune) à +3 % (légendaire) à toute l'équipe selon sa rareté ;
+- le Loup optionnel : aucun bonus de puissance, mais 1 à 5 crédits par match 1v1 (10 premiers matchs du jour, 30 crédits par jour au plus) ;
+- 1 seule carte Équipement : aucun bonus de puissance, mais -15 % à -60 % de perte de forme en 1v1 pour les cartes du match ;
+- la tactique (pierre-feuille-ciseaux) : +4 % à toute l'équipe pour celle qui l'emporte ;
+- la synergie formation + tactique (pressing 1-1-2, possession 1-2-1, contre 2-1-1) : +2 % ;
+- l'arbitre (1v1) : +2 % à celui qui a mis la plus grosse enveloppe ;
 - la disposition (2-1-1, 1-2-1, 1-1-2) qui répartit la force entre attaque et défense.
 
 Les buts : expected_goals (attaque contre défense adverse, exposant XG_EXPONENT 3) puis draw_goals (une part acquise + un tirage
@@ -30,6 +34,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from .game_logic import (card_note, TIER_FAN_BONUS, TIER_MASCOT_BONUS, TIER_EQUIPMENT_BONUS, MAX_EQUIPMENT,
+                         LOUP_CREDITS_BY_TIER, LOUP_DAILY_CAP, EQUIPMENT_FATIGUE_REDUCTION, EQUIPMENT_FATIGUE_MAX, equipment_fatigue_reduction,
                          card_kind, is_fan, is_equipment, is_mascot)
 from .models import User, Card, OwnedCard, MatchProposal, ProposalSlot, ProposalEquipment, Duel, CardUsage
 from . import card_levels, fatigue
@@ -64,11 +69,15 @@ POSTE_CATEGORY = {
 
 OUT_OF_POSITION_MALUS = 0.10
 CAPTAIN_BONUS = 0.10
-TACTIC_BONUS = 0.06
+TACTIC_BONUS = 0.04       # la tactique qui l'emporte (pierre-feuille-ciseaux) : +4 % (avant 6 %), 2e facteur après la note des cartes
+# Synergie : chaque tactique va mieux avec une formation ; une équipe qui joue la formation de sa tactique a +2 % (multiplicatif,
+# comme le bonus de tactique), quelle que soit l'équipe adverse. 1v1, tournoi et défi du club (le club aussi).
+SYNERGY = {"pressing": "1-1-2", "possession": "1-2-1", "contre": "2-1-1"}
+SYNERGY_BONUS = 0.02
 
 DUEL_PACK_DAILY_CAP = 10   # au plus 10 packs gagnés en 1v1 par jour et par joueur : pack match si on gagne, classique si on perd ou fait nul
 AFTER_CAP_CREDITS = (1, 5) # au-delà des 10 packs du jour : chaque match rapporte à la place 1 à 5 crédits au hasard (sans limite), plus aucune carte
-REFEREE_BONUS = 0.05     # bonus d'équipe (+5 %) donné par l'arbitre à celui qui a mis la plus grosse enveloppe
+REFEREE_BONUS = 0.02     # bonus d'équipe (+2 %, avant 5 %) donné par l'arbitre à celui qui a mis la plus grosse enveloppe
 STAKE_MIN, STAKE_MAX = 1, 10
 MAX_OPEN_PROPOSALS = 3
 ELO_K = 32
@@ -126,6 +135,9 @@ def get_config() -> dict:
         "mascot_bonus": TIER_MASCOT_BONUS,
         "equipment_bonus": TIER_EQUIPMENT_BONUS,
         "max_equipment": MAX_EQUIPMENT,
+        "loup_credits": LOUP_CREDITS_BY_TIER, "loup_daily_cap": LOUP_DAILY_CAP, "loup_daily_matches": DUEL_PACK_DAILY_CAP,
+        "equipment_fatigue_reduction": EQUIPMENT_FATIGUE_REDUCTION, "equipment_fatigue_max": EQUIPMENT_FATIGUE_MAX,
+        "synergy": SYNERGY, "synergy_bonus": SYNERGY_BONUS, "level_note_bonus": list(card_levels.LEVEL_NOTE_BONUS),
         "referee_bonus": REFEREE_BONUS,
         "form_loss_per_match": fatigue.FORM_LOSS_PER_MATCH, "min_form": fatigue.MIN_FORM,
     }
@@ -252,7 +264,7 @@ def validate_team(db: Session, user: User, formation: str, tactic: str, slots: l
 # ---------------------------------------------------------------- Calculs ----
 
 def build_members(cards_with_slots, captain_card_id, levels=None, forms=None):
-    """Pour chaque carte : note de base (+ son niveau, voir card_levels), puis la forme du jour (1v1 seulement, voir fatigue),
+    """Pour chaque carte : note de base (+ le bonus de son niveau, card_levels.LEVEL_NOTE_BONUS), puis la forme du jour (1v1 seulement, voir fatigue),
     puis le malus hors poste, puis le bonus capitaine.
     levels : {carte: niveau} des copies évoluées du propriétaire de l'équipe ; forms : {carte: forme 0,5 à 1} (absent = 100 %)."""
     members = []
@@ -260,7 +272,7 @@ def build_members(cards_with_slots, captain_card_id, levels=None, forms=None):
     for card, slot in cards_with_slots:
         level = levels.get(card.id, 0)
         form = forms.get(card.id, 1.0)
-        base = card_note(card.player, card.tier.value, card) + level
+        base = card_note(card.player, card.tier.value, card) + card_levels.note_bonus(level)      # bonus cumulé du niveau (+2 / +3 / +4 / +6 / +8)
         natural = poste_category(card.player.poste)
         out = natural is not None and natural != slot
         effective = base * form * (1 - OUT_OF_POSITION_MALUS if out else 1.0)
@@ -276,12 +288,21 @@ def build_members(cards_with_slots, captain_card_id, levels=None, forms=None):
 
 
 def equipment_bonus_total(equipment_cards, forms=None) -> float:
+    """Bonus de puissance de l'équipement : toujours 0 depuis le rééquilibrage (il réduit la fatigue, voir equipment_fatigue_reduction)."""
     forms = forms or {}
     return sum(TIER_EQUIPMENT_BONUS.get(c.tier.value, 0.0) * forms.get(c.id, 1.0) for c in (equipment_cards or []))
 
 
-def team_powers(members, fan_card, tactic_multiplier=1.0, equipment_cards=(), mascot_card=None, referee_bonus=0.0, forms=None):
-    """forms : forme du jour (1v1) des cartes de l'équipe ; le bonus du Fan, du Loup et de l'équipement est multiplié par leur forme."""
+def has_synergy(formation, tactic) -> bool:
+    """La formation est-elle celle qui va avec la tactique (SYNERGY) ?"""
+    return bool(formation) and SYNERGY.get(tactic) == formation
+
+
+def team_powers(members, fan_card, tactic_multiplier=1.0, equipment_cards=(), mascot_card=None, referee_bonus=0.0, forms=None,
+                formation=None, tactic=None):
+    """forms : forme du jour (1v1) des cartes de l'équipe ; le bonus du Fan est multiplié par sa forme.
+    Le Loup et l'équipement ne donnent plus de puissance (TIER_MASCOT_BONUS et TIER_EQUIPMENT_BONUS à 0).
+    formation + tactic : +SYNERGY_BONUS si elles vont ensemble (multiplicatif, comme le bonus de tactique)."""
     forms = forms or {}
     units_att = sum(ATTACK_WEIGHT[m["slot"]] for m in members)
     units_def = sum(DEFENSE_WEIGHT[m["slot"]] for m in members)
@@ -291,7 +312,8 @@ def team_powers(members, fan_card, tactic_multiplier=1.0, equipment_cards=(), ma
     fan_bonus = TIER_FAN_BONUS.get(fan_card.tier.value, 0.0) * forms.get(fan_card.id, 1.0) if fan_card else 0.0
     equipment_bonus = equipment_bonus_total(equipment_cards, forms)
     mascot_bonus = TIER_MASCOT_BONUS.get(mascot_card.tier.value, 0.0) * forms.get(mascot_card.id, 1.0) if mascot_card else 0.0
-    mult = (1 + fan_bonus + mascot_bonus + equipment_bonus + referee_bonus) * tactic_multiplier      # Fan, Loup, équipement et arbitre s'additionnent
+    synergy = (1 + SYNERGY_BONUS) if has_synergy(formation, tactic) else 1.0
+    mult = (1 + fan_bonus + mascot_bonus + equipment_bonus + referee_bonus) * tactic_multiplier * synergy      # Fan et arbitre s'additionnent
     return attack_avg * style * mult, defense_avg / style * mult, fan_bonus, equipment_bonus, mascot_bonus
 
 
@@ -423,23 +445,28 @@ def build_events(side_a, side_b, score_a, score_b, xg_a, xg_b, tactic_winner):
     return events
 
 
-def _lineup_snapshot(side, fan_card, equipment_cards=(), mascot_card=None, referee_bonus=0.0, forms=None):
+def _lineup_snapshot(side, fan_card, equipment_cards=(), mascot_card=None, referee_bonus=0.0, forms=None, loup_credits=None, fatigue_mode=True):
+    """loup_credits : crédits rapportés par le Loup à ce match (1v1) ; fatigue_mode : le match fatigue-t-il (1v1 seulement) ?"""
     forms = forms or {}
+    pct = lambda x: round(x * 100, 2)
     fp = lambda c: round(forms.get(c.id, 1.0) * 100)                     # forme du jour d'un Fan, d'un Loup ou d'un équipement (1v1)
     return {
         "referee_bonus_pct": round(referee_bonus * 100),
         "pseudo": side["pseudo"], "formation": side["formation"], "tactic": side["tactic"],
+        "synergy": has_synergy(side["formation"], side["tactic"]), "synergy_bonus_pct": pct(SYNERGY_BONUS),
         "players": [{
             "slot": m["slot"], "player": m["player"], "tier": m["tier"], "poste": m["poste"],
             "base_note": m["base_note"], "effective_note": round(m["effective"], 1), "level": m.get("level", 0), "form": m.get("form", 100),
             "out_of_position": m["out_of_position"], "captain": m["captain"],
         } for m in side["members"]],
         "fan": ({"player": fan_card.player.name, "tier": fan_card.tier.value,
-                 "bonus_pct": round(TIER_FAN_BONUS.get(fan_card.tier.value, 0) * 100), "form": fp(fan_card)} if fan_card else None),
+                 "bonus_pct": pct(TIER_FAN_BONUS.get(fan_card.tier.value, 0)), "form": fp(fan_card)} if fan_card else None),
         "mascot": ({"player": mascot_card.player.name, "tier": mascot_card.tier.value,
-                    "bonus_pct": round(TIER_MASCOT_BONUS.get(mascot_card.tier.value, 0) * 100), "form": fp(mascot_card)} if mascot_card else None),
+                    "bonus_pct": 0, "credits_per_match": LOUP_CREDITS_BY_TIER.get(mascot_card.tier.value, 0),
+                    "credits_won": loup_credits, "form": fp(mascot_card)} if mascot_card else None),
         "equipment": [{"player": c.player.name, "tier": c.tier.value,
-                       "bonus_pct": round(TIER_EQUIPMENT_BONUS.get(c.tier.value, 0) * 100), "form": fp(c)} for c in (equipment_cards or [])],
+                       "bonus_pct": 0, "fatigue_reduction_pct": pct(EQUIPMENT_FATIGUE_REDUCTION.get(c.tier.value, 0)), "form": fp(c)} for c in (equipment_cards or [])],
+        "fatigue_reduction_pct": pct(equipment_fatigue_reduction(equipment_cards)) if fatigue_mode else 0,
     }
 
 
@@ -517,6 +544,23 @@ def create_proposal(db: Session, user: User, formation, tactic, stake, slots, ca
     return proposal
 
 
+def loup_credits(db: Session, player: User, mascot_card) -> int:
+    """Après un match 1v1 joué : compte le match du jour du joueur et lui verse les crédits de son Loup (s'il en aligne un),
+    seulement pendant ses DUEL_PACK_DAILY_CAP (10) premiers matchs 1v1 du jour et dans la limite de LOUP_DAILY_CAP (30) crédits par jour.
+    Compteurs du jour de missions.daily_count : « duel_matches » (matchs 1v1 joués) et « loup_credits ». Ne valide pas la transaction.
+    La forme du Loup n'y change rien ; la mise et les packs ne sont pas touchés."""
+    from . import missions
+    rank = missions.daily_count(db, player, "duel_matches")              # matchs 1v1 déjà joués aujourd'hui, avant celui-ci
+    missions.daily_add(db, player, "duel_matches")
+    if mascot_card is None or rank >= DUEL_PACK_DAILY_CAP:
+        return 0
+    n = min(LOUP_CREDITS_BY_TIER.get(mascot_card.tier.value, 0), max(0, LOUP_DAILY_CAP - missions.daily_count(db, player, "loup_credits")))
+    if n > 0:
+        player.credits += n
+        missions.daily_add(db, player, "loup_credits", n)
+    return n
+
+
 def play_proposal(db: Session, challenger: User, proposal_id: str, formation, tactic, slots,
                   captain_card_id, fan_card_id, equipment_card_ids=None, mascot_card_id=None, referee_bid=0) -> dict:
     # verrou : si deux joueurs cliquent en même temps, un seul passe, l'autre voit "n'existe plus"
@@ -555,10 +599,10 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
               "members": build_members(cards_c, captain_c.id if captain_c else None, card_levels.levels_for(db, challenger.id), forms_c)}
     side_d = {"pseudo": creator.pseudo, "formation": proposal.formation, "tactic": proposal.tactic,
               "members": build_members(cards_d, captain_d.id if captain_d else None, card_levels.levels_for(db, creator.id), forms_d)}       # niveaux et forme des deux équipes, au moment du match
-    # chaque carte utilisée perd 1 % de forme (jusqu'à minuit) : les 5 joueurs, le Fan, le Loup et l'équipement
+    # chaque carte utilisée perd 1 % de forme (jusqu'à minuit) : les 5 joueurs, le Fan, le Loup et l'équipement ; l'équipement réduit cette perte
     used = lambda cards, fan, mascot, equip: [c.id for c, _ in cards] + [x.id for x in ([fan, mascot] + list(equip or [])) if x is not None]
-    fatigue.record_match(db, challenger.id, used(cards_c, fan_c, mascot_c, equip_c))
-    fatigue.record_match(db, creator.id, used(cards_d, fan_d, mascot_d, equip_d))
+    fatigue.record_match(db, challenger.id, used(cards_c, fan_c, mascot_c, equip_c), equipment_fatigue_reduction(equip_c))
+    fatigue.record_match(db, creator.id, used(cards_d, fan_d, mascot_d, equip_d), equipment_fatigue_reduction(equip_d))
 
     winner_tactic = tactic_advantage(tactic, proposal.tactic)          # 'a' = challenger, 'b' = créateur
     mult_c = 1 + TACTIC_BONUS if winner_tactic == "a" else 1.0
@@ -567,8 +611,8 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     ref_winner = referee_winner(referee_bid, bid_d)                     # l'arbitre favorise celui qui a mis le plus, personne si égalité
     ref_c = REFEREE_BONUS if ref_winner == "challenger" else 0.0
     ref_d = REFEREE_BONUS if ref_winner == "defender" else 0.0
-    att_c, def_c, _, _, _ = team_powers(side_c["members"], fan_c, mult_c, equip_c, mascot_c, ref_c, forms_c)
-    att_d, def_d, _, _, _ = team_powers(side_d["members"], fan_d, mult_d, equip_d, mascot_d, ref_d, forms_d)
+    att_c, def_c, _, _, _ = team_powers(side_c["members"], fan_c, mult_c, equip_c, mascot_c, ref_c, forms_c, formation, tactic)
+    att_d, def_d, _, _, _ = team_powers(side_d["members"], fan_d, mult_d, equip_d, mascot_d, ref_d, forms_d, proposal.formation, proposal.tactic)
 
     xg_c = expected_goals(att_c, def_d)
     xg_d = expected_goals(att_d, def_c)
@@ -628,8 +672,10 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
         n = random.randint(*AFTER_CAP_CREDITS)
         player.credits += n
         credits_instead[player.pseudo] = n
+    loup = {challenger.pseudo: loup_credits(db, challenger, mascot_c), creator.pseudo: loup_credits(db, creator, mascot_d)}      # chaque équipe pour elle-même
     referee = {"challenger": referee_bid, "defender": bid_d, "winner": ref_winner, "bonus_pct": round(REFEREE_BONUS * 100) if ref_winner else 0}
-    lineups = {"challenger": _lineup_snapshot(side_c, fan_c, equip_c, mascot_c, ref_c, forms_c), "defender": _lineup_snapshot(side_d, fan_d, equip_d, mascot_d, ref_d, forms_d),
+    lineups = {"challenger": _lineup_snapshot(side_c, fan_c, equip_c, mascot_c, ref_c, forms_c, loup[challenger.pseudo]),
+               "defender": _lineup_snapshot(side_d, fan_d, equip_d, mascot_d, ref_d, forms_d, loup[creator.pseudo]),
                "referee": referee}                                      # (enregistré avec la composition : visible dans le récap APRÈS le match)
     duel = Duel(
         challenger_id=challenger.id, defender_id=creator.id, stake=stake,
@@ -642,6 +688,9 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
         lineups_json=json.dumps(lineups, ensure_ascii=False),
     )
     db.add(duel)
+    from . import tactic_trends
+    db.flush()                                                           # (l'identifiant du duel, pour les tendances)
+    tactic_trends.record(db, "1v1", [(challenger.id, tactic, formation), (creator.id, proposal.tactic, proposal.formation)], ref=duel.id)
     db.delete(proposal)   # le défi est consommé
     db.commit()
 
@@ -661,6 +710,7 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
         "pack_none_to": [p.pseudo for p in no_pack],                   # 10 packs 1v1 déjà gagnés aujourd'hui : aucun pack pour ce match…
         "credits_instead": credits_instead,                            # … mais 1 à 5 crédits au hasard à la place : {pseudo: crédits}
         "duel_pack_cap": DUEL_PACK_DAILY_CAP,
+        "loup_credits": {k: v for k, v in loup.items() if v},               # crédits rapportés par le Loup à ce match : {pseudo: crédits}
         "tactics": {"challenger": tactic, "defender": proposal.tactic,
                     "advantage": {"a": "challenger", "b": "defender"}.get(winner_tactic)},
         "referee": referee,
