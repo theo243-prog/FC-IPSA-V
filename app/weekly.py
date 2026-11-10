@@ -147,16 +147,31 @@ def category_rankings(db: Session, start: datetime, end: datetime):
     return cats, n_duels
 
 
+MIN_CARDS_FOR_PLUS_ONE = 2      # une catégorie de rareté qui n'a qu'UNE carte jouable dans le jeu ne donne pas de +1 (sinon elle le rafle chaque semaine)
+
+
+def group_card_counts(db: Session) -> dict:
+    """{groupe de rareté: nombre de cartes de vrais joueurs (jouables en 1v1) de ce groupe dans le jeu}."""
+    out = {}
+    for tier, poste in db.query(Card.tier, Player.poste).join(Player, Player.id == Card.player_id).all():
+        g = tier_group(tier.value)
+        if g is not None and game_logic.card_kind(Player(poste=poste)) == "joueur":
+            out[g] = out.get(g, 0) + 1
+    return out
+
+
 def plan_awards(db: Session, cats) -> list:
     """Ce que l'attribution du vendredi ferait, SANS rien modifier. Pour chaque catégorie, on parcourt le classement :
       1. le 1er sans carte spéciale : elle est créée, et c'est fini pour la catégorie ;
-         le 1er qui en a une : +1 (au plus un +1 par joueur et par semaine, note plafonnée à SPECIAL_MAX_NOTE), puis on continue ;
+         le 1er qui en a une : +1 (au plus un +1 par joueur et par semaine, note plafonnée à SPECIAL_MAX_NOTE ; jamais dans un groupe
+         de rareté qui n'a qu'une seule carte jouable dans le jeu, MIN_CARDS_FOR_PLUS_ONE), puis on continue ;
       2. on descend : le premier joueur sans carte spéciale la reçoit et c'est fini ; ceux qui en ont une sont sautés (rien) ;
       3. une carte créée plus tôt dans la même attribution compte comme déjà possédée (son propriétaire peut donc prendre
          le +1 s'il est 1er d'une catégorie suivante)."""
     base, cap = game_logic.SPECIAL_BASE_NOTE, game_logic.SPECIAL_MAX_NOTE
     notes = {pid: (note or base) for pid, note in db.query(Card.player_id, Card.note).filter(Card.tier == Tier.speciale).all()}
     bumped, entries = set(), []
+    counts = group_card_counts(db)
     for category, group, ranked in cats:
         if not ranked:                                      # catégorie sans aucun point cette semaine : rien
             continue
@@ -169,7 +184,9 @@ def plan_awards(db: Session, cats) -> list:
             notes[first.id] = base; act("created", first, n, note=base, rank=1)
             entry.update(created=first.name, created_rank=1)
             entries.append(entry); continue
-        if first.id in bumped:
+        if group is not None and counts.get(group, 0) < MIN_CARDS_FOR_PLUS_ONE:
+            act("skipped", first, n, reason="une seule carte de cette rareté dans le jeu : pas de +1", note=notes[first.id])
+        elif first.id in bumped:
             act("skipped", first, n, reason="déjà +1 cette semaine", note=notes[first.id])
         elif notes[first.id] >= cap:
             act("skipped", first, n, reason="note maximale de %d atteinte" % cap, note=notes[first.id])

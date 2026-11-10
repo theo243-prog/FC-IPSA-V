@@ -137,6 +137,16 @@ created = [x["created"] for x in seven if x["created"]]
 ok(all(sum(a["action"] == "created" for a in x["actions"]) <= 1 for x in seven) and len(created) == 7 and len(set(created)) == 7, "au plus une création par catégorie : 7 au maximum par semaine (%s)" % created)
 ok(sum(1 for x in seven if x["plus_one"]) <= 7, "et au plus 7 « +1 »")
 
+real_counts = WK.group_card_counts
+cnt = real_counts(db)
+ok(all(isinstance(v, int) for v in cnt.values()) and cnt.get("commune", 0) >= 2, "nombre de cartes jouables par groupe de rareté : %s" % cnt)
+WK.group_card_counts = lambda db: {**cnt, "legendaire": 1}
+el, es = WK.plan_awards(db, [("most_used", "legendaire", [(P["Rayan"], 9), (P["Kylian"], 2)]), ("top_scorer", None, [(P["Rayan"], 3)])])
+ok(acts(el)[0] == ("skipped", "Rayan") and "une seule carte" in el["actions"][0]["reason"] and el["plus_one"] is None, "une seule légendaire dans le jeu : pas de +1 pour la plus utilisée de cette rareté")
+ok(es["plus_one"] == "Rayan", "le +1 reste possible dans une autre catégorie (meilleur buteur)")
+ok(("created", "Kylian") in acts(el) or special("Kylian") is not None, "la création pour le suivant sans carte spéciale a toujours lieu")
+WK.group_card_counts = real_counts
+
 print("6) DOUBLE EXÉCUTION")
 from app.models import JobRun
 db.query(JobRun).filter_by(name=WK.JOB_NAME).delete(); db.commit()
