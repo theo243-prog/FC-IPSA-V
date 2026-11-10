@@ -163,6 +163,23 @@ class CrestEntry(BaseModel):
     photo_url: Optional[str] = None # l'image de l'écusson (ex. /photos/asse.webp), facultative
 
 
+class FreeCardEntry(BaseModel):
+    name: str                       # ex. « Blessure à l'entraînement — Intel », « Gourde dorée »
+    kind: str = "evenement"         # evenement, equipement, fan, mascotte, stade
+    tier: str = "gold"              # commune, rare, gold, epique, legendaire, halloween, noel, ed1…ed12
+    photo_url: Optional[str] = None
+
+
+class AdminCreateFreeCardsRequest(BaseModel):
+    cards: List[FreeCardEntry] = []  # cartes libres (pas des joueurs) : événements, équipements, fans, mascottes, stades
+
+
+class AdminSiteBannerRequest(BaseModel):
+    text: str = ""                   # le message (vide : plus de bandeau)
+    style: str = "info"              # info, fete, alerte
+    enabled: bool = True
+
+
 class AdminCreateCrestsRequest(BaseModel):
     clubs: List[CrestEntry] = []    # chaque club crée une carte GOLD « écusson » (carte de collection)
 
