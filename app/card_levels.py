@@ -89,6 +89,30 @@ def group_of(card: Card):
     return None
 
 
+# Complétion du JEU (profil et classement), en plus du % de collection : 100 % = toutes les cartes (mêmes cartes que le % de collection :
+# ni trophées de saison, ni numérotées) ET toutes celles qui peuvent évoluer au niveau 5. Chaque carte vaut 1 point : une carte qui ne
+# peut pas évoluer vaut 1 dès qu'on l'a ; une carte qui peut évoluer vaut COMPLETION_OWNED (0,5) quand on l'a, plus COMPLETION_PER_LEVEL (0,1) par niveau.
+COMPLETION_OWNED, COMPLETION_PER_LEVEL = 0.5, 0.1
+
+
+def game_completion(db: Session, user_ids=None) -> dict:
+    """{utilisateur: complétion du jeu en %, à 0,1 près} pour les joueurs donnés (tous si None), en quelques requêtes."""
+    cards = db.query(Card).join(Player, Player.id == Card.player_id).filter(Card.tier.notin_([Tier.saison, Tier.numerotee])).all()
+    evolvable = {c.id for c in cards if game_logic.card_kind(c.player) == "joueur" and group_of(c) is not None}
+    ids = {c.id for c in cards}
+    if not ids:
+        return {}
+    q = db.query(OwnedCard.user_id, OwnedCard.card_id).filter(OwnedCard.quantity > 0, OwnedCard.card_id.in_(ids))
+    lq = db.query(CardLevel.user_id, CardLevel.card_id, CardLevel.level).filter(CardLevel.level > 0)
+    if user_ids is not None:
+        q = q.filter(OwnedCard.user_id.in_(list(user_ids))); lq = lq.filter(CardLevel.user_id.in_(list(user_ids)))
+    levels = {(u, c): lv for u, c, lv in lq.all()}
+    points = {uid: 0.0 for uid in (user_ids or [])}
+    for uid, cid in q.all():
+        points[uid] = points.get(uid, 0.0) + ((COMPLETION_OWNED + COMPLETION_PER_LEVEL * min(MAX_LEVEL, levels.get((uid, cid), 0))) if cid in evolvable else 1.0)
+    return {uid: round(100 * p / len(ids), 1) for uid, p in points.items()}
+
+
 def ineligible_reason(card: Card):
     """La raison pour laquelle cette carte ne peut pas évoluer (None si elle le peut)."""
     kind = game_logic.card_kind(card.player)

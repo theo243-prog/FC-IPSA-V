@@ -1879,6 +1879,7 @@
         body.insertAdjacentHTML('beforeend', '<div class="share-actions" style="margin-top:16px;"><button class="btn-secondary" type="button" id="shareCardBtn">📤 Partager cette carte</button></div>');
         document.getElementById('shareCardBtn').addEventListener('click', () => openShareCard(card));
       }
+      if (card && card.quantity > 0 && !card._viewing && card.id) loadPriceBox(body, card);                         // prix moyen et prix max de ses ventes
       if (card && card.quantity > 0 && !card._viewing && card.id && kind === 'joueur') loadLevelBox(body, card);      // faire évoluer cette carte
       document.getElementById('userCollectionModal').style.display = 'flex';
     } catch(e) { toast(e.message); }
@@ -1928,6 +1929,15 @@
     anchor.insertAdjacentHTML('afterend', '<p class="owned-by">' + txt + '</p>');
   }
   // Niveaux de cartes : la fiche d'une de mes cartes montre son niveau, les paliers (doublons et crédits utilisés) et le bouton « Évoluer »
+  // Fiche d'une carte de ma collection : prix moyen et prix le plus haut de ses ventes passées (marché, offres, enchères)
+  async function loadPriceBox(body, card){
+    let s; try { s = await api('/cards/' + encodeURIComponent(card.id) + '/price-stats'); } catch(e) { return; }
+    if (!body.isConnected) return;
+    const box = document.createElement('p'); box.className = 'tm-hint price-box'; box.style.textAlign = 'center';
+    box.innerHTML = s.sales ? '💰 Prix moyen de vente : <b>' + s.avg_price + ' crédits</b> · prix max : <b>' + s.max_price + ' crédits</b> (' + s.sales + ' vente' + (s.sales > 1 ? 's' : '') + ')'
+      : '💰 Cette carte n\'a encore jamais été vendue.';
+    const lvl = body.querySelector('.lvl-box'); lvl ? body.insertBefore(box, lvl) : body.appendChild(box);
+  }
   async function loadLevelBox(body, card){
     let i; try { i = await api('/cards/' + encodeURIComponent(card.id) + '/level'); } catch(e) { return; }
     if (!body.isConnected) return;
@@ -2231,7 +2241,7 @@
       : (p.badges.top.length ? '<div class="badge-grid">' + p.badges.top.map(b => badgeTileHTML(b, false)).join('') + '</div>' : '<p class="muted">Aucun succès pour l\'instant.</p>');
     const bnr = passItem(p.banner); body.innerHTML = '<div class="profile-head' + (bnr ? ' has-banner' + (bnr.style.holo ? ' banner-holo' : '') : '') + '"' + (bnr ? ' style="background:' + bnr.style.bg + ';"' : '') + '>' + (bnr ? '<div class="banner-deco" aria-hidden="true">' + bnr.style.emoji.repeat(6) + '</div>' : '') + '<div class="profile-avatar' + (p.frame ? ' fr-' + p.frame : '') + '" id="profAvatar">' + (p.avatar ? '<img alt="Photo de ' + escapeHtml(p.pseudo) + '" src="' + API_BASE + '/users/' + encodeURIComponent(p.pseudo) + '/avatar?v=' + p.avatar + '">' : escapeHtml(p.pseudo.charAt(0).toUpperCase())) + (mine ? '<button type="button" class="profile-avatar-btn" id="profAvatarBtn" title="' + (p.avatar ? 'Changer ma photo' : 'Ajouter une photo') + '" aria-label="' + (p.avatar ? 'Changer ma photo' : 'Ajouter une photo') + '">📷</button>' : '') + '</div><div><div class="profile-pseudo' + ncClass(p.name_color) + '" style="font-weight:800;font-size:17px;">' + badgeHTML(p.badge) + escapeHtml(p.pseudo) + starsHTML(p.stars) + '</div>' + (p.title ? '<div class="profile-title">' + escapeHtml(p.title) + '</div>' : '') + '<div class="profile-meta">' + since +
       (p.rank ? '<br>Classement : n°' + p.rank + ' sur ' + p.players_ranked : '') + '</div></div></div>' +
-      '<div class="profile-tiles"><div class="profile-tile"><b>' + String(p.completion_pct).replace('.', ',') + ' %</b><span>collection (' + p.cards_owned + '/' + p.cards_total + ')</span></div>' +
+      '<div class="profile-tiles"><div class="profile-tile"><b>' + String(p.completion_pct).replace('.', ',') + ' %</b><span>collection (' + p.cards_owned + '/' + p.cards_total + ')' + (p.game_completion_pct != null ? '<br>jeu complété à ' + String(p.game_completion_pct).replace('.', ',') + ' %' : '') + '</span></div>' +
       '<div class="profile-tile"><b>' + d.played + '</b><span>matchs 1v1' + (d.played ? ' · ' + d.won + 'V ' + d.drawn + 'N ' + d.lost + 'D' : '') + '</span></div>' +
       '<div class="profile-tile"><b>' + p.elo + '</b><span>Elo' + (d.win_rate !== null ? ' · ' + d.win_rate + ' % de victoires' : '') + '</span></div></div>' +
       (p.podiums && (p.podiums[1] || p.podiums[2] || p.podiums[3]) ? '<div class="profile-meta" style="text-align:center;margin:6px 0;">🏆 Podiums de saison : 🥇 ' + (p.podiums[1] || 0) + ' · 🥈 ' + (p.podiums[2] || 0) + ' · 🥉 ' + (p.podiums[3] || 0) + '</div>' : '') +
@@ -2281,7 +2291,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.10.1';
+  const SITE_VERSION = '2026.11.10.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3492,7 +3502,8 @@
     } },
     classement: { title: 'Le classement', html(){
       return '<h3>Qui a la plus belle collection ?</h3><p>Les joueurs sont classés par <b>pourcentage de collection</b> : le nombre de cartes différentes que tu possèdes divisé par le nombre de cartes qui existent dans le jeu, <b>sans exception</b> (cartes secrètes et éditions limitées comprises, même terminées). En cas d\'égalité, ce sont les <b>succès validés</b> (colonne « Succès », sur tous les niveaux de succès qui existent) qui départagent ; si c\'est encore égal, le nombre de crédits tranche.</p>' +
-        '<ul><li>Clique sur un joueur pour ouvrir son <b>profil</b> : sa collection en %, ses matchs 1v1, sa vitrine de cartes et ses succès. Le bouton « Voir sa collection » ouvre ses cartes.</li><li>Touche ton propre pseudo, en haut de la page, pour voir <b>ton profil</b> et choisir ta vitrine.</li><li>Les comptes de test ne sont pas classés.</li></ul>' +
+        '<ul><li><b>Jeu</b> : la <b>complétion du jeu</b>, plus exigeante que la collection. 100 % = avoir toutes les cartes ET toutes celles qui évoluent (communes, rares et éditions des joueurs) au niveau 5. Une carte qui n\'évolue pas compte en entier dès que tu l\'as ; une carte qui évolue compte pour moitié, puis un dixième de plus par niveau.</li>' +
+        '<li>Clique sur un joueur pour ouvrir son <b>profil</b> : sa collection en %, ses matchs 1v1, sa vitrine de cartes et ses succès. Le bouton « Voir sa collection » ouvre ses cartes.</li><li>Touche ton propre pseudo, en haut de la page, pour voir <b>ton profil</b> et choisir ta vitrine.</li><li>Les comptes de test ne sont pas classés.</li></ul>' +
         '<h3>Les succès</h3><p>Chaque joueur gagne des <b>succès</b> en jouant : collection, packs ouverts, cartes secrètes, matchs 1v1, séries de connexion, marché… Chaque succès a plusieurs niveaux (Bronze, Argent, Or, Diamant, Légende). Un niveau obtenu est gardé pour toujours et rapporte quelques <b>crédits</b>. Tu retrouves ta progression dans ton profil.</p>';
     } },
     actualite: { title: 'L\'actualité du club', html(){
@@ -4204,13 +4215,13 @@
       const rows = await api('/leaderboard');
       const root = document.getElementById('leaderboardEl');
       if (!rows.length) { root.innerHTML = '<div class="empty-state">Personne n\'a encore de collection.</div>'; return; }
-      let html = '<table class="leaderboard"><thead><tr><th></th><th>Pseudo</th><th>Collection</th><th title="Niveaux de succès validés">Succès</th><th>Crédits</th></tr></thead><tbody>';
+      let html = '<table class="leaderboard"><thead><tr><th></th><th>Pseudo</th><th>Collection</th><th title="Complétion du jeu : toutes les cartes, et celles qui évoluent au niveau 5">Jeu</th><th title="Niveaux de succès validés">Succès</th><th>Crédits</th></tr></thead><tbody>';
       rows.forEach((r, i) => {
         const mine = r.pseudo === myPseudo, bnr = passItem(r.banner);          // bannière choisie (Pass ou shop) : derrière le nom
         const bnrAttr = bnr ? ' has-banner' + (bnr.style.holo ? ' banner-holo' : '') + '" style="background:' + bnr.style.bg + ';' : '';
         html += '<tr class="' + (mine ? 'me' : '') + '"><td><span class="rank-num">#' + (i+1) + '</span></td>' +
           '<td><div class="lb-name' + bnrAttr + '">' + (bnr ? '<span class="banner-deco" aria-hidden="true">' + bnr.style.emoji.repeat(3) + '</span>' : '') + avatarHTML(r.pseudo, r.avatar, r.frame) + '<span class="lb-who"><button class="pseudo-link' + ncClass(r.name_color) + '" data-pseudo="' + escapeHtml(r.pseudo) + '">' + badgeHTML(r.badge) + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') + '</button>' + starsHTML(r.stars) + (r.title ? '<small class="lb-title">' + escapeHtml(r.title) + '</small>' : '') + '</span></div></td>' +
-          '<td>' + r.completion_pct + '%</td><td title="Niveaux de succès validés">' + (r.achievements || 0) + '/' + (r.achievements_total || 47) + '</td><td>' + r.credits + '</td></tr>';
+          '<td>' + r.completion_pct + '%</td><td>' + (r.game_completion_pct != null ? r.game_completion_pct : 0) + '%</td><td title="Niveaux de succès validés">' + (r.achievements || 0) + '/' + (r.achievements_total || 47) + '</td><td>' + r.credits + '</td></tr>';
       });
       html += '</tbody></table><p class="duel-hint" style="margin-top:10px;">À égalité de collection, ce sont les succès validés qui départagent (puis les crédits). Pour ajouter ta photo : touche ton pseudo, puis 📷.</p>';
       root.innerHTML = html;
