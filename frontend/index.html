@@ -1576,7 +1576,8 @@
     return 'joueur';
   }
   // un trophée de saison s'appelle « Vainqueur de saison (octobre 2026) » : le titre en grand, le mois dessous
-  const TROPHY_MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉', 4: '🏆', 5: '🥈' };
+  const TROPHY_MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉', 4: '🏆', 5: '🥈', 7: '🏃', 8: '🏃', 9: '🏃', 10: '🏮' };      // 7-9 : les plus assidus ; 10 : lanterne rouge
+  const trophyKindLabel = t => t.rank === 6 ? 'Pass' : (t.rank === 4 || t.rank === 5) ? 'Tournoi' : null;
   function trophyParts(card){
     if (card.trophy) return card.trophy;
     const m = /^(.*) \((.*)\)$/.exec(card.player_name || ''); const title = m ? m[1] : (card.player_name || '');
@@ -1674,7 +1675,7 @@
       statsRow = '<div class="card-stats" title="Écusson d\'un club adverse : carte de collection"><span>🛡️ ÉCUSSON</span></div>';
       posteLabel = '🛡️';
     } else if (kind === 'trophee') {
-      statsRow = '<div class="card-stats" title="' + (trophyParts(card).rank === 6 ? 'Carte exclusive du Pass' : trophyParts(card).rank >= 4 ? 'Carte de tournoi' : 'Trophée de saison') + ' : un souvenir"><span>🏆 ' + escapeHtml(trophyParts(card).label) + '</span></div>';
+      statsRow = '<div class="card-stats" title="' + (trophyParts(card).rank === 6 ? 'Carte exclusive du Pass' : [4, 5].includes(trophyParts(card).rank) ? 'Carte de tournoi' : 'Trophée de saison') + ' : un souvenir"><span>🏆 ' + escapeHtml(trophyParts(card).label) + '</span></div>';
       posteLabel = trophyMedalOf(card);
     } else if (kind === 'mascotte') {
       statsRow = '<div class="card-stats" title="Crédits gagnés après chaque match 1v1 (10 premiers matchs du jour, 30 crédits par jour maximum)"><span>🐺 +' + (LOUP_CREDITS[card.tier] || 0) + ' cr./match</span></div>';
@@ -1694,7 +1695,7 @@
     else if (kind === 'equipement' || kind === 'stade' || kind === 'moment' || kind === 'numerotee') midHTML = itemMedalHTML(card);
     else midHTML = '<span class="ball-fallback">⚽</span>';
     const formBar = card.form != null && card.form < 100 ? '<div class="form-bar" title="Forme en 1v1 : ' + card.form + ' % (remise à 100 % à minuit)"><i style="width:' + card.form + '%;background-position:' + (100 - card.form) + '% 0;"></i></div>' : '';
-    return formBar + (kind === 'trophee' ? '' : editionDecor(card.tier)) + bgPhoto + '<div class="card-top"><span class="card-tier-label">'+(kind === 'trophee' && trophyParts(card).rank >= 4 ? (trophyParts(card).rank === 6 ? 'Pass' : 'Tournoi') : tierLabel(card.tier))+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
+    return formBar + (kind === 'trophee' ? '' : editionDecor(card.tier)) + bgPhoto + '<div class="card-top"><span class="card-tier-label">'+(kind === 'trophee' && trophyKindLabel(trophyParts(card)) ? trophyKindLabel(trophyParts(card)) : tierLabel(card.tier))+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
       '<div class="card-mid">'+midHTML+'</div>'+
       '<div><div class="card-name"></div>'+statsRow+'</div>'+
       crestIco('card-watermark');
@@ -1816,7 +1817,7 @@
     const t = trophyParts(card), preview = String(card.id || '').startsWith('trophy-');
     document.getElementById('modalTitle').textContent = card.player_name;
     const body = document.getElementById('modalBody');
-    body.innerHTML = '<div style="text-align:center;font-size:64px;line-height:1.1;margin:6px 0;">' + trophyMedalOf(card) + '</div><p style="text-align:center;font-weight:700;">' + (preview ? 'Cette carte sera remise à la fin de la saison de ' + escapeHtml(t.label) + '.' : (t.rank === 6 ? 'Carte exclusive du Pass de ' : t.rank === 4 ? 'Trophée du tournoi de ' : t.rank === 5 ? 'Carte de finaliste du tournoi de ' : 'Trophée de la saison de ') + escapeHtml(t.label) + '.') + '</p><p class="muted" style="text-align:center;">Un trophée n\'est qu\'un souvenir : il n\'a ni note ni bonus, ne joue pas de match, ne se vend pas et ne s\'échange pas. Il ne compte pas dans le pourcentage de collection.</p>';
+    body.innerHTML = '<div style="text-align:center;font-size:64px;line-height:1.1;margin:6px 0;">' + trophyMedalOf(card) + '</div><p style="text-align:center;font-weight:700;">' + (preview ? 'Cette carte sera remise à la fin de la saison de ' + escapeHtml(t.label) + '.' : (t.rank === 6 ? 'Carte exclusive du Pass de ' : t.rank === 4 ? 'Trophée du tournoi de ' : t.rank === 5 ? 'Carte de finaliste du tournoi de ' : [7, 8, 9].includes(t.rank) ? 'Trophée d\'assiduité de la saison de ' : t.rank === 10 ? 'Carte souvenir (pas vraiment glorieuse) de la saison de ' : 'Trophée de la saison de ') + escapeHtml(t.label) + '.') + '</p><p class="muted" style="text-align:center;">Un trophée n\'est qu\'un souvenir : il n\'a ni note ni bonus, ne joue pas de match, ne se vend pas et ne s\'échange pas. Il ne compte pas dans le pourcentage de collection.</p>';
     if (!preview && card.id && !card.locked) addOwnershipLine(body.querySelector('p'), card.id);      // « 👥 Possédée par N % des joueurs »
     if (!preview && card.quantity > 0 && !card._viewing) {
       body.insertAdjacentHTML('beforeend', '<div class="share-actions" style="margin-top:14px;"><button class="btn-secondary" type="button" id="shareCardBtn">📤 Partager ce trophée</button></div>');
@@ -2308,7 +2309,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.10.4';
+  const SITE_VERSION = '2026.11.10.5';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3574,7 +3575,7 @@
         '<li>Seule ta <b>première victoire du jour</b> à chaque niveau rapporte : 5, 10 ou 15 crédits et 10, 20 ou 30 points de Pass (30 crédits et 60 points au maximum par jour). Tu peux rejouer pour l\'honneur.</li>' +
         '<li>Aucun effet sur l\'Elo, l\'historique 1v1, les packs match ni les missions du jour.</li>' +
         '<li>Palmarès <b>« Tombeurs du club »</b> (victoires au niveau Difficile d\'abord), et titre <b>« Tombeur du club »</b> à 10 victoires au niveau Difficile.</li></ul>' +
-        '<h3>Le tournoi du mois</h3><p>Chaque mois, un <b>tournoi à élimination directe</b> (onglet Tournoi) : inscriptions du 1er au 7 contre un droit d\'entrée, tirage le 8, un match par tour (24 h pour composer ton équipe, forfait sinon, tirs au but en cas d\'égalité). Il ne compte <b>pas</b> pour l\'Elo. La cagnotte revient au vainqueur, au finaliste et aux demi-finalistes ; le vainqueur gagne un trophée.</p>' + '<h3>Les saisons</h3><p>Chaque mois est une <b>saison</b> : le 1er à minuit (heure de Paris), l\'Elo de tout le monde repart à <b>1000</b>. Il faut avoir joué au moins <b>5 matchs</b> dans le mois pour monter sur le podium. Les <b>3 premiers</b> gagnent des crédits (100, 60, 30) et un <b>trophée</b> : une carte « Vainqueur de saison (mois) », « Deuxième de la saison (mois) » ou « Troisième de la saison (mois) ». Il y a un trophée par saison : être premier deux fois donne deux cartes différentes, jamais un doublon. Un trophée n\'est qu\'un <b>souvenir</b> : il ne sort d\'aucun pack, n\'a ni note ni bonus, ne joue pas de match, ne se vend pas, ne s\'achète pas et ne compte pas dans le pourcentage de collection. Il se range dans « Trophées de saison », dans ta collection.</p>' +
+        '<h3>Le tournoi du mois</h3><p>Chaque mois, un <b>tournoi à élimination directe</b> (onglet Tournoi) : inscriptions du 1er au 7 contre un droit d\'entrée, tirage le 8, un match par tour (24 h pour composer ton équipe, forfait sinon, tirs au but en cas d\'égalité). Il ne compte <b>pas</b> pour l\'Elo. La cagnotte revient au vainqueur, au finaliste et aux demi-finalistes ; le vainqueur gagne un trophée.</p>' + '<h3>Les saisons</h3><p>Chaque mois est une <b>saison</b> : le 1er à minuit (heure de Paris), l\'Elo de tout le monde repart à <b>1000</b>. Il faut avoir joué au moins <b>5 matchs</b> dans le mois pour monter sur le podium. Les <b>3 premiers</b> gagnent des crédits (100, 60, 30) et un <b>trophée</b> : une carte « Vainqueur de saison (mois) », « Deuxième de la saison (mois) » ou « Troisième de la saison (mois) ». Il y a un trophée par saison : être premier deux fois donne deux cartes différentes, jamais un doublon. Un trophée n\'est qu\'un <b>souvenir</b> : il ne sort d\'aucun pack, n\'a ni note ni bonus, ne joue pas de match, ne se vend pas, ne s\'achète pas et ne compte pas dans le pourcentage de collection. Il se range dans « Trophées de saison », dans ta collection. Les <b>3 joueurs qui ont joué le plus de matchs</b> du mois reçoivent aussi un trophée : « Joueur le plus assidu de la saison » (puis 2e et 3e).</p>' +
         '<h3>Mises, packs et classement</h3><ul>' +
         '<li><b>Mise</b> de ' + cfg.stake_min + ' à ' + cfg.stake_max + ' crédits, bloquée tant que le défi est ouvert. Le gagnant prend les deux mises <b>et un pack match</b> ; le perdant reçoit <b>un pack classique</b>. En cas de <b>nul</b>, chacun récupère sa mise <b>et reçoit un pack classique</b>. Le 1v1 rapporte <b>10 packs au maximum par jour</b> (un pack match si tu gagnes, un classique si tu perds ou fais nul) : ensuite, tu peux continuer à jouer autant que tu veux, et chaque match te rapporte <b>1 à 5 crédits</b> au hasard à la place (plus de cartes jusqu\'à minuit). Les mises, l\'Elo et les missions ne changent pas.</li>' +
         '<li><b>Enveloppe pour l\'arbitre</b> (facultative, sans plafond) : tu glisses des crédits à l\'arbitre en plus de ta mise. <b>Celui qui met le plus gagne +' + Math.round(cfg.referee_bonus * 100) + ' %</b> dans le match, comme un bonus d\'équipe ; en cas d\'égalité, personne ne l\'a. '

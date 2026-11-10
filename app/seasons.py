@@ -62,8 +62,13 @@ class SeasonResult(Base):
 
 
 # ------------------------------------------------------------------ trophées
-RANK_TITLES = {1: "Vainqueur de saison", 2: "Deuxième de la saison", 3: "Troisième de la saison", 4: "Vainqueur du tournoi", 5: "Finaliste du tournoi"}      # (les rangs 4 et 5 sont les cartes du tournoi mensuel)
-TROPHY_RE = re.compile(r"^(Vainqueur de saison|Deuxième de la saison|Troisième de la saison|Vainqueur du tournoi|Finaliste du tournoi|Pass [^()]+) \((.+)\)$")
+RANK_TITLES = {1: "Vainqueur de saison", 2: "Deuxième de la saison", 3: "Troisième de la saison", 4: "Vainqueur du tournoi", 5: "Finaliste du tournoi",      # (les rangs 4 et 5 sont les cartes du tournoi mensuel ; 6 : carte du Pass)
+               7: "Joueur le plus assidu de la saison", 8: "Deuxième joueur le plus assidu de la saison", 9: "Troisième joueur le plus assidu de la saison",
+               10: "Lanterne rouge de la saison"}
+ASSIDUOUS_RANKS = (7, 8, 9)       # les 3 joueurs qui ont joué le plus de matchs 1v1 dans le mois (égalité : le meilleur Elo)
+LANTERN_RANK = 10                 # SURPRISE : le dernier en Elo parmi ceux qui ont joué au moins MIN_MATCHES matchs (jamais annoncée à l'avance)
+LANTERN_MIN_ELIGIBLE = 4          # au moins 4 joueurs classés, pour que la lanterne rouge ne soit jamais aussi sur le podium
+TROPHY_RE = re.compile(r"^(%s|Pass [^()]+) \((.+)\)$" % "|".join(re.escape(t) for t in sorted(RANK_TITLES.values(), key=len, reverse=True)))
 
 
 def trophy_name(key: str, rank: int) -> str:
@@ -169,6 +174,24 @@ def podium_of(rows: list) -> list:
     return top
 
 
+def assiduous_of(rows: list) -> list:
+    """Les 3 joueurs qui ont joué le plus de matchs dans la saison (égalité : le meilleur Elo, puis les victoires, puis le pseudo)."""
+    top = sorted(rows, key=lambda r: (-r["matches"], -r["elo"], -r["wins"], r["pseudo"].lower()))[:len(ASSIDUOUS_RANKS)]
+    return [{**r, "rank": rank} for r, rank in zip(top, ASSIDUOUS_RANKS)]
+
+
+def lantern_of(rows: list):
+    """Le dernier en Elo parmi les joueurs classés (au moins MIN_MATCHES matchs), s'il y en a au moins LANTERN_MIN_ELIGIBLE ; sinon None."""
+    eligible = [r for r in rows if r["eligible"]]
+    return {**eligible[-1], "rank": LANTERN_RANK} if len(eligible) >= LANTERN_MIN_ELIGIBLE else None
+
+
+def _give_trophy(db: Session, user: User, key: str, rank: int) -> Card:
+    card = get_or_create_trophy(db, key, rank)
+    game_logic.get_or_create_owned(db, user, card).quantity = 1          # un trophée par saison et par rang : jamais de doublon
+    return card
+
+
 def podium_counts(db: Session, user_id: str) -> dict:
     out = {1: 0, 2: 0, 3: 0}
     for r in db.query(SeasonResult).filter_by(user_id=user_id).all():
@@ -200,12 +223,30 @@ def close_season(db: Session, key: str) -> dict:
         top = next((r for r in results if r["rank"] == 1), results[0])
         rest = " · ".join("%s %s" % (medals.get(r["rank"], ""), r["pseudo"]) for r in results if r is not top)
         chat.add_event(db, "🏆 %s a gagné la saison de %s !%s" % (top["pseudo"], label_of(key), (" (" + rest + ")") if rest else ""), db.query(User).filter_by(pseudo=top["pseudo"]).first())
+    extra = []                                   # trophées des plus assidus, puis la lanterne rouge (surprise)
+    for r in assiduous_of(rows):
+        user = db.query(User).filter_by(id=r["user_id"]).first()
+        card = _give_trophy(db, user, key, r["rank"])
+        extra.append({"rank": r["rank"], "pseudo": user.pseudo, "matches": r["matches"], "card": card.player.name})
+        push.enqueue(db, user.id, "duels", "🏃 Trophée d'assiduité de %s !" % label_of(key),
+                     "Tu as joué %d matchs 1v1 ce mois-ci : voici ta carte « %s »." % (r["matches"], card.player.name), url="/#collection", tag="season-assidu")
+    if extra:
+        from . import chat
+        chat.add_event(db, "🏃 Les plus assidus de la saison de %s : %s" % (label_of(key), " · ".join("%s (%d matchs)" % (e["pseudo"], e["matches"]) for e in extra)))
+    lantern = lantern_of(rows)
+    if lantern is not None:
+        user = db.query(User).filter_by(id=lantern["user_id"]).first()
+        card = _give_trophy(db, user, key, LANTERN_RANK)
+        extra.append({"rank": LANTERN_RANK, "pseudo": user.pseudo, "elo": lantern["elo"], "card": card.player.name})
+        push.enqueue(db, user.id, "duels", "🏮 Surprise de fin de saison !", "Tu finis dernier du classement de %s… mais tu repars avec une carte collector : « %s ». La saison prochaine sera la bonne !" % (label_of(key), card.player.name), url="/#collection", tag="season-lantern")
+        from . import chat
+        chat.add_event(db, "🏮 %s termine lanterne rouge de la saison de %s et gagne une carte souvenir unique ! Courage pour la prochaine 😄" % (user.pseudo, label_of(key)))
     db.query(User).update({User.elo: ELO_START}, synchronize_session=False)
     nxt = label_of(next_key(key))
     for u in db.query(User).filter(User.is_test == False).all():          # noqa: E712
         push.enqueue(db, u.id, "duels", "Nouvelle saison 1v1 ! 🏆", "Le classement Elo est remis à zéro pour %s. À toi de jouer !" % nxt, url="/#duels", tag="season-new")
     db.commit()
-    return {"season": key, "podium": results, "players_ranked": len(rows)}
+    return {"season": key, "podium": results, "extra_trophies": extra, "players_ranked": len(rows)}
 
 
 def run_scheduled(db: Session) -> list:
