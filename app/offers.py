@@ -216,3 +216,21 @@ def market_history(limit: int = 100, viewer=Depends(optional_user), db: Session 
         out.append({"id": t.id, "kind": t.kind, "created_at": t.created_at.isoformat(), "seller": t.seller_pseudo, "buyer": t.buyer_pseudo, "price": t.price, "level": tl.get(t.id, 0),
                     "card": card_out(card) if shown else {"masked": True, "tier": t.card_tier, "deleted": card is None}})
     return out
+
+
+def price_stats(db: Session, card_id: str) -> dict:
+    """Prix des ventes passées d'une carte : annonces, offres d'achat et enchères des joueurs (table trades), et enchères du club gagnées
+    (club_auction_lots). Seulement le nombre de ventes, le prix moyen (arrondi) et le prix le plus haut : ni pseudo, ni date."""
+    prices = [p for (p,) in db.query(Trade.price).filter(Trade.card_id == card_id).all()]
+    from .club_auctions import ClubAuctionLot
+    prices += [p for (p,) in db.query(ClubAuctionLot.price).filter(ClubAuctionLot.card_id == card_id, ClubAuctionLot.status == "won", ClubAuctionLot.price.isnot(None)).all()]
+    return {"card_id": card_id, "sales": len(prices), "avg_price": round(sum(prices) / len(prices)) if prices else None, "max_price": max(prices) if prices else None}
+
+
+@router.get("/cards/{card_id}/price-stats")
+def card_price_stats(card_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Fiche d'une carte de SA collection : prix moyen et prix le plus haut de ses ventes passées."""
+    owned = db.query(OwnedCard).filter_by(user_id=user.id, card_id=card_id).first()
+    if owned is None or owned.quantity < 1:
+        raise HTTPException(status_code=404, detail="Cette carte n'est pas dans ta collection")
+    return price_stats(db, card_id)

@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-prix-et-completion", "date": "2026-11-10", "category": "autre", "title": "Prix des cartes et complétion du jeu",
+     "text": "Dans ta collection, la fiche d'une carte montre son prix moyen de vente et le prix le plus haut auquel elle a été vendue. Le profil et le classement affichent aussi ta complétion du jeu : 100 %, c'est avoir toutes les cartes et faire évoluer au niveau 5 toutes celles qui peuvent l'être."},
     {"id": "2026-11-recompenses-1v1-juste", "date": "2026-11-10", "category": "économie", "title": "Plus de récompenses et un 1v1 plus juste",
      "text": "Le Pass donne plus de crédits et de packs, et l'objectif du club monte jusqu'à 10 000 packs avec un pack ultra et 50 crédits pour tous à la fin. Faire évoluer une carte coûte moins cher (deux fois moins pour les communes) et les cosmétiques du shop vont maintenant de 30 à 300 crédits. Les légendaires valent 90 ; une spéciale peut monter jusqu'à 99 et sort plus souvent des packs match. En 1v1, la disposition du créateur d'un défi reste secrète jusqu'au match et il joue à domicile (+1 %). L'Elo récompense ceux qui jouent : une victoire rapporte plus et une défaite coûte au plus 20 points."},
     {"id": "2026-11-reequilibrage-cartes-d-abord", "date": "2026-11-09", "category": "règles", "title": "Rééquilibrage du jeu : les cartes d'abord",
