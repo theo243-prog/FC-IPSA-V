@@ -2,7 +2,7 @@
 Outils de collection : « Vendre tous les doublons ».
 
 Chaque doublon se revend à un prix FIXE selon sa rareté (commune 1, rare 3, …). Mais les doublons de communes (1 point) et de rares
-(5 points) d'un joueur servent aussi à FUSIONNER sa carte secrète (100 points). Tant qu'il reste des secrètes à débloquer, la vente en
+(5 points) d'un joueur servent aussi à FUSIONNER sa carte secrète (300 points). Tant qu'il reste des secrètes à débloquer, la vente en
 bloc propose donc de GARDER les doublons de communes et de rares des joueurs dont la secrète n'est pas encore à toi. Une fois toutes
 les secrètes débloquées, il n'y a plus rien à garder : tout se vend d'un coup. On garde toujours 1 exemplaire de chaque carte.
 """

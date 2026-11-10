@@ -320,7 +320,7 @@ def get_collection(user: User = Depends(get_current_user), db: Session = Depends
 
 @app.post("/collection/unlock-secret")
 def unlock_secret(payload: schemas.UnlockSecretRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Débloque une carte secrète en fusionnant des doublons (100 points : commune = 1, rare = 5)."""
+    """Débloque une carte secrète en fusionnant des doublons (300 points : commune = 1, rare = 5)."""
     try:
         result = game_logic.unlock_secret(db, user, payload.card_id)
     except ValueError as e:

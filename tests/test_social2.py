@@ -73,7 +73,7 @@ lastid = d["last_id"]; time.sleep(1.6); c.post("/chat", json={"text": "nouveau"}
 ok([m["text"] for m in c.get("/chat", params={"after_id": lastid}, headers=Ha).json()["messages"]] == ["nouveau"] and c.get("/me", headers=Ha).json()["chat_last_id"] >= lastid + 1, "« après le numéro N » ne renvoie que les nouveaux ; /me donne le dernier numéro")
 c.post("/admin/grant-packs", json={"pseudo": "dan", "count": 1, "pack_type": "legendaire"}, headers=A); r = c.post("/pack/open", json={"pack_type": "legendaire"}, headers=Hd)
 ev = [m["text"] for m in c.get("/chat", headers=Ha).json()["messages"] if m["kind"] == "event"]; ok(r.status_code == 200 and any(t.startswith("👑 dan a ouvert une légendaire :") for t in ev), "ouvrir une légendaire est annoncé")
-own("dan", "Léo", "commune", 101); sec = card("Léo", "secrete"); r = c.post("/collection/unlock-secret", json={"card_id": sec.id}, headers=Hd); ev = [m["text"] for m in c.get("/chat", headers=Ha).json()["messages"] if m["kind"] == "event"]
+own("dan", "Léo", "commune", 301); sec = card("Léo", "secrete"); r = c.post("/collection/unlock-secret", json={"card_id": sec.id}, headers=Hd); ev = [m["text"] for m in c.get("/chat", headers=Ha).json()["messages"] if m["kind"] == "event"]
 ok(r.status_code == 200 and "🔮 dan a débloqué la carte secrète de Léo !" in ev, "débloquer une secrète est annoncé")
 PR.bump(db, U("ben"), "open_packs", 500, maximum=True); db.commit(); c.get("/me", headers=Hb); ev = [m["text"] for m in c.get("/chat", headers=Ha).json()["messages"] if m["kind"] == "event"]
 ok(any("ben a obtenu « Ouvreur de packs » niveau Diamant" in t for t in ev), "un niveau Diamant de succès est annoncé")

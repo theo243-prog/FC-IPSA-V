@@ -16,7 +16,7 @@ Rééquilibrage « les cartes d'abord » : par ordre d'importance, 1) la note de
 - +10 % pour la carte capitaine ;
 - le Fan optionnel : +0,75 % (commune) à +3 % (légendaire) à toute l'équipe selon sa rareté ;
 - le Loup optionnel : aucun bonus de puissance, mais 1 à 5 crédits par match 1v1 (10 premiers matchs du jour, 30 crédits par jour au plus) ;
-- 1 seule carte Équipement : aucun bonus de puissance, mais -15 % à -60 % de perte de forme en 1v1 pour les cartes du match ;
+- 1 seule carte Équipement : aucun bonus de puissance, mais -5 % à -25 % de perte de forme en 1v1 pour les cartes du match ;
 - la tactique (pierre-feuille-ciseaux) : +4 % à toute l'équipe pour celle qui l'emporte ;
 - la synergie formation + tactique (pressing 1-1-2, possession 1-2-1, contre 2-1-1) : +2 % ;
 - l'arbitre (1v1) : +2 % à celui qui a mis la plus grosse enveloppe ;
