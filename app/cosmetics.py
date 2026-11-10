@@ -27,8 +27,14 @@ MASTER_TITLES = {
     "legendaires": "Roi des légendes", "editions": "Roi des éditions", "series": "Perfectionniste", "variete": "Touche-à-tout",
     "matchs": "Gladiateur", "victoires": "Invincible", "serie": "Fidèle au poste", "missions": "Infatigable", "marche": "Magnat du marché",
     "doublons": "Roi du recyclage",
+    # succès de novembre 2026
+    "evolution": "Forgeron de cartes", "niveau_max": "Tout au max", "pronos": "Voyant", "scores_exacts": "Nostradamus", "minijeu": "Roi du mini-jeu",
+    "electeur": "Grand électeur", "club": "Bourreau du club", "club_difficile": "Terreur du club", "encheres": "Commissaire-priseur",
+    "echanges": "Roi du troc", "tournoi": "Bête de tournoi", "stars": "Chasseur d'étoiles", "completion": "Le jeu est fini", "pass": "Abonné à vie",
+    "podiums": "Habitué du podium", "numerotees": "Pièce de musée",
 }
-BASE_TITLES = {"packs": "Ouvreur de packs", "legendaires": "Légendaire", "matchs": "Joueur 1v1", "serie": "Assidu"}
+BASE_TITLES = {"packs": "Ouvreur de packs", "legendaires": "Légendaire", "matchs": "Joueur 1v1", "serie": "Assidu",
+               "pronos": "Parieur", "club": "Adversaire du club", "club_difficile": "Téméraire", "pass": "Abonné", "podiums": "Médaillé", "completion": "Complétiste"}
 # (id, nom, niveaux de succès au total)
 FRAMES = [("bronze", "Bronze", 5), ("argent", "Argent", 12), ("or", "Or", 20), ("diamant", "Diamant", 30), ("legende", "Légende", 40)]
 CHAMPION_FRAME = ("champion", "Champion de saison")
@@ -60,7 +66,8 @@ def _title_catalog():
         n = len(lad["goals"]); base_lv = min(2, n - 1) if n > 1 else 1
         names = profiles.LEVEL_NAMES[n]
         out.append((lad["id"], BASE_TITLES.get(lad["id"], lad["title"]), "Succès « %s » : niveau %s" % (lad["title"], names[base_lv - 1]), (lambda lid, lv: lambda c: c["levels"].get(lid, 0) >= lv)(lad["id"], base_lv)))
-        out.append((lad["id"] + "_max", MASTER_TITLES[lad["id"]], "Succès « %s » : niveau %s (le dernier)" % (lad["title"], names[n - 1]), (lambda lid, lv: lambda c: c["levels"].get(lid, 0) >= lv)(lad["id"], n)))
+        top = lad.get("master_at", n)               # (un succès qui a reçu un niveau de plus garde son titre maître à l'ancien dernier niveau)
+        out.append((lad["id"] + "_max", MASTER_TITLES[lad["id"]], "Succès « %s » : niveau %s%s" % (lad["title"], names[top - 1], " (le dernier)" if top == n else ""), (lambda lid, lv: lambda c: c["levels"].get(lid, 0) >= lv)(lad["id"], top)))
     out.append(("champion", "Champion de saison", "Gagner une saison 1v1", lambda c: c["champion"]))
     out.append(("podium", "Sur le podium", "Finir dans les 3 premiers d'une saison 1v1", lambda c: c["podium"]))
     out.append(("tournoi", "Champion de tournoi", "Remporter un tournoi mensuel", lambda c: c["tournament_wins"] >= 1))

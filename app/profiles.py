@@ -28,24 +28,44 @@ LEVEL_NAMES = {
     4: ["Bronze", "Argent", "Or", "Diamant"],
     5: ["Bronze", "Argent", "Or", "Diamant", "Légende"],
 }
-LEVEL_REWARD = {"Bronze": 3, "Argent": 5, "Or": 10, "Diamant": 25, "Légende": 50}     # crédits offerts à l'obtention du niveau
+LEVEL_REWARD = {"Bronze": 5, "Argent": 10, "Or": 20, "Diamant": 35, "Légende": 60}     # crédits offerts à l'obtention du niveau (novembre 2026, avant 3 / 5 / 10 / 25 / 50)
 
 # Une ligne par succès : identifiant, titre, icône, explication, mesure, unité, objectifs de chaque niveau.
+# « master_at » : le niveau qui donne le titre « maître » (cosmetics.MASTER_TITLES) quand un succès a reçu un niveau de plus après coup
+# (novembre 2026) : le titre reste à l'ancien dernier niveau, personne ne perd un titre déjà équipé. Sans « master_at » : le dernier niveau.
+# Ne jamais retirer un niveau ni changer l'ordre : les niveaux gagnés sont enregistrés par numéro (user_badges).
 LADDERS = [
     {"id": "collection", "title": "Collectionneur", "icon": "📚", "metric": "collection", "unit": "% de la collection", "desc": "Possède une part de toutes les cartes du jeu.", "goals": [10, 25, 50, 75, 100]},
-    {"id": "packs", "title": "Ouvreur de packs", "icon": "📦", "metric": "packs", "unit": "packs ouverts", "desc": "Ouvre des packs.", "goals": [10, 50, 150, 500]},
+    {"id": "packs", "title": "Ouvreur de packs", "icon": "📦", "metric": "packs", "unit": "packs ouverts", "desc": "Ouvre des packs.", "goals": [10, 50, 150, 500, 1500], "master_at": 4},
     {"id": "secretes", "title": "Chasseur de secrètes", "icon": "🔮", "metric": "secretes", "unit": "cartes secrètes", "desc": "Débloque des cartes secrètes.", "goals": [1, 5, 10, 20]},
     {"id": "epiques", "title": "Amateur d'épiques", "icon": "💜", "metric": "epiques", "unit": "cartes épiques", "desc": "Possède des cartes épiques différentes.", "goals": [1, 5, 10]},
     {"id": "legendaires", "title": "Légendes", "icon": "👑", "metric": "legendaires", "unit": "cartes légendaires", "desc": "Possède des cartes légendaires différentes.", "goals": [1, 3]},
     {"id": "editions", "title": "Éditions limitées", "icon": "🎃", "metric": "editions", "unit": "cartes d'édition", "desc": "Possède des cartes d'éditions limitées (Halloween, Noël…).", "goals": [1, 5]},
     {"id": "series", "title": "Séries complètes", "icon": "🧩", "metric": "series", "unit": "raretés complètes", "desc": "Possède TOUTES les cartes d'une rareté.", "goals": [1, 3, 5]},
     {"id": "variete", "title": "Éventail de raretés", "icon": "🌈", "metric": "variete", "unit": "raretés possédées", "desc": "Possède au moins une carte de plusieurs raretés différentes.", "goals": [3, 5, 7]},
-    {"id": "matchs", "title": "Joueur 1v1", "icon": "⚽", "metric": "duel_played", "unit": "matchs 1v1 joués", "desc": "Joue des matchs 1v1.", "goals": [1, 10, 50, 150]},
-    {"id": "victoires", "title": "Vainqueur", "icon": "🏆", "metric": "duel_won", "unit": "victoires en 1v1", "desc": "Gagne des matchs 1v1.", "goals": [1, 10, 30, 100]},
-    {"id": "serie", "title": "Assidu", "icon": "🔥", "metric": "best_streak", "unit": "jours d'affilée", "desc": "Récupère ta récompense de connexion plusieurs jours de suite.", "goals": [3, 7, 14, 30]},
+    {"id": "matchs", "title": "Joueur 1v1", "icon": "⚽", "metric": "duel_played", "unit": "matchs 1v1 joués", "desc": "Joue des matchs 1v1.", "goals": [1, 10, 50, 150, 500], "master_at": 4},
+    {"id": "victoires", "title": "Vainqueur", "icon": "🏆", "metric": "duel_won", "unit": "victoires en 1v1", "desc": "Gagne des matchs 1v1.", "goals": [1, 10, 30, 100, 300], "master_at": 4},
+    {"id": "serie", "title": "Assidu", "icon": "🔥", "metric": "best_streak", "unit": "jours d'affilée", "desc": "Récupère ta récompense de connexion plusieurs jours de suite.", "goals": [3, 7, 14, 30, 60], "master_at": 4},
     {"id": "missions", "title": "Missionnaire", "icon": "🎯", "metric": "bonus_days", "unit": "journées complètes", "desc": "Termine et récupère les 3 missions du jour (bonus).", "goals": [1, 7, 30]},
     {"id": "marche", "title": "Commerçant", "icon": "🛒", "metric": "market", "unit": "opérations au marché", "desc": "Achète ou mets en vente des cartes au marché.", "goals": [1, 10, 30]},
-    {"id": "doublons", "title": "Recycleur", "icon": "♻️", "metric": "sell_dupes", "unit": "doublons vendus", "desc": "Revends des doublons.", "goals": [10, 50, 200]},
+    {"id": "doublons", "title": "Recycleur", "icon": "♻️", "metric": "sell_dupes", "unit": "doublons vendus", "desc": "Revends des doublons.", "goals": [10, 50, 200, 1000], "master_at": 3},
+    # --- novembre 2026 : de quoi jouer à court, moyen et long terme ---
+    {"id": "evolution", "title": "Évolution", "icon": "⬆️", "metric": "level_sum", "unit": "niveaux sur tes cartes", "desc": "Fais évoluer tes cartes (total des niveaux de tes cartes évoluées).", "goals": [1, 10, 30, 75, 150]},
+    {"id": "niveau_max", "title": "Au sommet", "icon": "🌟", "metric": "max_level_cards", "unit": "cartes au niveau 5", "desc": "Monte des cartes au niveau maximal (5).", "goals": [1, 5, 20, 50]},
+    {"id": "pronos", "title": "Pronostiqueur", "icon": "📊", "metric": "pronos", "unit": "pronostics", "desc": "Pronostique le score des vrais matchs du club.", "goals": [1, 3, 5]},
+    {"id": "scores_exacts", "title": "Devin", "icon": "🧿", "metric": "exact", "unit": "scores exacts", "desc": "Trouve le score exact d'un vrai match du club.", "goals": [1, 2, 3]},
+    {"id": "minijeu", "title": "Mini-jeu", "icon": "🎮", "metric": "minigame_days", "unit": "jours de mini-jeu", "desc": "Joue au mini-jeu du jour (quiz ou tirs au but).", "goals": [1, 10, 50, 150]},
+    {"id": "electeur", "title": "Électeur", "icon": "🗳️", "metric": "motm_votes", "unit": "votes", "desc": "Vote pour l'homme du match après un match officiel.", "goals": [1, 3, 5]},
+    {"id": "club", "title": "Tombeur du club", "icon": "🏟️", "metric": "club_wins", "unit": "victoires contre le club", "desc": "Bats l'équipe du club (défi du club, tous niveaux).", "goals": [5, 25, 100, 300]},
+    {"id": "club_difficile", "title": "Club Difficile", "icon": "🔴", "metric": "club_hard", "unit": "victoires en Difficile", "desc": "Bats l'équipe du club au niveau Difficile.", "goals": [1, 10, 30]},
+    {"id": "encheres", "title": "Enchérisseur", "icon": "🔨", "metric": "auctions_won", "unit": "enchères gagnées", "desc": "Remporte des enchères (joueurs ou club).", "goals": [1, 5, 20]},
+    {"id": "echanges", "title": "Échangeur", "icon": "🤝", "metric": "swaps", "unit": "échanges", "desc": "Échange des cartes avec d'autres joueurs.", "goals": [1, 10, 30]},
+    {"id": "tournoi", "title": "Tournoi", "icon": "🎖️", "metric": "tourney_wins", "unit": "matchs de tournoi gagnés", "desc": "Gagne des matchs au tournoi du mois.", "goals": [1, 5, 15, 30]},
+    {"id": "stars", "title": "Stars", "icon": "⭐", "metric": "speciales", "unit": "cartes spéciales", "desc": "Possède des cartes spéciales différentes (les stars du 1v1).", "goals": [1, 5, 15]},
+    {"id": "completion", "title": "Complétion du jeu", "icon": "💯", "metric": "game_completion", "unit": "% du jeu", "desc": "Toutes les cartes, et celles qui évoluent au niveau 5.", "goals": [10, 25, 50, 75, 100]},
+    {"id": "pass", "title": "Pass terminés", "icon": "🎫", "metric": "pass_completed", "unit": "Pass terminés", "desc": "Atteins le niveau 30 du Pass de saison.", "goals": [1, 3, 5]},
+    {"id": "podiums", "title": "Podiums de saison", "icon": "🥇", "metric": "podiums", "unit": "podiums", "desc": "Finis dans les 3 premiers d'une saison 1v1.", "goals": [1, 3, 5]},
+    {"id": "numerotees", "title": "Pièces uniques", "icon": "🔢", "metric": "numbered", "unit": "cartes numérotées", "desc": "Possède des cartes numérotées à tirage limité (Édition Noire…).", "goals": [1, 3, 10]},
 ]
 SHOWCASE_MAX = 3
 # Pour la vitrine automatique : les raretés de la plus précieuse à la plus commune.
@@ -142,6 +162,39 @@ def metrics(db, user) -> dict:
         "bonus_days": _counter(db, user.id, "bonus_days"),
         "market": _counter(db, user.id, "market_buy") + _counter(db, user.id, "market_list"),
         "sell_dupes": _counter(db, user.id, "sell_dupes"),
+        **_more_metrics(db, user, owned),
+    }
+
+
+def _more_metrics(db, user, owned) -> dict:
+    """Mesures des succès de novembre 2026, calculées à partir du jeu (elles comptent ce qui a été fait avant leur arrivée).
+    Chaque mesure est protégée : une table absente ou une erreur donne 0, jamais une page qui plante."""
+    from . import card_levels, prono, minigame, motm, club, swaps, offers, club_auctions, tournament, battlepass, seasons
+    def safe(f):
+        try:
+            with db.begin_nested():
+                return f() or 0
+        except Exception:
+            return 0
+    CL = card_levels.CardLevel
+    return {
+        "level_sum": safe(lambda: db.query(func.sum(CL.level)).filter(CL.user_id == user.id).scalar()),
+        "max_level_cards": safe(lambda: db.query(CL).filter(CL.user_id == user.id, CL.level >= card_levels.MAX_LEVEL).count()),
+        "pronos": safe(lambda: db.query(prono.PronoBet).filter(prono.PronoBet.user_id == user.id).count()),
+        "exact": safe(lambda: db.query(prono.PronoBet).filter(prono.PronoBet.user_id == user.id, prono.PronoBet.exact == 1).count()),
+        "minigame_days": safe(lambda: db.query(minigame.MinigameRun).filter(minigame.MinigameRun.user_id == user.id).count()),
+        "motm_votes": safe(lambda: db.query(motm.MotmBallot).filter(motm.MotmBallot.user_id == user.id).count()),
+        "club_wins": safe(lambda: db.query(club.ClubMatch).filter(club.ClubMatch.user_id == user.id, club.ClubMatch.result == "victoire", club.ClubMatch.counted == True).count()),      # noqa: E712
+        "club_hard": safe(lambda: db.query(club.ClubMatch).filter(club.ClubMatch.user_id == user.id, club.ClubMatch.result == "victoire", club.ClubMatch.level == "difficile", club.ClubMatch.counted == True).count()),      # noqa: E712
+        "auctions_won": safe(lambda: db.query(offers.Trade).filter(offers.Trade.buyer_id == user.id, offers.Trade.kind == "enchère").count()
+                             + db.query(club_auctions.ClubAuctionLot).filter(club_auctions.ClubAuctionLot.winner_id == user.id, club_auctions.ClubAuctionLot.status == "won").count()),
+        "swaps": safe(lambda: db.query(swaps.CardSwap).filter(swaps.CardSwap.status == "accepted", or_(swaps.CardSwap.proposer_id == user.id, swaps.CardSwap.target_id == user.id)).count()),
+        "tourney_wins": safe(lambda: db.query(tournament.TournamentMatch).filter(tournament.TournamentMatch.winner_id == user.id, tournament.TournamentMatch.via == "play").count()),
+        "speciales": owned.get("speciale", 0),
+        "game_completion": safe(lambda: card_levels.game_completion(db, [user.id]).get(user.id, 0.0)),
+        "pass_completed": safe(lambda: db.query(battlepass.PassProgress).filter(battlepass.PassProgress.user_id == user.id, battlepass.PassProgress.completed == 1).count()),
+        "podiums": safe(lambda: db.query(seasons.SeasonResult).filter(seasons.SeasonResult.user_id == user.id).count()),
+        "numbered": safe(lambda: db.query(OwnedCard).join(Card, Card.id == OwnedCard.card_id).filter(OwnedCard.user_id == user.id, OwnedCard.quantity > 0, Card.tier == Tier.numerotee).count()),
     }
 
 
@@ -160,17 +213,20 @@ def check(db, user) -> list:
     """Donne les niveaux de succès atteints et pas encore gagnés (avec leurs crédits). Renvoie les nouveaux niveaux."""
     m = metrics(db, user)
     have = {(b.badge_id, b.level) for b in db.query(UserBadge).filter_by(user_id=user.id).all()}
-    new = []
+    new, big = [], None
     for ladder in LADDERS:
         value = m[ladder["metric"]]
         for lv in _levels(ladder):
             if value >= lv["goal"] and (ladder["id"], lv["n"]) not in have:
                 db.add(UserBadge(user_id=user.id, badge_id=ladder["id"], level=lv["n"], earned_at=datetime.utcnow(), seen=False))
                 user.credits += lv["reward"]
-                if lv["name"] in ("Diamant", "Légende"):          # annonce dans le chat
-                    from . import chat
-                    chat.add_event(db, "🏅 %s a obtenu « %s » niveau %s !" % (user.pseudo, ladder["title"], lv["name"]), user)
+                if lv["name"] in ("Diamant", "Légende"):          # annonce dans le chat : une seule par vérification (voir plus bas)
+                    big = (ladder["title"], lv["name"])
                 new.append({"id": ladder["id"], "title": ladder["title"], "icon": ladder["icon"], "level": lv["n"], "level_name": lv["name"], "reward": lv["reward"]})
+    if big is not None:                          # (plusieurs gros niveaux d'un coup, ex. à l'arrivée de nouveaux succès : un seul message)
+        from . import chat
+        more = sum(1 for x in new if x["level_name"] in ("Diamant", "Légende")) - 1
+        chat.add_event(db, "🏅 %s a obtenu « %s » niveau %s%s !" % (user.pseudo, big[0], big[1], (" (et %d autre%s)" % (more, "s" if more > 1 else "")) if more > 0 else ""), user)
     if new:
         db.commit()
     return new
