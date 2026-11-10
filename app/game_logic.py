@@ -71,7 +71,7 @@ PACK_TYPES = {
 
 # Fusion vers la carte SECRÈTE d'un joueur / fan / mascotte : 100 « points » de doublons.
 # Un doublon commune vaut 1 point, un doublon rare en vaut 5.
-SECRET_FUSION_COST = 100
+SECRET_FUSION_COST = 300          # points de doublons pour débloquer une secrète (x3 en novembre 2026, avant 100)
 RARE_FUSION_VALUE = 5
 
 
@@ -411,8 +411,8 @@ LOUP_DAILY_CAP = 30                                      # crédits gagnés grâ
 # de toutes les cartes utilisées dans le match. Utiles uniquement en 1v1 (le tournoi et le défi du club ne fatiguent pas).
 # Plusieurs pièces : les réductions s'additionnent, plafonnées à EQUIPMENT_FATIGUE_MAX. La forme de l'équipement ne change pas sa réduction.
 TIER_EQUIPMENT_BONUS = {"commune": 0.0, "rare": 0.0, "epique": 0.0, "legendaire": 0.0}     # (gardé à 0 : aucun bonus de puissance)
-EQUIPMENT_FATIGUE_REDUCTION = {"commune": 0.15, "rare": 0.25, "epique": 0.40, "legendaire": 0.60}
-EQUIPMENT_FATIGUE_MAX = 0.60
+EQUIPMENT_FATIGUE_REDUCTION = {"commune": 0.05, "rare": 0.10, "epique": 0.15, "legendaire": 0.25}      # (novembre 2026, avant 15 / 25 / 40 / 60 %)
+EQUIPMENT_FATIGUE_MAX = 0.25
 MAX_EQUIPMENT = 1
 
 

@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-equipement-secretes", "date": "2026-11-10", "category": "règles", "title": "Équipement et cartes secrètes",
+     "text": "L'équipement réduit moins la fatigue (de −5 % à −25 %), et débloquer une carte secrète demande maintenant trois fois plus de doublons (300 points)."},
     {"id": "2026-11-prix-et-completion", "date": "2026-11-10", "category": "autre", "title": "Prix des cartes et complétion du jeu",
      "text": "Dans ta collection, la fiche d'une carte montre son prix moyen de vente et le prix le plus haut auquel elle a été vendue. Le profil et le classement affichent aussi ta complétion du jeu : 100 %, c'est avoir toutes les cartes et faire évoluer au niveau 5 toutes celles qui peuvent l'être."},
     {"id": "2026-11-recompenses-1v1-juste", "date": "2026-11-10", "category": "économie", "title": "Plus de récompenses et un 1v1 plus juste",

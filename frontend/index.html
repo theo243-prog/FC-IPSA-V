@@ -1600,7 +1600,7 @@
   function cardDisplayName(card){ if (cardKind(card) === 'trophee') return trophyParts(card).title; if (cardKind(card) === 'moment') return momentParts(card.player_name).action; if (cardKind(card) === 'numerotee') return numberedParts(card.player_name).subject; return (card.tier === 'secrete' && card.surnom) ? card.surnom : card.player_name; }
   function numChip(card){ return (card.tier === 'secrete' && card.numero != null && card.numero !== '') ? '<span class="card-num" title="Numéro de maillot">#' + escapeHtml(String(card.numero)) + '</span>' : ''; }
   // Équipement : plus de bonus de puissance, il réduit la fatigue (perte de forme) des cartes du match, en 1v1 seulement (en %)
-  const EQUIP_FATIGUE_PCT = { commune: 15, rare: 25, epique: 40, legendaire: 60 };
+  const EQUIP_FATIGUE_PCT = { commune: 5, rare: 10, epique: 15, legendaire: 25 };
   const LEVEL_BONUS = [0, 2, 3, 4, 6, 8];          // bonus de note cumulé d'une carte évoluée, au niveau 0 à 5 (card_levels.LEVEL_NOTE_BONUS)
   const pctFr = x => String(Math.round((+x || 0) * 100) / 100).replace('.', ',');      // 1.5 -> « 1,5 »
   const ITEM_ICONS = {
@@ -1844,7 +1844,7 @@
         const lc = LOUP_CREDITS[p.tier] || 0;
         inner = '<div class="player-note">+' + lc + ' cr.<small>+' + lc + ' crédit' + (lc > 1 ? 's' : '') + ' par match 1v1 (' + loupRule() + '), sur l\'emplacement Loup : victoire, nul ou défaite. Aucun bonus de puissance, et rien en tournoi ni au défi du club.</small></div>';
       } else if (kind === 'equipement') {
-        inner = '<div class="player-note">−' + (EQUIP_FATIGUE_PCT[p.tier] || 0) + ' %<small>de fatigue en match 1v1 pour toutes les cartes du match (joueurs, Fan, Loup). Utile uniquement en 1v1 : le tournoi et le défi du club ne fatiguent pas. Aucun bonus de puissance. ' + (maxEq > 1 ? 'Jusqu\'à ' + maxEq + ' équipements par équipe (60 % au plus).' : 'Un seul équipement par équipe.') + '</small></div>';
+        inner = '<div class="player-note">−' + (EQUIP_FATIGUE_PCT[p.tier] || 0) + ' %<small>de fatigue en match 1v1 pour toutes les cartes du match (joueurs, Fan, Loup). Utile uniquement en 1v1 : le tournoi et le défi du club ne fatiguent pas. Aucun bonus de puissance. ' + (maxEq > 1 ? 'Jusqu\'à ' + maxEq + ' équipements par équipe (25 % au plus).' : 'Un seul équipement par équipe.') + '</small></div>';
       } else if (kind === 'stade') {
         inner = '<div class="player-note">' + p.matches_joues + '<small>' + (p.matches_joues > 1 ? 'matchs joués' : 'match joué') + ' dans ce stade</small></div>';
       } else if (kind === 'numerotee') {
@@ -1869,7 +1869,7 @@
         if (p.tier === 'secrete' && (p.surnom || (p.numero != null && p.numero !== ''))) inner += '<p class="tm-hint" style="text-align:center;">' + (p.surnom ? 'Surnom : <b>' + escapeHtml(p.surnom) + '</b>' : '') + (p.surnom && p.numero != null && p.numero !== '' ? ' · ' : '') + (p.numero != null && p.numero !== '' ? 'Maillot n° <b>' + escapeHtml(String(p.numero)) + '</b>' : '') + '</p>';
         if (p.edition) inner += '<p class="tm-hint" style="text-align:center;">' + p.edition.icon + ' <b>Édition limitée ' + escapeHtml(p.edition.label) + '</b> : ' + (p.edition.status === 'active' ? 'ses cartes sortent des packs jusqu\'au ' + formatDay(p.edition.end) + ' inclus.' : p.edition.status === 'ended' ? 'terminée le ' + formatDay(p.edition.end) + '. Elle ne sort plus des packs : seuls les joueurs qui l\'ont déjà peuvent l\'échanger.' : 'à partir du ' + formatDay(p.edition.start) + '.') + '</p>';
         if (p.tier === 'speciale') inner += '<p class="tm-hint" style="text-align:center;">Carte spéciale : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine (note 80 à sa création, +1 quand son joueur est n°1 d\'une catégorie, 99 au maximum). Elle ne sort que des packs gagnés en 1v1.</p>';
-        if (p.tier === 'secrete') inner += '<p class="tm-hint" style="text-align:center;">Carte secrète : elle ne sort jamais des packs. On la débloque en fusionnant 100 points de doublons (commune = 1, rare = 5).</p>';
+        if (p.tier === 'secrete') inner += '<p class="tm-hint" style="text-align:center;">Carte secrète : elle ne sort jamais des packs. On la débloque en fusionnant 300 points de doublons (commune = 1, rare = 5).</p>';
       }
       body.innerHTML = photoHTML + '<div class="player-detail-poste">' + escapeHtml(posteText) + ' · ' + tierLabel(p.tier) + '</div>' + inner;
       if (card && card.id && !card.locked) addOwnershipLine(body.querySelector('.player-detail-poste'), card.id, kind === 'numerotee');
@@ -2291,7 +2291,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.10.2';
+  const SITE_VERSION = '2026.11.10.3';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3470,7 +3470,7 @@
         '<li>Coût en crédits des niveaux 1 à 5 : commune 15, 30, 60, 100, 160 ; rare 30, 65, 125, 210, 335 ; édition limitée 40, 85, 170, 280, 450. Pas de limite par jour.</li>' +
         '<li>Tout se fait dans la <b>fiche de la carte</b> (touche-la dans ta collection) : niveau, doublons (« 7 sur 10 nécessaires »), coût et bouton « Évoluer ». Un badge « Niv. N » s\'affiche sur la carte.</li>' +
         '<li>Tu n\'as qu\'<b>une copie évoluée</b> par carte. <b>Le niveau suit la carte</b> : si tu la vends (annonce, enchère, offre d\'achat), l\'acheteur la reçoit avec son niveau, et tes autres copies repassent au niveau 0. Les échanges et la vente des doublons ne touchent jamais ta copie évoluée.</li></ul>' +
-        '<h3>Les autres types de cartes</h3><ul><li><b>Fans</b> : pas de note, un petit bonus d\'équipe en match (+0,75 % à +3 %). <b>Le Loup</b> (la mascotte) : des crédits après chaque match 1v1 (1 à 5). <b>Équipements</b> : moins de fatigue pour tes cartes en 1v1 (−15 % à −60 %).</li><li><b>Éditions numérotées</b> 🔢 : des séries limitées à un nombre fixe d\'exemplaires (par exemple 22). Chaque exemplaire porte son numéro (« N° 12/22 »), n\'existe qu\'une fois et appartient à un seul joueur ; une fois tous attribués, il n\'y en aura jamais d\'autre. Ils ne sortent jamais d\'un pack, ne jouent pas en match et ne s\'échangent pas, mais se vendent au marché et aux enchères. Ta collection ne montre que ceux que tu possèdes ; leur fiche indique la série (« 18 / 22 attribués ») et ses détenteurs.</li><li><b>Stades</b>, <b>moments gold</b> et <b>écussons</b> 🛡️ des clubs adverses (gold) : des cartes de collection. Elles ne jouent pas en match, mais se vendent et s\'échangent.</li></ul>';
+        '<h3>Les autres types de cartes</h3><ul><li><b>Fans</b> : pas de note, un petit bonus d\'équipe en match (+0,75 % à +3 %). <b>Le Loup</b> (la mascotte) : des crédits après chaque match 1v1 (1 à 5). <b>Équipements</b> : moins de fatigue pour tes cartes en 1v1 (−5 % à −25 %).</li><li><b>Éditions numérotées</b> 🔢 : des séries limitées à un nombre fixe d\'exemplaires (par exemple 22). Chaque exemplaire porte son numéro (« N° 12/22 »), n\'existe qu\'une fois et appartient à un seul joueur ; une fois tous attribués, il n\'y en aura jamais d\'autre. Ils ne sortent jamais d\'un pack, ne jouent pas en match et ne s\'échangent pas, mais se vendent au marché et aux enchères. Ta collection ne montre que ceux que tu possèdes ; leur fiche indique la série (« 18 / 22 attribués ») et ses détenteurs.</li><li><b>Stades</b>, <b>moments gold</b> et <b>écussons</b> 🛡️ des clubs adverses (gold) : des cartes de collection. Elles ne jouent pas en match, mais se vendent et s\'échangent.</li></ul>';
     } },
     marche: { title: 'Le marché', html(){
       return '<h3>Acheter et vendre entre joueurs</h3><ul>' +
