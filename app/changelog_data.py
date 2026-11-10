@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-trophees-assidus", "date": "2026-11-10", "category": "cartes", "title": "Trophées des plus assidus",
+     "text": "À la fin de chaque saison, les trois joueurs qui ont joué le plus de matchs 1v1 reçoivent une carte trophée « Joueur le plus assidu »."},
     {"id": "2026-11-equipement-secretes", "date": "2026-11-10", "category": "règles", "title": "Équipement et cartes secrètes",
      "text": "L'équipement réduit moins la fatigue (de −5 % à −25 %), et débloquer une carte secrète demande maintenant trois fois plus de doublons (300 points)."},
     {"id": "2026-11-prix-et-completion", "date": "2026-11-10", "category": "autre", "title": "Prix des cartes et complétion du jeu",

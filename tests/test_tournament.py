@@ -167,9 +167,9 @@ ok(g["rounds"][4]["deadline_at"].startswith("2027-05-13T12:00") and g["rounds"][
 ok(g["pool"] == 20 * 30 and sum(p["amount"] * (2 if p["place"] == 3 else 1) for p in g["prizes"]) == g["pool"], "la cagnotte (20 × 30 = 600) est répartie en totalité entre vainqueur, finaliste et les 2 demi-finalistes")
 
 print("11) OFFRIR LES CARTES DE TROPHÉE À UN COMPTE DE TEST")
-tp = lambda who: {(x["trophy"]["rank"], x["trophy"]["label"]): x["quantity"] for x in c.get("/collection", headers=H[who]).json() if x.get("trophy") and x["quantity"] > 0}
+tp = lambda who: {(x["trophy"]["rank"], x["trophy"]["label"]): x["quantity"] for x in c.get("/collection", headers=H[who]).json() if x.get("trophy") and x["quantity"] > 0 and x["trophy"]["rank"] <= 5}
 ok(c.post("/admin/give-trophies", json={"pseudo": "t7"}).status_code == 403 and c.post("/admin/give-trophies", json={"pseudo": "inconnu"}, headers=A).status_code == 404, "offrir des trophées : 403 sans clé, 404 pseudo inconnu")
-ok(c.post("/admin/give-trophies", json={"pseudo": "t7", "month": "octobre"}, headers=A).status_code == 422 and c.post("/admin/give-trophies", json={"pseudo": "t7", "ranks": [9]}, headers=A).status_code == 422 and c.post("/admin/give-trophies", json={"pseudo": "t7", "ranks": []}, headers=A).status_code == 422, "refusés : mois mal écrit, rang inconnu, liste vide (422)")
+ok(c.post("/admin/give-trophies", json={"pseudo": "t7", "month": "octobre"}, headers=A).status_code == 422 and c.post("/admin/give-trophies", json={"pseudo": "t7", "ranks": [99]}, headers=A).status_code == 422 and c.post("/admin/give-trophies", json={"pseudo": "t7", "ranks": []}, headers=A).status_code == 422, "refusés : mois mal écrit, rang inconnu, liste vide (422)")
 r = c.post("/admin/give-trophies", json={"pseudo": "t7", "month": "2026-10"}, headers=A)
 ok(r.status_code == 200 and r.json()["cards"] == ["Vainqueur de saison (octobre 2026)", "Deuxième de la saison (octobre 2026)", "Troisième de la saison (octobre 2026)", "Vainqueur du tournoi (octobre 2026)", "Finaliste du tournoi (octobre 2026)"], "les 5 cartes d'octobre 2026 sont offertes : " + ", ".join(r.json()["cards"][:2]) + "…")
 ok(tp("t7") == {(k, "octobre 2026"): 1 for k in (1, 2, 3, 4, 5)}, "elles apparaissent dans la collection, en un exemplaire chacune, avec leur rang")
