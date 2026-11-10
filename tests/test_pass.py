@@ -34,15 +34,19 @@ ok(cur["key"] == "2026-11" and cur["label"] == "novembre 2026" and cur["theme"][
 L = {l["level"]: l for l in cur["levels"]}; kinds = [P.ITEMS[L[n]["premium"]["item"]]["kind"] for n in range(1, 31)]
 ok(all(L[n]["premium"]["item"] == ("pass-halloween-son" if n == P.SOUND_LEVEL else "pass-halloween-%d" % n) for n in L) and set(kinds) == set(P.KINDS) and kinds.count("badge") == 5, "chaque niveau Premium donne un objet décoratif (un par jour), de 8 sortes : " + ", ".join(sorted(set(kinds))))
 ok(P.SOUND_LEVEL == 18 and kinds[17] == "sound" and kinds.count("sound") == 1 and kinds.count("name_color") == 3, "niveau 18 : le son d'ouverture remplace la couleur de pseudo (il en reste 3 : niveaux 4, 11, 25)")
-ok(L[10]["premium"].get("pack") == "rare" and L[15]["premium"].get("credits") == 50 and L[20]["premium"].get("edition_pack") == 2 and L[25]["premium"].get("pass_card") and L[30]["premium"].get("edition_pack") == 3, "bonus Premium : pack rare (10), 50 crédits (15), pack d'édition 2 cartes (20), carte exclusive du Pass (25), pack d'édition 3 cartes (30)")
-ok(L[1]["free"]["credits"] == 5 and L[4]["free"]["pack"] == "classique" and L[10]["free"]["item"] == "pass-halloween-f10" and L[2]["free"] is None and L[30]["free"]["item"] == "pass-halloween-f30", "piste gratuite : modeste (crédits, packs classiques, 3 objets sur la saison)")
-ok([t["goal"] for t in cur["club"]["tiers"]] == [500, 1000, 1500, 2000, 3000] and cur["club"]["packs"] == 0, "objectif du club : 5 paliers (500 à 3000 packs ouverts), compteur à 0")
+ok(L[5]["premium"].get("pack") == "classique" and L[10]["premium"].get("pack") == "rare" and L[12]["premium"].get("credits") == 50 and L[15]["premium"].get("credits") == 100 and L[17]["premium"].get("pack") == "classique"
+   and L[20]["premium"].get("edition_pack") == 2 and L[22]["premium"].get("pack") == "rare" and L[25]["premium"].get("pass_card") and L[27]["premium"].get("credits") == 50 and L[30]["premium"].get("edition_pack") == 3 and L[30]["premium"].get("pack") == "rare",
+   "bonus Premium : classique (5, 17), rare (10, 22, 30), 50 / 100 / 50 crédits (12, 15, 27), packs d'édition (20, 30), carte exclusive (25)")
+ok(sum(P.PREMIUM_EXTRAS.get(n, {}).get("credits", 0) for n in range(1, 31)) == 200 and sum(P.FREE_REWARDS.get(n, {}).get("credits", 0) for n in range(1, 31)) == 110
+   and [P.FREE_REWARDS.get(n, {}).get("pack") for n in range(1, 31)].count("classique") == 6, "Pass plus généreux : Premium 200 crédits, gratuit 110 crédits et 6 packs classiques + 1 rare")
+ok(L[1]["free"]["credits"] == 10 and L[4]["free"]["pack"] == "classique" and L[10]["free"]["item"] == "pass-halloween-f10" and L[2]["free"] is None and L[30]["free"]["item"] == "pass-halloween-f30", "piste gratuite : modeste (crédits, packs classiques, 3 objets sur la saison)")
+ok([t["goal"] for t in cur["club"]["tiers"]] == [500, 1000, 1500, 2000, 3000, 4000, 5000, 6500, 8000, 10000] and cur["club"]["packs"] == 0, "objectif du club : 10 paliers (500 à 10 000 packs ouverts), compteur à 0")
 
 print("2) LES POINTS ET LE DÉBLOCAGE JOUR PAR JOUR")
 ok(grant("p1", 150).status_code == 200 and st("p1")["current"]["level"] == 1 and st("p1")["current"]["waiting_for_day"] is False, "le 1er : 150 points = niveau 1 (les 50 points en plus ne sont pas perdus)")
 grant("p1", 350); g = st("p1")["current"]; ok(g["points"] == 500 and g["level"] == 1 and g["waiting_for_day"] is True, "500 points dès le 1er jour : toujours niveau 1, et le site dit que le niveau suivant attend demain")
 r = claim("p1", "free", 2); ok(r.status_code == 400 and "s'ouvre le jour 2" in r.json()["detail"], "réclamer le niveau 2 le jour 1 : refusé « " + r.json()["detail"] + " »")
-b = U("p1").credits; r = claim("p1", "free", 1); ok(r.status_code == 200 and r.json()["reward"]["credits"] == 5 and U("p1").credits == b + 5, "niveau 1 gratuit réclamé : +5 crédits")
+b = U("p1").credits; r = claim("p1", "free", 1); ok(r.status_code == 200 and r.json()["reward"]["credits"] == 10 and U("p1").credits == b + 10, "niveau 1 gratuit réclamé : +10 crédits")
 ok(claim("p1", "free", 1).status_code == 400 and claim("p1", "free", 3).status_code == 400 and claim("p2", "premium", 1).status_code == 400, "refusés : déjà réclamé ; piste gratuite sans récompense ; Premium sans Premium")
 at(2); g = st("p1")["current"]; ok(g["level"] == 2 and g["waiting_for_day"] is True, "le 2 : le niveau 2 se débloque, les points restent")
 at(5); ok(st("p1")["current"]["level"] == 5, "le 5 : niveau 5 (500 points)")
@@ -68,7 +72,7 @@ grant("p3", premium=False); ok(claim("p3", "premium", 1).status_code == 400, "(a
 print("5) LES RÉCOMPENSES PREMIUM")
 r = claim("p3", "premium", 1); it = r.json()["reward"]["item"]; ok(r.status_code == 200 and it["id"] == "pass-halloween-1" and it["kind"] == "badge" and it["emoji"] == "🎃", "niveau 1 Premium : « " + it["name"] + " » (badge 🎃)")
 b = U("p3").pack_state.rare_pack_tokens; claim("p3", "premium", 10); ok(U("p3").pack_state.rare_pack_tokens == b + 1, "niveau 10 : un pack rare")
-b = U("p3").credits; claim("p3", "premium", 15); ok(U("p3").credits == b + 50, "niveau 15 : +50 crédits")
+b = U("p3").credits; claim("p3", "premium", 15); ok(U("p3").credits == b + 100, "niveau 15 : +100 crédits")
 at(30); grant("p3", 1500); import random
 for n in (2, 3, 4, 5, 6, 7, 8, 9): claim("p3", "premium", n)
 r = claim("p3", "premium", 20); cards = r.json()["reward"]["edition_pack"]["cards"]; ok(r.status_code == 200 and len(cards) == 2 and all(x["tier"] == "halloween" for x in cards), "niveau 20 : pack d'édition limitée = 2 cartes Halloween : " + ", ".join(x["player_name"] for x in cards))
@@ -122,9 +126,12 @@ ok(c.post("/admin/pass-club", json={"packs": 500}).status_code == 403 and c.post
 b2, b3 = U("p2").credits, U("p3").credits; r2, r3 = claim("p2", "club", 0), claim("p3", "club", 0)
 ok(r2.status_code == 200 and r3.status_code == 200 and U("p2").credits == b2 + 10 and U("p3").credits == b3 + 10, "palier 500 : TOUS les joueurs (même sans Premium) reçoivent 10 crédits")
 ok(claim("p2", "club", 0).status_code == 400, "réclamer deux fois : refusé")
-c.post("/admin/pass-club", json={"packs": 3000}, headers=A); r = claim("p2", "club", 4); ok(r.status_code == 200 and r.json()["reward"]["pack"] == "rare" and r.json()["reward"]["item"]["id"] == "pass-club-stickers", "dernier palier : un pack rare, 30 crédits et les autocollants collectifs")
-ok(c.post("/admin/pass-club", json={"goals": [500, 400, 1, 2, 3]}, headers=A).status_code == 422 and c.post("/admin/pass-club", json={"goals": [100, 200, 300, 400, 500]}, headers=A).status_code == 200 and [t["goal"] for t in st("p2")["current"]["club"]["tiers"]] == [100, 200, 300, 400, 500], "(admin) régler les paliers : croissants obligatoires ; nouveaux paliers pris en compte")
-c.post("/admin/pass-club", json={"goals": [500, 1000, 1500, 2000, 3000]}, headers=A)
+c.post("/admin/pass-club", json={"packs": 2500}, headers=A); r = claim("p2", "club", 4); ok(r.status_code == 200 and r.json()["reward"]["pack"] == "rare" and r.json()["reward"].get("credits") == 30 and "item" not in r.json()["reward"], "palier 3000 : un pack rare et 30 crédits (plus les autocollants)")
+c.post("/admin/pass-club", json={"packs": 7000}, headers=A); u0 = U("p2").pack_state.ultra_pack_tokens; b2 = U("p2").credits; r = claim("p2", "club", 9)
+ok(r.status_code == 200 and r.json()["reward"]["pack"] == "ultra" and r.json()["reward"]["credits"] == 50 and r.json()["reward"]["item"]["id"] == "pass-club-stickers" and U("p2").pack_state.ultra_pack_tokens == u0 + 1 and U("p2").credits == b2 + 50,
+   "dernier palier (10 000 packs) : un pack ultra, 50 crédits et les autocollants collectifs")
+ok(c.post("/admin/pass-club", json={"goals": [500, 400, 1, 2, 3, 4, 5, 6, 7, 8]}, headers=A).status_code == 422 and c.post("/admin/pass-club", json={"goals": [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]}, headers=A).status_code == 200 and [t["goal"] for t in st("p2")["current"]["club"]["tiers"]] == [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], "(admin) régler les paliers : croissants obligatoires ; nouveaux paliers pris en compte")
+c.post("/admin/pass-club", json={"goals": [g for g, _ in P.CLUB_TIERS]}, headers=A)
 
 print("9) LE RATTRAPAGE (7 jours après la fin du mois)")
 at(1, mo=12); g = st("p1"); ok(g["current"]["key"] == "2026-12" and g["current"]["theme"]["id"] == "noel" and g["previous"] and g["previous"]["key"] == "2026-11" and g["previous"]["catchup_until"].startswith("2026-12-08"), "le 1er décembre : nouveau Pass (Noël), et le Pass de novembre reste ouvert jusqu'au 8 décembre")

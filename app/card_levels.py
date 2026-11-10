@@ -38,10 +38,10 @@ DUPES_REQUIRED = {                       # doublons consommés pour acheter le n
     "rare": [1, 3, 5, 12, 25],
     "edition": [1, 3, 5, 8, 10],
 }
-COSTS = {                                # crédits du niveau 1, 2, 3, 4, 5
-    "commune": [30, 60, 120, 200, 320],
-    "rare": [45, 90, 180, 300, 480],
-    "edition": [60, 120, 240, 400, 640],
+COSTS = {                                # crédits du niveau 1, 2, 3, 4, 5 (novembre 2026 : commune -50 %, rare et édition -30 %)
+    "commune": [15, 30, 60, 100, 160],
+    "rare": [30, 65, 125, 210, 335],
+    "edition": [40, 85, 170, 280, 450],
 }
 GROUP_LABELS = {"commune": "commune", "rare": "rare", "edition": "édition limitée"}
 

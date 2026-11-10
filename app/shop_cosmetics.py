@@ -1,7 +1,7 @@
 """
 Cosmétiques de la boutique : achat des paliers (le catalogue est dans shop_catalog.py).
 
-- 5 pistes (titre, cadre, bannière, couleur du pseudo, badge), 5 paliers chacune, de 50 à 500 crédits (shop_catalog.PRICES).
+- 5 pistes (titre, cadre, bannière, couleur du pseudo, badge), 5 paliers chacune, de 30 à 300 crédits (shop_catalog.PRICES).
 - Les paliers d'une piste s'achètent dans l'ordre : le palier N demande d'avoir le palier N-1.
 - Un objet acheté est gardé pour toujours ; il s'équipe comme les objets du Pass (battlepass.owned_ids les compte).
 - Prix fixes : les promotions de la boutique (événements) ne s'appliquent qu'aux packs.

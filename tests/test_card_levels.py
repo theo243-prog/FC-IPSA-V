@@ -45,7 +45,7 @@ fc = db.query(Card).filter_by(player_id=fan.id).first(); give("ana", fc, 30)
 ok("Seules les cartes de joueurs" in c.get("/cards/%s/level" % fc.id, headers=H["ana"]).json()["reason"], "carte de fan : refusée")
 
 print("2) DOUBLONS REQUIS ET COÛTS")
-ok(CL.DUPES_REQUIRED == {"commune": [5, 10, 20, 50, 100], "rare": [1, 3, 5, 12, 25], "edition": [1, 3, 5, 8, 10]} and CL.COSTS == {"commune": [30, 60, 120, 200, 320], "rare": [45, 90, 180, 300, 480], "edition": [60, 120, 240, 400, 640]}, "paliers et coûts par rareté")
+ok(CL.DUPES_REQUIRED == {"commune": [5, 10, 20, 50, 100], "rare": [1, 3, 5, 12, 25], "edition": [1, 3, 5, 8, 10]} and CL.COSTS == {"commune": [15, 30, 60, 100, 160], "rare": [30, 65, 125, 210, 335], "edition": [40, 85, 170, 280, 450]}, "paliers et coûts par rareté")
 good = True
 for t, g in (("commune", "commune"), ("rare", "rare"), ("halloween", "edition")):
     cd = card("Lucas", t)
@@ -58,7 +58,7 @@ for t, g in (("commune", "commune"), ("rare", "rare"), ("halloween", "edition"))
 ok(good, "pour chaque rareté et chaque niveau : exactement le nombre de doublons demandé, le bon coût")
 give("ana", LC, 6); cr0 = U("ana").credits
 r = c.post("/cards/%s/evolve" % LC.id, headers=H["ana"])
-ok(r.status_code == 200 and r.json()["level"] == 1 and r.json()["dupes_used"] == 5 and U("ana").credits == cr0 - 30 and qty("ana", LC) == 1, "niveau 1 d'une commune : 30 crédits ET 5 doublons utilisés (il reste la copie évoluée)")
+ok(r.status_code == 200 and r.json()["level"] == 1 and r.json()["dupes_used"] == 5 and U("ana").credits == cr0 - 15 and qty("ana", LC) == 1, "niveau 1 d'une commune : 15 crédits ET 5 doublons utilisés (il reste la copie évoluée)")
 i = c.get("/cards/%s/level" % LC.id, headers=H["ana"]).json()
 ok(i["level"] == 1 and i["next_level"] == 2 and i["dupes"] == 0 and i["dupes_needed"] == 10 and "tu en as 0" in i["reason"], "niveau 2 : « il te faut 10 doublons… tu en as 0 »")
 give("ana", LC, 12); r = c.post("/cards/%s/evolve" % LC.id, headers=H["ana"])

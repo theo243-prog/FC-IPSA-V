@@ -542,7 +542,7 @@ def admin_pass_club(payload: AdminClubRequest, db: Session = Depends(get_db)):
     key = seasons.key_of(now_paris())
     if payload.goals is not None:
         g = payload.goals
-        if len(g) != len(P.CLUB_TIERS) or any(x < 1 for x in g) or g != sorted(g): raise HTTPException(status_code=422, detail="Donne %d paliers croissants (ex. 500, 1000, 1500, 2000, 3000)" % len(P.CLUB_TIERS))
+        if len(g) != len(P.CLUB_TIERS) or any(x < 1 for x in g) or g != sorted(g): raise HTTPException(status_code=422, detail="Donne %d paliers croissants (ex. %s)" % (len(P.CLUB_TIERS), ", ".join(str(g) for g, _ in P.CLUB_TIERS)))
         row = db.get(AppSetting, "pass_club_goals")
         if row is None: db.add(AppSetting(key="pass_club_goals", value=json.dumps(g)))
         else: row.value = json.dumps(g)

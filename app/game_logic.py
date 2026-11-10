@@ -63,7 +63,7 @@ PACK_TYPES = {
     # Gold : 10 % des cartes pendant une édition limitée (10 / (1 - 0,06) = 10,64) ; la commune absorbe la différence (total 100).
     "match": {"label": "Pack match", "price": None, "guaranteed": [],
               "token_field": "match_pack_tokens",
-              "weights": {"commune": 52.56, "rare": 26, "gold": 10.64, "speciale": 8, "epique": 2.5, "legendaire": 0.3},
+              "weights": {"commune": 49.56, "rare": 26, "gold": 10.64, "speciale": 11, "epique": 2.5, "legendaire": 0.3},      # spéciale 11 (avant 8), la commune absorbe
               "description": "3 cartes avec un peu plus de chances de rares que le pack classique, et le seul pack où sortent les cartes spéciales"},
 }
 
@@ -394,9 +394,10 @@ def open_pack_for_user(db: Session, user: User, pack_type: str = "free") -> dict
 # (plus de notes par poste). Réutilisée par le moteur de duel.
 # ---------------------------------------------------------------------
 
-CARD_NOTE = {"commune": 75, "rare": 85, "halloween": 85, "noel": 85, "secrete": 90, "saison": 92, "legendaire": 95}
+CARD_NOTE = {"commune": 75, "rare": 85, "halloween": 85, "noel": 85, "secrete": 90, "saison": 92, "legendaire": 90}      # légendaire 90 depuis novembre 2026 (avant 95)
 SPECIAL_BASE_NOTE = 80      # note d'une carte spéciale à sa création ; +1 à chaque nouvelle récompense (weekly.plan_awards)
-SPECIAL_MAX_NOTE = 90       # les +1 du vendredi s'arrêtent à 90 (une carte déjà au-dessus n'est jamais baissée)
+SPECIAL_MAX_NOTE = 99       # les +1 du vendredi s'arrêtent à 99 (avant 90 ; une carte déjà au-dessus n'est jamais baissée)
+LEGENDARY_NOTE_DROP = 5     # passage des légendaires de 95 à 90 : les légendaires qui ont leur propre note (homme du match) perdent 5, une seule fois
 # Rééquilibrage « les cartes d'abord » : dans un match, ce qui compte le plus est la note des cartes joueurs (et leurs niveaux),
 # puis la tactique, puis le Fan, devenu le SEUL bonus de puissance d'équipe (petit : 0,75 % à 3 %, multiplié par sa forme du jour).
 TIER_FAN_BONUS = {"commune": 0.0075, "rare": 0.015, "halloween": 0.015, "noel": 0.015, "epique": 0.02, "secrete": 0.02, "saison": 0.025, "legendaire": 0.03}  # bonus apporté par le Fan
@@ -486,6 +487,20 @@ def card_note(player: Player, tier: str, card=None) -> int:
     if tier == "legendaire" and card is not None and card.note:      # légendaire : sa propre note (homme du match : +2, sans plafond)
         return card.note
     return CARD_NOTE.get(tier, 75)
+
+
+def lower_legendary_notes(db) -> int:
+    """Une seule fois (verrou job_runs « legendaires_90 ») : les légendaires qui ont leur propre note (+2 de l'homme du match) perdent
+    LEGENDARY_NOTE_DROP, pour suivre le passage de 95 à 90 en gardant leurs +2 (97 -> 92). Renvoie le nombre de cartes changées."""
+    from .models import JobRun
+    if db.get(JobRun, "legendaires_90") is not None:
+        return 0
+    db.add(JobRun(name="legendaires_90", last_run_at=datetime.utcnow())); db.flush()
+    n = 0
+    for card in db.query(Card).filter(Card.tier == Tier.legendaire, Card.note.isnot(None)).all():
+        card.note = max(CARD_NOTE["legendaire"], card.note - LEGENDARY_NOTE_DROP); n += 1
+    db.commit()
+    return n
 
 
 def get_display_note(player: Player, tier: str = "commune", card=None):

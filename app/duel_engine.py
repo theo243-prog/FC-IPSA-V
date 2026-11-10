@@ -11,7 +11,7 @@ Aucun délai n'est imposé entre deux matchs des mêmes joueurs : on peut rejoue
 Ce que comptent les calculs :
 Rééquilibrage « les cartes d'abord » : par ordre d'importance, 1) la note des cartes joueurs (et leurs niveaux), 2) la tactique,
 3) le Fan, seul bonus de puissance d'équipe. Le Loup rapporte des crédits, l'équipement réduit la fatigue (1v1).
-- la note de chaque carte (75 commune, 85 rare, 85+ épique, 95 légendaire), plus le bonus de son niveau (+2 / +3 / +4 / +6 / +8) ;
+- la note de chaque carte (75 commune, 85 rare, 85+ épique, 90 légendaire), plus le bonus de son niveau (+2 / +3 / +4 / +6 / +8) ;
 - -10 % si la carte joue HORS de son vrai poste (les postes "X" ne sont jamais pénalisés) ;
 - +10 % pour la carte capitaine ;
 - le Fan optionnel : +0,75 % (commune) à +3 % (légendaire) à toute l'équipe selon sa rareté ;
@@ -20,6 +20,7 @@ Rééquilibrage « les cartes d'abord » : par ordre d'importance, 1) la note de
 - la tactique (pierre-feuille-ciseaux) : +4 % à toute l'équipe pour celle qui l'emporte ;
 - la synergie formation + tactique (pressing 1-1-2, possession 1-2-1, contre 2-1-1) : +2 % ;
 - l'arbitre (1v1) : +2 % à celui qui a mis la plus grosse enveloppe ;
+- l'avantage du terrain (1v1) : +1 % pour le créateur du défi, qui ne choisit pas son adversaire ;
 - la disposition (2-1-1, 1-2-1, 1-1-2) qui répartit la force entre attaque et défense.
 
 Les buts : expected_goals (attaque contre défense adverse, exposant XG_EXPONENT 3) puis draw_goals (une part acquise + un tirage
@@ -81,6 +82,15 @@ REFEREE_BONUS = 0.02     # bonus d'équipe (+2 %, avant 5 %) donné par l'arbitr
 STAKE_MIN, STAKE_MAX = 1, 10
 MAX_OPEN_PROPOSALS = 3
 ELO_K = 32
+# Elo moins punitif (novembre 2026). Le niveau des cartes décide plus que l'Elo : l'écart d'Elo compte deux fois moins (échelle 800 au lieu
+# de 400), une défaite coûte au plus ELO_MAX_LOSS, et le créateur d'un défi (qui ne choisit pas son adversaire) perd 25 % de moins.
+# Une victoire rapporte ELO_WIN_BOOST fois plus : l'Elo n'est plus à somme nulle, les joueurs actifs montent toute la saison
+# (au lieu de tourner autour de 1000), et celui qui s'arrête de jouer avec un peu d'avance se fait dépasser. Remise à 1000 chaque mois.
+ELO_SCALE = 800
+ELO_MAX_LOSS = 20
+ELO_CREATOR_LOSS_FACTOR = 0.75
+ELO_WIN_BOOST = 1.25
+HOME_BONUS = 0.01          # avantage du terrain : +1 % pour l'équipe du créateur du défi (1v1 seulement), qui joue sans savoir contre qui
 
 MATCH_MINUTES = 40               # 2 mi-temps de 20 minutes
 HALF_TIME_MINUTE = 20
@@ -137,7 +147,8 @@ def get_config() -> dict:
         "max_equipment": MAX_EQUIPMENT,
         "loup_credits": LOUP_CREDITS_BY_TIER, "loup_daily_cap": LOUP_DAILY_CAP, "loup_daily_matches": DUEL_PACK_DAILY_CAP,
         "equipment_fatigue_reduction": EQUIPMENT_FATIGUE_REDUCTION, "equipment_fatigue_max": EQUIPMENT_FATIGUE_MAX,
-        "synergy": SYNERGY, "synergy_bonus": SYNERGY_BONUS, "level_note_bonus": list(card_levels.LEVEL_NOTE_BONUS),
+        "synergy": SYNERGY, "synergy_bonus": SYNERGY_BONUS, "home_bonus": HOME_BONUS,
+        "elo_scale": ELO_SCALE, "elo_max_loss": ELO_MAX_LOSS, "elo_creator_loss_factor": ELO_CREATOR_LOSS_FACTOR, "elo_win_boost": ELO_WIN_BOOST, "level_note_bonus": list(card_levels.LEVEL_NOTE_BONUS),
         "referee_bonus": REFEREE_BONUS,
         "form_loss_per_match": fatigue.FORM_LOSS_PER_MATCH, "min_form": fatigue.MIN_FORM,
     }
@@ -162,12 +173,20 @@ def draw_goals(xg: float) -> int:
     return min(9, fixed + poisson_random(xg - fixed))
 
 
-def elo_update(elo_a: int, elo_b: int, result_a: float, k: int = ELO_K):
-    """result_a : 1 si A gagne, 0.5 nul, 0 si A perd. Retourne (nouvel_elo_a, nouvel_elo_b)."""
-    expected_a = 1 / (1 + 10 ** ((elo_b - elo_a) / 400))
-    new_a = round(elo_a + k * (result_a - expected_a))
-    new_b = round(elo_b + k * ((1 - result_a) - (1 - expected_a)))
-    return new_a, new_b
+def elo_delta(elo_me: int, elo_other: int, result: float, creator: bool = False, k: int = ELO_K) -> int:
+    """Variation d'Elo d'UN joueur : gain multiplié par ELO_WIN_BOOST, perte plafonnée à ELO_MAX_LOSS (puis x0,75 pour le créateur du défi)."""
+    expected = 1 / (1 + 10 ** ((elo_other - elo_me) / ELO_SCALE))
+    d = k * (result - expected)
+    if d > 0:
+        d *= ELO_WIN_BOOST
+    elif d < 0:
+        d = max(d, -ELO_MAX_LOSS) * (ELO_CREATOR_LOSS_FACTOR if creator else 1.0)
+    return round(d)
+
+
+def elo_update(elo_a: int, elo_b: int, result_a: float, k: int = ELO_K, b_is_creator: bool = False):
+    """result_a : 1 si A gagne, 0.5 nul, 0 si A perd. Retourne (nouvel_elo_a, nouvel_elo_b). B est le créateur du défi en 1v1."""
+    return (elo_a + elo_delta(elo_a, elo_b, result_a, False, k), elo_b + elo_delta(elo_b, elo_a, 1 - result_a, b_is_creator, k))
 
 
 # ------------------------------------------------------------ Validation ----
@@ -612,7 +631,8 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     ref_c = REFEREE_BONUS if ref_winner == "challenger" else 0.0
     ref_d = REFEREE_BONUS if ref_winner == "defender" else 0.0
     att_c, def_c, _, _, _ = team_powers(side_c["members"], fan_c, mult_c, equip_c, mascot_c, ref_c, forms_c, formation, tactic)
-    att_d, def_d, _, _, _ = team_powers(side_d["members"], fan_d, mult_d, equip_d, mascot_d, ref_d, forms_d, proposal.formation, proposal.tactic)
+    # avantage du terrain du créateur (+1 %) : s'additionne comme l'arbitre et le Fan
+    att_d, def_d, _, _, _ = team_powers(side_d["members"], fan_d, mult_d, equip_d, mascot_d, ref_d + HOME_BONUS, forms_d, proposal.formation, proposal.tactic)
 
     xg_c = expected_goals(att_c, def_d)
     xg_d = expected_goals(att_d, def_c)
@@ -626,7 +646,7 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     else:
         outcome, result_c = "nul", 0.5
     elo_c_before, elo_d_before = challenger.elo, creator.elo
-    challenger.elo, creator.elo = elo_update(elo_c_before, elo_d_before, result_c)
+    challenger.elo, creator.elo = elo_update(elo_c_before, elo_d_before, result_c, b_is_creator=True)
 
     # crédits : la mise et l'enveloppe du créateur sont déjà séquestrées, celles du challenger sont prélevées maintenant.
     # Les DEUX enveloppes sont dépensées (celle de l'arbitre n'est jamais rendue, même au joueur qui a mis le moins)
@@ -675,7 +695,7 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     loup = {challenger.pseudo: loup_credits(db, challenger, mascot_c), creator.pseudo: loup_credits(db, creator, mascot_d)}      # chaque équipe pour elle-même
     referee = {"challenger": referee_bid, "defender": bid_d, "winner": ref_winner, "bonus_pct": round(REFEREE_BONUS * 100) if ref_winner else 0}
     lineups = {"challenger": _lineup_snapshot(side_c, fan_c, equip_c, mascot_c, ref_c, forms_c, loup[challenger.pseudo]),
-               "defender": _lineup_snapshot(side_d, fan_d, equip_d, mascot_d, ref_d, forms_d, loup[creator.pseudo]),
+               "defender": {**_lineup_snapshot(side_d, fan_d, equip_d, mascot_d, ref_d, forms_d, loup[creator.pseudo]), "home_bonus_pct": round(HOME_BONUS * 100, 2)},
                "referee": referee}                                      # (enregistré avec la composition : visible dans le récap APRÈS le match)
     duel = Duel(
         challenger_id=challenger.id, defender_id=creator.id, stake=stake,
@@ -848,7 +868,7 @@ def _replay_elo(user_ids, duels):
     for d in duels:
         a, b = elos.get(d.challenger_id, ELO_START), elos.get(d.defender_id, ELO_START)
         result = 1.0 if d.score_challenger > d.score_defender else (0.0 if d.score_challenger < d.score_defender else 0.5)
-        na, nb = elo_update(a, b, result)
+        na, nb = elo_update(a, b, result, b_is_creator=True)        # (le défenseur est le créateur du défi)
         steps.append((a, b, na, nb))
         elos[d.challenger_id], elos[d.defender_id] = na, nb
     return elos, steps
