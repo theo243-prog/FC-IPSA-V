@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-succes-v2", "date": "2026-11-10", "category": "autre", "title": "De nouveaux succès à débloquer",
+     "text": "16 nouveaux succès arrivent, du court au long terme : faire évoluer tes cartes, pronostiquer, jouer au mini-jeu, battre le club, gagner des enchères et des matchs de tournoi, terminer le Pass, compléter le jeu… Plusieurs succès existants gagnent un niveau Légende, et chaque niveau rapporte plus de crédits."},
     {"id": "2026-11-trophees-assidus", "date": "2026-11-10", "category": "cartes", "title": "Trophées des plus assidus",
      "text": "À la fin de chaque saison, les trois joueurs qui ont joué le plus de matchs 1v1 reçoivent une carte trophée « Joueur le plus assidu »."},
     {"id": "2026-11-equipement-secretes", "date": "2026-11-10", "category": "règles", "title": "Équipement et cartes secrètes",
