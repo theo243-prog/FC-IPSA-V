@@ -386,6 +386,11 @@
   .help-btn{display:inline-flex;align-items:center;gap:7px;background:transparent;color:var(--accent);border:1.5px solid var(--accent);border-radius:999px;padding:3px 14px 3px 4px;cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:16px;letter-spacing:.3px;}
   .help-btn:hover{background:var(--bg-sunk);}
   #helpModal{z-index:2600;}
+  /* ---- Bandeau du site : un message de l'administration (POST /admin/site-banner), fermable ---- */
+  .site-banner{margin:0 12px 8px;padding:10px 40px 10px 14px;border-radius:12px;position:relative;font-weight:700;line-height:1.35;background:#2B5BD7;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+  .site-banner[hidden]{display:none;}
+  .site-banner.fete{background:linear-gradient(135deg,#C2185B,#F0A500);} .site-banner.alerte{background:#C62828;}
+  .site-banner button{position:absolute;top:6px;right:8px;background:none;border:0;color:inherit;font-size:16px;cursor:pointer;padding:4px;}
   .events-bar{margin:0 12px 8px;display:flex;flex-direction:column;gap:6px;} .events-bar[hidden]{display:none;}
   .ev-item{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:linear-gradient(90deg,#7B2FF7,#FF2FD1);color:#fff;border-radius:12px;padding:8px 12px;font-size:13.5px;}
   .ev-item.soon{background:var(--bg-sunk);color:var(--text);border:1px dashed var(--border);} .ev-item .btn-small{background:#fff;color:#4a0a6e;} .disc{color:#c0158f;margin-left:4px;}
@@ -1068,6 +1073,7 @@
   </header>
 
   <div class="wrap">
+  <div class="site-banner" id="siteBanner" hidden role="status"><span id="siteBannerText"></span><button type="button" id="siteBannerClose" aria-label="Fermer le message">✕</button></div>
   <div class="events-bar" id="eventsBar" hidden></div>
   <section class="notice-box" id="noticeBox" hidden aria-live="polite"></section>
   <nav class="tabs">
@@ -1659,7 +1665,7 @@
       statsRow = '<div class="card-stats"><span>🏟️ STADE</span></div>';
       posteLabel = '🏟️';
     } else if (kind === 'moment') {
-      statsRow = '<div class="card-stats" title="Moment mémorable d\'un match"><span>🌟 ' + escapeHtml(momentParts(card.player_name).who) + '</span></div>';
+      statsRow = '<div class="card-stats" title="Moment mémorable d\'un match"><span>🌟 ' + escapeHtml(momentParts(card.player_name).who || 'Souvenir') + '</span></div>';
       posteLabel = '🌟';
     } else if (kind === 'numerotee') {
       statsRow = '<div class="card-stats" title="' + escapeHtml(numberedParts(card.player_name).title) + ' : exemplaire unique d\'une série limitée"><span class="num-badge">' + numBadgeText(card) + '</span></div>';
@@ -1854,7 +1860,7 @@
         inner = '<div class="player-note">🛡️<small>Adversaire du club. Carte de collection : elle ne joue pas en match.</small></div>';
       } else if (kind === 'moment') {
         const m = p.moment, parts = momentParts(p.name);
-        inner = '<div class="player-note">🌟<small>' + escapeHtml(m ? m.action : parts.action) + ' — ' + escapeHtml(m ? m.player : parts.who) +
+        inner = '<div class="player-note">🌟<small>' + escapeHtml(m ? m.action : parts.action) + ((m ? m.player : parts.who) ? ' — ' + escapeHtml(m ? m.player : parts.who) : '') + (!m ? '<br>Un souvenir de l\'année du club.' : '') +
           (m && m.opponent ? '<br>Match contre ' + escapeHtml(m.opponent) + (m.date ? ', le ' + escapeHtml(m.date.split('-').reverse().join('/')) : '') : '') + '</small></div>';
       } else {
         inner = (p.display_note ? '<div class="player-note">⭐ ' + p.display_note.value + '<small>Note de la carte</small></div>' : '') +
@@ -2290,8 +2296,19 @@
     api('/badges/seen', { method: 'POST' }).catch(() => {}).then(() => { announcingBadges = false; });
   }
 
+  // ---------- Bandeau du site : message de l'administration, affiché à tous ; ✕ le masque jusqu'au prochain message ----------
+  (async function loadSiteBanner(){
+    let b = null; try { b = await (await fetch(API_BASE + '/site-banner')).json(); } catch(e) { return; }
+    const el = document.getElementById('siteBanner'); if (!el || !b || !b.text) return;
+    let hidden = null; try { hidden = localStorage.getItem('fca5_banner_hidden'); } catch(e) {}
+    if (hidden && hidden === b.id) return;
+    document.getElementById('siteBannerText').textContent = b.text;
+    el.className = 'site-banner ' + (b.style || 'info'); el.hidden = false;
+    document.getElementById('siteBannerClose').addEventListener('click', () => { el.hidden = true; try { localStorage.setItem('fca5_banner_hidden', b.id || ''); } catch(e) {} });
+  })();
+
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.10.3';
+  const SITE_VERSION = '2026.11.10.4';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }

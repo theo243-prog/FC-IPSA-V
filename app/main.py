@@ -1436,6 +1436,81 @@ def admin_create_crests(payload: schemas.AdminCreateCrestsRequest, db: Session =
     return {"status": "ok", "crests_created": created, "total_gold": db.query(Card).filter_by(tier=Tier.gold).count()}
 
 
+# Cartes libres : pas des joueurs. Le type donne le poste réservé (et donc le rôle de la carte) ; la gold sert de fourre-tout
+# des souvenirs de l'année (événements). Un équipement ne peut être que commune, rare, épique ou légendaire (réduction de fatigue).
+FREE_CARD_POSTES = {"evenement": "MOMENT", "equipement": "EQUIPEMENT", "fan": "FAN", "mascotte": "MASCOTTE", "stade": "STADE"}
+FREE_CARD_TIERS = ["commune", "rare", "gold", "epique", "legendaire", "halloween", "noel"] + list(game_logic.CUSTOM_EDITION_SLOTS)
+
+
+@app.post("/admin/create-free-cards", dependencies=[Depends(require_admin)])
+def admin_create_free_cards(payload: schemas.AdminCreateFreeCardsRequest, db: Session = Depends(get_db)):
+    """Crée des cartes qui ne sont pas des joueurs, dans la rareté voulue : événements (cartes de collection qui ne jouent pas,
+    ex. « Blessure à l'entraînement — Intel » en gold), équipements, fans, mascottes, stades. Tout ou rien : un nom vide ou déjà pris,
+    un type ou une rareté inconnus, et rien n'est créé. Les fans et mascottes reçoivent aussi leur carte secrète au prochain démarrage."""
+    if not payload.cards:
+        raise HTTPException(status_code=400, detail="Ajoute au moins une carte")
+    taken = {n.casefold() for (n,) in db.query(Player.name).all()}
+    todo = []
+    for i, e in enumerate(payload.cards, 1):
+        name = " ".join((e.name or "").split())
+        kind = (e.kind or "").strip().lower().replace("é", "e").replace("è", "e")
+        tier = (e.tier or "").strip().lower().replace("é", "e")
+        if not name:
+            raise HTTPException(status_code=400, detail="Ligne %d : la carte doit avoir un nom" % i)
+        if name.casefold() in taken:
+            raise HTTPException(status_code=400, detail="Ligne %d : « %s » existe déjà (joueur, carte ou ligne en double)" % (i, name))
+        if kind not in FREE_CARD_POSTES:
+            raise HTTPException(status_code=400, detail="Ligne %d : type « %s » inconnu (evenement, equipement, fan, mascotte ou stade)" % (i, e.kind))
+        if tier not in FREE_CARD_TIERS:
+            raise HTTPException(status_code=400, detail="Ligne %d : rareté « %s » inconnue (%s)" % (i, e.tier, ", ".join(FREE_CARD_TIERS)))
+        if kind == "equipement" and tier not in game_logic.EQUIPMENT_FATIGUE_REDUCTION:
+            raise HTTPException(status_code=400, detail="Ligne %d : un équipement est commune, rare, épique ou légendaire" % i)
+        taken.add(name.casefold())
+        todo.append((name, kind, tier, _photo_path(e.photo_url) or None))
+    created = []
+    for name, kind, tier, photo in todo:
+        p = Player(name=name, poste=FREE_CARD_POSTES[kind], photo_url=photo)
+        db.add(p); db.flush()
+        db.add(Card(player_id=p.id, tier=Tier(tier), vitesse=0, tir=0))
+        created.append({"name": name, "kind": kind, "tier": tier, "photo_url": photo})
+    db.commit()
+    push.safe(db, push.notify_all, "cards", "Nouvelles cartes au club ! 🃏", ", ".join("%s (%s)" % (c["name"], c["tier"]) for c in created), url="/#collection", tag="cards")
+    return {"status": "ok", "cards_created": created}
+
+
+# Bandeau en haut du site : un message de l'administration, affiché à tous (même sans compte). Réglage app_settings « site_banner ».
+BANNER_STYLES = ("info", "fete", "alerte")
+
+
+@app.get("/site-banner")
+def site_banner(db: Session = Depends(get_db)):
+    row = db.get(AppSetting, "site_banner")
+    try:
+        b = json.loads(row.value) if row is not None else {}
+    except ValueError:
+        b = {}
+    if not b.get("enabled") or not (b.get("text") or "").strip():
+        return {"text": None}
+    return {"text": b["text"], "style": b.get("style", "info"), "id": b.get("id")}
+
+
+@app.post("/admin/site-banner", dependencies=[Depends(require_admin)])
+def admin_site_banner(payload: schemas.AdminSiteBannerRequest, db: Session = Depends(get_db)):
+    """Affiche (ou retire) le bandeau du site. Un nouvel identifiant à chaque changement : le bandeau réapparaît chez ceux qui l'avaient fermé."""
+    text = " ".join((payload.text or "").split())
+    if len(text) > 300:
+        raise HTTPException(status_code=400, detail="Le message fait plus de 300 caractères")
+    style = payload.style if payload.style in BANNER_STYLES else "info"
+    value = json.dumps({"text": text, "style": style, "enabled": bool(payload.enabled and text), "id": datetime.utcnow().strftime("%Y%m%d%H%M%S%f")}, ensure_ascii=False)
+    row = db.get(AppSetting, "site_banner")
+    if row is None:
+        db.add(AppSetting(key="site_banner", value=value))
+    else:
+        row.value = value
+    db.commit()
+    return {"status": "ok", "banner": site_banner(db)}
+
+
 @app.post("/admin/record-match", dependencies=[Depends(require_admin)])
 def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = Depends(get_db)):
     try:

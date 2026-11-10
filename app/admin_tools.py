@@ -95,6 +95,8 @@ def summarize(path: str, payload) -> str:
             if "teaser" in p: parts.append("teaser %s" % ("affiché" if p["teaser"] else "masqué"))
             return "Enchères du club : " + (", ".join(parts) or "réglages")
         if name == "series-reclaim": return "Série %s : n° %s remis dans la réserve" % (_s(p, "series"), _s(p, "number"))
+        if name == "create-free-cards": return "%d carte(s) libre(s) créée(s) : %s" % (len(p.get("cards") or []), ", ".join("%s (%s, %s)" % ((c or {}).get("name", ""), (c or {}).get("kind", ""), (c or {}).get("tier", "")) for c in (p.get("cards") or [])))
+        if name == "site-banner": return "Bandeau du site : %s" % (("« %s »" % p.get("text")) if p.get("enabled", True) and p.get("text") else "retiré")
         if name == "create-crests": return "%d écusson(s) gold ajouté(s) : %s" % (len(p.get("clubs") or []), ", ".join(str((c or {}).get("name", "")) for c in (p.get("clubs") or [])))
         if name == "create-gold": return "%d carte(s) gold ajoutée(s) sans match" % len(p.get("moments") or [])
         if name == "changelog-add": return "Historique : note « %s » (%s) publiée" % (_s(p, "title"), _s(p, "category", "autre"))
