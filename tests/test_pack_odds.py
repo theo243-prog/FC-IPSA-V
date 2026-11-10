@@ -44,10 +44,11 @@ ok(near(pack3(q["epique"]), 3.56, 0.01) and near(pack3(q["legendaire"]), 0.45, 0
 print("2) PACK MATCH")
 p, _ = odds("match", True)
 ok(near(p["gold"], 10.0) and near(p["halloween"], 6.0), "avec une édition : gold %.2f %% (10 %%), édition %.2f %% (6 %%)" % (p["gold"], p["halloween"]))
-ok(near(GL.PACK_TYPES["match"]["weights"]["speciale"], 8) and near(p["speciale"], 7.52), "poids de la spéciale inchangé (8) : %.2f %% pendant une édition" % p["speciale"])
+ok(near(GL.PACK_TYPES["match"]["weights"]["speciale"], 11) and near(p["speciale"], 10.34), "poids de la spéciale 11 (avant 8) : %.2f %% pendant une édition" % p["speciale"])
 ok(near(p["rare"] / p["epique"], 10.4) and near(p["epique"] / p["legendaire"], 2.5 / 0.3), "rare, épique et légendaire dans les rapports 26 / 2,5 / 0,3")
 q, _ = odds("match", False)
-ok(near(q["gold"], 10.64) and "halloween" not in q and near(q["commune"], 52.56) and near(q["speciale"], 8), "sans édition : gold 10,64 %, spéciale 8 %, commune 52,56 %")
+ok(near(q["gold"], 10.64) and "halloween" not in q and near(q["commune"], 49.56) and near(q["speciale"], 11), "sans édition : gold 10,64 %, spéciale 11 %, commune 49,56 %")
+ok(near(pack3(q["speciale"]), 29.6, 0.1), "par pack match de 3 : au moins une spéciale %.1f %% (22,1 %% avant)" % pack3(q["speciale"]))
 ok(near(pack3(q["epique"]), 7.31, 0.01) and near(pack3(q["legendaire"]), 0.90, 0.01), "par pack de 3 : épique %.2f %%, légendaire %.2f %%" % (pack3(q["epique"]), pack3(q["legendaire"])))
 
 print("3) PACK ULTRA (case « gold, édition limitée ou mieux »)")

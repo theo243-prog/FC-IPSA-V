@@ -61,7 +61,7 @@ groups = {}; used, goals, assists, nd = WK.window_stats(db, START, END, by_group
 ok(nd == 3 and used["Mathis"] == 21 and used["Hugo"] == 4, "toutes raretés confondues, Mathis (secrète et gold) serait le plus utilisé : 21 utilisations")
 ok(groups["commune"]["Hugo"] == 2 and groups["rare"]["Hugo"] == 2 and groups["edition"]["Enzo"] == 2 and groups["edition"]["Léo"] == 4, "les utilisations sont rangées dans le groupe de la rareté de la carte (1v1 et défi du club)")
 ok(goals == {"Tom": 2, "Nathan": 1} and assists == {"Enzo": 2}, "meilleur buteur et meilleur passeur : toutes raretés confondues, comme avant")
-ok(GL.SPECIAL_BASE_NOTE == 80 and GL.SPECIAL_MAX_NOTE == 90, "constantes : création à 80, plafond à 90")
+ok(GL.SPECIAL_BASE_NOTE == 80 and GL.SPECIAL_MAX_NOTE == 99, "constantes : création à 80, plafond à 99")
 dry = WK.run_weekly_specials(db, START, END, dry_run=True)
 ok(dry["created"] == ["Lucas", "Nathan", "Léo", "Tom", "Enzo"] and special("Lucas") is None and db.query(ChatMessage).count() == 0, "simulation : le rapport annonce les créations, mais rien n'est créé ni annoncé")
 SENT = []; real_notify = push.notify_all; push.notify_all = lambda db, kind, title, body, **kw: SENT.append(body) or 0
@@ -119,12 +119,12 @@ spec("Yanis", 84); e = plan(("commune", ["Rayan", "Yanis", "Maxime"]))[0]
 ok(acts(e) == [("plus_one", "Rayan"), ("skipped", "Yanis"), ("created", "Maxime")] and special("Yanis").note == 84, "1er et 2e avec carte, 3e sans : +1 au 1er seulement, le 2e sauté sans rien, création pour le 3e")
 spec("Maxime", 80); e = plan(("commune", ["Rayan", "Yanis", "Maxime"]))[0]
 ok(acts(e) == [("plus_one", "Rayan"), ("skipped", "Yanis"), ("skipped", "Maxime")] and e["created"] is None, "tous en ont une : +1 au 1er, aucune création")
-spec("Antoine", 90); e = plan(("commune", ["Antoine", "Baptiste"]))[0]
-ok(acts(e) == [("skipped", "Antoine"), ("created", "Baptiste")] and "90" in e["actions"][0]["reason"], "plafond : à 90, pas de +1 (mais la création pour le suivant a lieu)")
-spec("Antoine", 89); e = plan(("commune", ["Antoine"]))[0]
-ok(e["plus_one_note"] == 90, "89 → 90 : le dernier +1 possible")
-spec("Antoine", 93); WK._apply(db, plan(("commune", ["Antoine", "Baptiste"]))); db.commit(); db.expire_all()
-ok(special("Antoine").note == 93 and special("Baptiste").note == 80, "une spéciale déjà au-dessus de 90 n'est jamais baissée (93 reste 93)")
+spec("Antoine", 99); e = plan(("commune", ["Antoine", "Baptiste"]))[0]
+ok(acts(e) == [("skipped", "Antoine"), ("created", "Baptiste")] and "99" in e["actions"][0]["reason"], "plafond : à 99, pas de +1 (mais la création pour le suivant a lieu)")
+spec("Antoine", 98); e = plan(("commune", ["Antoine"]))[0]
+ok(e["plus_one_note"] == 99, "98 → 99 : le dernier +1 possible")
+spec("Antoine", 101); WK._apply(db, plan(("commune", ["Antoine", "Baptiste"]))); db.commit(); db.expire_all()
+ok(special("Antoine").note == 101 and special("Baptiste").note == 80, "une spéciale déjà au-dessus de 99 n'est jamais baissée (101 reste 101)")
 e1, e2 = plan(("commune", ["Rayan"]), ("rare", ["Rayan", "Théo"]))
 ok(acts(e1) == [("plus_one", "Rayan")] and acts(e2) == [("skipped", "Rayan"), ("created", "Théo")] and e2["actions"][0]["reason"] == "déjà +1 cette semaine", "1er de deux catégories : un seul +1 (le premier), le second est sauté ; la création continue")
 e1, e2, e3 = plan(("commune", ["Nolan"]), ("rare", ["Rayan", "Nolan", "Gabriel"]), ("epique", ["Nolan"]))

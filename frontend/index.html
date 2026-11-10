@@ -1868,7 +1868,7 @@
           '</div>';
         if (p.tier === 'secrete' && (p.surnom || (p.numero != null && p.numero !== ''))) inner += '<p class="tm-hint" style="text-align:center;">' + (p.surnom ? 'Surnom : <b>' + escapeHtml(p.surnom) + '</b>' : '') + (p.surnom && p.numero != null && p.numero !== '' ? ' · ' : '') + (p.numero != null && p.numero !== '' ? 'Maillot n° <b>' + escapeHtml(String(p.numero)) + '</b>' : '') + '</p>';
         if (p.edition) inner += '<p class="tm-hint" style="text-align:center;">' + p.edition.icon + ' <b>Édition limitée ' + escapeHtml(p.edition.label) + '</b> : ' + (p.edition.status === 'active' ? 'ses cartes sortent des packs jusqu\'au ' + formatDay(p.edition.end) + ' inclus.' : p.edition.status === 'ended' ? 'terminée le ' + formatDay(p.edition.end) + '. Elle ne sort plus des packs : seuls les joueurs qui l\'ont déjà peuvent l\'échanger.' : 'à partir du ' + formatDay(p.edition.start) + '.') + '</p>';
-        if (p.tier === 'speciale') inner += '<p class="tm-hint" style="text-align:center;">Carte spéciale : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine (note 80 à sa création, +1 quand son joueur est n°1 d\'une catégorie, 90 au maximum). Elle ne sort que des packs gagnés en 1v1.</p>';
+        if (p.tier === 'speciale') inner += '<p class="tm-hint" style="text-align:center;">Carte spéciale : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine (note 80 à sa création, +1 quand son joueur est n°1 d\'une catégorie, 99 au maximum). Elle ne sort que des packs gagnés en 1v1.</p>';
         if (p.tier === 'secrete') inner += '<p class="tm-hint" style="text-align:center;">Carte secrète : elle ne sort jamais des packs. On la débloque en fusionnant 100 points de doublons (commune = 1, rare = 5).</p>';
       }
       body.innerHTML = photoHTML + '<div class="player-detail-poste">' + escapeHtml(posteText) + ' · ' + tierLabel(p.tier) + '</div>' + inner;
@@ -2281,7 +2281,7 @@
   }
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.09.2';
+  const SITE_VERSION = '2026.11.10.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3451,13 +3451,13 @@
         '<li><span class="help-tier" style="background:' + TIER_COLORS.secrete + '"></span><b>Secrète</b> : une par joueur, fan et mascotte. Elle ne sort jamais d\'un pack (voir plus bas).</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.speciale + '"></span><b>Spéciale</b> : décernée chaque vendredi à 17h aux stars du 1v1 de la semaine. Elle ne sort que des packs match.</li>' +
         '<li><span class="help-tier" style="background:' + TIER_COLORS.epique + '"></span><b>Épique</b> : le joueur qui marque dans un vrai match. Sa note vaut 85 au premier but, puis +2 par but.</li>' +
-        '<li><span class="help-tier" style="background:' + TIER_COLORS.legendaire + '"></span><b>Légendaire</b> : la plus rare, holographique et animée. Note 95, qui peut monter de +2 grâce au vote de l\'homme du match (voir l\'aide de l\'onglet Actualité).</li></ul>' +
+        '<li><span class="help-tier" style="background:' + TIER_COLORS.legendaire + '"></span><b>Légendaire</b> : la plus rare, holographique et animée. Note 90, qui peut monter de +2 grâce au vote de l\'homme du match (voir l\'aide de l\'onglet Actualité).</li></ul>' +
         '<h3>Les doublons</h3><ul><li><b>Les revendre</b> avec « Vendre doublon » (une fenêtre te demande de confirmer : la vente est <b>définitive</b>, sans retour) : commune ' + sv.commune + ' crédit, rare ' + sv.rare + ', gold ' + sv.gold + ', spéciale ' + sv.speciale + ', épique ' + sv.epique + ', légendaire ' + sv.legendaire + '.</li>' +
         '<li><b>Débloquer une carte secrète</b> : la carte secrète d\'un joueur affiche une jauge. Chaque doublon <b>commune</b> de ce joueur vaut <b>1 point</b>, chaque doublon <b>rare</b> vaut <b>' + r.secret_fusion.rare_value + ' points</b>. À <b>' + r.secret_fusion.cost + ' points</b>, le bouton « Débloquer » apparaît : les doublons nécessaires sont consommés (tu gardes toujours ton premier exemplaire de chaque carte).</li></ul>' +
         '<h3>Faire évoluer une carte ⬆️</h3><ul>' +
         '<li>Les cartes de joueurs <b>communes</b>, <b>rares</b> et <b>éditions limitées</b> montent jusqu\'au <b>niveau 5</b>. Le niveau ajoute à la note de la carte en match (avant la forme, le malus hors poste et le bonus de capitaine) : <b>+2</b> au niveau 1, <b>+3</b> au niveau 2, <b>+4</b> au niveau 3, <b>+6</b> au niveau 4 et <b>+8</b> au niveau 5. C\'est ce qui pèse le plus dans un match : 5 cartes au niveau 3 valent plus qu\'une tactique gagnante. Les gold, secrètes, épiques, légendaires, spéciales, trophées, fans, mascottes et équipements n\'évoluent pas.</li>' +
         '<li>Un niveau se paie en <b>crédits</b> et en <b>doublons</b> de cette carte, qui sont <b>utilisés</b> : à toi de choisir entre faire évoluer tes cartes ou garder tes doublons pour les vendre ou débloquer les cartes secrètes. Doublons utilisés pour les niveaux 1 à 5 : commune 5, 10, 20, 50, 100 ; rare 1, 3, 5, 12, 25 ; édition limitée 1, 3, 5, 8, 10. Ta carte évoluée, elle, reste.</li>' +
-        '<li>Coût en crédits des niveaux 1 à 5 : commune 30, 60, 120, 200, 320 ; rare 45, 90, 180, 300, 480 ; édition limitée 60, 120, 240, 400, 640. Pas de limite par jour.</li>' +
+        '<li>Coût en crédits des niveaux 1 à 5 : commune 15, 30, 60, 100, 160 ; rare 30, 65, 125, 210, 335 ; édition limitée 40, 85, 170, 280, 450. Pas de limite par jour.</li>' +
         '<li>Tout se fait dans la <b>fiche de la carte</b> (touche-la dans ta collection) : niveau, doublons (« 7 sur 10 nécessaires »), coût et bouton « Évoluer ». Un badge « Niv. N » s\'affiche sur la carte.</li>' +
         '<li>Tu n\'as qu\'<b>une copie évoluée</b> par carte. <b>Le niveau suit la carte</b> : si tu la vends (annonce, enchère, offre d\'achat), l\'acheteur la reçoit avec son niveau, et tes autres copies repassent au niveau 0. Les échanges et la vente des doublons ne touchent jamais ta copie évoluée.</li></ul>' +
         '<h3>Les autres types de cartes</h3><ul><li><b>Fans</b> : pas de note, un petit bonus d\'équipe en match (+0,75 % à +3 %). <b>Le Loup</b> (la mascotte) : des crédits après chaque match 1v1 (1 à 5). <b>Équipements</b> : moins de fatigue pour tes cartes en 1v1 (−15 % à −60 %).</li><li><b>Éditions numérotées</b> 🔢 : des séries limitées à un nombre fixe d\'exemplaires (par exemple 22). Chaque exemplaire porte son numéro (« N° 12/22 »), n\'existe qu\'une fois et appartient à un seul joueur ; une fois tous attribués, il n\'y en aura jamais d\'autre. Ils ne sortent jamais d\'un pack, ne jouent pas en match et ne s\'échangent pas, mais se vendent au marché et aux enchères. Ta collection ne montre que ceux que tu possèdes ; leur fiche indique la série (« 18 / 22 attribués ») et ses détenteurs.</li><li><b>Stades</b>, <b>moments gold</b> et <b>écussons</b> 🛡️ des clubs adverses (gold) : des cartes de collection. Elles ne jouent pas en match, mais se vendent et s\'échangent.</li></ul>';
@@ -3487,7 +3487,7 @@
       return '<h3>Acheter des packs avec tes crédits</h3><p>Tu gagnes des crédits en ouvrant des packs, en revendant des doublons et en gagnant des matchs 1v1. Un pack acheté arrive dans tes packs bonus (onglet Packs), sans limite de stock.</p>' +
         '<ul><li><b>' + escapeHtml(r.packs.classique.label) + '</b> (' + r.packs.classique.price + ' crédits) : ' + escapeHtml(r.packs.classique.description) + '.</li></ul>' + guaranteedPacksHTML(r) +
         '<p class="help-note">Un pack à carte garantie n\'est en vente que si au moins une carte de cette rareté existe. Le pack match ne s\'achète pas : il se gagne en 1v1 (et le perdant, ou chacun des deux en cas de nul, reçoit un pack classique). Tu peux en gagner 5 par jour au maximum ; ensuite, chaque match te rapporte un pack classique.</p>' +
-        '<h3>Les cosmétiques</h3><p>Sous les packs, 5 pistes de décorations vendues <b>uniquement au shop</b> : titres, cadres de profil, bannières, couleurs du pseudo et badges. Chaque piste a 5 paliers (50, 100, 200, 350 puis 500 crédits), à acheter dans l\'ordre. Un cosmétique acheté est gardé pour toujours ; tu l\'équipes depuis ton profil (bouton « 🎨 Titre et cadre »). Le dernier palier de chaque piste forme l\'ensemble du Pigeon : titre « Pigeon du shop », pseudo et bannière holographiques. Les promotions de la boutique ne s\'appliquent qu\'aux packs.</p>' +
+        '<h3>Les cosmétiques</h3><p>Sous les packs, 5 pistes de décorations vendues <b>uniquement au shop</b> : titres, cadres de profil, bannières, couleurs du pseudo et badges. Chaque piste a 5 paliers (30, 60, 120, 200 puis 300 crédits), à acheter dans l\'ordre. Un cosmétique acheté est gardé pour toujours ; tu l\'équipes depuis ton profil (bouton « 🎨 Titre et cadre »). Le dernier palier de chaque piste forme l\'ensemble du Pigeon : titre « Pigeon du shop », pseudo et bannière holographiques. Les promotions de la boutique ne s\'appliquent qu\'aux packs.</p>' +
         '<h3>Tes chances de tirage</h3>' + oddsTableHTML(r, ['classique']) + '<p>Pour les packs à carte garantie, les cartes qui ne sont pas garanties suivent ces mêmes chances.</p>' + ultraOddsHTML(r);
     } },
     classement: { title: 'Le classement', html(){
@@ -3522,7 +3522,8 @@
         '<li><b>Tendances</b> : le profil de chaque joueur montre ses tactiques et formations préférées en pourcentage, sur ses 20 derniers matchs (1v1 et tournoi, à partir de 5 matchs). Jamais la tactique d\'un match précis.</li>' +
         '<li><b>Poste</b> : un joueur placé hors de son poste perd <b>' + p(cfg.out_of_position_malus) + '</b> (les postes « X » ne sont jamais pénalisés).</li>' +
         '<li><b>Capitaine</b> : <b>+' + p(cfg.captain_bonus) + '</b> sur sa note.</li>' +
-        '<li>Tu ne peux pas jouer deux fois la même carte (mais la commune et la rare d\'un joueur, oui).</li></ul>' +
+        '<li>Tu ne peux pas jouer deux fois la même carte (mais la commune et la rare d\'un joueur, oui).</li>' +
+        '<li><b>Défi secret</b> : la disposition et la tactique du créateur d\'un défi restent cachées jusqu\'au match (elles vont ensemble). Le créateur, qui ne choisit pas contre qui il joue, a l\'<b>avantage du terrain : +' + p(cfg.home_bonus || 0.01) + '</b>.</li></ul>' +
         '<h3>Ce qui compte le plus</h3><p>Dans l\'ordre : <b>1) la note de tes joueurs</b> (et leurs niveaux), <b>2) la tactique</b> (et la synergie), <b>3) le Fan</b>. Par exemple, contre une équipe identique : 5 cartes au niveau 3 ≈ 52 % de victoires, une tactique gagnante ≈ 50 %, un Fan légendaire ≈ 47 % (40 % sans rien).</p>' +
         '<h3>Fan, Loup et équipement : trois rôles</h3><p>Trois emplacements facultatifs :</p><ul>' +
         '<li><b>1 Fan</b> : le seul bonus de puissance d\'équipe (attaque et défense) : ' + range(cfg.fan_bonus, ['commune', 'rare', 'epique', 'secrete', 'legendaire']) + ' %, édition limitée +' + pctFr(cfg.fan_bonus.halloween * 100) + ' %.</li>' +
@@ -3555,9 +3556,10 @@
         '<li><b>Défier un joueur en particulier</b> : dans le formulaire, choisis un adversaire (ou touche « Défier » sur son profil). Ton défi n\'est alors visible que de vous deux, il est prévenu par notification, et seul lui peut le jouer. Tu peux l\'annuler quand tu veux.</li>' +
         '<li><b>Revanche</b> : à la fin d\'un match, le bouton « ⚔️ Revanche » te propose un défi privé au même adversaire, avec la même mise.</li>' +
         '<li>Tu peux avoir ' + cfg.max_open_proposals + ' défis ouverts au maximum. Aucun délai : tu peux rejouer tout de suite contre le même adversaire.</li>' +
-        '<li><b>Classement</b> : par Elo. M = matchs, V = victoires, D = défaites, N = nuls, <b>Diff</b> = buts marqués moins buts encaissés.</li></ul>' +
+        '<li><b>Classement</b> : par Elo. M = matchs, V = victoires, D = défaites, N = nuls, <b>Diff</b> = buts marqués moins buts encaissés.</li>' +
+        '<li><b>L\'Elo récompense ceux qui jouent</b> : une victoire rapporte un quart de points en plus, une défaite coûte <b>' + (cfg.elo_max_loss || 20) + ' points au plus</b>, et le créateur d\'un défi (qui ne choisit pas son adversaire) perd un quart de moins. Les joueurs actifs montent toute la saison : s\'arrêter avec un peu d\'avance ne suffit pas pour rester devant.</li></ul>' +
         '<h3>Les cartes stars</h3><p>Deux classements, avec les 5 cartes les plus utilisées et les 5 plus décisives en buts et en passes :</p><ul>' +
-        '<li><b>De la semaine</b> : remis à zéro chaque <b>vendredi à 17h</b>. À ce moment, 7 catégories sont récompensées : <b>la plus utilisée de chaque groupe de rareté</b> (commune, rare, épique, légendaire et édition limitée : Halloween, Noël et les autres éditions ensemble ; un groupe ne compte que ses propres cartes), plus le <b>meilleur buteur</b> et le <b>meilleur passeur</b>, toutes raretés confondues. Dans chaque catégorie : si le n°1 n\'a pas encore de <b>carte spéciale</b>, elle est créée pour lui (note 80) ; s\'il en a une, elle gagne <b>+1</b> (⬆️), puis le <b>premier joueur du classement qui n\'en a pas</b> reçoit la sienne (🆕). Un joueur gagne <b>un seul +1 par semaine</b>, même s\'il est n°1 de plusieurs catégories, et une carte spéciale ne dépasse jamais <b>90</b>. Soit au plus 7 nouvelles cartes et 7 « +1 » par semaine. Sous chaque classement, « Si la semaine finissait maintenant » montre qui en profiterait.</li>' +
+        '<li><b>De la semaine</b> : remis à zéro chaque <b>vendredi à 17h</b>. À ce moment, 7 catégories sont récompensées : <b>la plus utilisée de chaque groupe de rareté</b> (commune, rare, épique, légendaire et édition limitée : Halloween, Noël et les autres éditions ensemble ; un groupe ne compte que ses propres cartes), plus le <b>meilleur buteur</b> et le <b>meilleur passeur</b>, toutes raretés confondues. Dans chaque catégorie : si le n°1 n\'a pas encore de <b>carte spéciale</b>, elle est créée pour lui (note 80) ; s\'il en a une, elle gagne <b>+1</b> (⬆️), puis le <b>premier joueur du classement qui n\'en a pas</b> reçoit la sienne (🆕). Un joueur gagne <b>un seul +1 par semaine</b>, même s\'il est n°1 de plusieurs catégories, et une carte spéciale ne dépasse jamais <b>99</b>. Soit au plus 7 nouvelles cartes et 7 « +1 » par semaine. Sous chaque classement, « Si la semaine finissait maintenant » montre qui en profiterait.</li>' +
         '<li><b>De tous les temps</b> : l\'historique complet, depuis le premier match.</li>' +
         '<li><b>Les plus utilisées</b> comptent aussi les cartes que tu alignes au <b>tournoi</b> et au <b>défi du club</b> (jamais celles de l\'équipe du club). Les buts et les passes ne viennent que des matchs 1v1.</li></ul>' +
         '<p>Les cartes spéciales ne sortent que des packs gagnés en 1v1 :</p>' +
@@ -4168,7 +4170,7 @@
   async function loadShopCosmetics(){
     const root = document.getElementById('shopCosmeticsEl'); if (!root) return;
     let d; try { d = await api('/shop/cosmetics'); } catch(e) { root.innerHTML = ''; return; }
-    root.innerHTML = '<div class="shopc-head">🎨 Cosmétiques</div><p class="shopc-sub">Des décorations vendues <b>uniquement au shop</b>. Chaque piste a 5 paliers à acheter dans l\'ordre, de 50 à 500 crédits. Équipe-les ensuite depuis ton profil (bouton « 🎨 Titre et cadre »). Tu en as ' + d.owned + ' sur ' + d.total + '.</p>' +
+    root.innerHTML = '<div class="shopc-head">🎨 Cosmétiques</div><p class="shopc-sub">Des décorations vendues <b>uniquement au shop</b>. Chaque piste a 5 paliers à acheter dans l\'ordre, de 30 à 300 crédits. Équipe-les ensuite depuis ton profil (bouton « 🎨 Titre et cadre »). Tu en as ' + d.owned + ' sur ' + d.total + '.</p>' +
       d.tracks.map(t => '<div class="shopc-track"><h4>' + escapeHtml(t.label) + ' <small>' + t.owned + ' / ' + t.levels.length + '</small></h4><div class="shopc-levels">' +
         t.levels.map(l => '<div class="shopc-lv' + (l.owned ? ' owned' : l.next ? '' : ' locked') + '"><span class="shopc-n">Palier ' + l.level + '</span><div class="shopc-prev">' + shopPreviewHTML(l.item) + '</div><span class="shopc-name">' + escapeHtml(l.item.name) + '</span>' +
           (l.owned ? '<span class="pc-st">✓ possédé</span>' : l.next ? '<button class="btn-small" type="button" data-shopc="' + l.item.id + '"' + (d.credits < l.price ? ' disabled title="Pas assez de crédits"' : '') + '>' + l.price + ' crédits</button>' : '<span class="pc-st">🔒 ' + l.price + ' crédits</span>') + '</div>').join('') +
@@ -4436,7 +4438,7 @@
       ]);
       renderStars(byId('duelStarsEl'), all, false);
       renderStars(byId('duelWeekEl'), week, true);
-      byId('duelWeekHint').innerHTML = 'Remis à zéro <b>vendredi à 17h</b> (' + untilText(week.resets_at) + '). Dans chaque catégorie (la plus utilisée de chaque rareté, meilleur buteur, meilleur passeur), le n°1 gagne <b>+1</b> sur sa carte spéciale (⬆️, jusqu\'à 90) et le premier joueur du classement qui n\'en a pas encore <b>reçoit la sienne</b> (🆕).';
+      byId('duelWeekHint').innerHTML = 'Remis à zéro <b>vendredi à 17h</b> (' + untilText(week.resets_at) + '). Dans chaque catégorie (la plus utilisée de chaque rareté, meilleur buteur, meilleur passeur), le n°1 gagne <b>+1</b> sur sa carte spéciale (⬆️, jusqu\'à 99) et le premier joueur du classement qui n\'en a pas encore <b>reçoit la sienne</b> (🆕).';
     } catch(e) { toast(e.message); }
   }
 
@@ -4477,9 +4479,10 @@
       rows.forEach(pr => {
         const mine = pr.creator === myPseudo;
         const row = document.createElement('div'); row.className = 'proposal-row';
-        const label = duelConfig && duelConfig.formation_labels[pr.formation] ? ' (' + duelConfig.formation_labels[pr.formation] + ')' : '';
+        // la disposition d'un défi est secrète (seul son créateur la voit) : elle va avec la tactique (synergie)
+        const label = pr.formation && duelConfig && duelConfig.formation_labels[pr.formation] ? ' (' + duelConfig.formation_labels[pr.formation] + ')' : '';
         row.innerHTML = '<div class="proposal-main"><b>' + escapeHtml(pr.creator) + '</b>' + (mine ? ' (toi)' : '') + ' · Elo ' + pr.creator_elo +
-          '<div class="proposal-meta">Disposition ' + escapeHtml(pr.formation) + label + (pr.has_fan ? ' · avec un Fan' : '') + (pr.has_mascot ? ' · avec le Loup' : '') + (pr.equipment_count ? ' · ' + pr.equipment_count + ' équipement' + (pr.equipment_count > 1 ? 's' : '') : '') + ' · mise <b>' + pr.stake + ' crédits</b> · tactique secrète</div></div>';
+          '<div class="proposal-meta">' + (pr.formation ? 'Disposition ' + escapeHtml(pr.formation) + label : 'Disposition secrète') + (pr.has_fan ? ' · avec un Fan' : '') + (pr.has_mascot ? ' · avec le Loup' : '') + (pr.equipment_count ? ' · ' + pr.equipment_count + ' équipement' + (pr.equipment_count > 1 ? 's' : '') : '') + ' · mise <b>' + pr.stake + ' crédits</b> · tactique secrète</div></div>';
         if (pr.target) row.querySelector('.proposal-meta').insertAdjacentHTML('beforeend', '<br>🎯 <b>Défi privé</b> ' + (pr.target_is_me ? 'pour toi' : 'pour ' + escapeHtml(pr.target)));
         const btn = document.createElement('button'); btn.className = 'btn-small' + (mine ? ' ghost' : '');
         if (mine) { btn.textContent = 'Annuler'; btn.addEventListener('click', () => cancelProposal(pr.id, btn)); }
@@ -4540,7 +4543,7 @@
       byId('tmSubmit').textContent = 'Publier mon défi';
     } else {
       byId('tmTitle').textContent = 'Jouer contre ' + proposal.creator;
-      byId('tmIntro').textContent = proposal.creator + ' (Elo ' + proposal.creator_elo + ') joue en ' + proposal.formation + '. Mise : ' + proposal.stake + ' crédits, prélevée au coup d\'envoi. Sa tactique est secrète : à toi de la deviner ! ' + rules;
+      byId('tmIntro').textContent = proposal.creator + ' (Elo ' + proposal.creator_elo + ') joue à domicile (+' + pctFr(((duelConfig && duelConfig.home_bonus) || 0.01) * 100) + ' %). Mise : ' + proposal.stake + ' crédits, prélevée au coup d\'envoi. Sa disposition et sa tactique sont secrètes : à toi de les deviner ! ' + rules;
       byId('tmSubmit').textContent = 'Lancer le match (' + proposal.stake + ' crédits)';
       tm.proposal = proposal;
     }
@@ -4848,6 +4851,7 @@
           ? (t.mascot.credits_won ? ' (+' + t.mascot.credits_won + ' crédit' + (t.mascot.credits_won > 1 ? 's' : '') + ')' : '')
           : ' (+' + t.mascot.bonus_pct + ' %' + (t.mascot.form != null && t.mascot.form < 100 ? ', forme ' + t.mascot.form + ' %' : '') + ')') : '') +
         (t.referee_bonus_pct ? ' · Arbitre +' + t.referee_bonus_pct + ' %' : '') +
+        (t.home_bonus_pct ? ' · À domicile +' + pctFr(t.home_bonus_pct) + ' %' : '') +
         (t.club_bonus_pct ? ' · Bonus du club +' + t.club_bonus_pct + ' %' : '') +
         (t.equipment && t.equipment.length ? ' · Équipement ' + t.equipment.map(e => escapeHtml(e.player)).join(', ') + (t.fatigue_reduction_pct != null
           ? (t.fatigue_reduction_pct ? ' (−' + pctFr(t.fatigue_reduction_pct) + ' % de fatigue)' : ' (sans effet ici)')

@@ -43,10 +43,18 @@ KINDS = CYCLE + ["sound"]
 KIND_LABELS = {"badge": "Badge", "banner": "Bannière", "frame": "Cadre", "name_color": "Couleur du pseudo", "title": "Titre", "stickers": "Autocollants", "share_bg": "Fond d'image", "sound": "Son d'ouverture"}
 LEVELS, POINTS_PER_LEVEL = 30, 100
 SOUND_LEVEL, SOUND_FROM = 18, "2026-11"           # niveau Premium du son d'ouverture, et premier Pass (mois) qui le donne
-PREMIUM_EXTRAS = {10: {"pack": "rare"}, 15: {"credits": 50}, 20: {"edition_pack": 2}, 25: {"pass_card": True}, 30: {"edition_pack": 3}}
-FREE_REWARDS = {1: {"credits": 5}, 4: {"pack": "classique"}, 7: {"credits": 10}, 10: {"free_item": 10}, 13: {"credits": 10}, 16: {"pack": "classique"}, 19: {"credits": 10}, 20: {"free_item": 20},
-                23: {"credits": 10}, 26: {"pack": "rare"}, 28: {"pack": "classique"}, 30: {"credits": 10, "free_item": 30}}
-CLUB_TIERS = [(500, {"credits": 10}), (1000, {"pack": "classique"}), (1500, {"credits": 20}), (2000, {"pack": "rare"}), (3000, {"pack": "rare", "credits": 30})]
+# Pass plus généreux (novembre 2026) : Premium 200 crédits, 2 packs classiques, 3 packs rares (avant : 50 crédits, 1 rare) en plus des packs d'édition
+PREMIUM_EXTRAS = {5: {"pack": "classique"}, 10: {"pack": "rare"}, 12: {"credits": 50}, 15: {"credits": 100}, 17: {"pack": "classique"}, 20: {"edition_pack": 2},
+                  22: {"pack": "rare"}, 25: {"pass_card": True}, 27: {"credits": 50}, 30: {"edition_pack": 3, "pack": "rare"}}
+# Gratuit : 110 crédits (avant 55), 6 packs classiques et 1 rare (avant 3 classiques et 1 rare)
+FREE_REWARDS = {1: {"credits": 10}, 4: {"pack": "classique"}, 7: {"credits": 20}, 8: {"pack": "classique"}, 10: {"free_item": 10}, 12: {"pack": "classique"}, 13: {"credits": 20},
+                16: {"pack": "classique"}, 19: {"credits": 20}, 20: {"free_item": 20}, 22: {"pack": "classique"}, 23: {"credits": 20}, 26: {"pack": "rare"}, 28: {"pack": "classique"},
+                30: {"credits": 20, "free_item": 30}}
+# Objectif du club : packs ouverts par tout le club dans le mois. Les 5 premiers paliers ne changent pas (les récupérations c0 à c4 en dépendent) ;
+# 5 paliers de plus jusqu'à 10 000 packs, le dernier donne un pack ultra et 50 crédits à tous (et les autocollants du club).
+CLUB_TIERS = [(500, {"credits": 10}), (1000, {"pack": "classique"}), (1500, {"credits": 20}), (2000, {"pack": "rare"}), (3000, {"pack": "rare", "credits": 30}),
+              (4000, {"pack": "classique", "credits": 20}), (5000, {"pack": "rare"}), (6500, {"credits": 40}), (8000, {"pack": "rare", "credits": 30}),
+              (10000, {"pack": "ultra", "credits": 50})]
 
 
 def item_id(theme: str, n) -> str:

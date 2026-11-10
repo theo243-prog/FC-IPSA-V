@@ -147,7 +147,7 @@ syn_team = {**team, "tactic": "possession"}
 r = duel(creator="ana", player="bob", cteam={**team, "tactic": "contre"}, pteam=syn_team); one = seen[0]; seen.clear()
 TN.simulate(TN._prepare(db, U("bob"), {**syn_team, "captain_card_id": None}), TN._prepare(db, U("ana"), {**team, "tactic": "contre", "captain_card_id": None})); two = seen[0]
 DE.expected_goals = real_xg
-ok(abs(one[0] - two[0]) < 1e-9 and abs(one[1] - two[1]) < 1e-9, "effet identique en 1v1 et en tournoi (même attaque et même défense)")
+ok(abs(one[0] - two[0]) < 1e-9 and abs(one[1] / two[1] - (1 + DE.HOME_BONUS)) < 1e-9, "effet identique en 1v1 et en tournoi (même attaque ; en 1v1, la défense adverse a en plus l'avantage du terrain du créateur)")
 ok(r["lineups"]["challenger"]["synergy"] is True and r["lineups"]["defender"]["synergy"] is False, "le récapitulatif indique la synergie de chaque équipe")
 
 print("8) TENDANCES DES TACTIQUES")

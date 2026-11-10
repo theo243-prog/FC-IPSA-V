@@ -704,7 +704,9 @@ def duel_card_stats(limit: int = 5, scope: str = "all", db: Session = Depends(ge
 
 @app.get("/duel/proposals")
 def duel_proposals(db: Session = Depends(get_db), viewer: Optional[User] = Depends(optional_user)):
-    return challenges.filter_proposals(db, duel_engine.list_proposals(db), viewer)
+    rows = challenges.filter_proposals(db, duel_engine.list_proposals(db), viewer)
+    # la formation d'un défi est secrète comme sa tactique (elles vont ensemble : synergie) : seul son créateur la voit avant le match
+    return [r if viewer is not None and r.get("creator") == viewer.pseudo else {k: v for k, v in r.items() if k != "formation"} for r in rows]
 
 
 @app.post("/duel/proposals")
@@ -2035,6 +2037,13 @@ async def _startup():
             print("Cartes secrètes créées :", created)
     except Exception as exc:
         print("Cartes secrètes : erreur ignorée au démarrage :", exc)
+    finally:
+        db.close()
+    db = SessionLocal()
+    try:
+        game_logic.lower_legendary_notes(db)              # légendaires de 95 à 90 : -5 sur leur propre note, une seule fois
+    except Exception:
+        db.rollback()
     finally:
         db.close()
     tactic_trends.run_backfill(SessionLocal)              # tendances des tactiques : reprise des anciens matchs (une seule fois)

@@ -6,7 +6,7 @@ du 1v1 de la semaine écoulée : la carte de joueur la plus utilisée DANS CHAQU
 
 - Pour chaque catégorie (voir plan_awards) : le 1er reçoit sa carte s'il ne l'a pas (et c'est fini), sinon +1 ; puis le premier
   joueur du classement qui n'a pas de carte spéciale la reçoit. Création à 80 (SPECIAL_BASE_NOTE), +1 au plus une fois par joueur
-  et par semaine, jamais au-delà de 90 (SPECIAL_MAX_NOTE). Une carte ne baisse jamais.
+  et par semaine, jamais au-delà de 99 (SPECIAL_MAX_NOTE). Une carte ne baisse jamais.
 - Elles ne sortent que des packs gagnés en 1v1 (voir game_logic.PACK_TYPES["match"]).
 - Le créneau traité est mémorisé en base (table job_runs) : un redémarrage du serveur ne fait ni rater ni
   répéter la tâche. Si le serveur était éteint à 17h, elle est rattrapée dès son retour.

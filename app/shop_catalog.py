@@ -7,7 +7,7 @@ Les paliers s'achètent dans l'ordre. Le palier 5 de chaque piste forme l'ensemb
 Ce fichier ne dépend d'aucun autre module (pas d'import circulaire avec pass_catalog).
 """
 
-PRICES = [50, 100, 200, 350, 500]                     # prix des paliers 1 à 5 (crédits), identiques pour toutes les pistes
+PRICES = [30, 60, 120, 200, 300]      # (novembre 2026, avant 50 / 100 / 200 / 350 / 500)                     # prix des paliers 1 à 5 (crédits), identiques pour toutes les pistes
 TRACK_ORDER = ["title", "frame", "banner", "name_color", "badge"]
 TRACK_LABELS = {"title": "Titres", "frame": "Cadres de profil", "banner": "Bannières", "name_color": "Couleurs du pseudo", "badge": "Badges"}
 
