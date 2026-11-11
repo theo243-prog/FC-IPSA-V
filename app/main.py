@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -67,6 +67,7 @@ app.include_router(club_auctions.router)    # enchères quotidiennes du club (ca
 app.include_router(numbered.router)         # cartes numérotées à tirage limité (séries, exemplaires « n° 12/22 »)
 app.include_router(ownership.router)        # part des joueurs qui possèdent chaque carte (fiche d'une carte)
 app.include_router(changelog.router)        # historique des changements du jeu (bouton « 📜 Nouveautés »)
+app.include_router(player_packs.router)     # packs joueur du shop (une carte d'un joueur garantie, offres du jour)
 app.include_router(admin_page.router)      # la page d'administration (/admin-panel) et le numéro de version (/version)
 
 app.add_middleware(
@@ -189,6 +190,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "notices_unread": inbox.unread_count(db, user.id),   # encadré « Notifications » du site
             "pass_todo": battlepass.claimable_count(db, user),
             "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
+            "player_packs": player_packs.owned_out(db, user.id),   # packs joueur achetés, pas encore ouverts
         }
     return {
         "pseudo": user.pseudo,
@@ -206,6 +208,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "notices_unread": inbox.unread_count(db, user.id),   # encadré « Notifications » du site
             "pass_todo": battlepass.claimable_count(db, user),
             "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
+            "player_packs": player_packs.owned_out(db, user.id),   # packs joueur achetés, pas encore ouverts
     }
 
 
@@ -261,7 +264,10 @@ def open_pack(
 ):
     pack_type = payload.pack_type or ("classique" if payload.use_shop_token else "free")
     try:
-        result = game_logic.open_pack_for_user(db, user, pack_type=pack_type)
+        if pack_type == "joueur":                       # pack joueur du shop (player_packs) : une carte d'un joueur garantie
+            result = player_packs.open_for_user(db, user, payload.player_pack_id)
+        else:
+            result = game_logic.open_pack_for_user(db, user, pack_type=pack_type)
     except ValueError as e:
         if str(e) == "tier_unavailable":
             raise HTTPException(status_code=400, detail="Ce pack n'est pas encore disponible : aucune carte de cette rareté n'existe cette saison")
@@ -898,6 +904,7 @@ def purge_card_rows(db: Session, card_ids: list):
     db.query(OwnedCard).filter(OwnedCard.card_id.in_(card_ids)).delete(synchronize_session=False)
     card_levels.on_cards_deleted(db, card_ids)          # niveaux de ces cartes
     fatigue.on_cards_deleted(db, card_ids)              # leur forme du jour
+    player_packs.on_cards_deleted(db, card_ids)         # packs joueur : offres retirées, packs non ouverts remboursés
     card_levels.cleanup_orphans(db)                     # niveaux des annonces et enchères disparues
     db.query(TeamSlot).filter(TeamSlot.card_id.in_(card_ids)).delete(synchronize_session=False)      # ancien 1v1
     db.query(Team).filter(Team.fan_card_id.in_(card_ids)).update({"fan_card_id": None}, synchronize_session=False)
@@ -936,6 +943,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     motm.on_user_deleted(db, user.id)                                                     # ses bulletins des votes encore ouverts
     card_levels.on_user_deleted(db, user.id)                                              # ses cartes évoluées
     fatigue.on_user_deleted(db, user.id)                                                  # la forme de ses cartes
+    player_packs.on_user_deleted(db, user.id)                                             # ses packs joueur pas encore ouverts
     tactic_trends.on_user_deleted(db, user.id)                                            # ses tendances de tactiques
     inbox.on_user_deleted(db, user.id)                                                    # ses notifications du site
     db.query(CardUsage).filter_by(user_id=user.id).delete()                               # ses cartes alignées (tournoi, défi du club), comme ses matchs 1v1

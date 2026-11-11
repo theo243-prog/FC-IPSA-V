@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-packs-joueur", "date": "2026-11-11", "category": "économie", "title": "Packs joueur au shop",
+     "text": "Chaque jour, le shop propose 4 packs joueur à 75 crédits, qui garantissent la carte rare d'un joueur, et un pack premium qui garantit une carte plus rare d'un joueur : édition limitée en cours (200 crédits), épique (300) ou spéciale (400). Chaque pack contient 3 cartes, sans limite d'achat."},
     {"id": "2026-11-forme-gardien", "date": "2026-11-11", "category": "règles", "title": "Forme et gardien en 1v1",
      "text": "La forme est maintenant celle du joueur : toutes ses versions (commune, rare, édition, spéciale…) se fatiguent ensemble. Le gardien pèse un peu moins dans la défense de l'équipe."},
     {"id": "2026-11-credits-1v1-secretes-200", "date": "2026-11-11", "category": "économie", "title": "Crédits des matchs 1v1 et cartes secrètes",

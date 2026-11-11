@@ -829,6 +829,8 @@
 
   .shop-item{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg-elevated);border:1px solid var(--border);border-left:5px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 16px;margin-bottom:10px;}
   .shop-item-name{font-weight:700;font-size:14px;}
+  .pp-head{font-weight:800;font-size:16px;margin:4px 0 4px;} .pp-sub{font-size:12.5px;color:var(--text-muted);margin:0 0 10px;}
+  .shop-item.pp-premium{border-left-color:#C9A227;} .pp-tier{display:inline-block;font-size:11px;font-weight:800;padding:1px 7px;border-radius:9px;background:var(--bg);border:1px solid var(--border);margin-left:6px;vertical-align:1px;}
   .shop-item-price{font-size:12.5px;color:var(--text-muted);}
   .shop-item-desc{font-size:12px;color:var(--text-muted);margin:2px 0;}
   .bonus-packs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
@@ -1189,6 +1191,7 @@
 
     <section id="tab-shop" class="tab-panel">
       <div class="help-row"><button class="help-btn" type="button" data-help="shop"><span class="help-q">?</span> Aide</button></div>
+      <div id="playerPacksEl"></div>
       <div id="shopItemsEl"></div>
       <div id="shopCosmeticsEl"></div>
     </section>
@@ -2309,7 +2312,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.11.2';
+  const SITE_VERSION = '2026.11.11.3';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3229,6 +3232,14 @@
       btn.addEventListener('click', () => openPack(t));
       root.appendChild(btn);
     });
+    (meInfo.player_packs || []).forEach(p => {                  // packs joueur achetés au shop : un bouton par pack
+      const btn = document.createElement('button');
+      btn.className = 'btn-secondary';
+      btn.textContent = 'Ouvrir le pack ' + p.player_name + ' (' + tierLabel(p.tier).toLowerCase() + ' garantie)';
+      btn.disabled = opening;
+      btn.addEventListener('click', () => openPack('joueur', p.id));
+      root.appendChild(btn);
+    });
   }
   function formatDuration(seconds){
     const h = Math.floor(seconds/3600), m = Math.floor((seconds%3600)/60);
@@ -3514,7 +3525,8 @@
       const r = await getGameRules();
       return '<h3>Acheter des packs avec tes crédits</h3><p>Tu gagnes des crédits en ouvrant des packs, en revendant des doublons et en gagnant des matchs 1v1. Un pack acheté arrive dans tes packs bonus (onglet Packs), sans limite de stock.</p>' +
         '<ul><li><b>' + escapeHtml(r.packs.classique.label) + '</b> (' + r.packs.classique.price + ' crédits) : ' + escapeHtml(r.packs.classique.description) + '.</li></ul>' + guaranteedPacksHTML(r) +
-        '<p class="help-note">Un pack à carte garantie n\'est en vente que si au moins une carte de cette rareté existe. Le pack match ne s\'achète pas : il se gagne en 1v1 (et le perdant, ou chacun des deux en cas de nul, reçoit un pack classique). Tu peux en gagner 5 par jour au maximum ; ensuite, chaque match te rapporte un pack classique.</p>' +
+        '<p class="help-note">Un pack à carte garantie n\'est en vente que si au moins une carte de cette rareté existe. Le pack match ne s\'achète pas : il se gagne en 1v1 (et le perdant, ou chacun des deux en cas de nul, reçoit un pack classique). Le 1v1 rapporte 10 packs par jour au maximum ; ensuite, chaque match te rapporte 1 à 5 crédits (50 par jour au maximum).</p>' +
+        '<h3>Les packs joueur du jour</h3><p>En haut du shop, chaque jour (les mêmes pour tout le monde, changés à minuit) : <b>4 packs « joueur »</b> à 75 crédits, qui garantissent la carte <b>rare</b> d\'un joueur, et <b>1 pack premium</b> qui garantit une carte plus rare d\'un joueur : édition limitée en cours (200 crédits), épique (300) ou spéciale (400). Chaque pack contient 3 cartes : la carte annoncée, plus 2 cartes aux chances du pack classique. Achat sans limite ; le pack s\'ouvre ensuite dans l\'onglet Packs et compte comme un pack ouvert (missions, objectif du club).</p>' +
         '<h3>Les cosmétiques</h3><p>Sous les packs, 5 pistes de décorations vendues <b>uniquement au shop</b> : titres, cadres de profil, bannières, couleurs du pseudo et badges. Chaque piste a 5 paliers (30, 60, 120, 200 puis 300 crédits), à acheter dans l\'ordre. Un cosmétique acheté est gardé pour toujours ; tu l\'équipes depuis ton profil (bouton « 🎨 Titre et cadre »). Le dernier palier de chaque piste forme l\'ensemble du Pigeon : titre « Pigeon du shop », pseudo et bannière holographiques. Les promotions de la boutique ne s\'appliquent qu\'aux packs.</p>' +
         '<h3>Tes chances de tirage</h3>' + oddsTableHTML(r, ['classique']) + '<p>Pour les packs à carte garantie, les cartes qui ne sont pas garanties suivent ces mêmes chances.</p>' + ultraOddsHTML(r);
     } },
@@ -3800,7 +3812,7 @@
   bigHost.addEventListener('click', e => { if (e.target.closest('.card-slot.big')) advanceReveal(); });
   bigHost.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('.card-slot.big')) { e.preventDefault(); advanceReveal(); } });
 
-  async function openPack(packType){
+  async function openPack(packType, playerPackId){
     if (opening) return;
     opening = true;
     playOpenSound();       // dans le clic, pour que le navigateur autorise le son (son choisi dans le Pass, sinon le hurlement)
@@ -3821,7 +3833,7 @@
     document.getElementById('revealArea').classList.remove('many');
     updateRevealHint();
 
-    const apiPromise = api('/pack/open', { method: 'POST', body: JSON.stringify({ pack_type: packType === 'free' ? null : packType }) });
+    const apiPromise = api('/pack/open', { method: 'POST', body: JSON.stringify({ pack_type: packType === 'free' ? null : packType, player_pack_id: playerPackId || null }) });
 
     try {
       await new Promise(r => setTimeout(r, SHAKE_MS));              // le pack tremble pendant que la requête part
@@ -4165,7 +4177,36 @@
   }
 
   // ---------- Shop ----------
+  // ---------- Shop : packs joueur du jour (une carte d'un joueur garantie, mêmes offres pour tous, changées à minuit) ----------
+  async function loadPlayerPacks(){
+    const root = document.getElementById('playerPacksEl'); if (!root) return;
+    let d; try { d = await api('/shop/player-packs'); } catch(e) { root.innerHTML = ''; return; }
+    if (!d.offers.length) { root.innerHTML = ''; return; }
+    const credits = meInfo ? meInfo.credits : 0;
+    root.innerHTML = '<div class="pp-head">🎯 Packs joueur du jour</div><p class="pp-sub">3 cartes : la carte annoncée est <b>garantie</b>, les 2 autres suivent les chances du pack classique (gold, édition, épique… possibles). Les offres changent chaque jour à minuit. Idéal pour faire évoluer tes cartes ou remplir la jauge d\'une secrète.' +
+      (d.owned.length ? ' Tu as <b>' + d.owned.length + ' pack' + (d.owned.length > 1 ? 's' : '') + ' joueur</b> à ouvrir dans l\'onglet Packs.' : '') + '</p>';
+    d.offers.forEach(o => {
+      const row = document.createElement('div'); row.className = 'shop-item' + (o.kind === 'premium' ? ' pp-premium' : '');
+      row.innerHTML = '<div><div class="shop-item-name">' + (o.kind === 'premium' ? '⭐ ' : '') + 'Pack ' + escapeHtml(o.player_name) + '<span class="pp-tier">' + escapeHtml(tierLabel(o.tier)) + ' garantie</span></div>' +
+        '<div class="shop-item-desc">La carte ' + escapeHtml(tierLabel(o.tier).toLowerCase()) + ' de ' + escapeHtml(o.player_name) + ' + 2 cartes aux chances classiques</div>' +
+        '<div class="shop-item-price">' + (o.discount ? '<s style="opacity:.6">' + o.base_price + '</s> ' + o.price + ' crédits <b class="disc">−' + o.discount + ' %</b>' : o.price + ' crédits') + '</div></div>';
+      const btn = document.createElement('button'); btn.className = 'btn-small'; btn.textContent = 'Acheter';
+      btn.disabled = credits < o.price; if (btn.disabled) btn.title = 'Pas assez de crédits';
+      btn.addEventListener('click', () => buyPlayerPack(o, btn));
+      row.appendChild(btn); root.appendChild(row);
+    });
+  }
+  async function buyPlayerPack(o, btn){
+    try {
+      btn.disabled = true;
+      await api('/shop/player-packs/buy', { method: 'POST', body: JSON.stringify({ offer_id: o.id }) });
+      toast('Pack ' + o.player_name + ' acheté — à ouvrir dans l\'onglet Packs');
+      await refreshMe(); loadShop();
+    } catch(e) { toast(e.message); btn.disabled = false; }
+  }
+
   async function loadShop(){
+    loadPlayerPacks();
     try {
       const items = await api('/shop/items');
       const root = document.getElementById('shopItemsEl');
