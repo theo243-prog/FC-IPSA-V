@@ -16,7 +16,7 @@ from .database import Base, get_db
 from .models import User
 from .security import get_current_user
 from .common import require_admin
-from . import game_logic, missions, battlepass
+from . import game_logic, missions, battlepass, quiz_bank
 
 router = APIRouter()
 ROUNDS, POINTS_EACH = 5, 10
@@ -33,8 +33,8 @@ def adjacent(a: int, b: int) -> bool:
     """Deux zones voisines : même rangée et colonnes côte à côte, ou même colonne et rangées différentes."""
     return (a // 3 == b // 3 and abs(a % 3 - b % 3) == 1) or (a % 3 == b % 3 and a // 3 != b // 3)
 
-# (question, bonne réponse, deux mauvaises, explication)
-BANK = [
+# (question, bonne réponse, deux mauvaises, explication). Les 41 questions d'origine, faciles ; les moyennes et les difficiles sont dans quiz_bank.py.
+BANK_EASY = [
     ("Quel pays a gagné la Coupe du monde 2018 ?", "La France", ["La Croatie", "La Belgique"], "Les Bleus ont battu la Croatie 4-2 en finale, à Moscou."),
     ("Quel pays a gagné la Coupe du monde 2022 ?", "L'Argentine", ["La France", "La Croatie"], "L'Argentine a battu la France aux tirs au but après un 3-3."),
     ("Dans quel pays s'est jouée la Coupe du monde 2022 ?", "Au Qatar", ["En Russie", "Au Brésil"], "C'était la première Coupe du monde organisée au Qatar."),
@@ -79,6 +79,12 @@ BANK = [
 ]
 
 
+BANK_MEDIUM, BANK_HARD = quiz_bank.MEDIUM, quiz_bank.HARD
+BANK = BANK_EASY + BANK_MEDIUM + BANK_HARD                 # 100 questions en tout
+MIX = (("facile", BANK_EASY, 2), ("moyen", BANK_MEDIUM, 2), ("difficile", BANK_HARD, 1))      # chaque quiz : 2 faciles, 2 moyennes, 1 difficile
+MIX_FROM = "2026-11-12"                                    # avant cette date : l'ancien tirage (5 faciles), pour ne pas changer un quiz commencé
+
+
 class MinigameRun(Base):
     __tablename__ = "minigame_runs"
     user_id = Column(String, primary_key=True)
@@ -98,11 +104,17 @@ def kind_for(day: str) -> str:
 
 
 def questions_for(day: str) -> list:
-    """Les 5 questions du jour (les mêmes pour tout le monde), avec l'ordre des réponses mélangé de façon fixe."""
-    r = random.Random("quiz-" + day); picks = r.sample(BANK, ROUNDS); out = []
-    for i, (q, good, bad, why) in enumerate(picks):
+    """Les 5 questions du jour (les mêmes pour tout le monde), avec l'ordre des réponses mélangé de façon fixe.
+    Depuis MIX_FROM : 2 faciles, 2 moyennes puis 1 difficile (MIX) ; avant : 5 faciles (l'ancien tirage, inchangé)."""
+    r = random.Random("quiz-" + day)
+    if day < MIX_FROM:
+        picks = [(p, "facile") for p in r.sample(BANK_EASY, ROUNDS)]
+    else:
+        picks = [(p, label) for label, bank, n in MIX for p in r.sample(bank, n)]
+    out = []
+    for i, ((q, good, bad, why), level) in enumerate(picks):
         choices = [good] + list(bad); random.Random("%s-%d" % (day, i)).shuffle(choices)
-        out.append({"q": q, "choices": choices, "answer": choices.index(good), "why": why})
+        out.append({"q": q, "choices": choices, "answer": choices.index(good), "why": why, "difficulty": level})
     return out
 
 
@@ -120,7 +132,7 @@ def _view(day: str, run) -> dict:
     if kind == "quiz":
         qs = questions_for(day); n = len(st["answers"]); out["answers"] = [{"correct": a["correct"], "choice": a["choice"], "answer": qs[i]["answer"], "why": qs[i]["why"]} for i, a in enumerate(st["answers"])]
         if not out["finished"] and n < ROUNDS:
-            out["question"] = {"index": n, "text": qs[n]["q"], "choices": qs[n]["choices"]}
+            out["question"] = {"index": n, "text": qs[n]["q"], "choices": qs[n]["choices"], "difficulty": qs[n]["difficulty"]}
     else:
         out["shots"] = st["shots"]
         if not out["finished"]:

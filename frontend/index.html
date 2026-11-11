@@ -2312,7 +2312,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.11.3';
+  const SITE_VERSION = '2026.11.11.6';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -4046,7 +4046,7 @@
       if (fb) {
         h = '<div class="mg-prog">' + (fb.correct ? '✅ Bonne réponse !' : '❌ Raté…') + ' · score ' + s.score + ' / ' + s.rounds + '</div><div class="mg-q">' + escapeHtml(fb.q) + '</div>' + fb.choices.map((c, i) => '<div class="mg-choice ' + (i === fb.answer ? 'good' : i === fb.choice ? 'bad' : '') + '">' + escapeHtml(c) + '</div>').join('') + '<p class="mg-why">' + escapeHtml(fb.why) + '</p><button class="btn-primary" type="button" id="mgNext">' + (s.finished ? 'Voir mon score' : 'Question suivante') + '</button>';
       } else if (s.finished) h = mgEnd(s);
-      else if (s.question) h = '<div class="mg-prog">Question ' + (s.question.index + 1) + ' / ' + s.rounds + ' · score ' + s.score + '</div><div class="mg-q">' + escapeHtml(s.question.text) + '</div>' + s.question.choices.map((c, i) => '<button class="mg-choice" type="button" data-choice="' + i + '">' + escapeHtml(c) + '</button>').join('');
+      else if (s.question) h = '<div class="mg-prog">Question ' + (s.question.index + 1) + ' / ' + s.rounds + ' · score ' + s.score + (s.question.difficulty ? ' · ' + ({facile: '🟢 facile', moyen: '🟠 moyenne', difficile: '🔴 difficile'})[s.question.difficulty] : '') + '</div><div class="mg-q">' + escapeHtml(s.question.text) + '</div>' + s.question.choices.map((c, i) => '<button class="mg-choice" type="button" data-choice="' + i + '">' + escapeHtml(c) + '</button>').join('');
     } else {
       const shots = s.shots.map(x => x.goal ? '⚽' : x.missed ? '💨' : '🧤'), rest = s.finished ? 0 : s.rounds - shots.length, row = '<div class="mg-shots">' + shots.join('') + '⚪'.repeat(rest) + '</div>';
       if (s.finished && !fb) h = row + mgEnd(s);
