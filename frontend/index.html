@@ -1639,6 +1639,9 @@
   const FAN_BONUS_PCT = { commune: 0.75, rare: 1.5, halloween: 1.5, noel: 1.5, epique: 2, secrete: 2, saison: 2.5, legendaire: 3 };
   // crédits rapportés par le Loup après chaque match 1v1 (10 premiers matchs du jour, 30 crédits par jour au plus)
   const LOUP_CREDITS = { commune: 1, rare: 2, halloween: 2, noel: 2, epique: 3, secrete: 3, saison: 4, legendaire: 5 };
+  // niveaux du Fan (+ % de bonus), de l'équipement (− % de fatigue) et du Loup (+ crédits par match) : game_logic.FAN_LEVEL_BONUS…
+  const BONUS_LEVEL = { fan: [0, 0.1, 0.2, 0.3, 0.4, 0.5], equip: [0, 1, 2, 3, 4, 5], loup: [0, 0, 1, 1, 1, 2] };
+  function bonusLvlChip(card){ return card.level ? '<span class="lvl-chip" title="Carte évoluée">Niv. ' + card.level + '</span>' : ''; }
   const loupRule = () => { const c = duelConfig || {}; return (c.loup_daily_matches || 10) + ' premiers matchs du jour, ' + (c.loup_daily_cap || 30) + ' crédits par jour maximum'; };
   const ED_SLOTS = Array.from({ length: 12 }, (_, i) => 'ed' + (i + 1));          // 12 emplacements d'éditions libres, créés depuis l'administration
   // Une édition libre reçoit automatiquement un style à 2 couleurs. Pour lui donner un habillage dessiné à la main (comme les toiles d'Halloween
@@ -1663,7 +1666,7 @@
     const kind = cardKind(card);
     let statsRow, posteLabel, midHTML;
     if (kind === 'equipement') {
-      statsRow = '<div class="card-stats" title="Réduit la fatigue des cartes en match 1v1 (utile uniquement en 1v1)"><span>🎒 −' + (EQUIP_FATIGUE_PCT[card.tier] || 0) + ' % fatigue</span></div>';
+      statsRow = '<div class="card-stats" title="Réduit la fatigue des cartes en match 1v1 (utile uniquement en 1v1)"><span>🎒 −' + ((EQUIP_FATIGUE_PCT[card.tier] || 0) + (BONUS_LEVEL.equip[card.level || 0] || 0)) + ' % fatigue</span>' + bonusLvlChip(card) + '</div>';
       posteLabel = '🎒';
     } else if (kind === 'stade') {
       statsRow = '<div class="card-stats"><span>🏟️ STADE</span></div>';
@@ -1681,10 +1684,10 @@
       statsRow = '<div class="card-stats" title="' + (trophyParts(card).rank === 6 ? 'Carte exclusive du Pass' : [4, 5].includes(trophyParts(card).rank) ? 'Carte de tournoi' : 'Trophée de saison') + ' : un souvenir"><span>🏆 ' + escapeHtml(trophyParts(card).label) + '</span></div>';
       posteLabel = trophyMedalOf(card);
     } else if (kind === 'mascotte') {
-      statsRow = '<div class="card-stats" title="Crédits gagnés après chaque match 1v1 (10 premiers matchs du jour, 30 crédits par jour maximum)"><span>🐺 +' + (LOUP_CREDITS[card.tier] || 0) + ' cr./match</span></div>';
+      statsRow = '<div class="card-stats" title="Crédits gagnés après chaque match 1v1 (10 premiers matchs du jour, 30 crédits par jour maximum)"><span>🐺 +' + ((LOUP_CREDITS[card.tier] || 0) + (BONUS_LEVEL.loup[card.level || 0] || 0)) + ' cr./match</span>' + bonusLvlChip(card) + '</div>';
       posteLabel = '🐺';
     } else if (kind === 'fan') {
-      statsRow = '<div class="card-stats" title="Bonus d\'équipe en match (1v1, tournoi, défi du club)"><span>🎉 +' + pctFr(FAN_BONUS_PCT[card.tier]) + ' %</span>' + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
+      statsRow = '<div class="card-stats" title="Bonus d\'équipe en match (1v1, tournoi, défi du club)"><span>🎉 +' + pctFr((FAN_BONUS_PCT[card.tier] || 0) + (BONUS_LEVEL.fan[card.level || 0] || 0)) + ' %</span>' + bonusLvlChip(card) + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
       posteLabel = '🎉';
     } else {
       statsRow = '<div class="card-stats"><span>⭐ ' + (card.display_note ? card.display_note.value : '') + '</span>' + (card.level ? '<span class="lvl-chip" title="Carte évoluée : +' + (LEVEL_BONUS[card.level] || 0) + ' de note">Niv. ' + card.level + '</span>' : '') + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
@@ -1890,7 +1893,7 @@
         document.getElementById('shareCardBtn').addEventListener('click', () => openShareCard(card));
       }
       if (card && card.quantity > 0 && !card._viewing && card.id) loadPriceBox(body, card);                         // prix moyen et prix max de ses ventes
-      if (card && card.quantity > 0 && !card._viewing && card.id && kind === 'joueur') loadLevelBox(body, card);      // faire évoluer cette carte
+      if (card && card.quantity > 0 && !card._viewing && card.id && ['joueur', 'fan', 'mascotte', 'equipement'].includes(kind)) loadLevelBox(body, card);      // faire évoluer cette carte (joueur, Fan, Loup, équipement)
       document.getElementById('userCollectionModal').style.display = 'flex';
     } catch(e) { toast(e.message); }
   }
@@ -1953,22 +1956,25 @@
     if (!body.isConnected) return;
     const box = document.createElement('div'); box.className = 'lvl-box';
     if (!i.eligible) { box.innerHTML = '<h4>⬆️ Niveau de la carte</h4><p class="lvl-why" style="margin:0;">' + escapeHtml(i.reason) + '</p>'; body.appendChild(box); return; }
-    const pips = '★'.repeat(i.level) + '☆'.repeat(i.max_level - i.level);
+    const pips = '★'.repeat(i.level) + '☆'.repeat(i.max_level - i.level), bonus = !!i.bonus_card;      // bonus : Fan, Loup ou équipement (un effet, pas de note)
+    const dupesTxt = ' Tu as <b>' + i.dupes + ' doublon' + (i.dupes > 1 ? 's' : '') + '</b> de cette carte : chaque niveau en consomme (ta carte évoluée, elle, reste).';
     let h = '<h4>⬆️ Niveau ' + i.level + ' / ' + i.max_level + ' <span class="lvl-pips">' + pips + '</span></h4>' +
-      '<div>Note en match : <b>' + i.note + '</b>' + (i.level ? ' (' + i.base_note + ' + ' + (i.level_bonus != null ? i.level_bonus : LEVEL_BONUS[i.level]) + ')' : '') + '. Bonus cumulé : niveau 1 +2, 2 +3, 3 +4, 4 +6, 5 +8. Tu as <b>' + i.dupes + ' doublon' + (i.dupes > 1 ? 's' : '') + '</b> de cette carte : chaque niveau en consomme (ta carte évoluée, elle, reste).</div>' +
-      '<table><tr><th>Niveau</th><th>Doublons utilisés</th><th>Crédits</th></tr>' + i.steps.map(st => '<tr class="' + (st.level === i.level + 1 ? 'cur' : '') + '"><td>' + (st.level <= i.level ? '✅ ' : '') + st.level + '</td><td>' + st.dupes + '</td><td>' + st.cost + '</td></tr>').join('') + '</table>';
-    if (i.next_level) h += '<div>Niveau ' + i.next_level + ' : <b>' + i.dupes + ' doublon' + (i.dupes > 1 ? 's' : '') + ' sur ' + i.dupes_needed + '</b> nécessaires (ils seront utilisés) · <b>' + i.cost + ' crédits</b> · note ' + i.note + ' → ' + i.next_note + '</div>';
+      (bonus ? '<div>Effet : <b>' + escapeHtml(i.effect) + '</b>.' + dupesTxt + '</div>'
+             : '<div>Note en match : <b>' + i.note + '</b>' + (i.level ? ' (' + i.base_note + ' + ' + (i.level_bonus != null ? i.level_bonus : LEVEL_BONUS[i.level]) + ')' : '') + '. Bonus cumulé : niveau 1 +2, 2 +3, 3 +4, 4 +6, 5 +8.' + dupesTxt + '</div>') +
+      '<table><tr><th>Niveau</th><th>Doublons utilisés</th><th>Crédits</th>' + (bonus ? '<th>Effet</th>' : '') + '</tr>' + i.steps.map(st => '<tr class="' + (st.level === i.level + 1 ? 'cur' : '') + '"><td>' + (st.level <= i.level ? '✅ ' : '') + st.level + '</td><td>' + st.dupes + '</td><td>' + st.cost + '</td>' + (bonus ? '<td>' + escapeHtml(i.effect_steps[st.level]) + '</td>' : '') + '</tr>').join('') + '</table>';
+    const change = bonus ? escapeHtml(i.effect) + ' → ' + escapeHtml(i.effect_next || '') : 'note ' + i.note + ' → ' + i.next_note;
+    if (i.next_level) h += '<div>Niveau ' + i.next_level + ' : <b>' + i.dupes + ' doublon' + (i.dupes > 1 ? 's' : '') + ' sur ' + i.dupes_needed + '</b> nécessaires (ils seront utilisés) · <b>' + i.cost + ' crédits</b> · ' + change + '</div>';
     h += '<div style="margin-top:8px;"><button class="btn-primary" type="button" id="lvlGo"' + (i.can ? '' : ' disabled') + '>' + (i.next_level ? '⬆️ Évoluer au niveau ' + i.next_level : 'Niveau maximal') + '</button></div>';
     if (i.reason) h += '<p class="lvl-why">' + escapeHtml(i.reason) + '</p>';
     h += '<p class="lvl-why">Le niveau suit la carte si tu la vends.</p>';
     box.innerHTML = h; body.appendChild(box);
     const go = box.querySelector('#lvlGo');
     if (go && i.can) go.addEventListener('click', async () => {
-      if (!(await confirmDialog('Faire évoluer ' + escapeHtml(card.player_name) + ' ?', '<p style="margin:0;">Niveau ' + i.next_level + ' pour <b>' + i.cost + ' crédits</b> et <b>' + i.dupes_needed + ' doublon' + (i.dupes_needed > 1 ? 's' : '') + '</b> (il t\'en restera ' + (i.dupes - i.dupes_needed) + ') : note ' + i.note + ' → <b>' + i.next_note + '</b>. Les doublons utilisés ne pourront plus être vendus ni servir aux cartes secrètes.</p>', 'Évoluer'))) return;
+      if (!(await confirmDialog('Faire évoluer ' + escapeHtml(card.player_name) + ' ?', '<p style="margin:0;">Niveau ' + i.next_level + ' pour <b>' + i.cost + ' crédits</b> et <b>' + i.dupes_needed + ' doublon' + (i.dupes_needed > 1 ? 's' : '') + '</b> (il t\'en restera ' + (i.dupes - i.dupes_needed) + ') : <b>' + change + '</b>. Les doublons utilisés ne pourront plus être vendus ni servir aux cartes secrètes.</p>', 'Évoluer'))) return;
       go.disabled = true;
       try {
         const r = await api('/cards/' + encodeURIComponent(card.id) + '/evolve', { method: 'POST' });
-        toast('⬆️ ' + card.player_name + ' passe au niveau ' + r.level + ' (note ' + r.note + ')');
+        toast('⬆️ ' + card.player_name + ' passe au niveau ' + r.level + (bonus ? ' (' + (r.info && r.info.effect || '') + ')' : ' (note ' + r.note + ')'));
         await refreshMe(true); await loadCollection();
         const fresh = myCollection.find(c => c.id === card.id) || card; openPlayerDetail(card.player_name, card.tier, fresh);
       } catch(e) { toast(e.message); go.disabled = false; }
@@ -2312,7 +2318,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.11.4';
+  const SITE_VERSION = '2026.11.11.5';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3494,7 +3500,8 @@
         '<h3>Les doublons</h3><ul><li><b>Les revendre</b> avec « Vendre doublon » (une fenêtre te demande de confirmer : la vente est <b>définitive</b>, sans retour) : commune ' + sv.commune + ' crédit, rare ' + sv.rare + ', gold ' + sv.gold + ', spéciale ' + sv.speciale + ', épique ' + sv.epique + ', légendaire ' + sv.legendaire + '.</li>' +
         '<li><b>Débloquer une carte secrète</b> : la carte secrète d\'un joueur affiche une jauge. Chaque doublon <b>commune</b> de ce joueur vaut <b>1 point</b>, chaque doublon <b>rare</b> vaut <b>' + r.secret_fusion.rare_value + ' points</b>. À <b>' + r.secret_fusion.cost + ' points</b>, le bouton « Débloquer » apparaît : les doublons nécessaires sont consommés (tu gardes toujours ton premier exemplaire de chaque carte).</li></ul>' +
         '<h3>Faire évoluer une carte ⬆️</h3><ul>' +
-        '<li>Les cartes de joueurs <b>communes</b>, <b>rares</b> et <b>éditions limitées</b> montent jusqu\'au <b>niveau 5</b>. Le niveau ajoute à la note de la carte en match (avant la forme, le malus hors poste et le bonus de capitaine) : <b>+2</b> au niveau 1, <b>+3</b> au niveau 2, <b>+4</b> au niveau 3, <b>+6</b> au niveau 4 et <b>+8</b> au niveau 5. C\'est ce qui pèse le plus dans un match : 5 cartes au niveau 3 valent plus qu\'une tactique gagnante. Les gold, secrètes, épiques, légendaires, spéciales, trophées, fans, mascottes et équipements n\'évoluent pas.</li>' +
+        '<li>Les cartes de joueurs <b>communes</b>, <b>rares</b> et <b>éditions limitées</b> montent jusqu\'au <b>niveau 5</b>. Le niveau ajoute à la note de la carte en match (avant la forme, le malus hors poste et le bonus de capitaine) : <b>+2</b> au niveau 1, <b>+3</b> au niveau 2, <b>+4</b> au niveau 3, <b>+6</b> au niveau 4 et <b>+8</b> au niveau 5. C\'est ce qui pèse le plus dans un match : 5 cartes au niveau 3 valent plus qu\'une tactique gagnante. Les gold, secrètes, épiques, légendaires, spéciales et trophées de joueurs n\'évoluent pas.</li>' +
+        '<li>Le <b>Fan</b>, le <b>Loup</b> et l\'<b>équipement</b> évoluent aussi (communes, rares, éditions, épiques et légendaires ; pas les secrètes), avec des gains modérés à chaque niveau : Fan <b>+0,1 %</b> de bonus d\'équipe par niveau (+0,5 % au niveau 5) ; équipement <b>−1 %</b> de fatigue en plus par niveau (jusqu\'à −30 % pour une légendaire au niveau 5) ; Loup <b>+1 crédit</b> par match aux niveaux 2 et 5, et un plafond du jour relevé de 2 crédits par niveau. Épiques et légendaires : <b>1 doublon</b> par niveau.</li>' +
         '<li>Un niveau se paie en <b>crédits</b> et en <b>doublons</b> de cette carte, qui sont <b>utilisés</b> : à toi de choisir entre faire évoluer tes cartes ou garder tes doublons pour les vendre ou débloquer les cartes secrètes. Doublons utilisés pour les niveaux 1 à 5 : commune 5, 10, 20, 50, 100 ; rare 1, 3, 5, 12, 25 ; édition limitée 1, 3, 5, 8, 10. Ta carte évoluée, elle, reste.</li>' +
         '<li>Coût en crédits des niveaux 1 à 5 : commune 15, 30, 60, 100, 160 ; rare 30, 65, 125, 210, 335 ; édition limitée 40, 85, 170, 280, 450. Pas de limite par jour.</li>' +
         '<li>Tout se fait dans la <b>fiche de la carte</b> (touche-la dans ta collection) : niveau, doublons (« 7 sur 10 nécessaires »), coût et bouton « Évoluer ». Un badge « Niv. N » s\'affiche sur la carte.</li>' +
@@ -4632,17 +4639,17 @@
 
     const fans = myCollection.filter(c => c.quantity > 0 && cardKind(c) === 'fan');
     byId('tmFan').innerHTML = '<option value="">— aucun —</option>' + fans.map(c =>
-      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', ' + bonusTxt(cfg.fan_bonus[c.tier], c) + ')</option>').join('');
+      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + lvTxt(c) + ', ' + bonusTxt(fanValue(c), c) + ')</option>').join('');
 
     // équipements : jusqu'à cfg.max_equipment, tous différents, leur bonus s'ajoute à celui du Fan
     tm.equip = myCollection.filter(c => c.quantity > 0 && cardKind(c) === 'equipement')
-      .sort((a, b) => ((cfg.equipment_fatigue_reduction || {})[b.tier] || 0) - ((cfg.equipment_fatigue_reduction || {})[a.tier] || 0) || a.player_name.localeCompare(b.player_name, 'fr'));
+      .sort((a, b) => equipValue(b) - equipValue(a) || a.player_name.localeCompare(b.player_name, 'fr'));
     byId('tmEquipLabel').textContent = cfg.max_equipment > 1 ? 'Équipement (optionnel, ' + cfg.max_equipment + ' au maximum : moins de fatigue, utile uniquement en 1v1)' : 'Équipement (optionnel, un seul : moins de fatigue, utile uniquement en 1v1)';
     const mascots = myCollection.filter(c => c.quantity > 0 && cardKind(c) === 'mascotte');
     byId('tmMascot').innerHTML = '<option value="">— aucun —</option>' + mascots.map(c =>
-      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', +' + ((cfg.loup_credits || LOUP_CREDITS)[c.tier] || 0) + ' crédits par match 1v1)</option>').join('');
+      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + lvTxt(c) + ', +' + (((cfg.loup_credits || LOUP_CREDITS)[c.tier] || 0) + ((cfg.loup_level_credits || [])[c.level || 0] || 0)) + ' crédits par match 1v1)</option>').join('');
     const equipOptions = '<option value="">— aucun —</option>' + tm.equip.map(c =>
-      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + ', −' + pctFr(((cfg.equipment_fatigue_reduction || {})[c.tier] || 0) * 100) + ' % de fatigue en 1v1)</option>').join('');
+      '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' (' + tierLabel(c.tier) + lvTxt(c) + ', −' + pctFr(equipValue(c) * 100) + ' % de fatigue en 1v1)</option>').join('');
     byId('tmEquip').innerHTML = tm.equip.length ? Array.from({ length: cfg.max_equipment }, () => '<select>' + equipOptions + '</select>').join('') : '';
     refreshTeamBonus();
 
@@ -4701,13 +4708,14 @@
     const used = new Set(sels.map(s => s.value).filter(Boolean));
     sels.forEach(sel => [...sel.options].forEach(o => { o.disabled = !!o.value && used.has(o.value) && o.value !== sel.value; }));
     refreshSynergy();
-    const fan = tm.byId[byId('tmFan').value], fanPct = fan ? Math.round((cfg.fan_bonus[fan.tier] || 0) * tmForm(fan) * 100) / 100 : 0;
+    const fan = tm.byId[byId('tmFan').value], fanPct = fan ? Math.round(fanValue(fan) * tmForm(fan) * 100) / 100 : 0;
     const mascot = tm.byId[byId('tmMascot').value];
     const eqCards = sels.map(s => tm.byId[s.value]).filter(Boolean);
-    const red = Math.min(cfg.equipment_fatigue_max || 0.6, eqCards.reduce((n, c) => n + ((cfg.equipment_fatigue_reduction || {})[c.tier] || 0), 0));
+    const red = Math.min(cfg.equipment_fatigue_max || 0.6, eqCards.reduce((n, c) => n + ((cfg.equipment_fatigue_reduction || {})[c.tier] || 0), 0)) +
+      Math.max(0, ...eqCards.map(c => (cfg.equipment_level_reduction || [])[c.level || 0] || 0));      // + le niveau de la pièce la mieux montée
     const lines = [];
     lines.push(fan ? 'Bonus d\'équipe : Fan +' + pctFr(fanPct) + ' %' + (tmForm(fan) < 100 ? ' (forme ' + tmForm(fan) + ' %)' : '') : 'Aucun bonus d\'équipe (le Fan est le seul).');
-    if (mascot) lines.push(tmUsesForm() ? 'Loup : +' + ((cfg.loup_credits || LOUP_CREDITS)[mascot.tier] || 0) + ' crédits après le match (' + loupRule() + ')' : 'Loup : aucun crédit ici (seulement en 1v1)');
+    if (mascot) lines.push(tmUsesForm() ? 'Loup : +' + (((cfg.loup_credits || LOUP_CREDITS)[mascot.tier] || 0) + ((cfg.loup_level_credits || [])[mascot.level || 0] || 0)) + ' crédits après le match (' + loupRule() + ')' : 'Loup : aucun crédit ici (seulement en 1v1)');
     if (eqCards.length) lines.push(tmUsesForm() ? 'Équipement : −' + pctFr(red * 100) + ' % de fatigue' : 'Équipement : inutile ici (pas de fatigue, utile uniquement en 1v1)');
     if (tmUsesForm()) {                // forme de l'équipe : aujourd'hui, puis après ce match sans et avec l'équipement
       const players = tmSelects().map(s => tm.byId[s.value]).filter(Boolean);
@@ -4737,6 +4745,10 @@
   const tmNote = c => Math.round(c.display_note.value * tmForm(c) / 10) / 10;          // note du moment (forme comprise), à 0,1 près
   const tmNoteTxt = c => String(tmNote(c)).replace('.', ',');
   // bonus d'un Fan, d'un Loup ou d'un équipement avec sa forme du jour (1v1) : « +7,76 % · forme 97 % »
+  // niveaux des cartes Fan, Loup et équipement (card_levels) : petits gains en plus de la rareté
+  function lvTxt(c){ return c && c.level ? ', niv. ' + c.level : ''; }
+  function fanValue(c){ const cfg = duelConfig || {}; return ((cfg.fan_bonus || {})[c.tier] || 0) + ((cfg.fan_level_bonus || [])[c.level || 0] || 0); }
+  function equipValue(c){ const cfg = duelConfig || {}; return ((cfg.equipment_fatigue_reduction || {})[c.tier] || 0) + ((cfg.equipment_level_reduction || [])[c.level || 0] || 0); }
   function bonusTxt(b, c){ const f = tmForm(c), v = Math.round((b || 0) * f * 100) / 100; return '+' + String(v).replace('.', ',') + ' %' + (f < 100 ? ' · forme ' + f + ' %' : ''); }
   function slotOptionsHTML(cat){
     const cfg = duelConfig, malus = Math.round(cfg.out_of_position_malus * 100);

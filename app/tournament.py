@@ -201,8 +201,9 @@ def _prepare(db, user, spec):
     except duel_engine.DuelError:
         return None
     from . import card_levels
-    side = {"pseudo": user.pseudo, "formation": spec["formation"], "tactic": spec["tactic"],
-            "members": duel_engine.build_members(cards, cap.id if cap else None, card_levels.levels_for(db, user.id))}      # niveaux au moment du match
+    lv = card_levels.levels_for(db, user.id)
+    side = {"pseudo": user.pseudo, "formation": spec["formation"], "tactic": spec["tactic"], "levels": lv,
+            "members": duel_engine.build_members(cards, cap.id if cap else None, lv)}      # niveaux au moment du match (joueurs et Fan)
     return side, fan, equip, mascot
 
 
@@ -213,8 +214,9 @@ def simulate(prep_a, prep_b) -> dict:
     ma = 1 + duel_engine.TACTIC_BONUS if wt == "a" else 1.0; mb = 1 + duel_engine.TACTIC_BONUS if wt == "b" else 1.0
     # « team_bonus » : bonus d'équipe de l'équipe du club (défi du club) ; jamais présent dans un match de tournoi
     # synergie formation + tactique : comme en 1v1 (aussi pour l'équipe du club) ; ni forme ni fatigue ici (tout le monde à 100 %)
-    att_a, def_a, *_ = duel_engine.team_powers(side_a["members"], fan_a, ma, eq_a, mas_a, side_a.get("team_bonus", 0.0), None, side_a["formation"], side_a["tactic"])
-    att_b, def_b, *_ = duel_engine.team_powers(side_b["members"], fan_b, mb, eq_b, mas_b, side_b.get("team_bonus", 0.0), None, side_b["formation"], side_b["tactic"])
+    fl = lambda side, fan: (side.get("levels") or {}).get(fan.id, 0) if fan is not None else 0      # niveau du Fan (le club n'en a pas)
+    att_a, def_a, *_ = duel_engine.team_powers(side_a["members"], fan_a, ma, eq_a, mas_a, side_a.get("team_bonus", 0.0), None, side_a["formation"], side_a["tactic"], fl(side_a, fan_a))
+    att_b, def_b, *_ = duel_engine.team_powers(side_b["members"], fan_b, mb, eq_b, mas_b, side_b.get("team_bonus", 0.0), None, side_b["formation"], side_b["tactic"], fl(side_b, fan_b))
     xg_a, xg_b = duel_engine.expected_goals(att_a, def_b), duel_engine.expected_goals(att_b, def_a)
     sa, sb = duel_engine.draw_goals(xg_a), duel_engine.draw_goals(xg_b)        # même tirage que le 1v1 (part acquise + Poisson)
     events = duel_engine.build_events(side_a, side_b, sa, sb, xg_a, xg_b, wt)

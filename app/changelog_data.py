@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-niveaux-fan-loup-equipement", "date": "2026-11-11", "category": "cartes", "title": "Le Fan, le Loup et l'équipement évoluent",
+     "text": "Tes cartes Fan, Loup et équipement peuvent maintenant monter jusqu'au niveau 5, avec des doublons et des crédits comme les joueurs. Chaque niveau donne un petit plus : Fan +0,1 % de bonus d'équipe, équipement −1 % de fatigue, Loup jusqu'à 2 crédits de plus par match et un plafond du jour relevé. Épiques et légendaires : 1 doublon par niveau."},
     {"id": "2026-11-packs-joueur", "date": "2026-11-11", "category": "économie", "title": "Packs joueur au shop",
      "text": "Chaque jour, le shop propose 4 packs joueur à 75 crédits, qui garantissent la carte rare d'un joueur, et un pack premium qui garantit une carte plus rare d'un joueur : édition limitée en cours (200 crédits), épique (300) ou spéciale (400). Chaque pack contient 3 cartes, sans limite d'achat."},
     {"id": "2026-11-forme-gardien", "date": "2026-11-11", "category": "règles", "title": "Forme et gardien en 1v1",
