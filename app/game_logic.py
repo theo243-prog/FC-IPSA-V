@@ -71,7 +71,7 @@ PACK_TYPES = {
 
 # Fusion vers la carte SECRÈTE d'un joueur / fan / mascotte : 100 « points » de doublons.
 # Un doublon commune vaut 1 point, un doublon rare en vaut 5.
-SECRET_FUSION_COST = 300          # points de doublons pour débloquer une secrète (x3 en novembre 2026, avant 100)
+SECRET_FUSION_COST = 200          # points de doublons pour débloquer une secrète (200 depuis le 11/11/2026 ; 300 le 10/11, 100 avant)
 RARE_FUSION_VALUE = 5
 
 

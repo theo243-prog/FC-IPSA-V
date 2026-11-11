@@ -43,9 +43,20 @@ bb, ba = r11["credits_instead"].get("bob"), r11["credits_instead"].get("alice")
 ok(set(r11["pack_none_to"]) == {"bob", "alice"} and not r11["pack_match_won"] and r11["pack_classique_to"] == [] and tokens("bob") == (10, 0) and tokens("alice") == (0, 10), "11e match : plus aucun pack, ni pour bob ni pour alice")
 ok(bb in range(1, 6) and ba in range(1, 6) and credits("bob") - cb == 1 + bb and credits("alice") - ca == -1 + ba, "chacun reçoit 1 à 5 crédits (bob +%s en plus de la mise gagnée, alice +%s malgré la défaite)" % (bb, ba))
 ok(r11["elo_challenger_after"] > r11["elo_challenger_before"] and r11["duel_pack_cap"] == 10, "le match compte quand même : Elo en hausse")
-got = [match("bob")["credits_instead"] for _ in range(20)]; vals = [g[k] for g in got for k in g]
-ok(len(vals) == 40 and all(1 <= v <= 5 for v in vals) and len(set(vals)) >= 3, "20 matchs de plus : des crédits à chaque fois, toujours entre 1 et 5 (%s)" % sorted(set(vals)))
+got = [match("bob")["credits_instead"] for _ in range(5)]; vals = [g[k] for g in got for k in g]
+ok(len(vals) == 10 and all(1 <= v <= 5 for v in vals), "5 matchs de plus : des crédits à chaque fois, toujours entre 1 et 5 (%s)" % sorted(set(vals)))
 rn = match("nul"); ok(rn["result"] == "nul" and set(rn["credits_instead"]) == {"bob", "alice"} and rn["pack_classique_to"] == [], "un nul après la limite : des crédits aussi, pas de pack")
+print("2 bis) 50 CRÉDITS PAR JOUR AU MAXIMUM APRÈS LA LIMITE DES PACKS")
+day = {"bob": bb + sum(g.get("bob", 0) for g in got) + rn["credits_instead"]["bob"], "alice": ba + sum(g.get("alice", 0) for g in got) + rn["credits_instead"]["alice"]}
+more = []
+for _ in range(60):
+    if day["bob"] >= DE.AFTER_CAP_DAILY_MAX and day["alice"] >= DE.AFTER_CAP_DAILY_MAX: break
+    g = match("bob")["credits_instead"]; more.append(g)
+    for k in g: day[k] += g[k]
+ok(day == {"bob": 50, "alice": 50} and all(1 <= v <= 5 for g in more for v in g.values()), "après une vingtaine de matchs, chacun a reçu exactement 50 crédits de cette façon (le dernier gain est coupé pour ne pas dépasser)")
+cb, ca = credits("bob"), credits("alice"); rx = match("bob")
+ok(rx["credits_instead"] == {} and set(rx["pack_none_to"]) == {"bob", "alice"} and credits("bob") - cb == 1 and credits("alice") - ca == -1 and rx["elo_challenger_after"] > rx["elo_challenger_before"], "au-delà de 50 : plus de crédits (seulement la mise), mais le match compte (Elo)")
+ok(c.get("/duel/config").json().get("after_cap_daily_max") == 50, "/duel/config annonce le plafond de 50 crédits")
 print("3) LE CRÉATEUR DU DÉFI A LA MÊME RÈGLE")
 GL.today_paris = lambda: real_today() + timedelta(days=1)
 a0 = tokens("alice"); rs = [match("alice") for _ in range(11)]
@@ -58,9 +69,10 @@ print("5) FACE-À-FACE (depuis toujours)")
 from app.models import Duel
 vs = c.get("/users/alice/versus", headers=H["bob"]).json(); rows = db.query(Duel).count()
 ok(vs["pseudo"] == "alice" and vs["played"] == rows and vs["wins"] + vs["draws"] + vs["losses"] == rows, f"bob contre alice : {vs['played']} matchs ({vs['wins']} victoires, {vs['draws']} nul, {vs['losses']} défaites)")
-ok(vs["wins"] == 31 and vs["losses"] == 11 and vs["draws"] == 2 and vs["goals_for"] == 31 * 3 + 2 and vs["goals_against"] == 11 * 3 + 2, "le détail : 31 victoires de bob, 11 défaites, 2 nuls ; buts %d pour, %d contre" % (vs["goals_for"], vs["goals_against"]))
+BW = 10 + 1 + 5 + len(more) + 1                     # victoires de bob : 10, le 11e, 5 de plus, celles jusqu'aux 50 crédits, puis une au-delà
+ok(vs["wins"] == BW and vs["losses"] == 11 and vs["draws"] == 2 and vs["goals_for"] == BW * 3 + 2 and vs["goals_against"] == 11 * 3 + 2, "le détail : %d victoires de bob, 11 défaites, 2 nuls ; buts %d pour, %d contre" % (BW, vs["goals_for"], vs["goals_against"]))
 ok(vs["last"]["result"] == "nul" and vs["best_win"]["mine"] - vs["best_win"]["theirs"] == 3 and len(vs["recent"]) == 5, "dernier match (nul), plus large victoire (3-0), 5 derniers matchs")
-va = c.get("/users/bob/versus", headers=H["alice"]).json(); ok(va["wins"] == 11 and va["losses"] == 31 and va["goals_for"] == 35, "vu d'alice, c'est l'inverse (11 victoires, 31 défaites)")
+va = c.get("/users/bob/versus", headers=H["alice"]).json(); ok(va["wins"] == 11 and va["losses"] == BW and va["goals_for"] == 35, "vu d'alice, c'est l'inverse (11 victoires, %d défaites)" % BW)
 ok(c.get("/users/alice/versus", headers=H["alice"]).status_code == 400 and c.get("/users/inconnu/versus", headers=H["bob"]).status_code == 404 and c.get("/users/alice/versus").status_code == 401, "contre soi-même : 400 ; inconnu : 404 ; sans compte : 401")
 DE.draw_goals = real_draw; GL.today_paris = real_today
 print(); print("BILAN (10 packs 1v1 par jour, puis des crédits) :", "TOUT EST VERT" if not FAILS else f"{len(FAILS)} ÉCHEC(S) : {FAILS}")
