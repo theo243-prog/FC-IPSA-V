@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-quiz-100", "date": "2026-11-11", "category": "autre", "title": "Quiz foot : 100 questions",
+     "text": "Le quiz du jour pioche maintenant dans 100 questions. Chaque quiz pose 2 questions faciles, 2 moyennes et 1 difficile, avec la difficulté affichée."},
     {"id": "2026-11-niveaux-fan-loup-equipement", "date": "2026-11-11", "category": "cartes", "title": "Le Fan, le Loup et l'équipement évoluent",
      "text": "Tes cartes Fan, Loup et équipement peuvent maintenant monter jusqu'au niveau 5, avec des doublons et des crédits comme les joueurs. Chaque niveau donne un petit plus : Fan +0,1 % de bonus d'équipe, équipement −1 % de fatigue, Loup jusqu'à 2 crédits de plus par match et un plafond du jour relevé. Épiques et légendaires : 1 doublon par niveau."},
     {"id": "2026-11-packs-joueur", "date": "2026-11-11", "category": "économie", "title": "Packs joueur au shop",
