@@ -112,7 +112,7 @@ ok(lo["sound"] == "pass-halloween-son" and lo["badge"] == by["badge"][0] and lo[
 ok(c.post("/pass/sound", json={"item_id": None}, headers=H["p3"]).status_code == 200 and c.get("/me", headers=H["p3"]).json()["open_sound"] is None, "revenir au hurlement du loup (choix vide)")
 c.post("/pass/sound", json={"item_id": "pass-halloween-son"}, headers=H["p3"])
 r = c.post("/admin/unlock-cosmetics", json={"pseudo": "p1", "enabled": True}, headers=A); inv1 = c.get("/pass/inventory", headers=H["p1"]).json()
-ok(r.status_code == 200 and sorted(i["id"] for i in inv1["items"] if i["kind"] == "sound") == sorted(P.sound_id(t) for t in P.THEMES), "« tout débloquer » donne les 7 sons")
+ok(r.status_code == 200 and sorted(i["id"] for i in inv1["items"] if i["kind"] == "sound") == sorted([P.sound_id(t) for t in P.THEMES] + [i for i, it in P.ITEMS.items() if it.get("shop_sound")]), "« tout débloquer » donne les 7 sons des Pass et les sons du shop")
 ok(c.post("/pass/sound", json={"item_id": "pass-noel-son"}, headers=H["p1"]).status_code == 200 and c.get("/me", headers=H["p1"]).json()["open_sound"]["file"] == "sounds/noel.mp3", "p1 (tout débloqué) peut choisir le son de Noël")
 c.post("/admin/unlock-cosmetics", json={"pseudo": "p1", "enabled": False}, headers=A)
 ok(c.get("/me", headers=H["p1"]).json()["open_sound"] is None and c.get("/pass/inventory", headers=H["p1"]).json()["loadout"]["sound"] is None, "déblocage retiré : le son qu'il ne possède plus n'est plus joué (retour au hurlement)")

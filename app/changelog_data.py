@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-sons-shop", "date": "2026-11-11", "category": "autre", "title": "Un son d'ouverture chaque semaine au shop",
+     "text": "Chaque lundi, le shop propose un nouveau son d'ouverture de packs à 100 crédits. Une fois acheté, il est à toi pour toujours : choisis-le dans ton profil (🎨 Titre et cadre)."},
     {"id": "2026-11-quiz-100", "date": "2026-11-11", "category": "autre", "title": "Quiz foot : 100 questions",
      "text": "Le quiz du jour pioche maintenant dans 100 questions. Chaque quiz pose 2 questions faciles, 2 moyennes et 1 difficile, avec la difficulté affichée."},
     {"id": "2026-11-niveaux-fan-loup-equipement", "date": "2026-11-11", "category": "cartes", "title": "Le Fan, le Loup et l'équipement évoluent",
