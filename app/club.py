@@ -260,8 +260,9 @@ def play(level: str, payload: TeamPayload, user: User = Depends(get_current_user
                                                                     payload.fan_card_id, payload.equipment_card_ids, payload.mascot_card_id)
     except duel_engine.DuelError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)
-    mine = ({"pseudo": user.pseudo, "formation": payload.formation, "tactic": payload.tactic,
-             "members": duel_engine.build_members(cards, cap.id if cap else None, card_levels.levels_for(db, user.id))}, fan, equip, mascot)      # (le club n'a pas de niveaux)
+    lv = card_levels.levels_for(db, user.id)
+    mine = ({"pseudo": user.pseudo, "formation": payload.formation, "tactic": payload.tactic, "levels": lv,
+             "members": duel_engine.build_members(cards, cap.id if cap else None, lv)}, fan, equip, mascot)      # (le club n'a pas de niveaux)
     row = team_of_day(db, level, day)
     res = tournament.simulate(mine, club_side(db, level, row))
     res["lineups"]["defender"]["club_bonus_pct"] = round(spec["bonus"] * 100)          # (affiché dans les compositions du récit)

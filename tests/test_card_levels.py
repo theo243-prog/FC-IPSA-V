@@ -42,10 +42,11 @@ for t in ("gold", "secrete", "epique", "legendaire", "speciale"):
     r = c.get("/cards/%s/level" % card("Lucas", t).id, headers=H["ana"]).json(); e = c.post("/cards/%s/evolve" % card("Lucas", t).id, headers=H["ana"])
     ok(not r["eligible"] and "ne peut pas évoluer" in r["reason"] and e.status_code == 400, "%s : refusé avec la raison (« %s »)" % (t, r["reason"][:70]))
 fc = db.query(Card).filter_by(player_id=fan.id).first(); give("ana", fc, 30)
-ok("Seules les cartes de joueurs" in c.get("/cards/%s/level" % fc.id, headers=H["ana"]).json()["reason"], "carte de fan : refusée")
+fi = c.get("/cards/%s/level" % fc.id, headers=H["ana"]).json()
+ok(fi["eligible"] and fi.get("bonus_card") and "bonus d" in fi["effect"], "carte de fan : elle évolue aussi depuis le 11/11/2026 (effet : %s)" % fi.get("effect"))
 
 print("2) DOUBLONS REQUIS ET COÛTS")
-ok(CL.DUPES_REQUIRED == {"commune": [5, 10, 20, 50, 100], "rare": [1, 3, 5, 12, 25], "edition": [1, 3, 5, 8, 10]} and CL.COSTS == {"commune": [15, 30, 60, 100, 160], "rare": [30, 65, 125, 210, 335], "edition": [40, 85, 170, 280, 450]}, "paliers et coûts par rareté")
+ok(CL.DUPES_REQUIRED == {"commune": [5, 10, 20, 50, 100], "rare": [1, 3, 5, 12, 25], "edition": [1, 3, 5, 8, 10], "epique": [1, 1, 1, 1, 1], "legendaire": [1, 1, 1, 1, 1]} and CL.COSTS == {"commune": [15, 30, 60, 100, 160], "rare": [30, 65, 125, 210, 335], "edition": [40, 85, 170, 280, 450], "epique": [60, 120, 200, 300, 450], "legendaire": [80, 160, 260, 400, 600]}, "paliers et coûts par rareté (épique et légendaire : Fan, Loup et équipement seulement)")
 good = True
 for t, g in (("commune", "commune"), ("rare", "rare"), ("halloween", "edition")):
     cd = card("Lucas", t)

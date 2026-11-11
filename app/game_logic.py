@@ -415,10 +415,28 @@ EQUIPMENT_FATIGUE_REDUCTION = {"commune": 0.05, "rare": 0.10, "epique": 0.15, "l
 EQUIPMENT_FATIGUE_MAX = 0.25
 MAX_EQUIPMENT = 1
 
+# Niveaux des cartes Fan, Loup et Équipement (card_levels, 11/11/2026) : des gains MODÉRÉS, cumulés, du niveau 0 au niveau 5.
+FAN_LEVEL_BONUS = (0.0, 0.001, 0.002, 0.003, 0.004, 0.005)          # Fan : +0,1 point de bonus d'équipe par niveau (niveau 5 : +0,5 %), multiplié par sa forme
+EQUIPMENT_LEVEL_REDUCTION = (0.0, 0.01, 0.02, 0.03, 0.04, 0.05)     # Équipement : +1 point de réduction de la fatigue par niveau (au-delà du plafond de 25 %)
+LOUP_LEVEL_CREDITS = (0, 0, 1, 1, 1, 2)                             # Loup : crédits en plus par match 1v1 (niveaux 2 et 5)
+LOUP_LEVEL_DAILY_CAP = (0, 2, 4, 6, 8, 10)                          # … et plafond du jour relevé (30 + 10 au niveau 5)
 
-def equipment_fatigue_reduction(equipment_cards) -> float:
-    """Réduction de la perte de forme apportée par l'équipement d'une équipe (0 à EQUIPMENT_FATIGUE_MAX)."""
-    return min(EQUIPMENT_FATIGUE_MAX, sum(EQUIPMENT_FATIGUE_REDUCTION.get(c.tier.value, 0.0) for c in (equipment_cards or [])))
+
+def _lv(levels, card_id) -> int:
+    return max(0, min(5, int((levels or {}).get(card_id, 0) or 0)))
+
+
+def equipment_fatigue_reduction(equipment_cards, levels=None) -> float:
+    """Réduction de la perte de forme apportée par l'équipement d'une équipe : sa rareté (EQUIPMENT_FATIGUE_MAX au plus), plus le bonus
+    du niveau de la pièce la mieux montée (EQUIPMENT_LEVEL_REDUCTION, qui peut dépasser le plafond). levels : {carte: niveau} du propriétaire."""
+    cards = list(equipment_cards or [])
+    base = min(EQUIPMENT_FATIGUE_MAX, sum(EQUIPMENT_FATIGUE_REDUCTION.get(c.tier.value, 0.0) for c in cards))
+    return base + max([EQUIPMENT_LEVEL_REDUCTION[_lv(levels, c.id)] for c in cards] or [0.0])
+
+
+def fan_bonus_value(fan_card, level: int = 0) -> float:
+    """Bonus d'équipe d'un Fan (avant sa forme) : sa rareté + son niveau."""
+    return TIER_FAN_BONUS.get(fan_card.tier.value, 0.0) + FAN_LEVEL_BONUS[max(0, min(5, int(level or 0)))] if fan_card is not None else 0.0
 
 # Les cartes "qui ne sont pas des joueurs" sont repérées par leur poste (comme les Fans) :
 #   FAN... -> supporter / mascotte ; EQUIPEMENT -> équipement ; STADE -> stade ; autre -> joueur.

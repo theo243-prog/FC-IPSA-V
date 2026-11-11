@@ -37,13 +37,18 @@ DUPES_REQUIRED = {                       # doublons consommés pour acheter le n
     "commune": [5, 10, 20, 50, 100],
     "rare": [1, 3, 5, 12, 25],
     "edition": [1, 3, 5, 8, 10],
+    "epique": [1, 1, 1, 1, 1],           # Fan, Loup et équipement seulement (11/11/2026) : leurs doublons épiques et légendaires sont rarissimes
+    "legendaire": [1, 1, 1, 1, 1],
 }
 COSTS = {                                # crédits du niveau 1, 2, 3, 4, 5 (novembre 2026 : commune -50 %, rare et édition -30 %)
     "commune": [15, 30, 60, 100, 160],
     "rare": [30, 65, 125, 210, 335],
     "edition": [40, 85, 170, 280, 450],
+    "epique": [60, 120, 200, 300, 450],
+    "legendaire": [80, 160, 260, 400, 600],
 }
-GROUP_LABELS = {"commune": "commune", "rare": "rare", "edition": "édition limitée"}
+GROUP_LABELS = {"commune": "commune", "rare": "rare", "edition": "édition limitée", "epique": "épique", "legendaire": "légendaire"}
+BONUS_KINDS = ("fan", "mascotte", "equipement")      # cartes qui évoluent sans note : Fan, Loup, équipement (game_logic.FAN_LEVEL_BONUS…)
 
 
 class CardLevel(Base):
@@ -80,13 +85,29 @@ class TradeLevel(Base):
 # ------------------------------------------------------------------------------- outils ----
 
 def group_of(card: Card):
-    """« commune », « rare » ou « edition » pour une carte qui peut évoluer, sinon None."""
+    """Le barème d'une carte qui peut évoluer, sinon None : « commune », « rare » ou « edition » pour un joueur ; pour un Fan, un Loup ou
+    un équipement, aussi « epique » et « legendaire » (jamais une secrète ni un trophée)."""
     t = card.tier.value
     if t in ("commune", "rare"):
         return t
     if t in game_logic.EDITION_TIERS:
         return "edition"
+    if t in ("epique", "legendaire") and game_logic.card_kind(card.player) in BONUS_KINDS:
+        return t
     return None
+
+
+def effect_text(card: Card, level: int) -> str:
+    """Ce que fait une carte Fan, Loup ou équipement à ce niveau (texte de la fiche)."""
+    kind, t, lv = game_logic.card_kind(card.player), card.tier.value, max(0, min(MAX_LEVEL, int(level or 0)))
+    if kind == "fan":
+        return "+%s %% de bonus d'équipe" % ("%g" % round(100 * game_logic.fan_bonus_value(card, lv), 2)).replace(".", ",")
+    if kind == "mascotte":
+        n = game_logic.LOUP_CREDITS_BY_TIER.get(t, 0) + game_logic.LOUP_LEVEL_CREDITS[lv]
+        return "%d crédit%s par match 1v1 (%d par jour au plus)" % (n, "s" if n > 1 else "", game_logic.LOUP_DAILY_CAP + game_logic.LOUP_LEVEL_DAILY_CAP[lv])
+    if kind == "equipement":
+        return "−%g %% de fatigue" % round(100 * (game_logic.EQUIPMENT_FATIGUE_REDUCTION.get(t, 0) + game_logic.EQUIPMENT_LEVEL_REDUCTION[lv]))
+    return ""
 
 
 # Complétion du JEU (profil et classement), en plus du % de collection : 100 % = toutes les cartes (mêmes cartes que le % de collection :
@@ -116,9 +137,13 @@ def game_completion(db: Session, user_ids=None) -> dict:
 def ineligible_reason(card: Card):
     """La raison pour laquelle cette carte ne peut pas évoluer (None si elle le peut)."""
     kind = game_logic.card_kind(card.player)
+    if kind in BONUS_KINDS:
+        if group_of(card) is None:
+            return "Cette carte ne peut pas évoluer : pour un Fan, un Loup ou un équipement, seules les communes, rares, éditions limitées, épiques et légendaires évoluent."
+        return None
     if kind != "joueur":
-        labels = {"fan": "un fan", "mascotte": "la mascotte", "equipement": "un équipement", "stade": "un stade", "moment": "un moment mémorable", "ecusson": "un écusson", "numerotee": "un exemplaire numéroté"}
-        return "Seules les cartes de joueurs évoluent : celle-ci est %s." % labels.get(kind, "une carte spéciale")
+        labels = {"stade": "un stade", "moment": "un moment mémorable", "ecusson": "un écusson", "numerotee": "un exemplaire numéroté"}
+        return "Seuls les joueurs, les Fans, le Loup et les équipements évoluent : celle-ci est %s." % labels.get(kind, "une carte spéciale")
     if group_of(card) is None:
         t = card.tier.value
         why = {"gold": "les cartes gold sont des souvenirs de match", "secrete": "une carte secrète a déjà sa note fixe",
@@ -192,6 +217,9 @@ def info(db: Session, user: User, card: Card) -> dict:
         return out
     g = group_of(card); out.update(eligible=True, group=g, group_label=GROUP_LABELS[g], dupes=_dupes(db, user.id, card.id),
                                    steps=[{"level": i + 1, "dupes": DUPES_REQUIRED[g][i], "cost": COSTS[g][i]} for i in range(MAX_LEVEL)])
+    if game_logic.card_kind(card.player) in BONUS_KINDS:                 # Fan, Loup, équipement : pas de note, un effet
+        out.update(bonus_card=True, effect=effect_text(card, lvl), effect_next=effect_text(card, lvl + 1) if lvl < MAX_LEVEL else None,
+                   effect_steps=[effect_text(card, i) for i in range(MAX_LEVEL + 1)])
     owned = db.query(OwnedCard).filter_by(user_id=user.id, card_id=card.id).first()
     if not owned or owned.quantity < 1:
         out["reason"] = "Tu ne possèdes pas cette carte."
