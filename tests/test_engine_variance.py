@@ -34,7 +34,7 @@ def wdl(note_a, note_b, old=False, formation="1-2-1"):
 
 
 print("1) CONSTANTES")
-ok(DE.XG_EXPONENT == 3.0 and DE.FORMATION_SKEW == 0.25 and DE.BASE_XG == 3.0 and DE.FIXED_GOALS_SHARE == 0.5, "exposant 3, skew 0,25, xG de base 3, part acquise 0,5")
+ok(DE.XG_EXPONENT == 3.0 and DE.FORMATION_SKEW == 0.25 and DE.BASE_XG == 2.7 and DE.FIXED_GOALS_SHARE == 0.5 and DE.DEFENSE_WEIGHT["GB"] == 1.0, "moteur v4 : exposant 3, skew 0,25, xG de base 2,7 (gardien 1,0 en défense), part acquise 0,5")
 
 print("2) MÊME MOYENNE, MOINS DE VARIANCE")
 random.seed(1)
@@ -50,7 +50,7 @@ for xg in (0.4, 1.2, 1.99):
     ok(a == b, "xg %.2f : exactement les mêmes tirages qu'un Poisson pur" % xg)
 
 print("4) BUTS PAR FORMATION INCHANGÉS (cartes égales)")
-for f, want in (("2-1-1", 1.4), ("1-2-1", 2.0), ("1-1-2", 2.6)):
+for f, want in (("2-1-1", 1.4), ("1-2-1", 2.0), ("1-1-2", 2.7)):
     att, de, *_ = DE.team_powers(team(f, 85), None)
     ok(abs(DE.expected_goals(att, de) - want) < 0.1, "%s contre %s : %.2f buts attendus par équipe (≈ %.1f)" % (f, f, DE.expected_goals(att, de), want))
 att_o, def_o, *_ = DE.team_powers(team("1-1-2", 85), None); att_p, def_p, *_ = DE.team_powers(team("2-1-1", 85), None)

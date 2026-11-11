@@ -8,6 +8,10 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-forme-gardien", "date": "2026-11-11", "category": "règles", "title": "Forme et gardien en 1v1",
+     "text": "La forme est maintenant celle du joueur : toutes ses versions (commune, rare, édition, spéciale…) se fatiguent ensemble. Le gardien pèse un peu moins dans la défense de l'équipe."},
+    {"id": "2026-11-credits-1v1-secretes-200", "date": "2026-11-11", "category": "économie", "title": "Crédits des matchs 1v1 et cartes secrètes",
+     "text": "Après tes 10 premiers matchs 1v1 du jour, chaque match rapporte toujours 1 à 5 crédits, mais 50 crédits par jour au maximum. Il faut maintenant 200 points de doublons pour débloquer une carte secrète, au lieu de 300."},
     {"id": "2026-11-succes-v2", "date": "2026-11-10", "category": "autre", "title": "De nouveaux succès à débloquer",
      "text": "16 nouveaux succès arrivent, du court au long terme : faire évoluer tes cartes, pronostiquer, jouer au mini-jeu, battre le club, gagner des enchères et des matchs de tournoi, terminer le Pass, compléter le jeu… Plusieurs succès existants gagnent un niveau Légende, et chaque niveau rapporte plus de crédits."},
     {"id": "2026-11-trophees-assidus", "date": "2026-11-10", "category": "cartes", "title": "Trophées des plus assidus",

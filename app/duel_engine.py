@@ -77,7 +77,8 @@ SYNERGY = {"pressing": "1-1-2", "possession": "1-2-1", "contre": "2-1-1"}
 SYNERGY_BONUS = 0.02
 
 DUEL_PACK_DAILY_CAP = 10   # au plus 10 packs gagnés en 1v1 par jour et par joueur : pack match si on gagne, classique si on perd ou fait nul
-AFTER_CAP_CREDITS = (1, 5) # au-delà des 10 packs du jour : chaque match rapporte à la place 1 à 5 crédits au hasard (sans limite), plus aucune carte
+AFTER_CAP_CREDITS = (1, 5) # au-delà des 10 packs du jour : chaque match rapporte à la place 1 à 5 crédits au hasard, plus aucune carte
+AFTER_CAP_DAILY_MAX = 50   # … et 50 crédits par jour au plus de cette façon (compteur « after_cap_credits » de missions.daily_count ; avant : sans limite)
 REFEREE_BONUS = 0.02     # bonus d'équipe (+2 %, avant 5 %) donné par l'arbitre à celui qui a mis la plus grosse enveloppe
 STAKE_MIN, STAKE_MAX = 1, 10
 MAX_OPEN_PROPOSALS = 3
@@ -98,7 +99,7 @@ HALF_TIME_MINUTE = 20
 # Poids de chaque emplacement dans la ligne d'attaque / la ligne de défense (le milieu compte
 # dans les deux). La force d'une ligne est la MOYENNE pondérée des notes de ses joueurs.
 ATTACK_WEIGHT = {"ATT": 1.0, "MC": 0.5, "DEF": 0.0, "GB": 0.0}
-DEFENSE_WEIGHT = {"ATT": 0.0, "MC": 0.5, "DEF": 1.0, "GB": 1.5}
+DEFENSE_WEIGHT = {"ATT": 0.0, "MC": 0.5, "DEF": 1.0, "GB": 1.0}     # gardien 1,0 depuis le 11/11/2026 (avant 1,5 : il faisait 43 % de la défense)
 # La disposition donne un "style" : offensive = plus de buts des deux côtés, prudente = moins.
 # Elle ne rend pas l'équipe plus forte en soi (attaque x défense reste constant) : elle décide
 # surtout quelles cartes comptent le plus (attaquants en 1-1-2, défenseurs/gardien en 2-1-1).
@@ -107,8 +108,11 @@ DEFENSE_WEIGHT = {"ATT": 0.0, "MC": 0.5, "DEF": 1.0, "GB": 1.5}
 # - FORMATION_SKEW 0,25 (au lieu de 0,5) : avec l'exposant 3, les buts attendus par formation restent les mêmes
 #   (le style compte comme r^(skew x exposant) = r^0,75 dans les deux cas) : 1,4 (2-1-1), 2,0 (1-2-1), 2,6 (1-1-2) par équipe.
 # - FIXED_GOALS_SHARE 0,5 : une part des buts attendus est « acquise » (voir draw_goals) : même moyenne, moins de hasard.
+# Moteur v4 (11/11/2026) : gardien à 1,0 en défense (au lieu de 1,5). L'exposant reste à 3 (pas plus de hasard : décidé ainsi).
+# Le gardien plus léger change les unités de défense des formations : BASE_XG passe à 2,7 pour garder les mêmes buts,
+# 1,4 (2-1-1), 2,0 (1-2-1), 2,7 (1-1-2) par équipe ; le skew 0,25 garde le même effet de formation (r^0,75).
 FORMATION_SKEW = 0.25
-BASE_XG = 3.0                    # donne ~2 buts par équipe dans un match équilibré (1-2-1 contre 1-2-1)
+BASE_XG = 2.7                    # donne ~2 buts par équipe dans un match équilibré (1-2-1 contre 1-2-1)
 XG_EXPONENT = 3.0                # plus il est grand, plus l'écart de niveau pèse sur le score
 FIXED_GOALS_SHARE = 0.5          # part des buts attendus marqués à coup sûr (arrondie vers le bas)
 
@@ -141,6 +145,7 @@ def get_config() -> dict:
         "stake_min": STAKE_MIN,
         "stake_max": STAKE_MAX,
         "max_open_proposals": MAX_OPEN_PROPOSALS,
+        "after_cap_daily_max": AFTER_CAP_DAILY_MAX,
         "fan_bonus": TIER_FAN_BONUS,
         "mascot_bonus": TIER_MASCOT_BONUS,
         "equipment_bonus": TIER_EQUIPMENT_BONUS,
@@ -688,10 +693,12 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
             classic_won.append(player)
     for player in classic_won:
         player.pack_state.shop_pack_tokens += 1
-    for player in no_pack:                                    # 10 packs déjà gagnés aujourd'hui : 1 à 5 crédits à la place, à chaque match
-        n = random.randint(*AFTER_CAP_CREDITS)
-        player.credits += n
-        credits_instead[player.pseudo] = n
+    for player in no_pack:                                    # 10 packs déjà gagnés aujourd'hui : 1 à 5 crédits à la place, 50 par jour au plus
+        n = min(random.randint(*AFTER_CAP_CREDITS), max(0, AFTER_CAP_DAILY_MAX - missions.daily_count(db, player, "after_cap_credits")))
+        if n > 0:
+            player.credits += n
+            missions.daily_add(db, player, "after_cap_credits", n)
+            credits_instead[player.pseudo] = n
     loup = {challenger.pseudo: loup_credits(db, challenger, mascot_c), creator.pseudo: loup_credits(db, creator, mascot_d)}      # chaque équipe pour elle-même
     referee = {"challenger": referee_bid, "defender": bid_d, "winner": ref_winner, "bonus_pct": round(REFEREE_BONUS * 100) if ref_winner else 0}
     lineups = {"challenger": _lineup_snapshot(side_c, fan_c, equip_c, mascot_c, ref_c, forms_c, loup[challenger.pseudo]),
@@ -728,7 +735,7 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
         "pack_match_to": pack_winner.pseudo if pack_winner else None,
         "pack_classique_to": [p.pseudo for p in classic_won],
         "pack_none_to": [p.pseudo for p in no_pack],                   # 10 packs 1v1 déjà gagnés aujourd'hui : aucun pack pour ce match…
-        "credits_instead": credits_instead,                            # … mais 1 à 5 crédits au hasard à la place : {pseudo: crédits}
+        "credits_instead": credits_instead,                            # … mais 1 à 5 crédits au hasard à la place (50 par jour au plus) : {pseudo: crédits}
         "duel_pack_cap": DUEL_PACK_DAILY_CAP,
         "loup_credits": {k: v for k, v in loup.items() if v},               # crédits rapportés par le Loup à ce match : {pseudo: crédits}
         "tactics": {"challenger": tactic, "defender": proposal.tactic,
