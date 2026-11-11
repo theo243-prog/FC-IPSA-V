@@ -1,6 +1,6 @@
 """
 Test : au plus 10 packs gagnés par jour en 1v1 (pack match si on gagne, classique si on perd ou fait nul). Au-delà, chaque match rapporte 1 à 5 crédits
-au hasard à la place, sans limite, tout en continuant à rapporter mises, Elo et missions.
+au hasard à la place (50 par jour au plus), tout en continuant à rapporter mises, Elo et missions.
 Lancer comme test_tournament.py (voir tests/LISEZMOI.md).
 """
 import itertools
@@ -54,8 +54,9 @@ for _ in range(60):
     g = match("bob")["credits_instead"]; more.append(g)
     for k in g: day[k] += g[k]
 ok(day == {"bob": 50, "alice": 50} and all(1 <= v <= 5 for g in more for v in g.values()), "après une vingtaine de matchs, chacun a reçu exactement 50 crédits de cette façon (le dernier gain est coupé pour ne pas dépasser)")
-cb, ca = credits("bob"), credits("alice"); rx = match("bob")
-ok(rx["credits_instead"] == {} and set(rx["pack_none_to"]) == {"bob", "alice"} and credits("bob") - cb == 1 and credits("alice") - ca == -1 and rx["elo_challenger_after"] > rx["elo_challenger_before"], "au-delà de 50 : plus de crédits (seulement la mise), mais le match compte (Elo)")
+dbc = lambda p: (db.expire_all(), db.query(User).filter_by(pseudo=p).first().credits)[1]      # lu en base : /me verserait les crédits d'un succès gagné entre-temps
+cb, ca = dbc("bob"), dbc("alice"); rx = match("bob")
+ok(rx["credits_instead"] == {} and set(rx["pack_none_to"]) == {"bob", "alice"} and dbc("bob") - cb == 1 and dbc("alice") - ca == -1 and rx["elo_challenger_after"] > rx["elo_challenger_before"], "au-delà de 50 : plus de crédits (seulement la mise), mais le match compte (Elo)")
 ok(c.get("/duel/config").json().get("after_cap_daily_max") == 50, "/duel/config annonce le plafond de 50 crédits")
 print("3) LE CRÉATEUR DU DÉFI A LA MÊME RÈGLE")
 GL.today_paris = lambda: real_today() + timedelta(days=1)
