@@ -295,6 +295,9 @@ def settle(db: Session, a) -> tuple:
     """Fin d'une enchère du club (appelée par auctions._settle). Le gagnant reçoit l'exemplaire avec son numéro ; ses crédits, déjà
     retirés au moment de l'enchère, sont détruits (le club n'est pas un compte). Sans enchère : l'exemplaire reste dans la réserve."""
     lot = db.get(ClubAuctionLot, a.id)
+    if lot is not None and lot.status != "open":                 # déjà réglée : on ne rembourse ni ne change rien (jamais deux règlements)
+        db.delete(a)
+        return (lot.winner_id if lot.status == "won" else None), CLUB_SELLER
     winner = db.get(User, a.top_bidder_id) if a.top_bidder_id else None
     s = db.get(numbered.NumberedSeries, lot.series_id) if lot else None
     won = None

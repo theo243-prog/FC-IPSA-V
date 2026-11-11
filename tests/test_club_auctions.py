@@ -171,6 +171,13 @@ nmsg = len(club_msgs())
 at("2026-11-10T17:00:00"); tick()
 la = db.get(CA.ClubAuctionLot, aA)
 ok(la.status == "won" and la.winner_pseudo == last_who and la.price == last_amount and owner(la.card_id) == [last_who], "17h00 : l'enchère prolongée se termine d'abord (%s, %d crédits)" % (last_who, last_amount))
+wu = db.query(User).filter_by(pseudo=last_who).first(); wc = wu.credits; nwon = len(club_msgs())
+ghost = AU.Auction(id=aA, seller_id=CA.CLUB_SELLER, card_id=la.card_id, start_price=20, current_bid=last_amount, top_bidder_id=wu.id, bids=1,
+                   ends_at=datetime(2026, 11, 10, 17, 0), created_at=datetime(2026, 11, 10, 16, 0))      # la même enchère, vue par un 2e règlement en même temps
+db.add(ghost); db.flush(); CA.settle(db, ghost); db.commit(); db.expire_all()
+la = db.get(CA.ClubAuctionLot, aA)
+ok(la.status == "won" and la.winner_pseudo == last_who and db.get(User, wu.id).credits == wc and owner(la.card_id) == [last_who] and db.get(AU.Auction, aA) is None,
+   "réglée deux fois (tâche de fond + page du marché en même temps) : le 2e règlement ne change rien (pas de remboursement, lot toujours gagné)")
 T1 = credits_total()
 ok(T0 - T1 == last_amount + 30 + 25, "crédits détruits : le total des crédits du jeu baisse exactement des prix payés (%d)" % (last_amount + 55))
 ok(not db.query(User).filter_by(pseudo="club").first() and all(u.pseudo != "club" for u in db.query(User).all()), "aucun compte « club » n'a reçu de crédits")

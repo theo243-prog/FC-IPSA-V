@@ -105,8 +105,16 @@ def _settle(db: Session, a: Auction) -> None:
 
 
 def settle_due(db: Session) -> int:
+    """Termine les enchères échues. Appelée par la tâche de fond ET par les pages (marché, enchères du club) : deux appels peuvent
+    tomber en même temps (à 16h00, quand des joueurs ont le marché ouvert). Chaque enchère est donc verrouillée et relue avant d'être
+    réglée ; celle qu'un autre appel est en train de régler (ou a déjà réglée) est sautée. Sans ça, une même enchère était réglée deux fois
+    (carte donnée deux fois, vendeur payé deux fois ; au club : gagnant remboursé et lot annoncé « sans preneur »)."""
     n = 0
-    for a in db.query(Auction).filter(Auction.ends_at <= _now()).all():
+    now = _now()
+    for (aid,) in db.query(Auction.id).filter(Auction.ends_at <= now).all():
+        a = db.query(Auction).filter(Auction.id == aid).with_for_update(skip_locked=True).first()
+        if a is None or a.ends_at > now:
+            db.rollback(); continue                               # déjà réglée (ou en cours de règlement) ailleurs, ou prolongée
         won, seller_id = _settle(db, a); db.commit(); n += 1
         if won:
             missions.safe_record(db, db.get(User, won), "market_buy")
