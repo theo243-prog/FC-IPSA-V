@@ -99,7 +99,7 @@ HALF_TIME_MINUTE = 20
 # Poids de chaque emplacement dans la ligne d'attaque / la ligne de défense (le milieu compte
 # dans les deux). La force d'une ligne est la MOYENNE pondérée des notes de ses joueurs.
 ATTACK_WEIGHT = {"ATT": 1.0, "MC": 0.5, "DEF": 0.0, "GB": 0.0}
-DEFENSE_WEIGHT = {"ATT": 0.0, "MC": 0.5, "DEF": 1.0, "GB": 1.5}
+DEFENSE_WEIGHT = {"ATT": 0.0, "MC": 0.5, "DEF": 1.0, "GB": 1.0}     # gardien 1,0 depuis le 11/11/2026 (avant 1,5 : il faisait 43 % de la défense)
 # La disposition donne un "style" : offensive = plus de buts des deux côtés, prudente = moins.
 # Elle ne rend pas l'équipe plus forte en soi (attaque x défense reste constant) : elle décide
 # surtout quelles cartes comptent le plus (attaquants en 1-1-2, défenseurs/gardien en 2-1-1).
@@ -108,8 +108,11 @@ DEFENSE_WEIGHT = {"ATT": 0.0, "MC": 0.5, "DEF": 1.0, "GB": 1.5}
 # - FORMATION_SKEW 0,25 (au lieu de 0,5) : avec l'exposant 3, les buts attendus par formation restent les mêmes
 #   (le style compte comme r^(skew x exposant) = r^0,75 dans les deux cas) : 1,4 (2-1-1), 2,0 (1-2-1), 2,6 (1-1-2) par équipe.
 # - FIXED_GOALS_SHARE 0,5 : une part des buts attendus est « acquise » (voir draw_goals) : même moyenne, moins de hasard.
+# Moteur v4 (11/11/2026) : gardien à 1,0 en défense (au lieu de 1,5). L'exposant reste à 3 (pas plus de hasard : décidé ainsi).
+# Le gardien plus léger change les unités de défense des formations : BASE_XG passe à 2,7 pour garder les mêmes buts,
+# 1,4 (2-1-1), 2,0 (1-2-1), 2,7 (1-1-2) par équipe ; le skew 0,25 garde le même effet de formation (r^0,75).
 FORMATION_SKEW = 0.25
-BASE_XG = 3.0                    # donne ~2 buts par équipe dans un match équilibré (1-2-1 contre 1-2-1)
+BASE_XG = 2.7                    # donne ~2 buts par équipe dans un match équilibré (1-2-1 contre 1-2-1)
 XG_EXPONENT = 3.0                # plus il est grand, plus l'écart de niveau pèse sur le score
 FIXED_GOALS_SHARE = 0.5          # part des buts attendus marqués à coup sûr (arrondie vers le bas)
 

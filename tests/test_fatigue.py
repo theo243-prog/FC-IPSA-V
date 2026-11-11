@@ -36,7 +36,9 @@ ok(forms("ana") == {} and col("ana")["Mathis"]["form"] == 100, "au départ : tou
 r = duel()
 ok(all(m["form"] == 100 for side in ("challenger", "defender") for m in r["lineups"][side]["players"]), "1er match : joué à 100 % de forme")
 fa, fb = forms("ana"), forms("bob")
-ok(set(fa) == {card(n).id for n, _ in CORE} and all(abs(v - 0.99) < 1e-9 for v in fa.values()) and len(fb) == 5, "après le match : les 5 cartes de chaque équipe sont à 99 %")
+ok({card(n).id for n, _ in CORE} <= set(fa) and all(abs(v - 0.99) < 1e-9 for v in fa.values()) and {card(n).id for n, _ in CORE} <= set(fb), "après le match : les 5 cartes de chaque équipe sont à 99 %")
+ok(abs(fa[card("Mathis", "rare").id] - 0.99) < 1e-9 and card("Mathis", "rare").id not in [s["card_id"] for s in team["slots"]], "forme PAR PERSONNE : la rare de Mathis (pas jouée) est aussi à 99 %, comme sa commune")
+ok(card("Adrien").id not in fa if card("Adrien") else True, "une personne qui n'a pas joué reste à 100 %")
 ok(card("Sacha").id not in fa and col("ana")["Sacha"]["form"] == 100, "une carte qui n'a pas joué reste à 100 %")
 for _ in range(4): r = duel()
 m = {x["player"]: x for x in r["lineups"]["defender"]["players"]}

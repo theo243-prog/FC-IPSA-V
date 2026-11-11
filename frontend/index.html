@@ -2309,7 +2309,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.11.1';
+  const SITE_VERSION = '2026.11.11.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3560,7 +3560,7 @@
         '<li><b>' + cfg.max_equipment + ' Équipement</b> : aucun bonus de puissance, mais <b>moins de fatigue</b> pour toutes les cartes du match : commune −' + pctFr((er.commune || 0) * 100) + ' %, rare −' + pctFr((er.rare || 0) * 100) + ' %, épique −' + pctFr((er.epique || 0) * 100) + ' %, légendaire −' + pctFr((er.legendaire || 0) * 100) + ' % de perte de forme. <b>Utile uniquement en 1v1</b> (le tournoi et le défi du club ne fatiguent pas).</li></ul>' +
         '<h3>La forme des cartes 💪</h3><ul>' +
         '<li>Chaque carte que tu utilises dans un <b>match 1v1</b> (les 5 joueurs, le Fan, le Loup et l\'équipement) perd <b>1 % de forme</b> (moins avec un équipement) : la note d\'un joueur est multipliée par sa forme (85 à 97 % de forme vaut 82,5), tout comme le bonus d\'un Fan. Une petite barre sous la note montre la forme d\'une carte qui a déjà joué aujourd\'hui.</li>' +
-        '<li>La forme revient à <b>100 % chaque jour à minuit</b> (heure de Paris) et ne descend jamais sous 50 %. Les deux équipes d\'un défi se fatiguent.</li>' +
+        '<li>La forme revient à <b>100 % chaque jour à minuit</b> (heure de Paris) et ne descend jamais sous 50 %. Les deux équipes d\'un défi se fatiguent. La forme est celle de la <b>personne</b> : toutes les versions d\'un même joueur (commune, rare, édition, spéciale…) partagent la même forme.</li>' +
         '<li>Le <b>tournoi</b> et le <b>défi du club</b> jouent toujours à 100 % et ne fatiguent pas.</li>' +
         '<li>Pour garder une bonne note, <b>fais tourner tes cartes</b>, gardien compris. Le bouton <b>« ⚡ Meilleure équipe »</b> remplit chaque poste avec tes meilleures notes du moment.</li></ul>' +
         '<h3>Le niveau compte, le hasard un peu</h3><ul>' +

@@ -6,7 +6,9 @@ L'ÉQUIPEMENT réduit la perte de forme de toutes les cartes du match (game_logi
 La perte est comptée en centièmes de point de forme (colonne « loss » : 100 = 1 %) pour rester exacte avec l'équipement.
 But : faire tourner les cartes utilisées, y compris le gardien et les bonus.
 
-- Compté par joueur du site et par carte (deux joueurs différents ont chacun leur forme pour la même carte).
+- Compté par joueur du site et PAR PERSONNE (depuis le 11/11/2026) : toutes les versions d'une même personne (commune, rare, édition,
+  spéciale…) partagent la même forme. Les pertes restent enregistrées carte par carte et sont additionnées par personne à la lecture.
+  Deux joueurs du site différents ont chacun leur forme.
 - Seul le 1v1 compte et fatigue : le tournoi et le défi du club jouent toujours à 100 % (et ne fatiguent pas).
 - Les deux équipes d'un défi se fatiguent : celle du créateur et celle du challenger, au moment où le match est joué.
 - La forme ne descend jamais sous MIN_FORM (50 %).
@@ -15,6 +17,7 @@ from sqlalchemy import Column, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Session
 
 from .database import Base
+from .models import Card
 from . import game_logic
 
 FORM_LOSS_PER_MATCH = 0.01       # 1 % de forme en moins par match 1v1 joué
@@ -55,9 +58,22 @@ def form_from_loss(loss: int) -> float:
 
 
 def forms_for(db: Session, user_id: str) -> dict:
-    """{carte: forme entre 0,5 et 1} des cartes d'un joueur qui ont déjà joué aujourd'hui (les autres sont à 100 %)."""
+    """{carte: forme entre 0,5 et 1} des cartes d'un joueur dont la PERSONNE a déjà joué aujourd'hui (les autres sont à 100 %).
+    La perte du jour est additionnée sur toutes les versions d'une même personne, et la forme vaut pour chacune de ses cartes."""
     today = _today()
-    return {r.card_id: form_from_loss(_loss(r)) for r in db.query(CardFatigue).filter_by(user_id=user_id, day=today).all() if _loss(r) > 0}
+    rows = [r for r in db.query(CardFatigue).filter_by(user_id=user_id, day=today).all() if _loss(r) > 0]
+    if not rows:
+        return {}
+    person = dict(db.query(Card.id, Card.player_id).filter(Card.id.in_([r.card_id for r in rows])).all())      # carte -> personne
+    loss_by_person = {}
+    for r in rows:
+        pid = person.get(r.card_id)
+        if pid is not None:
+            loss_by_person[pid] = loss_by_person.get(pid, 0) + _loss(r)
+    if not loss_by_person:
+        return {}
+    return {cid: form_from_loss(loss_by_person[pid])
+            for cid, pid in db.query(Card.id, Card.player_id).filter(Card.player_id.in_(list(loss_by_person))).all()}
 
 
 def record_match(db: Session, user_id: str, card_ids, reduction: float = 0.0) -> None:
