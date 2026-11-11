@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-packs-joueur", "date": "2026-11-11", "category": "économie", "title": "Packs joueur au shop",
+     "text": "Chaque jour, le shop propose 4 packs joueur à 75 crédits, qui garantissent la carte rare d'un joueur, et un pack premium qui garantit une carte plus rare d'un joueur : édition limitée en cours (200 crédits), épique (300) ou spéciale (400). Chaque pack contient 3 cartes, sans limite d'achat."},
     {"id": "2026-11-credits-1v1-secretes-200", "date": "2026-11-11", "category": "économie", "title": "Crédits des matchs 1v1 et cartes secrètes",
      "text": "Après tes 10 premiers matchs 1v1 du jour, chaque match rapporte toujours 1 à 5 crédits, mais 50 crédits par jour au maximum. Il faut maintenant 200 points de doublons pour débloquer une carte secrète, au lieu de 300."},
     {"id": "2026-11-succes-v2", "date": "2026-11-10", "category": "autre", "title": "De nouveaux succès à débloquer",

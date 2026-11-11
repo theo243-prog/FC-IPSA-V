@@ -16,7 +16,8 @@ class LoginRequest(BaseModel):
 
 class OpenPackRequest(BaseModel):
     use_shop_token: bool = False          # ancien paramètre : équivaut à pack_type="classique"
-    pack_type: Optional[str] = None       # None = pack gratuit ; sinon classique / rare / epique / legendaire
+    pack_type: Optional[str] = None       # None = pack gratuit ; sinon classique / rare / epique / legendaire / joueur
+    player_pack_id: Optional[str] = None  # pack_type « joueur » : le pack joueur de la réserve à ouvrir (player_packs)
 
 
 class SellDuplicateRequest(BaseModel):
