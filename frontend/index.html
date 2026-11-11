@@ -1193,6 +1193,7 @@
       <div class="help-row"><button class="help-btn" type="button" data-help="shop"><span class="help-q">?</span> Aide</button></div>
       <div id="playerPacksEl"></div>
       <div id="shopItemsEl"></div>
+      <div id="shopSoundEl"></div>
       <div id="shopCosmeticsEl"></div>
     </section>
 
@@ -2318,7 +2319,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.11.6';
+  const SITE_VERSION = '2026.11.11.7';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2536,7 +2537,7 @@
     const soundSel = '<label class="cos-sel">Son d\'ouverture de packs<span style="display:flex;gap:6px;align-items:center;"><select id="cosSound" style="flex:1;"><option value="">🐺 Hurlement du loup (par défaut)</option>' +
       sounds.map(i => '<option value="' + i.id + '" data-file="' + escapeHtml(i.style.file) + '"' + (inv.loadout.sound === i.id ? ' selected' : '') + '>' + i.emoji + ' ' + escapeHtml(i.name) + '</option>').join('') +
       '</select><button class="btn-small" type="button" id="cosSoundPlay" title="Écouter" aria-label="Écouter le son choisi">▶</button></span></label>' +
-      (sounds.length ? '' : '<p style="font-size:12px;color:var(--text-muted);margin:-4px 0 8px;">Les sons d\'ouverture se gagnent au niveau 18 du Pass Premium (un par mois, à partir de novembre 2026).</p>');
+      (sounds.length ? '' : '<p style="font-size:12px;color:var(--text-muted);margin:-4px 0 8px;">Les sons d\'ouverture se gagnent au niveau 18 du Pass Premium (un par mois, à partir de novembre 2026) ou s\'achètent au shop (un nouveau son chaque semaine).</p>');
     const passSlots = slotSel('badge', 'Badge (à côté du pseudo)', inv.loadout.badge) + slotSel('name_color', 'Couleur du pseudo', inv.loadout.name_color) + slotSel('banner', 'Bannière du profil', inv.loadout.banner) + slotSel('share_bg', 'Fond des images à partager', inv.loadout.share_bg) + soundSel;
     const html = '<div class="cos-prev"><div class="profile-avatar' + (cat.selected.frame ? ' fr-' + cat.selected.frame : '') + '" id="cosPrev">' + (p.avatar ? '<img alt="" src="' + API_BASE + '/users/' + encodeURIComponent(p.pseudo) + '/avatar?v=' + p.avatar + '">' : escapeHtml(p.pseudo.charAt(0).toUpperCase())) + '</div></div>' +
       '<label class="cos-sel">Titre (sous ton pseudo)<select id="cosTitle">' + opts(cat.titles, cat.selected.title) + '</select></label>' +
@@ -4213,7 +4214,7 @@
   }
 
   async function loadShop(){
-    loadPlayerPacks();
+    loadPlayerPacks(); loadShopSound();
     try {
       const items = await api('/shop/items');
       const root = document.getElementById('shopItemsEl');
@@ -4232,6 +4233,28 @@
       });
     } catch(e) { toast(e.message); }
     loadShopCosmetics();
+  }
+
+  // ---------- Shop : le son d'ouverture de la semaine (100 crédits, changé chaque lundi) ----------
+  async function loadShopSound(){
+    const root = document.getElementById('shopSoundEl'); if (!root) return;
+    let d; try { d = await api('/shop/sound'); } catch(e) { root.innerHTML = ''; return; }
+    if (!d.sound) { root.innerHTML = ''; return; }
+    const s = d.sound, until = new Date(d.ends + 'T12:00:00'); until.setDate(until.getDate() - 1);      // le dernier jour : le dimanche
+    root.innerHTML = '<div class="shopc-head">🔊 Son de la semaine</div><p class="shopc-sub">Un nouveau son d\'ouverture de packs chaque lundi. Celui-ci est en vente jusqu\'au ' + until.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) + ' à minuit. Une fois acheté, il est à toi pour toujours : choisis-le dans ton profil (bouton « 🎨 Titre et cadre »). Tu en as ' + d.owned_count + ' sur ' + d.total + '.</p>';
+    const row = document.createElement('div'); row.className = 'shop-item';
+    row.innerHTML = '<div><div class="shop-item-name">' + s.emoji + ' ' + escapeHtml(s.name) + '</div><div class="shop-item-desc">Joué à chaque ouverture de pack</div><div class="shop-item-price">' + d.price + ' crédits</div></div>';
+    const box = document.createElement('div'); box.style.display = 'flex'; box.style.gap = '6px';
+    const play = document.createElement('button'); play.className = 'btn-small'; play.type = 'button'; play.textContent = '▶ Écouter';
+    play.addEventListener('click', () => playSoundFile(s.style.file));
+    const buy = document.createElement('button'); buy.className = 'btn-small'; buy.type = 'button';
+    buy.textContent = s.owned ? '✓ possédé' : 'Acheter'; buy.disabled = s.owned || d.credits < d.price;
+    if (!s.owned && d.credits < d.price) buy.title = 'Pas assez de crédits';
+    buy.addEventListener('click', async () => {
+      try { buy.disabled = true; await api('/shop/sound/buy', { method: 'POST', body: JSON.stringify({ item_id: s.id }) }); toast('🔊 ' + s.name + ' acheté ! Choisis-le dans ton profil (🎨 Titre et cadre)'); await refreshMe(); loadShopSound(); }
+      catch(e) { toast(e.message); buy.disabled = false; }
+    });
+    box.appendChild(play); box.appendChild(buy); row.appendChild(box); root.appendChild(row);
   }
 
   // ---------- Shop : cosmétiques à paliers (vendus uniquement ici) ----------

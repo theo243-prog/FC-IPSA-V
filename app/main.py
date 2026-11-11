@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -53,6 +53,7 @@ app.include_router(tournament.router)          # tournoi 1v1 mensuel
 app.include_router(club.router)                # défi du club (équipe du club contrôlée par le jeu)
 app.include_router(first_steps.router)         # Premiers pas : objectifs des nouveaux comptes
 app.include_router(shop_cosmetics.router)      # cosmétiques à paliers vendus au shop
+app.include_router(shop_sounds.router)          # son d'ouverture de la semaine au shop (100 crédits)
 app.include_router(cosmetics.router)         # titres et cadres de profil
 app.include_router(chat.router)              # chat général et fil d'activité
 app.include_router(swaps.router)             # échanges de cartes entre joueurs
@@ -940,6 +941,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     club.on_user_deleted(db, user.id)                                                     # ses matchs contre le club
     first_steps.on_user_deleted(db, user.id)                                              # sa récompense des Premiers pas
     shop_cosmetics.on_user_deleted(db, user.id)                                           # ses cosmétiques achetés au shop
+    shop_sounds.on_user_deleted(db, user.id)                                              # ses sons achetés au shop
     motm.on_user_deleted(db, user.id)                                                     # ses bulletins des votes encore ouverts
     card_levels.on_user_deleted(db, user.id)                                              # ses cartes évoluées
     fatigue.on_user_deleted(db, user.id)                                                  # la forme de ses cartes

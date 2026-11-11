@@ -207,9 +207,9 @@ def club_add(db: Session, n: int = 1) -> None:
 def owned_ids(db: Session, user: User) -> set:
     if profiles._counter(db, user.id, "cosmetics_all") == 1:                  # compte d'essai : tout débloqué à la main
         return set(P.ITEMS)
-    from . import shop_cosmetics                                              # (import ici : shop_cosmetics importe ce module)
+    from . import shop_cosmetics, shop_sounds                                 # (import ici : shop_cosmetics importe ce module)
     ids = {c.item_id for c in db.query(PassClaim).filter(PassClaim.user_id == user.id, PassClaim.item_id.isnot(None)).all() if c.item_id in P.ITEMS}
-    return ids | shop_cosmetics.owned_ids(db, user.id)                     # + les cosmétiques achetés au shop
+    return ids | shop_cosmetics.owned_ids(db, user.id) | shop_sounds.owned_ids(db, user.id)       # + les cosmétiques et les sons achetés au shop
 
 
 def owned_items(db: Session, user: User, kind: Optional[str] = None) -> list:
