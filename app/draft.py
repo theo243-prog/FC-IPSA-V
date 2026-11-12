@@ -37,7 +37,7 @@ from .database import Base, get_db
 from .models import AppSetting, Card, User, gen_id
 from .common import card_out, require_admin
 from .security import get_current_user
-from . import duel_engine as DE, game_logic, tournament
+from . import duel_engine as DE, features, game_logic, tournament
 
 router = APIRouter()
 
@@ -131,29 +131,15 @@ class RoomRequest(BaseModel):
 
 # --------------------------------------------------------------------------------- réglages, accès ----
 def get_settings(db: Session) -> dict:
-    row = db.get(AppSetting, SETTING_KEY)
-    s = {"public": False, "allowed": []}
-    if row is not None:
-        try:
-            s.update({k: v for k, v in (json.loads(row.value) or {}).items() if k in s})
-        except ValueError:
-            pass
-    return s
+    return features.get(db, SETTING_KEY)                 # (fonctions en essai : même réglage que l'interrupteur commun)
 
 
 def _save_settings(db: Session, s: dict) -> None:
-    row = db.get(AppSetting, SETTING_KEY)
-    if row is None:
-        db.add(AppSetting(key=SETTING_KEY, value=json.dumps(s, ensure_ascii=False)))
-    else:
-        row.value = json.dumps(s, ensure_ascii=False)
+    features.save(db, SETTING_KEY, s)
 
 
 def has_access(db: Session, user) -> bool:
-    if user is None:
-        return False
-    s = get_settings(db)
-    return bool(s["public"]) or user.pseudo.lower() in {p.lower() for p in s["allowed"]}
+    return features.has_access(db, user, SETTING_KEY)
 
 
 def _require_access(db, user):

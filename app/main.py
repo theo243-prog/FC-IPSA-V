@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -54,6 +54,8 @@ app.include_router(club.router)                # défi du club (équipe du club 
 app.include_router(first_steps.router)         # Premiers pas : objectifs des nouveaux comptes
 app.include_router(shop_cosmetics.router)      # cosmétiques à paliers vendus au shop
 app.include_router(shop_sounds.router)          # son d'ouverture de la semaine au shop (100 crédits)
+app.include_router(features.router)             # fonctions en essai : cachées aux joueurs sauf aux comptes choisis, sorties ensemble
+app.include_router(pantheon.router)             # Panthéon : palmarès des saisons et des tournois, records du jeu et du club (en essai)
 app.include_router(duel_stats.router)           # mes stats 1v1 (bilan, face à face, cartes, buteurs), visibles par moi seul
 app.include_router(draft.router)                # mode draft : match en direct, équipe construite aux enchères (comptes choisis)
 app.include_router(cosmetics.router)         # titres et cadres de profil
@@ -195,6 +197,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
             "player_packs": player_packs.owned_out(db, user.id),   # packs joueur achetés, pas encore ouverts
             "draft_access": draft.has_access(db, user),           # mode draft (ouvert aux comptes choisis dans l'administration)
+            "features": features.flags_for(db, user),             # fonctions en essai : {nom: accès} (draft, pantheon…)
         }
     return {
         "pseudo": user.pseudo,
@@ -214,6 +217,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
             "player_packs": player_packs.owned_out(db, user.id),   # packs joueur achetés, pas encore ouverts
             "draft_access": draft.has_access(db, user),           # mode draft (ouvert aux comptes choisis dans l'administration)
+            "features": features.flags_for(db, user),             # fonctions en essai : {nom: accès} (draft, pantheon…)
     }
 
 
