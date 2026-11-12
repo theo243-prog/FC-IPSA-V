@@ -1151,9 +1151,9 @@
     <button class="tab" data-tab="actualite">Actualité<span class="tab-dot" id="newsDot" hidden></span></button>
     <button class="tab" data-tab="duels">Matchs 1v1</button>
     <button class="tab" data-tab="draft" id="draftTabBtn" hidden>Draft<span class="tab-dot" id="draftDot" hidden></span></button>
-    <button class="tab" data-tab="pantheon" id="pantheonTabBtn" hidden>Panthéon</button>
     <button class="tab" data-tab="tournoi">Tournoi<span class="tab-dot" id="tournoiDot" hidden></span></button>
     <button class="tab" data-tab="chat">Chat<span class="tab-dot" id="chatDot" hidden></span></button>
+    <button class="tab" data-tab="pantheon" id="pantheonTabBtn" hidden>Panthéon</button>
   </nav>
 
   <main>
@@ -2403,7 +2403,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.13.1';
+  const SITE_VERSION = '2026.11.13.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
