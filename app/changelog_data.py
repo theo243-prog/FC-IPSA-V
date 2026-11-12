@@ -8,6 +8,12 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-stats-match", "date": "2026-11-12", "category": "modes", "title": "Les statistiques du match",
+     "text": "À la fin de chaque match, retrouve les statistiques comme dans un vrai match : possession, tirs, tirs cadrés, arrêts, corners, hors-jeu, fautes et cartons jaunes. Elles suivent ce qui s'est passé pendant le match."},
+    {"id": "2026-11-podium-saison-300", "date": "2026-11-12", "category": "économie", "title": "Podium de saison mieux payé",
+     "text": "Les 3 premiers de la saison 1v1 gagnent maintenant 300, 200 et 100 crédits (avant 100, 60 et 30), en plus de leur trophée, dès la fin de la saison de novembre."},
+    {"id": "2026-11-trophees-titres", "date": "2026-11-12", "category": "cartes", "title": "Tes trophées deviennent des titres",
+     "text": "Chaque carte trophée (podium de saison, tournoi, joueurs les plus assidus) débloque aussi un titre à son nom, par exemple « Vainqueur de saison (novembre 2026) », à choisir dans ton profil (🎨 Titre et cadre). Les trophées déjà gagnés comptent."},
     {"id": "2026-11-sons-shop", "date": "2026-11-11", "category": "autre", "title": "Un son d'ouverture chaque semaine au shop",
      "text": "Chaque lundi, le shop propose un nouveau son d'ouverture de packs à 100 crédits. Une fois acheté, il est à toi pour toujours : choisis-le dans ton profil (🎨 Titre et cadre)."},
     {"id": "2026-11-quiz-100", "date": "2026-11-11", "category": "autre", "title": "Quiz foot : 100 questions",

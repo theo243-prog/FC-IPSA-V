@@ -469,6 +469,55 @@ def build_events(side_a, side_b, score_a, score_b, xg_a, xg_b, tactic_winner):
     return events
 
 
+# ---------------------------------------------------------- Statistiques ----
+# Statistiques de fin de match (12/11/2026), comme dans un vrai match. Elles suivent la simulation (buts, occasions racontées, buts attendus,
+# tactiques) et ne changent RIEN au résultat. Toujours cohérentes : tirs cadrés = buts + arrêts du gardien adverse, tirs >= tirs cadrés.
+CONTROL_WEIGHT = {"MC": 1.0, "DEF": 0.4, "ATT": 0.4, "GB": 0.0}          # qui tient le ballon : surtout le milieu
+TACTIC_POSSESSION = {"possession": 6, "pressing": 2, "contre": -6}     # points de possession donnés par la tactique
+TACTIC_FOULS = {"pressing": 3, "contre": 1, "possession": 0}            # fautes en plus selon la tactique
+YELLOW_PER_FOUL = 0.12
+
+
+def _control(side) -> float:
+    w = sum(CONTROL_WEIGHT[m["slot"]] for m in side["members"]) or 1.0
+    return sum(CONTROL_WEIGHT[m["slot"]] * m["effective"] for m in side["members"]) / w
+
+
+def match_stats(side_a, side_b, events, xg_a, xg_b, rng=None) -> dict:
+    """Possession, tirs, tirs cadrés, arrêts, corners, hors-jeu, fautes et cartons jaunes des deux équipes ([équipe A, équipe B])."""
+    rng = rng or random
+    ca, cb = _control(side_a), _control(side_b)
+    poss = 50 + (ca / (ca + cb) - 0.5) * 250 + (TACTIC_POSSESSION.get(side_a["tactic"], 0) - TACTIC_POSSESSION.get(side_b["tactic"], 0)) / 2 + rng.uniform(-4, 4)
+    poss = int(round(min(70, max(30, poss))))
+    idx = {"challenger": 0, "defender": 1}
+    goals, saves, off = [0, 0], [0, 0], [0, 0]                # saves[i] : tirs de l'équipe i arrêtés par le gardien adverse
+    for ev in events:
+        if ev.get("side") not in idx:
+            continue
+        i = idx[ev["side"]]
+        if ev["kind"] == "goal":
+            goals[i] += 1
+        elif ev["kind"] == "chance":
+            if ev["text"].startswith("🧤"):
+                saves[i] += 1
+            else:
+                off[i] += 1                                    # poteau, à côté, contré
+    out = {"possession": [poss, 100 - poss], "shots": [0, 0], "on_target": [0, 0], "saves": [0, 0], "corners": [0, 0], "offsides": [0, 0], "fouls": [0, 0], "yellow": [0, 0]}
+    for i, (side, xg) in enumerate(((side_a, xg_a), (side_b, xg_b))):
+        extra_saved = rng.randint(0, 1 + int(xg))              # tirs arrêtés que le récit ne raconte pas
+        extra_off = rng.randint(1, 3 + int(xg * 1.5))           # tirs non cadrés que le récit ne raconte pas
+        on = goals[i] + saves[i] + extra_saved
+        out["on_target"][i] = on
+        out["shots"][i] = on + off[i] + extra_off
+        out["saves"][1 - i] = saves[i] + extra_saved           # les arrêts du gardien de l'AUTRE équipe
+        out["corners"][i] = rng.randint(0, 2) + int(round(xg * 1.2))
+        out["offsides"][i] = rng.randint(0, 2) + (1 if side["formation"] == "1-1-2" else 0)
+        fouls = rng.randint(4, 9) + TACTIC_FOULS.get(side["tactic"], 0)
+        out["fouls"][i] = fouls
+        out["yellow"][i] = min(3, sum(1 for _ in range(fouls) if rng.random() < YELLOW_PER_FOUL))
+    return out
+
+
 def _lineup_snapshot(side, fan_card, equipment_cards=(), mascot_card=None, referee_bonus=0.0, forms=None, loup_credits=None, fatigue_mode=True):
     """loup_credits : crédits rapportés par le Loup à ce match (1v1) ; fatigue_mode : le match fatigue-t-il (1v1 seulement) ?"""
     forms = forms or {}
@@ -709,7 +758,8 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     referee = {"challenger": referee_bid, "defender": bid_d, "winner": ref_winner, "bonus_pct": round(REFEREE_BONUS * 100) if ref_winner else 0}
     lineups = {"challenger": _lineup_snapshot(side_c, fan_c, equip_c, mascot_c, ref_c, forms_c, loup[challenger.pseudo]),
                "defender": {**_lineup_snapshot(side_d, fan_d, equip_d, mascot_d, ref_d, forms_d, loup[creator.pseudo]), "home_bonus_pct": round(HOME_BONUS * 100, 2)},
-               "referee": referee}                                      # (enregistré avec la composition : visible dans le récap APRÈS le match)
+               "referee": referee,                                      # (enregistré avec la composition : visible dans le récap APRÈS le match)
+               "stats": match_stats(side_c, side_d, events, xg_c, xg_d)}         # statistiques de fin de match (possession, tirs…)
     duel = Duel(
         challenger_id=challenger.id, defender_id=creator.id, stake=stake,
         formation_challenger=formation, formation_defender=proposal.formation,

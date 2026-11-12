@@ -102,11 +102,47 @@ def catalog(db: Session, user: User) -> dict:
     for it in battlepass.owned_items(db, user):                                                  # objets du Pass possédés : cadres et titres en plus
         row = {"id": it["id"], "label": it["name"], "desc": ("Boutique, palier %d" % it["level"]) if it.get("shop") else "Objet du Pass (%s)" % pass_theme_name(it), "unlocked": True, "pass": True}
         (frames if it["kind"] == "frame" else titles if it["kind"] == "title" else []).append(row)
+    for tid, name in trophy_titles(db, user.id):                                                  # une carte trophée possédée = un titre à son nom
+        titles.append({"id": tid, "label": name, "desc": "Carte trophée", "unlocked": True, "trophy": True})
     sel = db.query(UserCosmetics).filter_by(user_id=user.id).first()
     return {"titles": titles, "frames": frames, "selected": {"title": sel.title if sel else None, "frame": sel.frame if sel else None}, "levels_total": ctx["total"]}
 
 
-def title_label(title_id):
+TROPHY_TITLE_PREFIX = "trophee-"        # titre d'une carte trophée : « trophee-<id de la fiche> », son texte est le nom de la carte
+TROPHY_TITLE_RANKS = (1, 2, 3, 4, 5, 7, 8, 9, 10, 11)       # podium de saison, tournoi (vainqueur, finaliste, demi-finalistes), assidus, lanterne rouge (pas la carte du Pass, rang 6)
+
+
+def trophy_titles(db: Session, user_id: str) -> list:
+    """Les titres que donnent les cartes trophées possédées : [(id, nom de la carte)]. Seulement celles qu'on a : la lanterne rouge reste une surprise."""
+    from .models import Card, OwnedCard, Player, Tier
+    from . import seasons
+    rows = (db.query(Player).join(Card, Card.player_id == Player.id).join(OwnedCard, OwnedCard.card_id == Card.id)
+            .filter(OwnedCard.user_id == user_id, OwnedCard.quantity > 0, Card.tier == Tier.saison, Player.poste == "TROPHEE").all())
+    out = []
+    for p in rows:
+        info = seasons.trophy_info(p)
+        if info and info["rank"] in TROPHY_TITLE_RANKS:
+            out.append((TROPHY_TITLE_PREFIX + p.id, p.name, info))
+    out.sort(key=lambda x: (x[2]["season"] or "", x[2]["rank"]), reverse=True)        # les plus récents d'abord
+    return [(i, nm) for i, nm, _ in out]
+
+
+def _trophy_label(title_id, db=None):
+    from .models import Player
+    from .database import SessionLocal
+    own = db is None
+    db = db or SessionLocal()
+    try:
+        p = db.get(Player, title_id[len(TROPHY_TITLE_PREFIX):])
+        return p.name if p is not None and (p.poste or "").upper() == "TROPHEE" else None
+    finally:
+        if own:
+            db.close()
+
+
+def title_label(title_id, db=None):
+    if title_id and str(title_id).startswith(TROPHY_TITLE_PREFIX):         # titre d'une carte trophée
+        return _trophy_label(title_id, db)
     if title_id and str(title_id).startswith(("pass-", "shop-")):          # titres du Pass et de la boutique
         from . import pass_catalog
         it = pass_catalog.ITEMS.get(title_id)
@@ -119,12 +155,14 @@ def display_map(db: Session) -> dict:
     labels = {i: nm for i, nm, _d, _t in _title_catalog()}
     from . import pass_catalog
     labels.update({i: it["name"] for i, it in pass_catalog.ITEMS.items() if it["kind"] == "title"})        # titres du Pass
+    from .models import Player
+    labels.update({TROPHY_TITLE_PREFIX + p.id: p.name for p in db.query(Player).filter(Player.poste == "TROPHEE").all()})      # titres des cartes trophées
     return {r.user_id: (labels.get(r.title), r.frame) for r in db.query(UserCosmetics).all() if r.title or r.frame}
 
 
 def user_display(db: Session, user_id: str):
     r = db.query(UserCosmetics).filter_by(user_id=user_id).first()
-    return (title_label(r.title), r.frame) if r else (None, None)
+    return (title_label(r.title, db), r.frame) if r else (None, None)
 
 
 @router.get("/cosmetics")
@@ -144,7 +182,7 @@ def set_cosmetics(payload: CosmeticsRequest, user: User = Depends(get_current_us
         row = UserCosmetics(user_id=user.id); db.add(row)
     row.title, row.frame = payload.title, payload.frame
     db.commit()
-    return {"status": "ok", "title": title_label(payload.title), "frame": payload.frame}
+    return {"status": "ok", "title": title_label(payload.title, db), "frame": payload.frame}
 
 
 @router.post("/admin/unlock-cosmetics", dependencies=[Depends(require_admin)])

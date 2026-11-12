@@ -115,8 +115,11 @@ ok(len(troph) == 1 and troph[0]["trophy"]["title"] == "Vainqueur du tournoi" and
 colf = c.get("/collection", headers=H[fin]).json(); tf = [x for x in colf if x.get("trophy") and x["trophy"]["rank"] == 5 and x["quantity"] == 1]
 ok(len(tf) == 1 and tf[0]["trophy"]["title"] == "Finaliste du tournoi" and tf[0]["trophy"]["label"] == "novembre 2026" and tf[0]["tier"] == "saison" and not any(x.get("trophy") and x["trophy"]["rank"] == 4 and x["quantity"] > 0 for x in colf), "le finaliste reçoit la carte « Finaliste du tournoi (novembre 2026) » (et pas celle du vainqueur)")
 ok(not any(x.get("trophy") and x["trophy"]["rank"] == 5 and x["quantity"] > 0 for x in c.get("/collection", headers=H[champ]).json()), "le vainqueur n'a que sa carte de vainqueur")
-semi_cards = [p for p in before if p not in (champ, fin) and any(x.get("trophy") and x["trophy"]["rank"] >= 4 and x["quantity"] > 0 for x in c.get("/collection", headers=H[p]).json())]
-ok(semi_cards == [], "les demi-finalistes (et les autres) ne reçoivent aucune carte de tournoi")
+tcards = lambda p: sorted((x["trophy"]["rank"], x["trophy"]["title"]) for x in c.get("/collection", headers=H[p]).json() if x.get("trophy") and x["trophy"]["rank"] >= 4 and x["quantity"] > 0)
+semis = [p for p in before if ent[p] == 3]; others = [p for p in before if not ent[p]]
+ok(len(semis) == 2 and all(tcards(p) == [(11, "Demi-finaliste du tournoi")] for p in semis) and all(tcards(p) == [] for p in others),
+   "chaque demi-finaliste battu reçoit la carte « Demi-finaliste du tournoi (novembre 2026) », les éliminés plus tôt rien")
+ok(all(any(t.get("trophy") and t["label"] == "Demi-finaliste du tournoi (novembre 2026)" and t["unlocked"] for t in c.get("/cosmetics", headers=H[p]).json()["titles"]) for p in semis), "… et le titre à son nom")
 ok(any(t["id"] == "tournoi" and t["unlocked"] for t in c.get("/cosmetics", headers=H[champ]).json()["titles"]), "le titre « Champion de tournoi » est débloqué")
 ev = chat_events(H["t1"]); ok(any(("%s remporte le tournoi de novembre 2026 et gagne 91 crédits + le trophée" % champ) in t and "Finaliste : " + fin in t for t in ev), "le champion est annoncé dans le chat : « " + next(t for t in ev if "remporte le tournoi" in t) + " »")
 h = c.get("/tournament/history").json(); ok(h[0]["label"] == "novembre 2026" and h[0]["champion"] == champ and h[0]["finalist"] == fin and h[0]["players"] == 6 and h[0]["pool"] == 180 and len(h[0]["semifinalists"]) == 2, "l'historique des tournois le retient")

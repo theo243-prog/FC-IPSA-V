@@ -935,6 +935,14 @@
   .duel-grid .season-prizes .p-credits{font-size:12px;margin:2px 0 4px;}
   table.duel-table th{position:sticky;top:0;background:var(--bg-elevated);z-index:1;}
   @media (max-width:760px){.duel-grid{grid-template-columns:1fr;} .duel-grid .cell{height:480px;} .duel-grid .duel-proposals.cell{height:600px;} .duel-grid .season-box.cell,.duel-grid .duel-grid-board.cell{height:580px;} .duel-grid .duel-stars.cell{height:520px;}}
+  /* ---- Statistiques de fin de match ---- */
+  .match-stats:empty{display:none;}
+  .match-stats{margin:12px 0;padding:10px 12px;background:var(--bg-sunk);border-radius:12px;}
+  .match-stats h4{margin:0 0 8px;text-align:center;font-size:15px;}
+  .mst-row{display:grid;grid-template-columns:42px 1fr 42px;gap:8px;align-items:center;margin:5px 0;font-size:13px;}
+  .mst-row .v{font-weight:800;font-variant-numeric:tabular-nums;} .mst-row .v.b{text-align:right;}
+  .mst-mid{display:flex;flex-direction:column;gap:3px;} .mst-label{text-align:center;color:var(--text-muted);font-size:12px;}
+  .mst-bar{display:flex;height:6px;border-radius:999px;overflow:hidden;background:var(--border);} .mst-bar .a{background:#7A4EC9;} .mst-bar .b{background:#2E9E5B;}
   /* ---- Mode draft ---- */
   .draft-box{border-top:5px solid #7A4EC9;}
   .draft-beta{font-size:12px;font-weight:700;background:#7A4EC9;color:#fff;border-radius:999px;padding:2px 8px;vertical-align:middle;}
@@ -1250,7 +1258,7 @@
           <li><b>Ton match</b> : tu composes ton équipe en secret (comme au 1v1). Dès que les deux joueurs ont validé, le match se joue. <b>Qui n'a pas validé à l'heure limite perd par forfait</b> ; si les deux oublient, le mieux classé passe. Ne vends pas les cartes de ton équipe avant la fin du match : une équipe devenue invalide = forfait.</li>
           <li><b>Égalité</b> : tirs au but, pondérés par la force des deux équipes.</li>
           <li><b>Ces matchs ne comptent pas pour l'Elo</b> ni pour les statistiques de saison, et ne rapportent ni pack ni crédits.</li>
-          <li><b>Récompenses</b> : la cagnotte (droits d'entrée + bonus du club) est partagée entre le vainqueur, le finaliste et les demi-finalistes ; le vainqueur reçoit aussi un <b>trophée de tournoi</b> à son nom. Moins de 2 inscrits : tournoi annulé, tout le monde est remboursé.</li>
+          <li><b>Récompenses</b> : la cagnotte (droits d'entrée + bonus du club) est partagée entre le vainqueur, le finaliste et les demi-finalistes ; chacun reçoit aussi sa carte de tournoi (vainqueur, finaliste, demi-finaliste), qui donne un titre à son nom. Moins de 2 inscrits : tournoi annulé, tout le monde est remboursé.</li>
         </ul>
       </div>
       <div class="panel-box"><h2>Anciens tournois</h2><div id="tnHistory"></div></div>
@@ -1377,6 +1385,7 @@
     <div class="match-clock" id="msClock">0'</div>
     <div class="match-timeline" id="msTimeline"></div>
     <div id="msResult"></div>
+    <div class="match-stats" id="msStats"></div>
     <div class="lineups" id="msLineups"></div>
     <div class="match-actions">
       <button class="btn-secondary" id="msSkip">Passer l'animation</button>
@@ -1619,14 +1628,14 @@
     return 'joueur';
   }
   // un trophée de saison s'appelle « Vainqueur de saison (octobre 2026) » : le titre en grand, le mois dessous
-  const TROPHY_MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉', 4: '🏆', 5: '🥈', 7: '🏃', 8: '🏃', 9: '🏃', 10: '🏮' };      // 7-9 : les plus assidus ; 10 : lanterne rouge
-  const trophyKindLabel = t => t.rank === 6 ? 'Pass' : (t.rank === 4 || t.rank === 5) ? 'Tournoi' : null;
+  const TROPHY_MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉', 4: '🏆', 5: '🥈', 7: '🏃', 8: '🏃', 9: '🏃', 10: '🏮', 11: '🥉' };      // 7-9 : les plus assidus ; 10 : lanterne rouge ; 11 : demi-finaliste du tournoi
+  const trophyKindLabel = t => t.rank === 6 ? 'Pass' : [4, 5, 11].includes(t.rank) ? 'Tournoi' : null;
   function trophyParts(card){
     if (card.trophy) return card.trophy;
     const m = /^(.*) \((.*)\)$/.exec(card.player_name || ''); const title = m ? m[1] : (card.player_name || '');
-    return { title, label: m ? m[2] : '', rank: /^Finaliste du tournoi/.test(title) ? 5 : /^Vainqueur du tournoi/.test(title) ? 4 : /^Vainqueur/.test(title) ? 1 : /^Deuxi/.test(title) ? 2 : 3, season: null };
+    return { title, label: m ? m[2] : '', rank: /^Demi-finaliste du tournoi/.test(title) ? 11 : /^Finaliste du tournoi/.test(title) ? 5 : /^Vainqueur du tournoi/.test(title) ? 4 : /^Vainqueur/.test(title) ? 1 : /^Deuxi/.test(title) ? 2 : 3, season: null };
   }
-  const isTourneyCard = card => card.tier === 'saison' && [4, 5].includes(trophyParts(card).rank);          // vainqueur ou finaliste d'un tournoi : carte violette et rose fluo
+  const isTourneyCard = card => card.tier === 'saison' && [4, 5, 11].includes(trophyParts(card).rank);          // vainqueur, finaliste ou demi-finaliste d'un tournoi : carte violette et rose fluo
   const isPassCard = card => card.tier === 'saison' && trophyParts(card).rank === 6 && !!trophyParts(card).theme;          // carte exclusive du Pass : aux couleurs du thème du mois
   const isBlackCard = card => !!card && cardKind(card) === 'numerotee' && numberedParts(card.player_name).title === 'Édition Noire';      // carte unique des enchères du club
   const noirClass = card => isBlackCard(card) ? ' edition-noire' : '';
@@ -1722,7 +1731,7 @@
       statsRow = '<div class="card-stats" title="Écusson d\'un club adverse : carte de collection"><span>🛡️ ÉCUSSON</span></div>';
       posteLabel = '🛡️';
     } else if (kind === 'trophee') {
-      statsRow = '<div class="card-stats" title="' + (trophyParts(card).rank === 6 ? 'Carte exclusive du Pass' : [4, 5].includes(trophyParts(card).rank) ? 'Carte de tournoi' : 'Trophée de saison') + ' : un souvenir"><span>🏆 ' + escapeHtml(trophyParts(card).label) + '</span></div>';
+      statsRow = '<div class="card-stats" title="' + (trophyParts(card).rank === 6 ? 'Carte exclusive du Pass' : [4, 5, 11].includes(trophyParts(card).rank) ? 'Carte de tournoi' : 'Trophée de saison') + ' : un souvenir"><span>🏆 ' + escapeHtml(trophyParts(card).label) + '</span></div>';
       posteLabel = trophyMedalOf(card);
     } else if (kind === 'mascotte') {
       statsRow = '<div class="card-stats" title="Crédits gagnés après chaque match 1v1 (10 premiers matchs du jour, 30 crédits par jour maximum)"><span>🐺 +' + ((LOUP_CREDITS[card.tier] || 0) + (BONUS_LEVEL.loup[card.level || 0] || 0)) + ' cr./match</span>' + bonusLvlChip(card) + '</div>';
@@ -1864,7 +1873,7 @@
     const t = trophyParts(card), preview = String(card.id || '').startsWith('trophy-');
     document.getElementById('modalTitle').textContent = card.player_name;
     const body = document.getElementById('modalBody');
-    body.innerHTML = '<div style="text-align:center;font-size:64px;line-height:1.1;margin:6px 0;">' + trophyMedalOf(card) + '</div><p style="text-align:center;font-weight:700;">' + (preview ? 'Cette carte sera remise à la fin de la saison de ' + escapeHtml(t.label) + '.' : (t.rank === 6 ? 'Carte exclusive du Pass de ' : t.rank === 4 ? 'Trophée du tournoi de ' : t.rank === 5 ? 'Carte de finaliste du tournoi de ' : [7, 8, 9].includes(t.rank) ? 'Trophée d\'assiduité de la saison de ' : t.rank === 10 ? 'Carte souvenir (pas vraiment glorieuse) de la saison de ' : 'Trophée de la saison de ') + escapeHtml(t.label) + '.') + '</p><p class="muted" style="text-align:center;">Un trophée n\'est qu\'un souvenir : il n\'a ni note ni bonus, ne joue pas de match, ne se vend pas et ne s\'échange pas. Il ne compte pas dans le pourcentage de collection.</p>';
+    body.innerHTML = '<div style="text-align:center;font-size:64px;line-height:1.1;margin:6px 0;">' + trophyMedalOf(card) + '</div><p style="text-align:center;font-weight:700;">' + (preview ? 'Cette carte sera remise à la fin de la saison de ' + escapeHtml(t.label) + '.' : (t.rank === 6 ? 'Carte exclusive du Pass de ' : t.rank === 4 ? 'Trophée du tournoi de ' : t.rank === 5 ? 'Carte de finaliste du tournoi de ' : t.rank === 11 ? 'Carte de demi-finaliste du tournoi de ' : [7, 8, 9].includes(t.rank) ? 'Trophée d\'assiduité de la saison de ' : t.rank === 10 ? 'Carte souvenir (pas vraiment glorieuse) de la saison de ' : 'Trophée de la saison de ') + escapeHtml(t.label) + '.') + '</p><p class="muted" style="text-align:center;">Un trophée n\'est qu\'un souvenir : il n\'a ni note ni bonus, ne joue pas de match, ne se vend pas et ne s\'échange pas. Il ne compte pas dans le pourcentage de collection.</p>';
     if (!preview && card.id && !card.locked) addOwnershipLine(body.querySelector('p'), card.id);      // « 👥 Possédée par N % des joueurs »
     if (!preview && card.quantity > 0 && !card._viewing) {
       body.insertAdjacentHTML('beforeend', '<div class="share-actions" style="margin-top:14px;"><button class="btn-secondary" type="button" id="shareCardBtn">📤 Partager ce trophée</button></div>');
@@ -2359,7 +2368,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.12.2';
+  const SITE_VERSION = '2026.11.12.3';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2568,7 +2577,7 @@
   // ---------- Titres et cadres de profil ----------
   async function openCosmetics(p){
     let cat; try { cat = await api('/cosmetics'); } catch(e) { toast(e.message); return; }
-    const opts = (list, cur) => '<option value="">— aucun —</option>' + list.map(x => '<option value="' + x.id + '"' + (x.unlocked ? '' : ' disabled') + (cur === x.id ? ' selected' : '') + '>' + (x.unlocked ? '' : '🔒 ') + escapeHtml(x.label) + '</option>').join('');
+    const opts = (list, cur) => '<option value="">— aucun —</option>' + list.map(x => '<option value="' + x.id + '"' + (x.unlocked ? '' : ' disabled') + (cur === x.id ? ' selected' : '') + '>' + (x.unlocked ? '' : '🔒 ') + (x.trophy ? '🏆 ' : '') + escapeHtml(x.label) + '</option>').join('');
     const locked = [...cat.titles.filter(t => !t.unlocked).map(t => 'Titre « ' + t.label + ' » : ' + t.desc), ...cat.frames.filter(f => !f.unlocked).map(f => 'Cadre ' + f.label + ' : ' + f.desc)];
     const unl = cat.titles.filter(t => t.unlocked).length + cat.frames.filter(f => f.unlocked).length;
     let inv = { items: [], loadout: {} }; try { inv = await api('/pass/inventory'); } catch(e) { /* pas de Pass */ }
@@ -3636,7 +3645,7 @@
         '<li>Seule ta <b>première victoire du jour</b> à chaque niveau rapporte : 5, 10 ou 15 crédits et 10, 20 ou 30 points de Pass (30 crédits et 60 points au maximum par jour). Tu peux rejouer pour l\'honneur.</li>' +
         '<li>Aucun effet sur l\'Elo, l\'historique 1v1, les packs match ni les missions du jour.</li>' +
         '<li>Palmarès <b>« Tombeurs du club »</b> (victoires au niveau Difficile d\'abord), et titre <b>« Tombeur du club »</b> à 10 victoires au niveau Difficile.</li></ul>' +
-        '<h3>Le tournoi du mois</h3><p>Chaque mois, un <b>tournoi à élimination directe</b> (onglet Tournoi) : inscriptions du 1er au 7 contre un droit d\'entrée, tirage le 8, un match par tour (24 h pour composer ton équipe, forfait sinon, tirs au but en cas d\'égalité). Il ne compte <b>pas</b> pour l\'Elo. La cagnotte revient au vainqueur, au finaliste et aux demi-finalistes ; le vainqueur gagne un trophée.</p>' + '<h3>Les saisons</h3><p>Chaque mois est une <b>saison</b> : le 1er à minuit (heure de Paris), l\'Elo de tout le monde repart à <b>1000</b>. Il faut avoir joué au moins <b>5 matchs</b> dans le mois pour monter sur le podium. Les <b>3 premiers</b> gagnent des crédits (100, 60, 30) et un <b>trophée</b> : une carte « Vainqueur de saison (mois) », « Deuxième de la saison (mois) » ou « Troisième de la saison (mois) ». Il y a un trophée par saison : être premier deux fois donne deux cartes différentes, jamais un doublon. Un trophée n\'est qu\'un <b>souvenir</b> : il ne sort d\'aucun pack, n\'a ni note ni bonus, ne joue pas de match, ne se vend pas, ne s\'achète pas et ne compte pas dans le pourcentage de collection. Il se range dans « Trophées de saison », dans ta collection. Les <b>3 joueurs qui ont joué le plus de matchs</b> du mois reçoivent aussi un trophée : « Joueur le plus assidu de la saison » (puis 2e et 3e).</p>' +
+        '<h3>Le tournoi du mois</h3><p>Chaque mois, un <b>tournoi à élimination directe</b> (onglet Tournoi) : inscriptions du 1er au 7 contre un droit d\'entrée, tirage le 8, un match par tour (24 h pour composer ton équipe, forfait sinon, tirs au but en cas d\'égalité). Il ne compte <b>pas</b> pour l\'Elo. La cagnotte revient au vainqueur, au finaliste et aux demi-finalistes ; chacun reçoit aussi sa carte (vainqueur, finaliste, demi-finaliste).</p><p>Chaque carte trophée (saison, tournoi) te donne aussi un <b>titre</b> à son nom, à choisir dans ton profil (🎨 Titre et cadre).</p>' + '<h3>Les saisons</h3><p>Chaque mois est une <b>saison</b> : le 1er à minuit (heure de Paris), l\'Elo de tout le monde repart à <b>1000</b>. Il faut avoir joué au moins <b>5 matchs</b> dans le mois pour monter sur le podium. Les <b>3 premiers</b> gagnent des crédits (300, 200, 100) et un <b>trophée</b> : une carte « Vainqueur de saison (mois) », « Deuxième de la saison (mois) » ou « Troisième de la saison (mois) ». Il y a un trophée par saison : être premier deux fois donne deux cartes différentes, jamais un doublon. Un trophée n\'est qu\'un <b>souvenir</b> : il ne sort d\'aucun pack, n\'a ni note ni bonus, ne joue pas de match, ne se vend pas, ne s\'achète pas et ne compte pas dans le pourcentage de collection. Il se range dans « Trophées de saison », dans ta collection. Les <b>3 joueurs qui ont joué le plus de matchs</b> du mois reçoivent aussi un trophée : « Joueur le plus assidu de la saison » (puis 2e et 3e).</p>' +
         '<h3>Mises, packs et classement</h3><ul>' +
         '<li><b>Mise</b> de ' + cfg.stake_min + ' à ' + cfg.stake_max + ' crédits, bloquée tant que le défi est ouvert. Le gagnant prend les deux mises <b>et un pack match</b> ; le perdant reçoit <b>un pack classique</b>. En cas de <b>nul</b>, chacun récupère sa mise <b>et reçoit un pack classique</b>. Le 1v1 rapporte <b>10 packs au maximum par jour</b> (un pack match si tu gagnes, un classique si tu perds ou fais nul) : ensuite, tu peux continuer à jouer autant que tu veux, et chaque match te rapporte <b>1 à 5 crédits</b> au hasard à la place, <b>' + (cfg.after_cap_daily_max || 50) + ' crédits par jour au maximum</b> (plus de cartes jusqu\'à minuit). Les mises, l\'Elo et les missions ne changent pas.</li>' +
         '<li><b>Enveloppe pour l\'arbitre</b> (facultative, sans plafond) : tu glisses des crédits à l\'arbitre en plus de ta mise. <b>Celui qui met le plus gagne +' + Math.round(cfg.referee_bonus * 100) + ' %</b> dans le match, comme un bonus d\'équipe ; en cas d\'égalité, personne ne l\'a. '
@@ -4981,6 +4990,17 @@
   }
   const eventDelay = ev => ({ kickoff: 900, tactic: 2000, goal: 1800, chance: 1100, half: 1400, full: 300 })[ev.kind] || 1000;
 
+  // statistiques de fin de match (possession, tirs…) : elles suivent la simulation, sans rien changer au résultat (absentes des anciens matchs)
+  const MATCH_STAT_ROWS = [['possession', 'Possession', '%'], ['shots', 'Tirs'], ['on_target', 'Tirs cadrés'], ['saves', 'Arrêts du gardien'], ['corners', 'Corners'], ['offsides', 'Hors-jeu'], ['fouls', 'Fautes'], ['yellow', 'Cartons jaunes']];
+  function renderMatchStats(recap){
+    const root = byId('msStats'), st = recap && recap.lineups && recap.lineups.stats;
+    if (!st) { root.innerHTML = ''; return; }
+    root.innerHTML = '<h4>📊 Statistiques du match</h4><div class="mst-row"><span class="v">' + escapeHtml(recap.challenger) + '</span><span></span><span class="v b">' + escapeHtml(recap.defender) + '</span></div>' +
+      MATCH_STAT_ROWS.filter(([k]) => st[k]).map(([k, label, unit]) => {
+        const [a, b] = st[k], tot = a + b, pa = tot ? a / tot * 100 : 50;
+        return '<div class="mst-row"><span class="v">' + a + (unit || '') + '</span><div class="mst-mid"><span class="mst-label">' + label + '</span><div class="mst-bar"><span class="a" style="width:' + pa + '%"></span><span class="b" style="width:' + (100 - pa) + '%"></span></div></div><span class="v b">' + b + (unit || '') + '</span></div>';
+      }).join('');
+  }
   function renderLineups(lineups){
     const root = byId('msLineups'); root.innerHTML = '';
     if (!lineups) return;
@@ -5070,6 +5090,7 @@
     const rc = matchState.recap, opp = rc.challenger === myPseudo ? rc.defender : (rc.defender === myPseudo ? rc.challenger : null);
     byId('msRematch').style.display = opp && !rc.tournament && !rc.club && !rc.draft ? '' : 'none'; matchState.rematch = opp ? { target: opp, stake: rc.stake } : null;      // revanche : un défi privé au même adversaire, avec la même mise
     renderMatchResult(matchState.recap, matchState.isNew);
+    renderMatchStats(matchState.recap);
     renderLineups(matchState.recap.lineups);
   }
   function showMatchInstantly(){
@@ -5085,7 +5106,7 @@
     const token = ++matchState.token;
     byId('msTitle').textContent = opts.isNew ? 'Match en direct' : 'Récap du match';
     byId('msNameA').textContent = recap.challenger; byId('msNameB').textContent = recap.defender;
-    byId('msTimeline').innerHTML = ''; byId('msResult').innerHTML = ''; byId('msLineups').innerHTML = ''; byId('msRematch').style.display = 'none';
+    byId('msTimeline').innerHTML = ''; byId('msResult').innerHTML = ''; byId('msStats').innerHTML = ''; byId('msLineups').innerHTML = ''; byId('msRematch').style.display = 'none';
     setMatchScore(0, 0, false); byId('msClock').textContent = "0'";
     byId('msReplay').style.display = 'none';
     byId('msSkip').style.display = opts.animate ? '' : 'none';
