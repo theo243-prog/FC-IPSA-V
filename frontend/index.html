@@ -934,6 +934,38 @@
   .duel-grid .season-prizes .p-credits{font-size:12px;margin:2px 0 4px;}
   table.duel-table th{position:sticky;top:0;background:var(--bg-elevated);z-index:1;}
   @media (max-width:760px){.duel-grid{grid-template-columns:1fr;} .duel-grid .cell{height:480px;} .duel-grid .duel-proposals.cell{height:600px;} .duel-grid .season-box.cell,.duel-grid .duel-grid-board.cell{height:580px;} .duel-grid .duel-stars.cell{height:520px;}}
+  /* ---- Mode draft ---- */
+  .draft-box{border-top:5px solid #7A4EC9;}
+  .draft-beta{font-size:12px;font-weight:700;background:#7A4EC9;color:#fff;border-radius:999px;padding:2px 8px;vertical-align:middle;}
+  .draft-create{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;} .draft-create input{flex:1;min-width:180px;}
+  .draft-sub{margin:14px 0 6px;font-size:15px;}
+  .draft-open-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;background:var(--bg-sunk);}
+  .draft-open-row.invited{border-color:#7A4EC9;}
+  .draft-room{display:flex;flex-direction:column;gap:12px;}
+  .draft-wait{font-size:15px;line-height:1.5;padding:12px;background:var(--bg-sunk);border-radius:12px;}
+  .draft-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:15px;}
+  .draft-clock{font-variant-numeric:tabular-nums;font-size:18px;} .draft-clock.urgent{color:#D92D20;}
+  .draft-bar{height:6px;background:var(--bg-sunk);border-radius:999px;overflow:hidden;} .draft-bar > div{height:100%;width:100%;background:#7A4EC9;transition:width .25s linear;}
+  .draft-lot{display:flex;gap:16px;align-items:center;flex-wrap:wrap;}
+  .draft-lot-card .card{zoom:.8;}
+  .draft-lot-info{flex:1;min-width:220px;display:flex;flex-direction:column;gap:6px;}
+  .draft-lot-num{font-size:13px;color:var(--text-muted);} .draft-lot-kind{font-weight:700;}
+  .draft-high{font-size:16px;} .draft-turn{font-weight:700;color:var(--text-muted);} .draft-turn.mine{color:#2E9E5B;}
+  .draft-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .draft-custom{display:inline-flex;gap:4px;align-items:center;} .draft-custom input{width:80px;}
+  .draft-teams{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;}
+  .draft-teams h4{margin:0 0 6px;font-size:14px;}
+  .draft-picks{display:flex;flex-wrap:wrap;gap:4px;}
+  .draft-pick{display:flex;flex-direction:column;align-items:center;} .draft-pick .card{zoom:.42;} .draft-price{font-size:12px;font-weight:700;}
+  .draft-log{font-size:13px;color:var(--text-muted);display:flex;flex-direction:column;gap:2px;}
+  .draft-foot{display:flex;justify-content:flex-end;}
+  .draft-lu-head{display:flex;gap:12px;flex-wrap:wrap;} .draft-lu-head label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;}
+  .draft-lu-rows{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;}
+  .draft-lu-row{display:flex;gap:8px;align-items:center;border:1px solid var(--border);border-radius:10px;padding:6px;} .draft-lu-row .card{zoom:.38;flex:none;}
+  .draft-lu-ctl{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:13px;} .draft-lu-name{font-weight:700;} .draft-lu-name .muted{font-weight:400;font-size:12px;}
+  .draft-cap{display:flex;gap:4px;align-items:center;font-size:12.5px;}
+  .draft-lu-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+  @media (max-width:760px){.draft-teams{grid-template-columns:1fr;} .draft-lot{justify-content:center;}}
   /* ---- Défi du club ---- */
   .club-box{border-top:5px solid #2E9E5B;}
   .club-levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
@@ -1086,6 +1118,7 @@
     <button class="tab" data-tab="classement">Classement</button>
     <button class="tab" data-tab="actualite">Actualité<span class="tab-dot" id="newsDot" hidden></span></button>
     <button class="tab" data-tab="duels">Matchs 1v1</button>
+    <button class="tab" data-tab="draft" id="draftTabBtn" hidden>Draft<span class="tab-dot" id="draftDot" hidden></span></button>
     <button class="tab" data-tab="tournoi">Tournoi<span class="tab-dot" id="tournoiDot" hidden></span></button>
     <button class="tab" data-tab="chat">Chat<span class="tab-dot" id="chatDot" hidden></span></button>
   </nav>
@@ -1261,6 +1294,10 @@
       <div id="matchesEl"></div>
     </section>
 
+    <section id="tab-draft" class="tab-panel">
+      <div class="panel-box draft-box"><h2>🃏 Draft <span class="draft-beta">essai</span></h2><div id="draftMain"></div></div>
+      <div class="panel-box" style="margin-top:16px;"><h2 id="draftRankTitle">🏆 Classement draft</h2><div class="cell-scroll" id="draftRanking"></div></div>
+    </section>
     <section id="tab-duels" class="tab-panel">
       <div class="help-row"><button class="help-btn" type="button" data-help="duels"><span class="help-q">?</span> Aide</button></div>
       <div class="duel-grid">
@@ -1527,6 +1564,7 @@
       if (btn.dataset.tab === 'shop') loadShop();
       if (btn.dataset.tab === 'classement') loadLeaderboard();
       if (btn.dataset.tab === 'actualite') { loadNews(); updateNewsDot(); }
+      if (btn.dataset.tab === 'draft') { loadDraft(); updateDraftDot(); }
       if (btn.dataset.tab === 'duels') { loadDuelsTab(); setTimeout(fitDuelCells, 600); setTimeout(fitDuelCells, 1800); }
     });
   });
@@ -2319,7 +2357,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.11.7';
+  const SITE_VERSION = '2026.11.12.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3090,6 +3128,7 @@
       if (meInfo.welcome) showWelcome(meInfo.welcome);        // compte tout neuf : pop-up de bienvenue
       updateChatDot();                                         // point rouge de l'onglet Chat
       updateTournamentDot();                                   // point rouge de l'onglet Tournoi (un match à composer)
+      updateDraftTab();                                        // onglet Draft : seulement pour les comptes qui y ont accès
       if (meInfo.notices_unread !== noticeSeen) loadNotices();  // encadré « Notifications » : du nouveau
       updateNewsDot();                                         // point rouge de l'onglet Actualité (un vote « homme du match » à faire)
       document.getElementById('chipCredits').textContent = meInfo.credits;
@@ -4985,6 +5024,11 @@
       root.innerHTML = '<div class="match-result"><div class="big">🏆 ' + escapeHtml(tn.winner || '?') + ' se qualifie</div>' + escapeHtml(tn.round_name) + ' du tournoi de ' + escapeHtml(tn.label) + (tn.pens ? ' · égalité, tirs au but : <b>' + tn.pens[0] + '–' + tn.pens[1] + '</b>' : '') + '<br><span class="muted">Match de tournoi : il ne compte ni pour l\'Elo ni pour les statistiques, et ne rapporte ni pack ni crédits.</span></div>';
       return;
     }
+    if (recap.draft) {
+      const dr = recap.draft, head = dr.result === 'me' ? '🏆 Victoire !' : (dr.result === 'draw' ? '🤝 Match nul' : '😔 Défaite');
+      root.innerHTML = '<div class="match-result"><div class="big">' + head + '</div>🃏 Match draft · classement du mois ' + dr.elo.before + ' → ' + dr.elo.after + ' (' + signed(dr.elo.after - dr.elo.before) + ')' + draftRewardLine(dr.reward) + '</div>';
+      return;
+    }
     if (recap.club) {
       const cl = recap.club;
       let html = '<div class="big">' + (cl.won ? '🏆 Tu bats le club !' : '😔 Le club l\'emporte') + '</div>' + cl.icon + ' Niveau ' + escapeHtml(cl.label) + (cl.pens ? ' · égalité, tirs au but : <b>' + cl.pens[0] + '–' + cl.pens[1] + '</b>' : '');
@@ -5022,7 +5066,7 @@
     byId('msSkip').style.display = 'none';
     byId('msReplay').style.display = '';
     const rc = matchState.recap, opp = rc.challenger === myPseudo ? rc.defender : (rc.defender === myPseudo ? rc.challenger : null);
-    byId('msRematch').style.display = opp && !rc.tournament && !rc.club ? '' : 'none'; matchState.rematch = opp ? { target: opp, stake: rc.stake } : null;      // revanche : un défi privé au même adversaire, avec la même mise
+    byId('msRematch').style.display = opp && !rc.tournament && !rc.club && !rc.draft ? '' : 'none'; matchState.rematch = opp ? { target: opp, stake: rc.stake } : null;      // revanche : un défi privé au même adversaire, avec la même mise
     renderMatchResult(matchState.recap, matchState.isNew);
     renderLineups(matchState.recap.lineups);
   }
@@ -5052,22 +5096,304 @@
       return;
     }
     if (!opts.animate) { showMatchInstantly(); return; }
+    let target = opts.startAt || Date.now();            // draft : chaque événement à heure fixe depuis le coup d'envoi commun (un écran en retard rattrape)
     for (const ev of recap.events) {
       if (token !== matchState.token) return;           // fermé, passé ou relancé entre-temps
       appendMatchEvent(ev);
       byId('msClock').textContent = ev.minute + "'";
       if (ev.kind === 'goal') setMatchScore(ev.score[0], ev.score[1], true);
-      await duelSleep(eventDelay(ev));
+      target += eventDelay(ev);
+      await duelSleep(Math.max(0, target - Date.now()));
     }
     if (token === matchState.token) finishMatch();
   }
   byId('msSkip').addEventListener('click', () => { matchState.token++; showMatchInstantly(); });
   byId('msReplay').addEventListener('click', () => showMatch(matchState.recap, { isNew: matchState.isNew, animate: true }));
 
+  // ---------- Mode draft : match en direct, équipe construite aux enchères (comptes choisis dans l'administration) ----------
+  const draft = { room: null, timer: null, lobbyTimer: null, key: null, at: 0, busy: false, shownMatch: null, lineupFor: null, logLen: 0, checked: false, rules: null };
+  const DRAFT_ACTIVE = ['waiting', 'bidding', 'lineup'];
+  const fmtSec = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+  function draftTabVisible(){ const t = byId('tab-draft'); return !!t && t.classList.contains('active'); }
+  function draftOpp(s){ return s.me === 'host' ? s.guest : s.host; }
+  const draftNote = c => (c.display_note && c.display_note.value) || 0;
+  function updateDraftTab(){
+    const b = byId('draftTabBtn'); if (!b || !meInfo) return;
+    b.hidden = !meInfo.draft_access;
+    if (meInfo.draft_access && !draft.checked) { draft.checked = true; resumeDraft(); }
+  }
+  async function resumeDraft(){                     // une partie en cours (page rechargée) : on la reprend, même hors de l'onglet
+    try { const d = await api('/draft'); if (d.my_room) { draft.room = d.my_room; draft.at = Date.now(); startDraftPoll(); updateDraftDot(); } } catch(e) {}
+  }
+  function updateDraftDot(){ const dot = byId('draftDot'); if (dot) dot.hidden = !(draft.room && DRAFT_ACTIVE.includes(draft.room.status)) || draftTabVisible(); }
+  function startDraftPoll(){ if (!draft.timer) draft.timer = setInterval(pollDraft, 1000); }
+  function stopDraftPoll(){ clearInterval(draft.timer); draft.timer = null; }
+  async function pollDraft(){
+    if (!draft.room || draft.busy) return;
+    draft.busy = true;
+    try { draft.room = await api('/draft/' + draft.room.id); draft.at = Date.now(); renderDraftRoom(); }
+    catch(e) { if (e.message !== 'unauthorized') toast(e.message); stopDraftPoll(); }
+    finally { draft.busy = false; }
+    if (draft.room && !DRAFT_ACTIVE.includes(draft.room.status)) { stopDraftPoll(); refreshMe(true); }
+    updateDraftDot();
+  }
+  async function draftAct(path, body){
+    try { draft.room = await api('/draft/' + draft.room.id + '/' + path, { method: 'POST', body: JSON.stringify(body || {}) }); draft.at = Date.now(); draft.key = null; renderDraftRoom(); }
+    catch(e) { toast(e.message); }
+  }
+
+  async function loadDraft(){
+    const main = byId('draftMain'); if (!main) return;
+    try { await loadDuelConfig(); } catch(e) {}
+    let d; try { d = await api('/draft'); } catch(e) { if (e.message !== 'unauthorized') main.innerHTML = '<div class="empty-state">' + escapeHtml(e.message) + '</div>'; return; }
+    draft.rules = d.rules; renderDraftRanking(d);
+    if (d.my_room) { draft.room = d.my_room; draft.at = Date.now(); draft.key = null; renderDraftRoom(); startDraftPoll(); return; }
+    if (draft.room && draft.room.status === 'done') { renderDraftRoom(); return; }          // le résultat reste affiché jusqu'au retour au salon
+    draft.room = null; renderDraftLobby(d);
+  }
+  function backToLobby(){ draft.room = null; draft.key = null; draft.lineupFor = null; byId('draftMain').innerHTML = ''; loadDraft(); }
+
+  function renderDraftRanking(d){
+    const root = byId('draftRanking'); if (!root) return;
+    const [y, m] = d.season.split('-');
+    byId('draftRankTitle').textContent = '🏆 Classement draft · ' + new Date(+y, +m - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    root.innerHTML = d.ranking.length ? '<table class="duel-table"><thead><tr><th></th><th>Joueur</th><th class="num">Elo</th><th class="num">M</th><th class="num">V</th><th class="num">N</th><th class="num">D</th></tr></thead><tbody>' +
+      d.ranking.map((r, i) => '<tr' + (r.pseudo === myPseudo ? ' class="me"' : '') + '><td><span class="rank-num">#' + (i + 1) + '</span></td><td>' + escapeHtml(r.pseudo) + '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.played + '</td><td class="num">' + r.wins + '</td><td class="num">' + r.draws + '</td><td class="num">' + r.losses + '</td></tr>').join('') + '</tbody></table>'
+      : '<div class="empty-state">Personne n\'a encore joué de draft ce mois-ci. Le classement repart de zéro chaque mois.</div>';
+  }
+
+  function renderDraftLobby(d){
+    const main = byId('draftMain'), r = d.rules;
+    if (!byId('draftOpen')) {
+      main.innerHTML = '<p class="duel-hint">Un match à deux, <b>en même temps devant vos écrans</b>. Le jeu tire en secret <b>' + r.players + ' joueurs et ' + r.fans + ' fans</b> parmi les cartes du jeu (pas les vôtres), présentés un par un : on ne sait jamais combien de gardiens, défenseurs, milieux ou attaquants il reste. Chacun a <b>' + r.budget + ' pièces</b>, pour ce match seulement. À chaque carte, celui qui parle en premier change : il mise (dès 0) ou passe, puis on surenchérit d\'au moins ' + r.min_step + ' pièces. Passer sans mise laisse la carte à l\'adversaire pour 0. ' + r.bid_seconds + ' secondes pour répondre. Chaque équipe a 5 joueurs et 1 fan au plus. Si tu tombes à 0 pièce, l\'adversaire choisit pour toi ce qui reste.</p>' +
+        '<p class="duel-hint">Ensuite, <b>' + r.lineup_seconds + ' secondes</b> pour choisir formation, tactique, postes et capitaine, et le match se joue en direct sur les deux écrans. Cartes au niveau 0 et à 100 % de forme. Récompenses comme en 1v1 : pack match au gagnant, pack classique au perdant ou aux deux en cas de nul, dans la même limite de ' + r.pack_cap + ' packs par jour. Le classement draft repart de zéro chaque mois.</p>' +
+        '<div class="draft-create"><input id="draftInvite" type="text" placeholder="Inviter un joueur (pseudo, facultatif)" maxlength="40"><button class="btn-primary" id="draftCreateBtn" type="button">🃏 Créer une partie</button></div>' +
+        '<h3 class="draft-sub">Parties qui attendent un adversaire</h3><div id="draftOpen"></div><p class="duel-hint" id="draftMine"></p>';
+      byId('draftCreateBtn').addEventListener('click', async e => {
+        const b = e.currentTarget; b.disabled = true;
+        try { draft.room = await api('/draft/create', { method: 'POST', body: JSON.stringify({ invite: byId('draftInvite').value.trim() }) }); draft.at = Date.now(); draft.key = null; draft.shownMatch = null; renderDraftRoom(); startDraftPoll(); }
+        catch(err) { toast(err.message); b.disabled = false; }
+      });
+    }
+    byId('draftMine').innerHTML = 'Ton classement ce mois : <b>' + d.my_rating.elo + '</b> (' + d.my_rating.played + ' match' + (d.my_rating.played > 1 ? 's' : '') + ').';
+    const open = byId('draftOpen'); open.innerHTML = '';
+    if (!d.open_rooms.length) open.innerHTML = '<div class="empty-state">Personne n\'attend pour l\'instant : crée une partie, ou invite quelqu\'un.</div>';
+    d.open_rooms.forEach(o => {
+      const row = document.createElement('div'); row.className = 'draft-open-row' + (o.invited ? ' invited' : '');
+      row.innerHTML = '<span>' + (o.invited ? '📩 <b>' + escapeHtml(o.host) + '</b> t\'invite' : '<b>' + escapeHtml(o.host) + '</b> cherche un adversaire') + ' <span class="muted">· encore ' + fmtSec(o.remaining) + '</span></span>';
+      const b = document.createElement('button'); b.className = 'btn-primary'; b.type = 'button'; b.textContent = 'Rejoindre';
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        try { draft.room = await api('/draft/' + o.id + '/join', { method: 'POST' }); draft.at = Date.now(); draft.key = null; draft.shownMatch = null; renderDraftRoom(); startDraftPoll(); }
+        catch(err) { toast(err.message); loadDraft(); }
+      });
+      row.appendChild(b); open.appendChild(row);
+    });
+    clearTimeout(draft.lobbyTimer);
+    draft.lobbyTimer = setTimeout(() => { if (draftTabVisible() && !draft.room) loadDraft(); }, 4000);
+  }
+
+  function draftClockLeft(){ const s = draft.room; return s && s.remaining != null ? s.remaining - (Date.now() - draft.at) / 1000 : null; }
+  function updateDraftClock(){
+    const left = draftClockLeft();
+    document.querySelectorAll('#draftMain .draft-clock').forEach(el => { el.textContent = left == null ? '' : fmtSec(left); el.classList.toggle('urgent', left != null && left <= 5); });
+    const bar = byId('draftBar'); if (bar && left != null && draft.room) { const tot = draft.room.status === 'lineup' ? draft.room.lineup_seconds : draft.room.bid_seconds; bar.style.width = Math.max(0, Math.min(100, left / tot * 100)) + '%'; }
+  }
+  setInterval(() => { if (draft.room && DRAFT_ACTIVE.includes(draft.room.status)) updateDraftClock(); }, 250);
+
+  function draftCardEl(card, label){
+    const box = document.createElement('div'); box.className = 'draft-pick';
+    box.appendChild(makeMiniCard(card, { hideCount: true }));
+    if (label) { const t = document.createElement('div'); t.className = 'draft-price'; t.textContent = label; box.appendChild(t); }
+    return box;
+  }
+  function draftKindLabel(card){
+    if (card.kind === 'fan') return '🎉 Fan · bonus d\'équipe';
+    const cat = duelConfig && duelConfig.poste_category ? duelConfig.poste_category[(card.poste || '').toUpperCase()] : null;
+    return cat ? SLOT_ICON[cat] + ' ' + ((duelConfig.slot_labels || {})[cat] || cat) : '✳️ Polyvalent (aucun malus, quel que soit le poste)';
+  }
+  function draftHow(l, opp){
+    const who = l.to === 'me' ? 'toi' : escapeHtml(opp);
+    const how = { given: ' (laissée)', auto: ' (d\'office : l\'autre équipe était complète)', timeout: ' (temps écoulé)', bid: '' }[l.how] || '';
+    return 'Carte ' + l.lot + ' : <b>' + escapeHtml(l.card.player_name) + '</b> → ' + who + ' pour ' + l.price + ' 🪙' + how;
+  }
+
+  function renderDraftRoom(){
+    const s = draft.room, main = byId('draftMain'); if (!s || !main) return;
+    if (!draftTabVisible()) { updateDraftDot(); if (s.status !== 'done') return; }
+    const key = JSON.stringify([s.id, s.status, s.lot && [s.lot.number, s.lot.high, s.lot.turn], s.coins, s.picks && [s.picks.me.length, s.picks.opp.length], s.lineup && [!!s.lineup.mine, s.lineup.submitted_opp], !!s.match]);
+    if (key === draft.key && byId('draftRoomBox')) { updateDraftClock(); return; }
+    draft.key = key;
+    const opp = draftOpp(s) || '?';
+    if (draft.logRoom === s.id && s.log && s.log.length > draft.logLen) { const l = s.log[0]; toast((l.to === 'me' ? '✅ ' : '➡️ ') + l.card.player_name + (l.to === 'me' ? ' est à toi' : ' va à ' + opp) + ' pour ' + l.price + ' pièces'); }
+    draft.logLen = s.log ? s.log.length : 0; draft.logRoom = s.id;
+    if (s.status === 'waiting') {
+      main.innerHTML = '<div id="draftRoomBox" class="draft-room"><div class="draft-wait">⏳ En attente d\'un adversaire' + (s.invited ? ' : invitation envoyée à <b>' + escapeHtml(s.invited) + '</b>' : ' : toute personne qui a accès au draft peut te rejoindre') + '… <b class="draft-clock"></b></div>' +
+        '<p class="duel-hint">Reste sur cette page : si tu la quittes plus de 30 secondes, la partie disparaît.</p><button class="btn-secondary" type="button" id="draftCancel">Annuler la partie</button></div>';
+      byId('draftCancel').addEventListener('click', async () => { try { await api('/draft/' + s.id + '/cancel', { method: 'POST' }); } catch(e) { toast(e.message); } stopDraftPoll(); backToLobby(); });
+    } else if (s.status === 'bidding') renderDraftBidding(s, opp);
+    else if (s.status === 'lineup') renderDraftLineup(s, opp);
+    else if (s.status === 'done') renderDraftDone(s, opp);
+    else {
+      main.innerHTML = '<div id="draftRoomBox" class="draft-room"><div class="draft-wait">' + (s.status === 'expired' ? '⌛ Personne n\'a rejoint la partie à temps.' : '✖️ Partie annulée' + (s.cancel_reason ? ' : ' + escapeHtml(s.cancel_reason) : '') + '.') + '</div><button class="btn-primary" type="button" id="draftBack">Retour au salon</button></div>';
+      byId('draftBack').addEventListener('click', backToLobby);
+    }
+    updateDraftClock();
+  }
+
+  function draftTeams(s, opp){
+    const count = side => ({ j: s.picks[side].filter(c => c.kind === 'joueur').length, f: s.picks[side].some(c => c.kind === 'fan') });
+    const me = count('me'), op = count('opp');
+    return '<div class="draft-teams"><div><h4>Mon équipe · ' + me.j + '/5 joueurs' + (me.f ? ' · fan ✓' : '') + '</h4><div class="draft-picks" id="draftPicksMe"></div></div>' +
+      '<div><h4>' + escapeHtml(opp) + ' · ' + op.j + '/5 joueurs' + (op.f ? ' · fan ✓' : '') + '</h4><div class="draft-picks" id="draftPicksOpp"></div></div></div>';
+  }
+  function fillDraftTeams(s){
+    ['me', 'opp'].forEach(side => { const root = byId(side === 'me' ? 'draftPicksMe' : 'draftPicksOpp'); if (!root) return;
+      if (!s.picks[side].length) root.innerHTML = '<div class="muted" style="font-size:13px;">Aucune carte pour l\'instant</div>';
+      s.picks[side].forEach(c => root.appendChild(draftCardEl(c, c.price + ' 🪙'))); });
+  }
+
+  function renderDraftBidding(s, opp){
+    const main = byId('draftMain'), lot = s.lot, mine = lot.turn === 'me';
+    const high = lot.high ? (lot.high.by === 'me' ? 'Ta mise : <b>' + lot.high.amount + '</b> 🪙' : escapeHtml(opp) + ' mise <b>' + lot.high.amount + '</b> 🪙') : 'Aucune mise pour l\'instant';
+    main.innerHTML = '<div id="draftRoomBox" class="draft-room">' +
+      '<div class="draft-top"><span>🪙 Toi : <b>' + s.coins.me + '</b></span><span class="draft-clock-wrap">⏱ <b class="draft-clock"></b></span><span>' + escapeHtml(opp) + ' : <b>' + s.coins.opp + '</b> 🪙</span></div>' +
+      '<div class="draft-bar"><div id="draftBar"></div></div>' +
+      '<div class="draft-lot"><div class="draft-lot-card" id="draftLotCard"></div><div class="draft-lot-info">' +
+        '<div class="draft-lot-num">Carte ' + lot.number + ' sur ' + s.total_lots + (s.left ? ' · encore ' + s.left + ' après celle-ci' : ' · la dernière') + '</div>' +
+        '<div class="draft-lot-kind">' + draftKindLabel(lot.card) + '</div>' +
+        '<div class="draft-high">' + high + '</div>' +
+        '<div class="draft-turn' + (mine ? ' mine' : '') + '">' + (mine ? '👉 À toi de jouer' + (lot.opener === 'me' && !lot.high ? ' (tu parles en premier)' : '') : '⏳ ' + escapeHtml(opp) + ' réfléchit…') + '</div>' +
+        '<div class="draft-actions" id="draftActions"></div></div></div>' +
+      draftTeams(s, opp) +
+      '<div class="draft-log">' + (s.log.length ? s.log.slice(0, 6).map(l => '<div>' + draftHow(l, opp) + '</div>').join('') : '') + '</div>' +
+      '<div class="draft-foot"><button class="btn-small ghost" type="button" id="draftForfeit">🏳️ Abandonner</button></div></div>';
+    const lc = byId('draftLotCard'); lc.appendChild(makeMiniCard(lot.card, { hideCount: true }));
+    fillDraftTeams(s);
+    byId('draftForfeit').addEventListener('click', () => { if (confirm('Abandonner ? Tu perds le match par forfait, sans récompense.')) draftAct('forfeit'); });
+    if (!mine) return;
+    const acts = byId('draftActions'), mn = lot.min_bid, coins = s.coins.me;
+    if (coins >= mn) {
+      const vals = [...new Set([mn, mn + 10, mn + 25, mn + 50, mn + 100].filter(v => v <= coins))];
+      vals.forEach(v => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn-small'; b.textContent = (v === 0 ? 'Je la prends (0)' : 'Miser ' + v); b.addEventListener('click', () => draftAct('bid', { amount: v })); acts.appendChild(b); });
+      if (coins > (vals[vals.length - 1] || 0)) { const all = document.createElement('button'); all.type = 'button'; all.className = 'btn-small'; all.textContent = 'Tout : ' + coins; all.addEventListener('click', () => draftAct('bid', { amount: coins })); acts.appendChild(all); }
+      const wrap = document.createElement('span'); wrap.className = 'draft-custom';
+      wrap.innerHTML = '<input type="number" id="draftAmount" min="' + mn + '" max="' + coins + '" step="5" placeholder="' + mn + '">';
+      const go = document.createElement('button'); go.type = 'button'; go.className = 'btn-small'; go.textContent = 'Miser';
+      go.addEventListener('click', () => { const v = parseInt(byId('draftAmount').value, 10); if (isNaN(v)) { toast('Indique une mise'); return; } draftAct('bid', { amount: v }); });
+      wrap.appendChild(go); acts.appendChild(wrap);
+    }
+    const pass = document.createElement('button'); pass.type = 'button'; pass.className = 'btn-secondary';
+    pass.textContent = lot.high ? 'Je passe : ' + opp + ' la prend pour ' + lot.high.amount : 'Je la laisse à ' + opp + ' (gratuite)';
+    pass.addEventListener('click', () => draftAct('pass')); acts.appendChild(pass);
+  }
+
+  // la meilleure équipe avec ces 5 cartes (même calcul que le serveur) : formation et postes qui donnent la plus grosse somme de notes
+  function draftBestLineup(cards){
+    const cat = c => duelConfig.poste_category[(c.poste || '').toUpperCase()] || null, malus = duelConfig.out_of_position_malus;
+    const perms = a => a.length <= 1 ? [a] : a.flatMap((x, i) => perms(a.slice(0, i).concat(a.slice(i + 1))).map(p => [x].concat(p)));
+    let best = null;
+    ['1-2-1', '2-1-1', '1-1-2'].forEach(f => {
+      const slots = SLOT_ORDER.flatMap(k => Array(duelConfig.formations[f][k]).fill(k));
+      perms(cards.map((_, i) => i)).forEach(p => {
+        const tot = p.reduce((n, idx, j) => { const c = cards[idx], nat = cat(c); return n + draftNote(c) * (nat && nat !== slots[j] ? 1 - malus : 1); }, 0);
+        if (!best || tot > best.tot + 1e-9) best = { tot, formation: f, slots: p.map((idx, j) => ({ card_id: cards[idx].id, slot_category: slots[j] })) };
+      });
+    });
+    const cap = cards.slice().sort((a, b) => draftNote(b) - draftNote(a))[0];
+    return { formation: best.formation, slots: best.slots, captain_card_id: cap ? cap.id : null };
+  }
+
+  function renderDraftLineup(s, opp){
+    const main = byId('draftMain');
+    if (s.lineup.mine) {
+      const lu = s.lineup.mine, tl = duelConfig.tactics[lu.tactic] ? duelConfig.tactics[lu.tactic].label : lu.tactic;
+      main.innerHTML = '<div id="draftRoomBox" class="draft-room"><div class="draft-wait">✅ Équipe envoyée : ' + escapeHtml(lu.formation) + ', ' + escapeHtml(tl) + '. ' + (s.lineup.submitted_opp ? escapeHtml(opp) + ' est prêt : le match va commencer…' : 'En attente de ' + escapeHtml(opp) + '… <b class="draft-clock"></b>') + '</div>' + draftTeams(s, opp) + '</div>';
+      fillDraftTeams(s); return;
+    }
+    const players = s.picks.me.filter(c => c.kind === 'joueur'), fan = s.picks.me.find(c => c.kind === 'fan');
+    if (draft.lineupFor === s.id && byId('draftLineupForm')) {           // le formulaire reste tel quel (choix en cours) : seul « adversaire prêt » change
+      byId('draftOppReady').textContent = s.lineup.submitted_opp ? '✅ ' + opp + ' a validé son équipe.' : '⏳ ' + opp + ' compose son équipe…'; return;
+    }
+    draft.lineupFor = s.id;
+    const best = draftBestLineup(players);
+    const fOpts = Object.keys(duelConfig.formations).map(f => '<option value="' + f + '"' + (f === best.formation ? ' selected' : '') + '>' + f + ' (' + escapeHtml(duelConfig.formation_labels[f] || '') + ')</option>').join('');
+    const tOpts = Object.entries(duelConfig.tactics).map(([k, t]) => '<option value="' + k + '">' + escapeHtml(t.label) + ' (bat ' + escapeHtml(duelConfig.tactics[t.beats].label) + ')</option>').join('');
+    main.innerHTML = '<div id="draftRoomBox" class="draft-room"><form id="draftLineupForm" onsubmit="return false;">' +
+      '<div class="draft-top"><span><b>🧩 Compose ton équipe</b></span><span class="draft-clock-wrap">⏱ <b class="draft-clock"></b></span><span id="draftOppReady"></span></div><div class="draft-bar"><div id="draftBar"></div></div>' +
+      '<p class="duel-hint">Sans validation à la fin du temps, la meilleure équipe est choisie pour toi (tactique au hasard). ' + (fan ? 'Ton fan : <b>' + escapeHtml(fan.player_name) + '</b> (bonus d\'équipe).' : 'Tu n\'as pas de fan.') + '</p>' +
+      '<div class="draft-lu-head"><label>Formation <select id="draftFormation">' + fOpts + '</select></label><label>Tactique (secrète) <select id="draftTactic">' + tOpts + '</select></label></div>' +
+      '<div class="draft-lu-rows" id="draftLuRows"></div><div class="tm-hint" id="draftLuCheck"></div>' +
+      '<div class="draft-lu-actions"><button class="btn-secondary" type="button" id="draftBest">⚡ Meilleure équipe</button><button class="btn-primary" type="button" id="draftSend">✅ Valider mon équipe</button></div></form></div>';
+    byId('draftTactic').selectedIndex = Math.floor(Math.random() * 3);
+    const rows = byId('draftLuRows');
+    players.forEach(c => {
+      const row = document.createElement('div'); row.className = 'draft-lu-row';
+      row.appendChild(makeMiniCard(c, { hideCount: true }));
+      const ctl = document.createElement('div'); ctl.className = 'draft-lu-ctl';
+      ctl.innerHTML = '<div class="draft-lu-name">' + escapeHtml(c.player_name) + ' · ⭐ ' + (draftNote(c) || '?') + '<div class="muted">' + draftKindLabel(c) + '</div></div>' +
+        '<select data-card="' + c.id + '">' + SLOT_ORDER.map(k => '<option value="' + k + '">' + SLOT_ICON[k] + ' ' + escapeHtml(duelConfig.slot_labels[k]) + '</option>').join('') + '</select>' +
+        '<label class="draft-cap"><input type="radio" name="draftCap" value="' + c.id + '"> Capitaine</label>';
+      row.appendChild(ctl); rows.appendChild(row);
+    });
+    const apply = lu => { byId('draftFormation').value = lu.formation; lu.slots.forEach(x => { const sel = rows.querySelector('select[data-card="' + x.card_id + '"]'); if (sel) sel.value = x.slot_category; });
+      const r = rows.querySelector('input[value="' + lu.captain_card_id + '"]'); if (r) r.checked = true; check(); };
+    const read = () => ({ formation: byId('draftFormation').value, tactic: byId('draftTactic').value,
+      slots: [...rows.querySelectorAll('select[data-card]')].map(sel => ({ card_id: sel.dataset.card, slot_category: sel.value })),
+      captain_card_id: (rows.querySelector('input[name="draftCap"]:checked') || {}).value || null });
+    const check = () => {
+      const lu = read(), need = duelConfig.formations[lu.formation], got = {}; lu.slots.forEach(x => { got[x.slot_category] = (got[x.slot_category] || 0) + 1; });
+      const okk = SLOT_ORDER.every(k => (got[k] || 0) === need[k]);
+      const warn = lu.slots.filter(x => { const c = players.find(p => p.id === x.card_id), nat = duelConfig.poste_category[(c.poste || '').toUpperCase()]; return nat && nat !== x.slot_category; }).length;
+      byId('draftLuCheck').innerHTML = okk ? '✅ ' + lu.formation + ' complète' + (warn ? ' · ⚠ ' + warn + ' joueur' + (warn > 1 ? 's' : '') + ' hors de son poste (−' + Math.round(duelConfig.out_of_position_malus * 100) + ' %)' : '') + (lu.captain_card_id ? '' : ' · choisis un capitaine (+' + Math.round(duelConfig.captain_bonus * 100) + ' %)')
+        : '❌ La formation ' + lu.formation + ' demande ' + SLOT_ORDER.map(k => need[k] + ' ' + duelConfig.slot_labels[k].toLowerCase()).join(', ');
+      byId('draftSend').disabled = !okk; return okk;
+    };
+    rows.addEventListener('change', check); byId('draftFormation').addEventListener('change', check);
+    byId('draftBest').addEventListener('click', () => apply(draftBestLineup(players)));
+    byId('draftSend').addEventListener('click', async () => { if (!check()) return; byId('draftSend').disabled = true; draft.lineupFor = null; await draftAct('lineup', read()); });
+    apply(best);
+    byId('draftOppReady').textContent = s.lineup.submitted_opp ? '✅ ' + opp + ' a validé son équipe.' : '⏳ ' + opp + ' compose son équipe…';
+  }
+
+  function draftRewardLine(rw){
+    if (!rw) return '';
+    if (rw.pack === 'match') return '<br>🎁 Tu gagnes un <b>pack match</b> !';
+    if (rw.pack === 'classique') return '<br>🎁 Tu reçois un <b>pack classique</b>.';
+    if (rw.credits) return '<br>💰 Tes ' + ((draft.rules && draft.rules.pack_cap) || 10) + ' packs du jour (1v1 et draft) sont déjà gagnés : <b>+' + rw.credits + ' crédit' + (rw.credits > 1 ? 's' : '') + '</b> à la place.';
+    return '<br>Tes packs et tes crédits du jour (1v1 et draft) sont déjà tous gagnés.';
+  }
+  function draftRecap(s){
+    const m = s.match;
+    return Object.assign({}, m, { draft: { result: m.result, elo: m.elo.me, reward: m.rewards.me } });
+  }
+  function renderDraftDone(s, opp){
+    const main = byId('draftMain'), m = s.match;
+    if (!m) { main.innerHTML = ''; return; }
+    const head = m.result === 'me' ? '🏆 Victoire' : (m.result === 'draw' ? '🤝 Match nul' : '😔 Défaite');
+    const elo = m.elo.me, eloTxt = 'Classement draft : ' + elo.before + ' → <b>' + elo.after + '</b> (' + signed(elo.after - elo.before) + ')';
+    if (m.forfeit) {
+      main.innerHTML = '<div id="draftRoomBox" class="draft-room"><div class="draft-wait"><b>' + head + '</b> · ' + (m.forfeit_by === 'me' ? 'tu as abandonné la partie.' : escapeHtml(opp) + ' a quitté la partie : victoire par forfait.') + '<br>' + eloTxt + draftRewardLine(m.rewards.me) + '</div><button class="btn-primary" type="button" id="draftBack">Retour au salon</button></div>';
+      byId('draftBack').addEventListener('click', backToLobby); return;
+    }
+    const sc = s.me === 'host' ? m.score_challenger + ' - ' + m.score_defender : m.score_defender + ' - ' + m.score_challenger;
+    const pending = draft.shownMatch !== s.id;
+    main.innerHTML = '<div id="draftRoomBox" class="draft-room"><div class="draft-wait" id="draftKick">' + (pending ? '⚽ Coup d\'envoi dans <b id="draftKickN">' + Math.ceil(m.starts_in || 0) + '</b> s…' : '<b>' + head + ' ' + sc + '</b> contre ' + escapeHtml(opp) + '<br>' + eloTxt + draftRewardLine(m.rewards.me)) + '</div>' +
+      '<div class="draft-lu-actions"><button class="btn-secondary" type="button" id="draftReplay">▶ Revoir le match</button><button class="btn-primary" type="button" id="draftBack">Retour au salon</button></div></div>';
+    byId('draftBack').addEventListener('click', backToLobby);
+    byId('draftReplay').addEventListener('click', () => showMatch(draftRecap(s), { isNew: true, animate: true }));
+    if (!pending) return;
+    draft.shownMatch = s.id;
+    const start = Date.now() + (m.starts_in || 0) * 1000;
+    const tick = setInterval(() => { const n = byId('draftKickN'); const left = (start - Date.now()) / 1000;
+      if (n) n.textContent = Math.max(0, Math.ceil(left));
+      if (left <= 0) { clearInterval(tick); draft.key = null; renderDraftDone(s, opp); showMatch(draftRecap(s), { isNew: true, animate: true, startAt: start }); refreshMe(true); } }, 200);
+  }
+
   // ---------- Notifications push ----------
   // Le joueur active les notifications sur CET appareil. Le navigateur nous donne une « adresse » chiffrée que
   // le serveur utilise pour le prévenir (pack prêt, nouvelle carte, défi joué, carte vendue), site fermé.
-  const TAB_KEYS = ['pack', 'collection', 'marche', 'shop', 'classement', 'actualite', 'duels', 'tournoi', 'chat'];
+  const TAB_KEYS = ['pack', 'collection', 'marche', 'shop', 'classement', 'actualite', 'duels', 'draft', 'tournoi', 'chat'];
   const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isStandalone = () => (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
