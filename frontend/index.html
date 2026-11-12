@@ -68,7 +68,10 @@
     pointer-events:none; z-index:0;
   }
   #app{position:relative;z-index:1;}
-  .wrap{max-width:960px;margin:0 auto;padding:0 16px 70px;}
+  /* largeur du site : 960 px sur un petit écran ; sur un écran d'ordinateur, il prend la largeur de l'écran (jusqu'à 1600 px) */
+  :root{--site-max:960px;}
+  @media (min-width:1000px){:root{--site-max:min(1600px, calc(100vw - 48px));} .wrap,.topbar-inner{padding-left:24px;padding-right:24px;} .tabs .tab{flex:1 1 auto;text-align:center;}}
+  .wrap{max-width:var(--site-max);margin:0 auto;padding:0 16px 70px;}
   .crest-ico{display:block;fill:currentColor;}
 
   /* ---- le col du maillot : bande violette, liserés roses, encoche en V, blason ---- */
@@ -88,7 +91,7 @@
   }
   .sleeve-l{left:0;}
   .sleeve-r{right:0;transform:scaleX(-1);}
-  .topbar-inner{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:18px 16px 36px;display:flex;align-items:center;gap:14px 18px;flex-wrap:wrap;}
+  .topbar-inner{position:relative;z-index:1;max-width:var(--site-max);margin:0 auto;padding:18px 16px 36px;display:flex;align-items:center;gap:14px 18px;flex-wrap:wrap;}
   .brand{display:flex;align-items:center;gap:14px;flex:0 0 auto;}
   .brand-wolf{width:52px;height:60px;color:var(--rose);flex:0 0 auto;}
   .titles h1{font-family:var(--font-head);font-weight:800;font-size:40px;line-height:.92;margin:0;letter-spacing:.8px;color:var(--rose);white-space:nowrap;}
@@ -830,6 +833,7 @@
 
   .shop-item{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg-elevated);border:1px solid var(--border);border-left:5px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 16px;margin-bottom:10px;}
   .shop-item-name{font-weight:700;font-size:14px;}
+  @media (min-width:1000px){#playerPacksEl,#shopItemsEl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px;} #playerPacksEl>:not(.shop-item),#shopItemsEl>:not(.shop-item){grid-column:1 / -1;}}      /* grand écran : les offres du shop sur 2 colonnes */
   .pp-head{font-weight:800;font-size:16px;margin:4px 0 4px;} .pp-sub{font-size:12.5px;color:var(--text-muted);margin:0 0 10px;}
   .shop-item.pp-premium{border-left-color:#C9A227;} .pp-tier{display:inline-block;font-size:11px;font-weight:800;padding:1px 7px;border-radius:9px;background:var(--bg);border:1px solid var(--border);margin-left:6px;vertical-align:1px;}
   .shop-item-price{font-size:12.5px;color:var(--text-muted);}
@@ -934,6 +938,7 @@
   .duel-grid .season-prizes .card{zoom:.8;}
   .duel-grid .season-prizes .p-credits{font-size:12px;margin:2px 0 4px;}
   table.duel-table th{position:sticky;top:0;background:var(--bg-elevated);z-index:1;}
+  @media (min-width:1000px){.duel-grid #duelWeekBox,.duel-grid .duel-stars{grid-column:auto;}}      /* grand écran : les deux tableaux « Cartes stars » côte à côte */
   @media (max-width:760px){.duel-grid{grid-template-columns:1fr;} .duel-grid .cell{height:480px;} .duel-grid .duel-proposals.cell{height:600px;} .duel-grid .season-box.cell,.duel-grid .duel-grid-board.cell{height:580px;} .duel-grid .duel-stars.cell{height:520px;}}
   /* ---- Panthéon (en essai) ---- */
   .panth-head h2{margin:0 0 4px;} #pantheonEl{display:flex;flex-direction:column;gap:16px;margin-top:10px;}
@@ -2398,7 +2403,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.12.5';
+  const SITE_VERSION = '2026.11.13.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
