@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -54,6 +54,7 @@ app.include_router(club.router)                # défi du club (équipe du club 
 app.include_router(first_steps.router)         # Premiers pas : objectifs des nouveaux comptes
 app.include_router(shop_cosmetics.router)      # cosmétiques à paliers vendus au shop
 app.include_router(shop_sounds.router)          # son d'ouverture de la semaine au shop (100 crédits)
+app.include_router(draft.router)                # mode draft : match en direct, équipe construite aux enchères (comptes choisis)
 app.include_router(cosmetics.router)         # titres et cadres de profil
 app.include_router(chat.router)              # chat général et fil d'activité
 app.include_router(swaps.router)             # échanges de cartes entre joueurs
@@ -192,6 +193,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "pass_todo": battlepass.claimable_count(db, user),
             "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
             "player_packs": player_packs.owned_out(db, user.id),   # packs joueur achetés, pas encore ouverts
+            "draft_access": draft.has_access(db, user),           # mode draft (ouvert aux comptes choisis dans l'administration)
         }
     return {
         "pseudo": user.pseudo,
@@ -210,6 +212,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "pass_todo": battlepass.claimable_count(db, user),
             "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
             "player_packs": player_packs.owned_out(db, user.id),   # packs joueur achetés, pas encore ouverts
+            "draft_access": draft.has_access(db, user),           # mode draft (ouvert aux comptes choisis dans l'administration)
     }
 
 
@@ -942,6 +945,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     first_steps.on_user_deleted(db, user.id)                                              # sa récompense des Premiers pas
     shop_cosmetics.on_user_deleted(db, user.id)                                           # ses cosmétiques achetés au shop
     shop_sounds.on_user_deleted(db, user.id)                                              # ses sons achetés au shop
+    draft.on_user_deleted(db, user.id)                                                    # ses parties et son classement draft
     motm.on_user_deleted(db, user.id)                                                     # ses bulletins des votes encore ouverts
     card_levels.on_user_deleted(db, user.id)                                              # ses cartes évoluées
     fatigue.on_user_deleted(db, user.id)                                                  # la forme de ses cartes
@@ -2095,6 +2099,7 @@ def _background_tick():
     _tick(auctions.tick)                    # fin des enchères
     _tick(club_auctions.tick)               # enchères du club : résultats, lot du jour à 17h00 (à partir de la date de démarrage)
     _tick(motm.tick)                        # fin des votes « homme du match » (24 h)
+    _tick(draft.tick)                       # mode draft : parties abandonnées, tours écoulés
     _tick(backup.tick)                      # sauvegarde automatique (une fois par jour, à partir de 4h)
     _tick(battlepass.tick)                  # étoiles du Pass de la saison qui vient de finir
     _tick(tournament.tick)                  # tournoi mensuel : tirage, tours de 24 h, forfaits, cagnotte
