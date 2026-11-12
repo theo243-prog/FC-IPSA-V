@@ -935,6 +935,14 @@
   .duel-grid .season-prizes .p-credits{font-size:12px;margin:2px 0 4px;}
   table.duel-table th{position:sticky;top:0;background:var(--bg-elevated);z-index:1;}
   @media (max-width:760px){.duel-grid{grid-template-columns:1fr;} .duel-grid .cell{height:480px;} .duel-grid .duel-proposals.cell{height:600px;} .duel-grid .season-box.cell,.duel-grid .duel-grid-board.cell{height:580px;} .duel-grid .duel-stars.cell{height:520px;}}
+  /* ---- Mes stats 1v1 ---- */
+  .mys-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+  .mys-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px;}
+  .mys-tile{background:var(--bg-sunk);border-radius:10px;padding:8px;text-align:center;display:flex;flex-direction:column;gap:2px;} .mys-tile b{font-size:18px;} .mys-tile span{font-size:11.5px;color:var(--text-muted);}
+  .mys-line{font-size:14px;margin:6px 0;} .mys-h{font-size:15px;margin:14px 0 6px;}
+  .mys-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;}
+  .mys-table td{padding:4px 6px;font-size:13px;}
+  @media (max-width:600px){.mys-tiles{grid-template-columns:repeat(2,minmax(0,1fr));} .mys-cols{grid-template-columns:1fr;}}
   /* ---- Statistiques de fin de match ---- */
   .match-stats:empty{display:none;}
   .match-stats{margin:12px 0;padding:10px 12px;background:var(--bg-sunk);border-radius:12px;}
@@ -1333,7 +1341,7 @@
           <p class="duel-hint" id="seasonLast" style="margin-top:10px;"></p>
         </div>
         <div class="panel-box cell duel-grid-board">
-          <h2>Profils & classement Elo</h2>
+          <div class="duel-proposals-head"><h2>Profils & classement Elo</h2><button class="btn-small" type="button" id="myStatsBtn">📊 Mes stats 1v1</button></div>
           <div class="cell-scroll" id="duelBoardEl"></div>
         </div>
         <div class="panel-box cell cell-wide">
@@ -1393,6 +1401,12 @@
       <button class="btn-secondary" id="msRematch" style="display:none;">⚔️ Revanche</button>
       <button class="btn-primary" id="msDone">Fermer</button>
     </div>
+  </div>
+</div>
+<div class="modal-overlay" id="myStatsModal">
+  <div class="modal-box help-box" role="dialog" aria-modal="true" aria-labelledby="myStatsTitle" style="max-width:720px;">
+    <div class="modal-header"><h2 id="myStatsTitle">📊 Mes stats 1v1</h2><button class="modal-close" id="myStatsClose" type="button" aria-label="Fermer">✕</button></div>
+    <div id="myStatsBody"></div>
   </div>
 </div>
 <div class="modal-overlay" id="notifModal">
@@ -2368,7 +2382,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.12.3';
+  const SITE_VERSION = '2026.11.12.4';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -5412,6 +5426,42 @@
       if (n) n.textContent = Math.max(0, Math.ceil(left));
       if (left <= 0) { clearInterval(tick); draft.key = null; renderDraftDone(s, opp); showMatch(draftRecap(s), { isNew: true, animate: true, startAt: start }); refreshMe(true); } }, 200);
   }
+
+  // ---------- Mes stats 1v1 (bilan, face à face, cartes, buteurs) : visibles par moi seul ----------
+  let myStatsScope = 'all';
+  async function openMyStats(scope){
+    myStatsScope = scope || myStatsScope;
+    const body = byId('myStatsBody'); byId('myStatsModal').style.display = 'flex';
+    body.innerHTML = '<div class="empty-state">Chargement…</div>';
+    let s; try { s = await api('/duel/my-stats?scope=' + myStatsScope); } catch(e) { body.innerHTML = '<div class="empty-state">' + escapeHtml(e.message) + '</div>'; return; }
+    try { await loadDuelConfig(); } catch(e) {}
+    const tabs = '<div class="mys-tabs"><button type="button" class="btn-small' + (s.scope === 'all' ? '' : ' ghost') + '" data-scope="all">Depuis le début</button><button type="button" class="btn-small' + (s.scope === 'month' ? '' : ' ghost') + '" data-scope="month">Saison en cours</button></div>';
+    if (!s.played) {
+      body.innerHTML = tabs + '<div class="empty-state">' + (s.scope === 'month' ? 'Aucun match 1v1 joué en ' + escapeHtml(s.season_label) + ' pour l\'instant.' : 'Tu n\'as encore joué aucun match 1v1 : propose ou relève un défi !') + '</div>';
+    } else {
+      const RES = { V: 'victoire', N: 'nul', D: 'défaite' };
+      const streak = s.current_streak ? s.current_streak.count + ' ' + RES[s.current_streak.result] + (s.current_streak.count > 1 ? 's' : '') + ' de suite' : '—';
+      const tile = (v, l) => '<div class="mys-tile"><b>' + v + '</b><span>' + l + '</span></div>';
+      const tacLabel = k => (duelConfig && duelConfig.tactics[k] ? duelConfig.tactics[k].label : k);
+      const pct = (w, n) => n ? Math.round(100 * w / n) + ' %' : '—';
+      const list = (rows, cols) => rows.length ? '<table class="duel-table mys-table"><tbody>' + rows.map(cols).join('') + '</tbody></table>' : '<div class="muted" style="font-size:13px;">Rien pour l\'instant.</div>';
+      body.innerHTML = tabs + (s.scope === 'month' ? '<p class="duel-hint" style="margin:0 0 8px;">Saison de ' + escapeHtml(s.season_label) + '.</p>' : '') +
+        '<div class="mys-tiles">' + tile(s.played, 'matchs') + tile(s.wins + ' / ' + s.draws + ' / ' + s.losses, 'V / N / D') + tile(s.win_pct + ' %', 'de victoires') +
+          tile(s.goals_for + ' – ' + s.goals_against, 'buts pour – contre') + tile(s.best_streak, 'victoires de suite (record)') + tile(streak, 'série en cours') + '</div>' +
+        (s.biggest_win ? '<p class="mys-line">💥 Plus grosse victoire : <b>' + s.biggest_win.for + '–' + s.biggest_win.against + '</b> contre ' + escapeHtml(s.biggest_win.opponent) + ' (' + formatDuelDate(s.biggest_win.date) + ')</p>' : '') +
+        '<h3 class="mys-h">🤝 Face à face</h3>' + list(s.opponents, o => '<tr><td>' + escapeHtml(o.pseudo) + '</td><td class="num">' + o.played + ' m.</td><td class="num"><b>' + o.wins + '</b> V · ' + o.draws + ' N · ' + o.losses + ' D</td><td class="num">' + o.goals_for + '–' + o.goals_against + '</td></tr>') +
+        '<div class="mys-cols"><div><h3 class="mys-h">🃏 Mes cartes les plus jouées</h3>' + list(s.top_cards, c => '<tr><td>' + escapeHtml(c.player || '?') + ' <span class="muted">' + escapeHtml(tierLabel(c.tier || '')) + '</span></td><td class="num">' + c.played + ' m.</td><td class="num">' + pct(c.wins, c.played) + '</td></tr>') + '</div>' +
+          '<div><h3 class="mys-h">⚽ Mes buteurs</h3>' + list(s.scorers, x => '<tr><td>' + escapeHtml(x.player) + '</td><td class="num"><b>' + x.count + '</b></td></tr>') +
+          '<h3 class="mys-h">🎯 Mes passeurs</h3>' + list(s.assists, x => '<tr><td>' + escapeHtml(x.player) + '</td><td class="num"><b>' + x.count + '</b></td></tr>') + '</div></div>' +
+        '<div class="mys-cols"><div><h3 class="mys-h">📐 Mes formations</h3>' + list(s.formations, f => '<tr><td>' + escapeHtml(f.id) + '</td><td class="num">' + f.played + ' m.</td><td class="num">' + pct(f.wins, f.played) + ' de V</td></tr>') + '</div>' +
+          '<div><h3 class="mys-h">🧠 Mes tactiques</h3>' + list(s.tactics, t => '<tr><td>' + escapeHtml(tacLabel(t.id)) + '</td><td class="num">' + t.played + ' m.</td><td class="num">' + pct(t.wins, t.played) + ' de V</td></tr>') + '</div></div>' +
+        '<p class="duel-hint" style="margin-top:10px;">Seulement les matchs 1v1 (ni tournoi, ni défi du club). Ces stats ne sont visibles que par toi. Les plus anciens matchs, joués avant le récit minute par minute, comptent dans le bilan mais pas dans les cartes, buteurs et tactiques.</p>';
+    }
+    body.querySelectorAll('.mys-tabs button').forEach(b => b.addEventListener('click', () => openMyStats(b.dataset.scope)));
+  }
+  byId('myStatsBtn').addEventListener('click', () => openMyStats());
+  byId('myStatsClose').addEventListener('click', () => { byId('myStatsModal').style.display = 'none'; });
+  byId('myStatsModal').addEventListener('click', e => { if (e.target.id === 'myStatsModal') byId('myStatsModal').style.display = 'none'; });
 
   // ---------- Notifications push ----------
   // Le joueur active les notifications sur CET appareil. Le navigateur nous donne une « adresse » chiffrée que
