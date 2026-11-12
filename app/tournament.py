@@ -223,7 +223,8 @@ def simulate(prep_a, prep_b) -> dict:
     pens = _shootout(att_a + def_a, att_b + def_b) if sa == sb else None
     none_ref = {"challenger": 0, "defender": 0, "winner": None, "bonus_pct": 0}
     lineups = {"challenger": duel_engine._lineup_snapshot(side_a, fan_a, eq_a, mas_a, 0.0, fatigue_mode=False),
-               "defender": duel_engine._lineup_snapshot(side_b, fan_b, eq_b, mas_b, 0.0, fatigue_mode=False), "referee": none_ref}
+               "defender": duel_engine._lineup_snapshot(side_b, fan_b, eq_b, mas_b, 0.0, fatigue_mode=False), "referee": none_ref,
+               "stats": duel_engine.match_stats(side_a, side_b, events, xg_a, xg_b)}          # statistiques de fin de match
     return {"score": (sa, sb), "pens": pens, "events": events, "lineups": lineups}
 
 
@@ -361,6 +362,9 @@ def _finish(db, t, now):
     fin_e = (by_place.get(2) or [None])[0]                     # le finaliste reçoit sa carte « Finaliste du tournoi (mois année) »
     if fin_e is not None and fin_e.user_id in users:
         owned2 = game_logic.get_or_create_owned(db, users[fin_e.user_id], seasons.get_or_create_trophy(db, t.month_key, 5)); owned2.quantity = max(owned2.quantity, 1)
+    for semi_e in by_place.get(3, []):                         # chaque demi-finaliste battu reçoit sa carte « Demi-finaliste du tournoi (mois année) »
+        if semi_e.user_id in users:
+            owned3 = game_logic.get_or_create_owned(db, users[semi_e.user_id], seasons.get_or_create_trophy(db, t.month_key, 11)); owned3.quantity = max(owned3.quantity, 1)
     if champ is None or champ.user_id not in users:
         return
     t.champion_id = champ.user_id; winner = users[champ.user_id]
@@ -373,7 +377,7 @@ def _finish(db, t, now):
           (" Finaliste : %s." % fin.pseudo if fin else "") + (" Demi-finalistes : %s." % ", ".join(semis) if semis else "")), winner)
     for uid, amount in pay.items():
         if uid in users:
-            _push(db, uid, "Tournoi terminé 🏆", "Tu reçois %d crédits%s." % (amount, " et le trophée du tournoi" if uid == champ.user_id else (" et la carte de finaliste" if fin_e is not None and uid == fin_e.user_id else "")))
+            _push(db, uid, "Tournoi terminé 🏆", "Tu reçois %d crédits%s." % (amount, " et le trophée du tournoi" if uid == champ.user_id else (" et la carte de finaliste" if fin_e is not None and uid == fin_e.user_id else (" et la carte de demi-finaliste" if any(e.user_id == uid for e in by_place.get(3, [])) else ""))))
 
 
 def _announce(db, t, r, ms, now):
