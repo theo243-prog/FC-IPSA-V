@@ -935,6 +935,16 @@
   .duel-grid .season-prizes .p-credits{font-size:12px;margin:2px 0 4px;}
   table.duel-table th{position:sticky;top:0;background:var(--bg-elevated);z-index:1;}
   @media (max-width:760px){.duel-grid{grid-template-columns:1fr;} .duel-grid .cell{height:480px;} .duel-grid .duel-proposals.cell{height:600px;} .duel-grid .season-box.cell,.duel-grid .duel-grid-board.cell{height:580px;} .duel-grid .duel-stars.cell{height:520px;}}
+  /* ---- Panthéon (en essai) ---- */
+  .panth-head h2{margin:0 0 4px;} #pantheonEl{display:flex;flex-direction:column;gap:16px;margin-top:10px;}
+  .panth-records{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
+  .panth-rec{background:linear-gradient(160deg,var(--bg-sunk),transparent);border:1px solid var(--border);border-top:4px solid #D4AF37;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:3px;}
+  .panth-rec-label{font-size:12.5px;color:var(--text-muted);font-weight:700;} .panth-rec-value{font-family:var(--font-head);font-size:24px;font-weight:700;} .panth-rec-holder{font-weight:700;} .panth-rec-detail{font-size:12px;color:var(--text-muted);}
+  .panth-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;}
+  .panth-row{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13.5px;flex-wrap:wrap;} .panth-when{font-weight:700;min-width:120px;text-transform:capitalize;} .panth-names{flex:1;min-width:0;}
+  .panth-legends{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;} .panth-legends h3{font-size:15px;margin:0 0 6px;}
+  .panth-top{margin:0;padding-left:20px;font-size:13.5px;} .panth-top li{padding:3px 0;} .panth-top li span{display:inline-block;min-width:60%;}
+  @media (max-width:760px){.panth-grid{grid-template-columns:1fr;} .panth-legends{grid-template-columns:repeat(2,minmax(0,1fr));}}
   /* ---- Mes stats 1v1 ---- */
   .mys-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
   .mys-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px;}
@@ -1136,6 +1146,7 @@
     <button class="tab" data-tab="actualite">Actualité<span class="tab-dot" id="newsDot" hidden></span></button>
     <button class="tab" data-tab="duels">Matchs 1v1</button>
     <button class="tab" data-tab="draft" id="draftTabBtn" hidden>Draft<span class="tab-dot" id="draftDot" hidden></span></button>
+    <button class="tab" data-tab="pantheon" id="pantheonTabBtn" hidden>Panthéon</button>
     <button class="tab" data-tab="tournoi">Tournoi<span class="tab-dot" id="tournoiDot" hidden></span></button>
     <button class="tab" data-tab="chat">Chat<span class="tab-dot" id="chatDot" hidden></span></button>
   </nav>
@@ -1311,6 +1322,10 @@
       <div id="matchesEl"></div>
     </section>
 
+    <section id="tab-pantheon" class="tab-panel">
+      <div class="panth-head"><h2>🏛️ Panthéon <span class="draft-beta">essai</span></h2><p class="duel-hint">La mémoire du club : les champions, les vainqueurs de tournoi, les records du jeu et les légendes des vrais matchs.</p></div>
+      <div id="pantheonEl"></div>
+    </section>
     <section id="tab-draft" class="tab-panel">
       <div class="panel-box draft-box"><h2>🃏 Draft <span class="draft-beta">essai</span></h2><div id="draftMain"></div></div>
       <div class="panel-box" style="margin-top:16px;"><h2 id="draftRankTitle">🏆 Classement draft</h2><div class="cell-scroll" id="draftRanking"></div></div>
@@ -1589,6 +1604,7 @@
       if (btn.dataset.tab === 'classement') loadLeaderboard();
       if (btn.dataset.tab === 'actualite') { loadNews(); updateNewsDot(); }
       if (btn.dataset.tab === 'draft') { loadDraft(); updateDraftDot(); }
+      if (btn.dataset.tab === 'pantheon') loadPantheon();
       if (btn.dataset.tab === 'duels') { loadDuelsTab(); setTimeout(fitDuelCells, 600); setTimeout(fitDuelCells, 1800); }
     });
   });
@@ -2382,7 +2398,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.12.4';
+  const SITE_VERSION = '2026.11.12.5';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3154,6 +3170,7 @@
       updateChatDot();                                         // point rouge de l'onglet Chat
       updateTournamentDot();                                   // point rouge de l'onglet Tournoi (un match à composer)
       updateDraftTab();                                        // onglet Draft : seulement pour les comptes qui y ont accès
+      updateFeatureTabs();                                     // fonctions en essai (Panthéon…) : onglet caché sauf aux comptes choisis
       if (meInfo.notices_unread !== noticeSeen) loadNotices();  // encadré « Notifications » : du nouveau
       updateNewsDot();                                         // point rouge de l'onglet Actualité (un vote « homme du match » à faire)
       document.getElementById('chipCredits').textContent = meInfo.credits;
@@ -5427,6 +5444,32 @@
       if (left <= 0) { clearInterval(tick); draft.key = null; renderDraftDone(s, opp); showMatch(draftRecap(s), { isNew: true, animate: true, startAt: start }); refreshMe(true); } }, 200);
   }
 
+  // ---------- Panthéon : palmarès des saisons et des tournois, légendes du club, records du jeu (fonction en essai) ----------
+  function updateFeatureTabs(){
+    const f = (meInfo && meInfo.features) || {};
+    const b = byId('pantheonTabBtn'); if (b) b.hidden = !f.pantheon;
+  }
+  const PANTH_MEDAL = { 1: '🥇', 2: '🥈', 3: '🥉' };
+  const panthDate = iso => iso ? new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  async function loadPantheon(){
+    const root = byId('pantheonEl'); if (!root) return;
+    root.innerHTML = '<div class="empty-state">Chargement…</div>';
+    let d; try { d = await api('/pantheon'); } catch(e) { root.innerHTML = '<div class="empty-state">' + escapeHtml(e.message) + '</div>'; return; }
+    const empty = t => '<div class="empty-state">' + t + '</div>';
+    const records = d.records.length ? '<div class="panth-records">' + d.records.map(r => '<div class="panth-rec"><div class="panth-rec-label">' + escapeHtml(r.label) + '</div><div class="panth-rec-value">' + escapeHtml(r.value) + '</div><div class="panth-rec-holder">👑 ' + escapeHtml(r.holder) + '</div>' +
+      (r.detail || r.date ? '<div class="panth-rec-detail">' + escapeHtml(r.detail || '') + (r.detail && r.date ? ' · ' : '') + panthDate(r.date) + '</div>' : '') + '</div>').join('') + '</div>' : empty('Aucun record pour l\'instant : à vous de les écrire !');
+    const seasonsHTML = d.seasons.length ? d.seasons.map(s => '<div class="panth-row"><span class="panth-when">' + escapeHtml(s.label) + '</span><span class="panth-names">' + s.podium.map(p => PANTH_MEDAL[p.rank] + ' <b>' + escapeHtml(p.pseudo) + '</b> <span class="muted">' + p.elo + '</span>').join(' · ') + '</span></div>').join('') : empty('Aucune saison terminée pour l\'instant.');
+    const tourneysHTML = d.tournaments.length ? d.tournaments.map(t => '<div class="panth-row"><span class="panth-when">' + escapeHtml(t.label) + '</span><span class="panth-names">🏆 <b>' + escapeHtml(t.champion || '?') + '</b>' + (t.finalist ? ' · 🥈 ' + escapeHtml(t.finalist) : '') + (t.semifinalists.length ? ' · 🥉 ' + t.semifinalists.map(escapeHtml).join(', ') : '') + ' <span class="muted">(' + t.players + ' joueurs)</span></span></div>').join('') : empty('Aucun tournoi terminé pour l\'instant.');
+    const top = (list, unit) => list.length ? '<ol class="panth-top">' + list.map(x => '<li><span>' + escapeHtml(x.player) + '</span><b>' + x.count + ' ' + unit + '</b></li>').join('') + '</ol>' : '<div class="muted" style="font-size:13px;">Pas encore de données.</div>';
+    const cl = d.club;
+    root.innerHTML =
+      '<div class="panel-box"><h2>📈 Records du jeu</h2>' + records + '</div>' +
+      '<div class="panth-grid"><div class="panel-box"><h2>🏆 Champions des saisons 1v1</h2>' + seasonsHTML + '</div>' +
+      '<div class="panel-box"><h2>🏟️ Vainqueurs des tournois</h2>' + tourneysHTML + '</div></div>' +
+      '<div class="panel-box"><h2>⭐ Légendes du club</h2><p class="duel-hint">Les vrais joueurs du club, d\'après les matchs officiels enregistrés.' + (cl.biggest_win ? ' Plus large victoire : <b>' + cl.biggest_win.score_us + '-' + cl.biggest_win.score_them + '</b> contre ' + escapeHtml(cl.biggest_win.opponent) + ' (' + panthDate(cl.biggest_win.date) + ').' : '') + '</p>' +
+        '<div class="panth-legends"><div><h3>⚽ Buteurs</h3>' + top(cl.scorers, 'buts') + '</div><div><h3>🎯 Passeurs</h3>' + top(cl.assists, 'passes') + '</div><div><h3>🏅 Hommes du match</h3>' + top(cl.motm, 'fois') + '</div><div><h3>👟 Matchs joués</h3>' + top(cl.matches, 'matchs') + '</div></div></div>';
+  }
+
   // ---------- Mes stats 1v1 (bilan, face à face, cartes, buteurs) : visibles par moi seul ----------
   let myStatsScope = 'all';
   async function openMyStats(scope){
@@ -5466,7 +5509,7 @@
   // ---------- Notifications push ----------
   // Le joueur active les notifications sur CET appareil. Le navigateur nous donne une « adresse » chiffrée que
   // le serveur utilise pour le prévenir (pack prêt, nouvelle carte, défi joué, carte vendue), site fermé.
-  const TAB_KEYS = ['pack', 'collection', 'marche', 'shop', 'classement', 'actualite', 'duels', 'draft', 'tournoi', 'chat'];
+  const TAB_KEYS = ['pack', 'collection', 'marche', 'shop', 'classement', 'actualite', 'duels', 'draft', 'pantheon', 'tournoi', 'chat'];
   const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isStandalone = () => (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;

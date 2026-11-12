@@ -108,6 +108,7 @@ def summarize(path: str, payload) -> str:
         if name == "motm-season-close": return "Saison des votes clôturée (classement figé)"
         if name == "motm-season-publish": return "Podium de la saison des votes publié dans le chat"
         if name == "chat-silent": return "Annonces automatiques du chat %s pour %s" % ("coupées" if p.get("enabled", True) else "rétablies", who)
+        if name == "feature-settings": return "Fonction en essai %s : %s%s" % (_s(p, "feature"), "ouverte à tous" if p.get("public") else "réservée à la liste", (" (" + ", ".join(p.get("allowed") or []) + ")") if p.get("allowed") is not None else "")
         if name == "draft-settings": return "Mode draft : %s%s" % ("ouvert à tous" if p.get("public") else "réservé à la liste", (" (" + ", ".join(p.get("allowed") or []) + ")") if p.get("allowed") is not None else "")
         if name == "draft-reset-ranking": return "Mode draft : classement effacé (%s)" % (_s(p, "season") or "mois en cours")
         if name == "draft-cancel": return "Mode draft : partie %s annulée" % str(_s(p, "room_id"))[:8]
