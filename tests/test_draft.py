@@ -55,7 +55,11 @@ ok(c.post("/draft/%s/join" % rid, headers=H["carl"]).status_code == 403, "partie
 ok(any(o["id"] == rid and o["invited"] for o in c.get("/draft", headers=H["bob"]).json()["open_rooms"]), "bob voit l'invitation dans le salon")
 s = c.post("/draft/%s/join" % rid, headers=H["bob"]).json()
 ok(s["status"] == "bidding" and s["coins"] == {"me": 500, "opp": 500} and s["lot"]["number"] == 1 and s["lot"]["opener"] == "opp", "bob rejoint : enchères, 500 pièces chacun, ana parle en premier")
-room_db = db.get(D.DraftRoom, rid); db.refresh(room_db); secret = D._st(room_db)["lots"]
+room_db = db.get(D.DraftRoom, rid); db.refresh(room_db); st0 = D._st(room_db)
+if st0["lots"][0]["kind"] == "fan":                                  # (pour un test stable : les premières cartes sont des joueurs, les fans à la fin ;
+    k = next(i for i, l in enumerate(st0["lots"]) if l["kind"] == "joueur"); st0["lots"][0], st0["lots"][k] = st0["lots"][k], st0["lots"][0]   #  sinon le 2e fan part d'office
+st0["lots"] = st0["lots"][:1] + sorted(st0["lots"][1:], key=lambda l: l["kind"] == "fan")                   #  et décale l'historique)
+D._save(room_db, st0); db.commit(); secret = st0["lots"]
 txt = json.dumps(G("bob", rid))
 ok("lots" not in json.loads(txt) and all(l["card_id"] not in txt for l in secret[1:]), "les cartes à venir restent secrètes (jamais envoyées au navigateur)")
 
@@ -84,8 +88,10 @@ while True:
         after = r.json()
         ok(after["coins"]["me"] == 0, "ana mise tout (elle tombe à 0 pièce, c'est permis)")
     elif who == "bob" and spent and s["lot"]["high"] is None and s["coins"]["opp"] >= 5 and not getattr(D, "_t_once", False):
+        n_lot = s["lot"]["number"]
         r = c.post("/draft/%s/bid" % rid, json={"amount": 5}, headers=H["bob"]).json(); D._t_once = True
-        ok(r["log"][0]["how"] == "bid" and r["log"][0]["to"] == "me", "ana à 0 ne peut plus surenchérir : la carte va tout de suite à bob")
+        got = next((l for l in r["log"] if l["lot"] == n_lot), None)      # (les cartes suivantes peuvent partir d'office juste après : on lit CETTE carte)
+        ok(got is not None and got["how"] == "bid" and got["to"] == "me" and got["price"] == 5, "ana à 0 ne peut plus surenchérir : la carte va tout de suite à bob")
     else:
         c.post("/draft/%s/pass" % rid, headers=H[who])
 room_db = db.get(D.DraftRoom, rid); db.refresh(room_db); st = D._st(room_db)
