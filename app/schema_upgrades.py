@@ -19,7 +19,8 @@ NEW_COLUMNS = [
     ("players", "tier_photos", "TEXT"),      # photos propres à une rareté (JSON)
     ("players", "unique_card", "BOOLEAN NOT NULL DEFAULT FALSE"),     # carte unique (une seule rareté, pas de variante automatique)
     ("pack_states", "ultra_pack_tokens", "INTEGER NOT NULL DEFAULT 0"),      # jetons du pack ultra
-    ("card_fatigue", "loss", "INTEGER"),     # perte de forme du jour en centièmes de % (l'équipement réduit la fatigue)
+    ("card_fatigue", "loss", "INTEGER"),
+    ("tournament_entries", "team_json", "TEXT"),     # équipe enregistrée pour tout le tournoi (plus de forfait si elle a été validée une fois)     # perte de forme du jour en centièmes de % (l'équipement réduit la fatigue)
 ]
 
 

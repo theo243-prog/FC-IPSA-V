@@ -7,7 +7,10 @@ CALENDRIER (heure de Paris, chaque mois)
     tournoi classique : les meilleures têtes de série ne se rencontrent que tard, et s'il manque des joueurs pour remplir le premier tour, les
     mieux classés l'enjambent (« exempt »). On commence donc par les seizièmes, huitièmes, quarts… selon le nombre d'inscrits, jusqu'à la finale.
   - Le 8 à midi : le 1er tour s'ouvre. Chaque tour dure 24 h (midi → midi) : chacun compose son équipe en secret ; dès que les deux ont validé, le
-    match est joué (moteur du 1v1) ; qui n'a pas validé à l'heure limite perd par FORFAIT (si les deux oublient, le mieux classé passe).
+    match est joué (moteur du 1v1). ÉQUIPE ENREGISTRÉE (13/11/2026) : la dernière équipe validée (pour un match, ou à l'avance avec
+    POST /tournament/team) est gardée pour tout le tournoi : à l'heure limite, un joueur qui n'a rien validé pour CE match joue avec elle
+    (modifiable à tout moment : tactique, formation, joueurs, Fan…). FORFAIT seulement sans équipe enregistrée (ou si elle n'est plus valable :
+    cartes vendues…) ; si les deux n'en ont pas, le mieux classé passe.
     Avec N inscrits il y a log2(N) tours : la finale se joue vers le 12 (16 joueurs), le 13 (32), le 14 (64) ou le 15 (128) : la fin du mois reste
     libre pour la course au classement Elo.
   - Égalité : TIRS AU BUT simulés, pondérés par la force des deux équipes.
@@ -68,6 +71,7 @@ class TournamentEntry(Base):
     place = Column(Integer, nullable=True)                 # 1 vainqueur, 2 finaliste, 3 demi-finaliste
     eliminated_round = Column(Integer, nullable=True)
     joined_at = Column(DateTime, default=datetime.utcnow)
+    team_json = Column(Text, nullable=True)                # l'équipe ENREGISTRÉE pour tout le tournoi (13/11/2026) : jouée à l'heure limite de chaque match si le joueur ne valide rien d'autre
 
 
 class TournamentMatch(Base):
@@ -308,10 +312,17 @@ def _mark_loser(db, t, m, loser_id, now):
         e.place = 3
 
 
+def _saved_team(db, t, user_id):
+    e = db.query(TournamentEntry).filter_by(tournament_id=t.id, user_id=user_id).first() if t is not None else None
+    return e.team_json if e is not None else None
+
+
 def _resolve(db, t, m, now):
     u1, u2 = db.get(User, m.p1_id), db.get(User, m.p2_id)
-    prep1 = _prepare(db, u1, json.loads(m.team1)) if m.team1 else None
-    prep2 = _prepare(db, u2, json.loads(m.team2)) if m.team2 else None
+    team1 = m.team1 or _saved_team(db, t, m.p1_id)            # rien de validé pour ce match : l'équipe enregistrée pour le tournoi
+    team2 = m.team2 or _saved_team(db, t, m.p2_id)
+    prep1 = _prepare(db, u1, json.loads(team1)) if team1 else None
+    prep2 = _prepare(db, u2, json.loads(team2)) if team2 else None
     if prep1 and prep2:
         res = simulate(prep1, prep2); m.score1, m.score2 = res["score"]; m.via = "play"
         if res["pens"]:
@@ -430,7 +441,8 @@ def todo(db: Session, user: User) -> bool:
     now = now_paris()
     rows = db.query(TournamentMatch).filter(TournamentMatch.state != "done", TournamentMatch.opens_at <= now, TournamentMatch.deadline_at > now,
                                             (TournamentMatch.p1_id == user.id) | (TournamentMatch.p2_id == user.id)).all()
-    return any(m.p1_id and m.p2_id and not (m.team1 if m.p1_id == user.id else m.team2) for m in rows)
+    rows = [m for m in rows if m.p1_id and m.p2_id and not (m.team1 if m.p1_id == user.id else m.team2)]
+    return any(not _saved_team(db, db.get(Tournament, m.tournament_id), user.id) for m in rows)      # une équipe enregistrée suffit : rien à faire
 
 
 def on_user_deleted(db: Session, user_id: str) -> None:
@@ -456,13 +468,13 @@ def _player(users, uid, seed, avatars=None, cos=None):
             "avatar": (avatars or {}).get(uid), "frame": ((cos or {}).get(uid) or (None, None))[1]}
 
 
-def _match_out(m, users, now, avatars=None, cos=None):
+def _match_out(m, users, now, avatars=None, cos=None, saved=()):
     w = users.get(m.winner_id)
     return {"id": m.id, "round": m.round, "slot": m.slot, "state": _state(m, now), "opens_at": m.opens_at.isoformat(), "deadline_at": m.deadline_at.isoformat(),
             "p1": _player(users, m.p1_id, m.seed1, avatars, cos), "p2": _player(users, m.p2_id, m.seed2, avatars, cos),
             "winner": (w.pseudo if w else ("(compte supprimé)" if m.winner_id else None)), "via": m.via,
             "score": [m.score1, m.score2] if m.score1 is not None else None, "pens": [m.pens1, m.pens2] if m.pens1 is not None else None,
-            "submitted": [bool(m.team1), bool(m.team2)], "replay": bool(m.events_json)}
+            "submitted": [bool(m.team1) or m.p1_id in saved, bool(m.team2) or m.p2_id in saved], "replay": bool(m.events_json)}      # (une équipe enregistrée pour le tournoi compte comme prête)
 
 
 @router.get("/tournament")
@@ -481,21 +493,23 @@ def get_tournament(viewer=Depends(optional_user), db: Session = Depends(get_db))
                 "planned_start": (t.start_at or planned_start(key)).isoformat(), "rounds_total": t.rounds, "size": t.size})
     out["players"] = [{"pseudo": users[e.user_id].pseudo, "elo": users[e.user_id].elo, "seed": e.seed, "avatar": av.get(e.user_id), "frame": (cos.get(e.user_id) or (None, None))[1]}
                       for e in sorted([e for e in entries if e.user_id in users], key=lambda e: (e.seed or 10 ** 9, -users[e.user_id].elo, users[e.user_id].pseudo))]
-    me = {"joined": mine is not None, "place": mine.place if mine else None, "eliminated": bool(mine and mine.eliminated_round), "match": None}
+    me = {"joined": mine is not None, "place": mine.place if mine else None, "eliminated": bool(mine and mine.eliminated_round), "match": None,
+          "team_saved": bool(mine and mine.team_json)}                    # équipe enregistrée pour tout le tournoi
     if t.status in ("running", "finished"):
         ms = db.query(TournamentMatch).filter_by(tournament_id=t.id).order_by(TournamentMatch.round, TournamentMatch.slot).all()
         users.update(_users(db, [m.p1_id for m in ms] + [m.p2_id for m in ms] + [m.winner_id for m in ms]))
+        saved = {e.user_id for e in entries if e.team_json}
         out["rounds"] = [{"round": r, "name": round_name(t.size >> r), "opens_at": rs[0].opens_at.isoformat(), "deadline_at": rs[0].deadline_at.isoformat(),
-                          "matches": [_match_out(m, users, now, av, cos) for m in rs]} for r in range(1, t.rounds + 1) for rs in [[m for m in ms if m.round == r]]]
+                          "matches": [_match_out(m, users, now, av, cos, saved) for m in rs]} for r in range(1, t.rounds + 1) for rs in [[m for m in ms if m.round == r]]]
         if viewer:
             mine_ms = [m for m in ms if viewer.id in (m.p1_id, m.p2_id)]
             cur = next((m for m in mine_ms if m.state != "done" and m.p1_id and m.p2_id), None) or (mine_ms[-1] if mine_ms else None)
             if cur:
-                mo = _match_out(cur, users, now, av, cos); mo["me_side"] = 1 if cur.p1_id == viewer.id else 2
+                mo = _match_out(cur, users, now, av, cos, saved); mo["me_side"] = 1 if cur.p1_id == viewer.id else 2
                 mo["my_team_ready"] = bool(cur.team1 if mo["me_side"] == 1 else cur.team2); mo["round_name"] = round_name(t.size >> cur.round); me["match"] = mo
             played = [m for m in mine_ms if m.state == "done" and m.via != "bye"]
             if played and (cur is None or cur.id != played[-1].id):         # son dernier match terminé (quand le suivant est déjà annoncé)
-                lo = _match_out(played[-1], users, now, av, cos); lo["me_side"] = 1 if played[-1].p1_id == viewer.id else 2; lo["round_name"] = round_name(t.size >> played[-1].round); me["last"] = lo
+                lo = _match_out(played[-1], users, now, av, cos, saved); lo["me_side"] = 1 if played[-1].p1_id == viewer.id else 2; lo["round_name"] = round_name(t.size >> played[-1].round); me["last"] = lo
         champ = users.get(t.champion_id)
         out["champion"] = champ.pseudo if champ else None
     out["me"] = me
@@ -579,6 +593,9 @@ def submit_team(match_id: str, payload: TeamPayload, user: User = Depends(get_cu
         m.team1, m.sub1 = spec, now
     else:
         m.team2, m.sub2 = spec, now
+    e = db.query(TournamentEntry).filter_by(tournament_id=t.id, user_id=user.id).first()
+    if e is not None:
+        e.team_json = spec                                     # gardée pour les tours suivants (modifiable à tout moment)
     resolved = False
     if m.team1 and m.team2:
         _resolve(db, t, m, now); resolved = True
@@ -588,6 +605,29 @@ def submit_team(match_id: str, payload: TeamPayload, user: User = Depends(get_cu
         return {"status": "ok", "resolved": False, "recap": None}
     recap = match_recap(m.id, db) if m.events_json else None
     return {"status": "ok", "resolved": True, "recap": recap, "winner": db.get(User, m.winner_id).pseudo if db.get(User, m.winner_id) else None, "pens": [m.pens1, m.pens2] if m.pens1 is not None else None}
+
+
+@router.post("/tournament/team")
+def save_team(payload: TeamPayload, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Enregistre son équipe pour TOUT le tournoi, à l'avance (inscrit, pas encore éliminé) : à l'heure limite de chaque match, elle est jouée
+    si rien d'autre n'a été validé pour ce match. Modifiable à tout moment ; valider une équipe pour un match la remplace aussi."""
+    now = now_paris(); tick(db, now)
+    t = db.query(Tournament).filter_by(month_key=seasons.key_of(now)).first()
+    e = db.query(TournamentEntry).filter_by(tournament_id=t.id, user_id=user.id).first() if t is not None else None
+    if t is None or e is None or t.status not in ("registration", "running"):
+        raise HTTPException(status_code=400, detail="Tu n'es inscrit à aucun tournoi en cours")
+    if e.eliminated_round:
+        raise HTTPException(status_code=400, detail="Tu es éliminé de ce tournoi")
+    challenges.check_no_trophy(db, payload.slots)
+    slots = [{"card_id": s.card_id, "slot_category": s.slot_category} for s in payload.slots]
+    try:
+        duel_engine.validate_team(db, user, payload.formation, payload.tactic, slots, payload.captain_card_id, payload.fan_card_id, payload.equipment_card_ids, payload.mascot_card_id)
+    except duel_engine.DuelError as err:
+        raise HTTPException(status_code=err.status_code, detail=err.message)
+    e.team_json = json.dumps({"formation": payload.formation, "tactic": payload.tactic, "slots": slots, "captain_card_id": payload.captain_card_id,
+                              "fan_card_id": payload.fan_card_id, "equipment_card_ids": payload.equipment_card_ids, "mascot_card_id": payload.mascot_card_id})
+    db.commit()
+    return {"status": "ok", "team_saved": True}
 
 
 # ------------------------------------------------------------------ administration
