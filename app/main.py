@@ -1598,7 +1598,7 @@ def admin_record_match(payload: schemas.AdminRecordMatchRequest, db: Session = D
         db.add(MatchGoal(match_id=match.id, player_id=p.id, count=entry.count))
         # un buteur débloque sa carte épique (créée une seule fois, ensuite tirable dans les packs)
         has_epic = db.query(Card).filter_by(player_id=p.id, tier=Tier.epique).first()
-        if not has_epic:
+        if not has_epic and not p.unique_card:                       # (carte unique : pas d'épique créée)
             db.add(Card(player_id=p.id, tier=Tier.epique, vitesse=0, tir=0))
             epics_created.append(p.name)
         scorers_notes[p.name] = game_logic.EPIC_BASE_NOTE + game_logic.EPIC_NOTE_PER_EXTRA_GOAL * max(0, p.buts - 1)
@@ -1840,6 +1840,45 @@ def admin_create_card(payload: schemas.AdminCreateCardRequest, db: Session = Dep
         granted_to = user.pseudo
     db.commit()
     return {"status": "ok", "created": created, "card_id": card.id, "granted_to": granted_to, "quantity": payload.quantity if granted_to else 0}
+
+
+# Carte unique (13/11/2026) : une nouvelle personne (joueur ou fan) qui n'existe que dans UNE rareté, au choix. Aucune autre variante n'est créée,
+# ni à la création ni plus tard : ni commune / rare / secrète, ni série Édition Noire, ni spéciale du vendredi, ni épique d'un premier but,
+# ni légendaire de l'homme du match (Player.unique_card). Elle se comporte ensuite comme toute carte de sa rareté (packs, match, marché…).
+UNIQUE_CARD_TIERS = ["commune", "rare", "epique", "legendaire", "speciale", "halloween", "noel"] + list(game_logic.CUSTOM_EDITION_SLOTS)
+
+
+@app.post("/admin/create-unique-card", dependencies=[Depends(require_admin)])
+def admin_create_unique_card(payload: schemas.AdminCreateUniqueCardRequest, db: Session = Depends(get_db)):
+    """Crée une personne (joueur ou fan) avec UNE seule carte, dans la rareté choisie, sans aucune autre variante (voir UNIQUE_CARD_TIERS)."""
+    name = " ".join((payload.name or "").split())
+    tier = (payload.tier or "").strip().lower().replace("é", "e")
+    if not name:
+        raise HTTPException(status_code=400, detail="Donne un nom à la carte")
+    if db.query(Player).filter(func.lower(Player.name) == name.lower()).first():
+        raise HTTPException(status_code=400, detail="« %s » existe déjà (joueur ou carte)" % name)
+    if tier not in UNIQUE_CARD_TIERS:
+        raise HTTPException(status_code=400, detail="Rareté « %s » impossible pour une carte unique (%s)" % (payload.tier, ", ".join(UNIQUE_CARD_TIERS)))
+    try:
+        poste = game_logic.normalize_poste(payload.poste or "X")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if poste.upper() in ("MASCOTTE", "EQUIPEMENT", "STADE", "MOMENT", "ECUSSON", "NUMEROTEE", "TROPHEE"):
+        raise HTTPException(status_code=400, detail="Une carte unique est un joueur ou un fan (poste GB, DEF, MC, ATT, X ou FAN)")
+    user = None
+    if payload.grant_to_pseudo:
+        user = db.query(User).filter_by(pseudo=payload.grant_to_pseudo.strip()).first()
+        if user is None:
+            raise HTTPException(status_code=404, detail="Utilisateur introuvable pour « Offrir à »")
+    player = Player(name=name, poste=poste, photo_url=_photo_path(payload.photo_url) or None, numero=(payload.numero or None), surnom=(payload.surnom or None), unique_card=True)
+    db.add(player); db.flush()
+    card = Card(player_id=player.id, tier=Tier(tier), vitesse=0, tir=0, note=game_logic.SPECIAL_BASE_NOTE if tier == "speciale" else None)
+    db.add(card); db.flush()
+    if user is not None:
+        game_logic.get_or_create_owned(db, user, card).quantity += 1
+    db.commit()
+    return {"status": "ok", "name": name, "poste": poste, "tier": tier, "card_id": card.id, "note": game_logic.card_note(player, tier, card) if game_logic.card_kind(player) == "joueur" else None,
+            "granted_to": user.pseudo if user else None}
 
 
 @app.post("/admin/create-mascot", dependencies=[Depends(require_admin)])

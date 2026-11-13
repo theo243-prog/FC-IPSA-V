@@ -73,6 +73,16 @@ class AdminCreateCardRequest(BaseModel):
     quantity: int = Field(default=1, ge=1, le=500)       # nombre d'exemplaires offerts (1 par défaut)
 
 
+class AdminCreateUniqueCardRequest(BaseModel):
+    name: str
+    tier: str
+    poste: str = "X"                     # GB, DEF, MC, ATT, X ou FAN
+    photo_url: Optional[str] = None
+    numero: Optional[str] = None
+    surnom: Optional[str] = None
+    grant_to_pseudo: Optional[str] = None
+
+
 class AdminDeleteCardRequest(BaseModel):
     player_name: str
     tier: str  # "commune" | "rare" | "epique" | "legendaire"

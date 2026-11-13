@@ -66,6 +66,7 @@ class Player(Base):
     photo_url = Column(String, nullable=True)  # ex: /photos/mathis.jpg  (photo par défaut de toutes ses cartes)
     surnom = Column(String, nullable=True)     # surnom du joueur : c'est lui qui s'écrit sur sa carte secrète
     numero = Column(String, nullable=True)     # numéro de maillot, en texte pour garder « 007 » ou « 0 »
+    unique_card = Column(Boolean, nullable=False, default=False)   # carte unique : une seule rareté, aucune autre variante créée automatiquement (ni secrète, ni Édition Noire, ni spéciale, épique ou légendaire)
     tier_photos = Column(Text, nullable=True)  # JSON {"rare": "/photos/mathis-rare.webp", ...} : photo propre à une rareté (prioritaire)
 
     # Statistiques de saison (vraie personne, pas liées à une carte précise)

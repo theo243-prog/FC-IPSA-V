@@ -173,6 +173,7 @@ def plan_awards(db: Session, cats) -> list:
     bumped, entries = set(), []
     counts = group_card_counts(db)
     for category, group, ranked in cats:
+        ranked = [(p, pts) for p, pts in ranked if not getattr(p, "unique_card", False)]     # une carte unique ne reçoit jamais de spéciale
         if not ranked:                                      # catégorie sans aucun point cette semaine : rien
             continue
         first, n = ranked[0]
