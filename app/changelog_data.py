@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-tournoi-equipe-gardee", "date": "2026-11-14", "category": "modes", "title": "Tournoi : ton équipe est gardée",
+     "text": "Au tournoi, ton équipe est maintenant gardée jusqu'à la fin : enregistre-la une fois (même pendant les inscriptions), elle sera jouée à chacun de tes matchs si tu ne valides rien d'autre. Plus besoin de revenir chaque jour, et plus de forfait. Tu peux toujours la modifier."},
     {"id": "2026-11-stats-match", "date": "2026-11-12", "category": "modes", "title": "Les statistiques du match",
      "text": "À la fin de chaque match, retrouve les statistiques comme dans un vrai match : possession, tirs, tirs cadrés, arrêts, corners, hors-jeu, fautes et cartons jaunes. Elles suivent ce qui s'est passé pendant le match."},
     {"id": "2026-11-podium-saison-300", "date": "2026-11-12", "category": "économie", "title": "Podium de saison mieux payé",

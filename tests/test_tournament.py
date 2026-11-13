@@ -94,6 +94,7 @@ m_a, m_b = r2[0]["id"], r2[1]["id"]; at(2026, 11, 9, 15)
 c.post(f"/tournament/matches/{m_b}/team", json=team("t2"), headers=H["t2"]); res = c.post(f"/tournament/matches/{m_b}/team", json=team("t3", "possession"), headers=H["t3"]).json()
 ok(res["resolved"] and res["winner"] in ("t2", "t3"), f"t2 – t3 se joue : {res['recap']['score_challenger']}–{res['recap']['score_defender']}" + (f" (tirs au but {res['pens'][0]}–{res['pens'][1]})" if res["pens"] else "") + f", {res['winner']} gagne")
 winner_b = res["winner"]; loser_b = "t3" if winner_b == "t2" else "t2"
+db.query(TN.TournamentEntry).filter_by(user_id=U(winner45).id).update({"team_json": None}); db.commit()     # (scénario du double forfait : personne n'a d'équipe enregistrée ; l'équipe gardée est testée dans test_tournoi_equipe)
 at(2026, 11, 10, 12, 1); g = info(H["t1"]); ma = g["rounds"][1]["matches"][0]
 ok(ma["via"] == "double_forfeit" and ma["winner"] == "t1", "t1 et son adversaire n'ont rien composé : le mieux classé (t1) passe")
 fm = g["rounds"][2]["matches"][0]; ok({fm["p1"]["pseudo"], fm["p2"]["pseudo"]} == {"t1", winner_b} and fm["state"] == "open", f"finale : t1 contre {winner_b}, ouverte")

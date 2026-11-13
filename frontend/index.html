@@ -68,9 +68,10 @@
     pointer-events:none; z-index:0;
   }
   #app{position:relative;z-index:1;}
-  /* largeur du site : 960 px sur un petit écran ; sur un écran d'ordinateur, il prend la largeur de l'écran (jusqu'à 1600 px) */
+  /* largeur du site : 960 px sur un petit écran ; sur un écran d'ordinateur, plus large (jusqu'à 1280 px) mais en gardant une bande vide d'au moins 64 px de chaque côté,
+     pour faire défiler la page à la molette sans tomber dans une liste qui défile toute seule (13/11/2026 : entre-deux entre 960 et toute la largeur) */
   :root{--site-max:960px;}
-  @media (min-width:1000px){:root{--site-max:min(1600px, calc(100vw - 48px));} .wrap,.topbar-inner{padding-left:24px;padding-right:24px;} .tabs .tab{flex:1 1 auto;text-align:center;}}
+  @media (min-width:1000px){:root{--site-max:min(1280px, calc(100vw - 128px));} .wrap,.topbar-inner{padding-left:24px;padding-right:24px;} .tabs .tab{flex:1 1 auto;text-align:center;}}
   .wrap{max-width:var(--site-max);margin:0 auto;padding:0 16px 70px;}
   .crest-ico{display:block;fill:currentColor;}
 
@@ -1279,7 +1280,7 @@
           <li><b>Inscriptions</b> : du <b>1er au 7</b> de chaque mois (jusqu'au 7 à minuit), en payant le droit d'entrée. Tout le monde peut s'inscrire, sans limite de places. Désinscription possible (remboursée) jusqu'à la fermeture.</li>
           <li><b>Tirage</b> : dès minuit, le 8. Les têtes de série sont les mieux classés en Elo ; elles ne se rencontrent que tard dans le tableau. S'il manque des joueurs pour remplir le premier tour, les mieux classés le passent directement.</li>
           <li><b>Les tours</b> : on commence par le tour qui convient au nombre d'inscrits (seizièmes, huitièmes, quarts…) jusqu'à la finale. Le 1er tour s'ouvre le 8 à midi, <b>24 h par tour</b> (de midi à midi). La finale se joue autour de la mi-mois : la fin du mois reste libre pour la course à l'Elo.</li>
-          <li><b>Ton match</b> : tu composes ton équipe en secret (comme au 1v1). Dès que les deux joueurs ont validé, le match se joue. <b>Qui n'a pas validé à l'heure limite perd par forfait</b> ; si les deux oublient, le mieux classé passe. Ne vends pas les cartes de ton équipe avant la fin du match : une équipe devenue invalide = forfait.</li>
+          <li><b>Ton match</b> : tu composes ton équipe en secret (comme au 1v1). Dès que les deux joueurs ont validé, le match se joue. <b>Ton équipe est gardée pour tout le tournoi</b> : enregistre-la une fois (même avant le 1er tour), elle sera jouée à l'heure limite de chacun de tes matchs si tu ne valides rien d'autre ; tu peux la modifier à tout moment. <b>Forfait seulement sans aucune équipe enregistrée</b> ; si les deux n'en ont pas, le mieux classé passe. Ne vends pas les cartes de ton équipe : une équipe devenue invalide = forfait.</li>
           <li><b>Égalité</b> : tirs au but, pondérés par la force des deux équipes.</li>
           <li><b>Ces matchs ne comptent pas pour l'Elo</b> ni pour les statistiques de saison, et ne rapportent ni pack ni crédits.</li>
           <li><b>Récompenses</b> : la cagnotte (droits d'entrée + bonus du club) est partagée entre le vainqueur, le finaliste et les demi-finalistes ; chacun reçoit aussi sa carte de tournoi (vainqueur, finaliste, demi-finaliste), qui donne un titre à son nom. Moins de 2 inscrits : tournoi annulé, tout le monde est remboursé.</li>
@@ -2403,7 +2404,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.13.4';
+  const SITE_VERSION = '2026.11.14.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2944,7 +2945,14 @@
   }
   function renderTnMine(){
     const d = tnData, box = byId('tnMineBox'), m = d.me.match; box.innerHTML = '';
-    if (!m) { if (d.me.joined && d.phase === 'running') box.innerHTML = '<div class="panel-box tn-mine"><h2>Ton tournoi</h2><p class="tn-when">Tu es qualifié : ton prochain match apparaîtra ici.</p></div>'; return; }
+    const canSave = d.me.joined && !d.me.eliminated && (d.phase === 'registration' || d.phase === 'running');
+    const saved = !!d.me.team_saved;
+    const saveBlock = canSave ? '<div class="tn-chips" style="margin-top:10px;"><span class="tn-chip' + (saved ? ' ok' : '') + '">Équipe du tournoi : ' + (saved ? '✅ enregistrée, jouée automatiquement à chaque match' : '❌ pas encore enregistrée') + '</span><button class="btn-small" type="button" id="tnSaveTeam">' + (saved ? '✏️ Modifier l\'équipe du tournoi' : '🛡️ Enregistrer mon équipe du tournoi') + '</button></div>' : '';
+    const bindSave = () => { const b = byId('tnSaveTeam'); if (b) b.addEventListener('click', () => openTeamModal('tournament', { id: null, opponent: null, round_name: null, deadline: null })); };
+    if (!m) {
+      if (canSave) box.innerHTML = '<div class="panel-box tn-mine"><h2>Ton tournoi</h2><p class="tn-when">' + (d.phase === 'registration' ? 'Tu es inscrit. Enregistre ton équipe dès maintenant : elle sera jouée à chacun de tes matchs, sans avoir à revenir chaque jour.' : 'Tu es qualifié : ton prochain match apparaîtra ici.') + '</p>' + saveBlock + '</div>';
+      bindSave(); return;
+    }
     const side = m.me_side, opp = side === 1 ? m.p2 : m.p1, mine = side === 1 ? m.p1 : m.p2, oppReady = m.submitted[side === 1 ? 1 : 0];
     let body = '<h2>⚽ Ton match : ' + escapeHtml(m.round_name) + '</h2>';
     if (!opp) {
@@ -2957,10 +2965,11 @@
           (m.replay ? '<div class="tn-actions"><button class="btn-small" type="button" id="tnReplay">▶️ Voir le match</button></div>' : '') +
           (d.me.place === 1 ? '<p class="tn-when">🏆 Tu as gagné le tournoi : cagnotte et trophée versés !</p>' : d.me.place ? '<p class="tn-when">Place ' + d.me.place + (d.me.place === 3 ? ' (demi-finaliste)' : ' (finaliste)') + ' : ta part de la cagnotte est versée.</p>' : '');
       } else if (m.state === 'open') {
-        body += '<div class="tn-chips"><span class="tn-chip' + (m.my_team_ready ? ' ok' : '') + '">Ton équipe : ' + (m.my_team_ready ? '✅ prête' : '❌ pas encore composée') + '</span><span class="tn-chip' + (oppReady ? ' ok' : '') + '">' + escapeHtml(opp.pseudo) + ' : ' + (oppReady ? '✅ prêt' : 'en attente') + '</span></div>' +
-          '<p class="tn-when">⏳ Heure limite : <b>' + escapeHtml(tnFmt(m.deadline_at)) + '</b> (' + escapeHtml(tnDelay(m.deadline_at)) + '). Sans équipe validée à cette heure : <b>forfait</b>.</p><div class="tn-actions"><button class="btn-primary" type="button" id="tnTeam">' + (m.my_team_ready ? '✏️ Modifier mon équipe' : '⚽ Composer mon équipe') + '</button></div>';
+        const ready = m.my_team_ready || saved;
+        body += '<div class="tn-chips"><span class="tn-chip' + (ready ? ' ok' : '') + '">Ton équipe : ' + (m.my_team_ready ? '✅ prête' : saved ? '✅ équipe enregistrée' : '❌ pas encore composée') + '</span><span class="tn-chip' + (oppReady ? ' ok' : '') + '">' + escapeHtml(opp.pseudo) + ' : ' + (oppReady ? '✅ prêt' : 'en attente') + '</span></div>' +
+          '<p class="tn-when">⏳ Heure limite : <b>' + escapeHtml(tnFmt(m.deadline_at)) + '</b> (' + escapeHtml(tnDelay(m.deadline_at)) + '). ' + (ready ? 'Ton équipe ' + (m.my_team_ready ? 'validée' : 'enregistrée') + ' sera jouée à cette heure si le match ne s\'est pas joué avant : tu peux encore la modifier.' : 'Sans équipe à cette heure : <b>forfait</b>. Une fois validée, elle est gardée pour tout le tournoi.') + '</p><div class="tn-actions"><button class="btn-primary" type="button" id="tnTeam">' + (ready ? '✏️ Modifier mon équipe' : '⚽ Composer mon équipe') + '</button></div>';
       } else {
-        body += '<p class="tn-when">Ce match s\'ouvre <b>' + escapeHtml(tnFmt(m.opens_at)) + '</b> (' + escapeHtml(tnDelay(m.opens_at)) + '). Tu auras alors 24 h pour composer ton équipe.</p>';
+        body += '<p class="tn-when">Ce match s\'ouvre <b>' + escapeHtml(tnFmt(m.opens_at)) + '</b> (' + escapeHtml(tnDelay(m.opens_at)) + '). ' + (saved ? 'Ton équipe enregistrée sera jouée si tu ne la changes pas.' : 'Tu auras alors 24 h pour composer ton équipe, ou enregistre-la dès maintenant.') + '</p>' + saveBlock;
       }
     }
     const lm = d.me.last;                                         // le dernier match joué, quand le suivant est déjà annoncé
@@ -2970,6 +2979,7 @@
       d.me.lastId = lm.id;
     }
     box.innerHTML = '<div class="panel-box tn-mine">' + body + '</div>';
+    bindSave();
     const tb = byId('tnTeam'); if (tb) tb.addEventListener('click', () => openTeamModal('tournament', { id: m.id, opponent: opp.pseudo, round_name: m.round_name, deadline: tnFmt(m.deadline_at) }));
     const rb = byId('tnReplay'); if (rb) rb.addEventListener('click', () => tnReplay(m.state === 'done' ? m.id : d.me.lastId));
   }
@@ -3681,7 +3691,7 @@
         '<li>Seule ta <b>première victoire du jour</b> à chaque niveau rapporte : 5, 10 ou 15 crédits et 10, 20 ou 30 points de Pass (30 crédits et 60 points au maximum par jour). Tu peux rejouer pour l\'honneur.</li>' +
         '<li>Aucun effet sur l\'Elo, l\'historique 1v1, les packs match ni les missions du jour.</li>' +
         '<li>Palmarès <b>« Tombeurs du club »</b> (victoires au niveau Difficile d\'abord), et titre <b>« Tombeur du club »</b> à 10 victoires au niveau Difficile.</li></ul>' +
-        '<h3>Le tournoi du mois</h3><p>Chaque mois, un <b>tournoi à élimination directe</b> (onglet Tournoi) : inscriptions du 1er au 7 contre un droit d\'entrée, tirage le 8, un match par tour (24 h pour composer ton équipe, forfait sinon, tirs au but en cas d\'égalité). Il ne compte <b>pas</b> pour l\'Elo. La cagnotte revient au vainqueur, au finaliste et aux demi-finalistes ; chacun reçoit aussi sa carte (vainqueur, finaliste, demi-finaliste).</p><p>Chaque carte trophée (saison, tournoi) te donne aussi un <b>titre</b> à son nom, à choisir dans ton profil (🎨 Titre et cadre).</p>' + '<h3>Les saisons</h3><p>Chaque mois est une <b>saison</b> : le 1er à minuit (heure de Paris), l\'Elo de tout le monde repart à <b>1000</b>. Il faut avoir joué au moins <b>5 matchs</b> dans le mois pour monter sur le podium. Les <b>3 premiers</b> gagnent des crédits (300, 200, 100) et un <b>trophée</b> : une carte « Vainqueur de saison (mois) », « Deuxième de la saison (mois) » ou « Troisième de la saison (mois) ». Il y a un trophée par saison : être premier deux fois donne deux cartes différentes, jamais un doublon. Un trophée n\'est qu\'un <b>souvenir</b> : il ne sort d\'aucun pack, n\'a ni note ni bonus, ne joue pas de match, ne se vend pas, ne s\'achète pas et ne compte pas dans le pourcentage de collection. Il se range dans « Trophées de saison », dans ta collection. Les <b>3 joueurs qui ont joué le plus de matchs</b> du mois reçoivent aussi un trophée : « Joueur le plus assidu de la saison » (puis 2e et 3e).</p>' +
+        '<h3>Le tournoi du mois</h3><p>Chaque mois, un <b>tournoi à élimination directe</b> (onglet Tournoi) : inscriptions du 1er au 7 contre un droit d\'entrée, tirage le 8, un match par tour (24 h pour composer ton équipe ; une équipe validée une fois est gardée pour tout le tournoi, forfait seulement sans équipe ; tirs au but en cas d\'égalité). Il ne compte <b>pas</b> pour l\'Elo. La cagnotte revient au vainqueur, au finaliste et aux demi-finalistes ; chacun reçoit aussi sa carte (vainqueur, finaliste, demi-finaliste).</p><p>Chaque carte trophée (saison, tournoi) te donne aussi un <b>titre</b> à son nom, à choisir dans ton profil (🎨 Titre et cadre).</p>' + '<h3>Les saisons</h3><p>Chaque mois est une <b>saison</b> : le 1er à minuit (heure de Paris), l\'Elo de tout le monde repart à <b>1000</b>. Il faut avoir joué au moins <b>5 matchs</b> dans le mois pour monter sur le podium. Les <b>3 premiers</b> gagnent des crédits (300, 200, 100) et un <b>trophée</b> : une carte « Vainqueur de saison (mois) », « Deuxième de la saison (mois) » ou « Troisième de la saison (mois) ». Il y a un trophée par saison : être premier deux fois donne deux cartes différentes, jamais un doublon. Un trophée n\'est qu\'un <b>souvenir</b> : il ne sort d\'aucun pack, n\'a ni note ni bonus, ne joue pas de match, ne se vend pas, ne s\'achète pas et ne compte pas dans le pourcentage de collection. Il se range dans « Trophées de saison », dans ta collection. Les <b>3 joueurs qui ont joué le plus de matchs</b> du mois reçoivent aussi un trophée : « Joueur le plus assidu de la saison » (puis 2e et 3e).</p>' +
         '<h3>Mises, packs et classement</h3><ul>' +
         '<li><b>Mise</b> de ' + cfg.stake_min + ' à ' + cfg.stake_max + ' crédits, bloquée tant que le défi est ouvert. Le gagnant prend les deux mises <b>et un pack match</b> ; le perdant reçoit <b>un pack classique</b>. En cas de <b>nul</b>, chacun récupère sa mise <b>et reçoit un pack classique</b>. Le 1v1 rapporte <b>10 packs au maximum par jour</b> (un pack match si tu gagnes, un classique si tu perds ou fais nul) : ensuite, tu peux continuer à jouer autant que tu veux, et chaque match te rapporte <b>1 à 5 crédits</b> au hasard à la place, <b>' + (cfg.after_cap_daily_max || 50) + ' crédits par jour au maximum</b> (plus de cartes jusqu\'à minuit). Les mises, l\'Elo et les missions ne changent pas.</li>' +
         '<li><b>Enveloppe pour l\'arbitre</b> (facultative, sans plafond) : tu glisses des crédits à l\'arbitre en plus de ta mise. <b>Celui qui met le plus gagne +' + Math.round(cfg.referee_bonus * 100) + ' %</b> dans le match, comme un bonus d\'équipe ; en cas d\'égalité, personne ne l\'a. '
@@ -4714,8 +4724,10 @@
 
     const rules = 'Une carte hors de son vrai poste perd ' + Math.round(cfg.out_of_position_malus * 100) + ' %. Le capitaine gagne ' + Math.round(cfg.captain_bonus * 100) + ' %. Tu ne peux pas mettre deux fois la même carte.';
     if (mode === 'tournament') {
-      byId('tmTitle').textContent = 'Tournoi : ' + proposal.round_name + ' contre ' + proposal.opponent;
-      byId('tmIntro').textContent = 'Compose ton équipe en secret : ni mise, ni enveloppe pour l\'arbitre. Quand ' + proposal.opponent + ' aura validé la sienne, le match se jouera tout seul (en cas d\'égalité : tirs au but). Tu peux modifier ton équipe jusque-là. Limite : ' + proposal.deadline + '. Ce match ne compte pas pour l\'Elo. Ne vends pas ces cartes avant la fin du match. ' + rules;
+      byId('tmTitle').textContent = proposal.id ? 'Tournoi : ' + proposal.round_name + ' contre ' + proposal.opponent : 'Tournoi : mon équipe enregistrée';
+      byId('tmIntro').textContent = proposal.id
+        ? 'Compose ton équipe en secret : ni mise, ni enveloppe pour l\'arbitre. Quand ' + proposal.opponent + ' aura validé la sienne, le match se jouera tout seul (en cas d\'égalité : tirs au but). Tu peux modifier ton équipe jusque-là. Limite : ' + proposal.deadline + '. Elle est aussi gardée pour les tours suivants : plus besoin de revenir chaque jour. Ce match ne compte pas pour l\'Elo. Ne vends pas ces cartes avant la fin du tournoi. ' + rules
+        : 'Cette équipe est gardée pour TOUT le tournoi : à l\'heure limite de chacun de tes matchs, elle est jouée automatiquement si tu n\'as rien validé d\'autre. Tu peux la modifier à tout moment (joueurs, formation, tactique, Fan…). Pas de forfait tant que ses cartes restent dans ta collection. ' + rules;
       byId('tmSubmit').textContent = 'Valider mon équipe';
     } else if (mode === 'club') {
       byId('tmTitle').textContent = 'Défi du club · ' + proposal.icon + ' ' + proposal.label;
@@ -4947,10 +4959,15 @@
       const opp = tm.proposal.opponent; btn.disabled = true;
       try {
         saveLastTeam(body, null);
+        if (!tm.proposal.id) {                                   // équipe enregistrée pour tout le tournoi (à l'avance)
+          await api('/tournament/team', { method: 'POST', body: JSON.stringify(body) });
+          closeTeamModal(); loadTournament(); toast('Équipe du tournoi enregistrée ✅ Elle sera jouée à chaque match si tu ne la changes pas.');
+          return;
+        }
         const r = await api('/tournament/matches/' + tm.proposal.id + '/team', { method: 'POST', body: JSON.stringify(body) });
         closeTeamModal(); await refreshMe(); loadTournament();
         if (r.resolved && r.recap) showMatch(r.recap, { isNew: true, animate: true });
-        else toast('Équipe validée ✅ Le match se jouera dès que ' + opp + ' aura validé la sienne, ou à l\'heure limite.');
+        else toast('Équipe validée ✅ Le match se jouera dès que ' + opp + ' aura validé la sienne, ou à l\'heure limite. Elle est gardée pour les tours suivants.');
       } catch(e) { if (e.message !== 'unauthorized') err.textContent = e.message; }
       finally { btn.disabled = tm.owned.length < cfg.team_size; btn.textContent = tmSubmitLabel(); }
       return;
