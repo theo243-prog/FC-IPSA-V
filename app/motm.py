@@ -147,6 +147,8 @@ def apply_cards(db: Session, ranking: list) -> dict:
         if player is None:
             continue
         leg = db.query(Card).filter_by(player_id=player.id, tier=Tier.legendaire).first()
+        if leg is None and player.unique_card:                          # carte unique d'une autre rareté : pas de légendaire créée, on passe au suivant
+            continue
         if leg is None:
             card = Card(player_id=player.id, tier=Tier.legendaire, vitesse=0, tir=0)
             db.add(card); db.flush()

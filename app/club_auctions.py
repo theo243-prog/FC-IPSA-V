@@ -173,7 +173,7 @@ def is_black_series(s) -> bool:
 
 def people(db: Session):
     """Les personnes qui ont droit à une série : joueurs et fans (ni mascotte, ni équipement, ni moment gold…), par nom."""
-    return sorted((p for p in db.query(Player).all() if game_logic.card_kind(p) in PERSON_KINDS), key=lambda p: p.name.casefold())
+    return sorted((p for p in db.query(Player).all() if game_logic.card_kind(p) in PERSON_KINDS and not p.unique_card), key=lambda p: p.name.casefold())      # (carte unique : pas de série)
 
 
 def black_series(db: Session):
@@ -182,7 +182,7 @@ def black_series(db: Session):
 
 def ensure_series(db: Session, player: Player) -> Optional[numbered.NumberedSeries]:
     """Crée la série Édition Noire d'une personne si elle n'existe pas encore (sans commit). None si elle existe déjà ou n'y a pas droit."""
-    if game_logic.card_kind(player) not in PERSON_KINDS:
+    if game_logic.card_kind(player) not in PERSON_KINDS or player.unique_card:
         return None
     if db.query(numbered.NumberedSeries).filter_by(title=SERIES_TITLE, subject=player.name).first():
         return None

@@ -52,6 +52,7 @@ def summarize(path: str, payload) -> str:
         if name == "delete-user": return "Suppression du compte %s" % who
         if name == "set-test-account": return "Compte de test %s : %s" % (who, "oui" if p.get("is_test", True) else "non")
         if name == "reset-missions": return "Missions et série remises à zéro pour %s" % who
+        if name == "create-unique-card": return "Carte unique %s (%s, %s)%s" % (_s(p, "name"), _s(p, "tier"), _s(p, "poste", "X"), " offerte à " + _s(p, "grant_to_pseudo") if _s(p, "grant_to_pseudo") else "")
         if name == "create-card": return "Carte %s (%s) créée%s" % (_s(p, "player_name"), _s(p, "tier"), " et offerte à " + who if who else "")
         if name == "delete-card": return "Carte %s (%s) supprimée" % (_s(p, "player_name"), _s(p, "tier"))
         if name == "create-player": return "Joueur %s créé (poste %s)%s" % (_s(p, "name"), _s(p, "poste", "X"), ", cartes offertes à " + who if who else "")

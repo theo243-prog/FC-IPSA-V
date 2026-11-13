@@ -471,7 +471,7 @@ def is_mascot(player) -> bool:
 
 def has_secret_card(player) -> bool:
     """Chaque joueur, fan et la mascotte ont leur carte secrète (pas les équipements, stades, moments gold ni écussons)."""
-    return card_kind(player) in ("joueur", "fan", "mascotte")
+    return card_kind(player) in ("joueur", "fan", "mascotte") and not getattr(player, "unique_card", False)      # (carte unique : jamais de secrète)
 
 
 def is_equipment(player) -> bool:
