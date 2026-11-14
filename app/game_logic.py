@@ -2,6 +2,7 @@
 Toutes les règles du jeu, isolées ici pour que les routes de l'API restent
 simples. Rien ici ne touche au HTTP — uniquement de la logique + la base.
 """
+import math
 import random
 from datetime import datetime, timedelta
 
@@ -31,10 +32,10 @@ TIER_WEIGHTS = {"commune": 75.36, "rare": 15, "gold": 8.29, "epique": 1.2, "lege
 TIER_REF_COUNT = {"gold": 6, "speciale": 6, "epique": 6, "legendaire": 3, "halloween": 5, "noel": 5}
 
 # Valeur de revente d'un doublon, en crédits. Les spéciales et les secrètes valent autant que les épiques ; les éditions limitées autant que les gold.
-DUPLICATE_SELL_VALUE = {"commune": 1, "rare": 3, "halloween": 5, "noel": 5, "gold": 5, "secrete": 10, "speciale": 10, "epique": 10, "saison": 25, "legendaire": 50, "numerotee": 0}      # une numérotée n'a jamais de doublon (une carte par exemplaire)
+DUPLICATE_SELL_VALUE = {"commune": 1, "communaute": 2, "rare": 3, "halloween": 5, "noel": 5, "gold": 5, "secrete": 10, "speciale": 10, "epique": 10, "saison": 25, "legendaire": 50, "numerotee": 0}      # une numérotée n'a jamais de doublon (une carte par exemplaire)
 
 # Ordre de rareté, de la plus commune à la plus rare.
-TIER_ORDER = ["commune", "rare", "halloween", "noel", "gold", "secrete", "speciale", "epique", "saison", "legendaire", "numerotee"]      # numérotée : hors packs, à part
+TIER_ORDER = ["commune", "communaute", "rare", "halloween", "noel", "gold", "secrete", "speciale", "epique", "saison", "legendaire", "numerotee"]      # numérotée : hors packs, à part
 CUSTOM_EDITION_SLOTS = tuple("ed%d" % i for i in range(1, 13))       # 12 emplacements libres : tu les nommes toi-même (voir define_edition)
 EDITION_TIERS = ("halloween", "noel") + CUSTOM_EDITION_SLOTS      # les éditions limitées : plus rares que la rare, moins que les autres
 
@@ -278,6 +279,54 @@ SLOT_RULES = {
 }
 
 
+# Cartes de la COMMUNAUTÉ (communaute.py, en essai) : leur chance se règle CARTE PAR CARTE. Une carte communauté précise tombe moins
+# souvent qu'une commune précise et plus souvent qu'une rare précise (moyenne géométrique des deux). La part de la rareté grandit donc
+# avec le nombre de cartes sorties, plafonnée au poids de la rare (COMMUNITY_MAX_SHARE fois) ; les autres raretés sont réduites
+# d'autant, en gardant leurs rapports entre elles (le total ne change pas).
+COMMUNITY_MAX_SHARE = 1.0
+
+
+def community_tier_weights(weights: dict, counts: dict) -> dict:
+    """Ajoute la rareté « communaute » aux poids d'un tirage (déjà réduits par classic_tier_weights). Sans carte communauté : inchangés."""
+    n = counts.get("communaute", 0)
+    if n <= 0 or not weights:
+        return dict(weights)
+    per = [weights[t] / counts[t] for t in ("commune", "rare") if weights.get(t) and counts.get(t)]
+    if not per:
+        return dict(weights)
+    per_card = math.sqrt(per[0] * per[1]) if len(per) == 2 else per[0]
+    total = sum(weights.values())
+    w = min(n * per_card, COMMUNITY_MAX_SHARE * weights.get("rare", n * per_card), 0.5 * total)
+    factor = (total - w) / total
+    out = {t: v * factor for t, v in weights.items() if t != "communaute"}
+    out["communaute"] = w
+    return out
+
+
+def community_allowed(db: Session, user=None) -> bool:
+    """Les cartes communauté sortent-elles des packs pour ce joueur ? Oui si la fonction est ouverte à tous, ou si le joueur y a accès
+    (essai). user None : seulement si elle est ouverte à tous (aide du site, % de collection)."""
+    from . import features                     # (import ici : features ne dépend pas de game_logic)
+    if user is None:
+        return bool(features.get(db, "communaute")["public"])
+    return features.has_access(db, user, "communaute")
+
+
+def pack_weights(db: Session, counts: dict, base_weights: dict, kind: str, user=None) -> dict:
+    """Les poids réels d'un tirage : rareté sans carte ignorée, édition en cours, puis cartes communauté si le joueur y a droit."""
+    weights = classic_tier_weights(counts, weights_with_editions(db, base_weights, kind, counts))
+    return community_tier_weights(weights, counts) if community_allowed(db, user) else weights
+
+
+def hidden_collection_tiers(db: Session) -> list:
+    """Raretés qui ne comptent pas dans le % de collection et la complétion : trophées de saison, numérotées, et les cartes communauté
+    tant que la fonction est en essai."""
+    tiers = [Tier.saison, Tier.numerotee]
+    if not community_allowed(db):
+        tiers.append(Tier.communaute)
+    return tiers
+
+
 def _slot_weights(weights: dict, rule: str) -> dict:
     """Les probabilités d'une case : celles du pack classique, limitées aux raretés autorisées (mêmes rapports entre elles).
     Si aucune rareté autorisée n'a de carte, on retombe sur la règle juste au-dessus, puis sur toutes les raretés."""
@@ -355,7 +404,7 @@ def open_pack_for_user(db: Session, user: User, pack_type: str = "free") -> dict
     credits_won = int(_roll_weighted(CREDIT_WEIGHTS))
     user.credits += credits_won
 
-    weights = classic_tier_weights(counts, weights_with_editions(db, spec.get("weights") or TIER_WEIGHTS, effective, counts))
+    weights = pack_weights(db, counts, spec.get("weights") or TIER_WEIGHTS, effective, user)      # (+ cartes communauté si le joueur y a droit)
     if spec.get("slots"):
         # pack ultra : chaque case a ses propres raretés autorisées
         plan = []
@@ -456,6 +505,8 @@ def card_kind(player) -> str:
         return "numerotee"                # exemplaire numéroté d'une série limitée (numbered.py) : collection, marché, enchères
     if poste == "ECUSSON":
         return "ecusson"                  # écusson d'un club adverse : carte gold de collection (ni note, ni match)
+    if poste == "COMMUNAUTE":
+        return "communaute"               # carte de la communauté (communaute.py) : proposée et votée par les joueurs, collection seulement
     if poste == "TROPHEE":
         return "trophee"                  # trophée de saison : ni note, ni bonus, ni match, ni échange
     return "joueur"
@@ -623,17 +674,19 @@ ULTRA_DISPLAY_ORDER = ["toutes", "rare_plus", "edition_min", "epique", "epique_l
 def pack_odds(db: Session) -> dict:
     """Pour chaque type de pack : les cartes garanties et la chance de chaque rareté pour les autres cartes."""
     counts = tier_card_counts(db)
+    if not community_allowed(db):                  # cartes communauté en essai : ni comptées ni affichées dans l'aide
+        counts = {k: v for k, v in counts.items() if k != "communaute"}
     packs = {}
     for key, spec in PACK_TYPES.items():
         base = weights_with_editions(db, spec.get("weights") or TIER_WEIGHTS, key, counts)      # + l'édition limitée en cours
         packs[key] = {
             "label": spec["label"], "price": spec["price"], "description": spec["description"],
             "guaranteed": list(spec["guaranteed"]), "available": pack_available(counts, key),
-            "odds": _percent(classic_tier_weights(counts, base)),          # réel (rareté sans carte ignorée, rareté récente réduite)
+            "odds": _percent(community_tier_weights(classic_tier_weights(counts, base), counts)),          # réel (rareté sans carte ignorée, rareté récente réduite)
             "nominal": _percent(base),                                      # théorique, avec toutes les raretés présentes
         }
         if spec.get("slots"):                                                   # pack ultra : les chances de CHAQUE case
-            real = classic_tier_weights(counts, base)
+            real = community_tier_weights(classic_tier_weights(counts, base), counts)
             packs[key]["cards"] = sum(n for n, _ in spec["slots"])
             packs[key]["slots"] = [{"count": n, "rule": rule, "odds": _percent(_slot_weights(real, rule))}
                                    for n, rule in sorted(spec["slots"], key=lambda s: ULTRA_DISPLAY_ORDER.index(s[1]))]
@@ -648,7 +701,7 @@ def pack_odds(db: Session) -> dict:
 # Postes : une faute de frappe ne doit pas casser une carte.
 # ---------------------------------------------------------------------
 VALID_POSTES = ("ATT", "MC", "DEF", "GB", "X", "FAN")
-RESERVED_POSTES = ("MASCOTTE", "EQUIPEMENT", "STADE", "MOMENT", "ECUSSON", "NUMEROTEE")
+RESERVED_POSTES = ("MASCOTTE", "EQUIPEMENT", "STADE", "MOMENT", "ECUSSON", "NUMEROTEE", "COMMUNAUTE")
 
 
 def normalize_poste(raw: str) -> str:

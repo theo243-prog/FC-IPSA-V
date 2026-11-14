@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon, communaute
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -55,6 +55,7 @@ app.include_router(first_steps.router)         # Premiers pas : objectifs des no
 app.include_router(shop_cosmetics.router)      # cosmétiques à paliers vendus au shop
 app.include_router(shop_sounds.router)          # son d'ouverture de la semaine au shop (100 crédits)
 app.include_router(features.router)             # fonctions en essai : cachées aux joueurs sauf aux comptes choisis, sorties ensemble
+app.include_router(communaute.router)           # Cartes de la communauté : propositions, tri par l'admin, vote du jour (en essai)
 app.include_router(pantheon.router)             # Panthéon : palmarès des saisons et des tournois, records du jeu et du club (en essai)
 app.include_router(duel_stats.router)           # mes stats 1v1 (bilan, face à face, cartes, buteurs), visibles par moi seul
 app.include_router(draft.router)                # mode draft : match en direct, équipe construite aux enchères (comptes choisis)
@@ -107,6 +108,7 @@ def card_out(card: Card) -> dict:
         "surnom": card.player.surnom,       # (affichés sur la carte secrète)
         "numero": card.player.numero,
         "trophy": seasons.trophy_info(card.player) if card.tier == Tier.saison else None,       # trophée de saison : rang, titre et mois
+        "proposed_by": getattr(card.player, "proposed_by", None),    # carte de la communauté : pseudo de son auteur
     }
 
 
@@ -314,6 +316,7 @@ def get_collection(user: User = Depends(get_current_user), db: Session = Depends
             qty_by_player.setdefault(c.player_id, {})[c.tier.value] = owned_rows.get(c.id, 0)
     out = []
     upcoming = {k for k in game_logic.EDITION_TIERS if game_logic.edition_status(db, k) == "upcoming"}
+    community_on = game_logic.community_allowed(db, user)
     for c in all_cards:
         if c.tier.value in upcoming and not owned_rows.get(c.id, 0):
             continue                                   # édition pas encore commencée : ses cartes restent une surprise
@@ -321,6 +324,8 @@ def get_collection(user: User = Depends(get_current_user), db: Session = Depends
             continue                                   # un trophée de saison n'est visible que de ceux qui l'ont gagné
         if c.tier == Tier.numerotee and not owned_rows.get(c.id, 0):
             continue                                   # exemplaire numéroté : seulement ceux qu'on possède (jamais de case « ? »)
+        if c.tier == Tier.communaute and not owned_rows.get(c.id, 0) and not reveal and not community_on:
+            continue                                   # carte de la communauté en essai : cachée à ceux qui n'y ont pas accès
         qty = owned_rows.get(c.id, 0)
         row = {**(with_level(card_out(c), lv.get(c.id, 0) if qty > 0 else 0) if (qty > 0 or reveal) else locked_out(c)), "quantity": qty}
         if qty > 0:
@@ -399,6 +404,7 @@ def player_detail(player_name: str, tier: str = "commune", db: Session = Depends
         "display_note": game_logic.get_display_note(player, tier, card),
         "surnom": player.surnom,
         "numero": player.numero,
+        "proposed_by": player.proposed_by,       # carte de la communauté : pseudo de son auteur
     }
 
 
@@ -542,6 +548,7 @@ def get_user_collection(pseudo: str, db: Session = Depends(get_db), x_admin_key:
     owned_rows = {o.card_id: o.quantity for o in db.query(OwnedCard).filter_by(user_id=user.id).all()}
     lv = card_levels.levels_for(db, user.id)               # ses copies évoluées
     upcoming = {k for k in game_logic.EDITION_TIERS if game_logic.edition_status(db, k) == "upcoming"}
+    community_on = game_logic.community_allowed(db)
     out = []
     for c in all_cards:
         qty = owned_rows.get(c.id, 0)
@@ -551,6 +558,8 @@ def get_user_collection(pseudo: str, db: Session = Depends(get_db), x_admin_key:
             continue                                   # un trophée de saison n'est visible que de ceux qui l'ont gagné
         if c.tier == Tier.numerotee and not qty:
             continue                                   # exemplaire numéroté : seulement ceux qu'il possède
+        if c.tier == Tier.communaute and not qty and not reveal and not community_on:
+            continue                                   # carte de la communauté en essai : pas de case « ? » chez les autres
         out.append({**(with_level(card_out(c), lv.get(c.id, 0) if qty > 0 else 0) if (qty > 0 or reveal) else locked_out(c)), "quantity": qty})
     return out
 
@@ -873,7 +882,7 @@ def user_profile(pseudo: str, db: Session = Depends(get_db), authorization: str 
 
 @app.get("/leaderboard")
 def leaderboard(db: Session = Depends(get_db)):
-    total_cards = db.query(Card).filter(Card.tier.notin_([Tier.saison, Tier.numerotee])).count()      # 100 % = TOUTES les cartes du jeu, sans exception (éditions limitées et secrètes comprises) ; sauf les cartes « Saison » (podium)
+    total_cards = db.query(Card).filter(Card.tier.notin_(game_logic.hidden_collection_tiers(db))).count()      # 100 % = TOUTES les cartes du jeu, sans exception (éditions limitées et secrètes comprises) ; sauf les cartes « Saison » (podium)
     reserved = dict(duel_engine.reserved_credits(db))   # crédits séquestrés dans les défis ouverts : comptés dans le total public (le montant d'une enveloppe reste secret)
     for uid, amount in offers.reserved_credits(db).items():        # … et ceux mis de côté dans les offres d'achat
         reserved[uid] = reserved.get(uid, 0) + amount
@@ -888,7 +897,7 @@ def leaderboard(db: Session = Depends(get_db)):
     for u in users:
         owned_count = (
             db.query(OwnedCard).join(Card, Card.id == OwnedCard.card_id)
-            .filter(OwnedCard.user_id == u.id, OwnedCard.quantity > 0, Card.tier.notin_([Tier.saison, Tier.numerotee]))
+            .filter(OwnedCard.user_id == u.id, OwnedCard.quantity > 0, Card.tier.notin_(game_logic.hidden_collection_tiers(db)))
             .count()
         )
         completion = round(100 * owned_count / total_cards, 1) if total_cards else 0.0
@@ -960,6 +969,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     player_packs.on_user_deleted(db, user.id)                                             # ses packs joueur pas encore ouverts
     tactic_trends.on_user_deleted(db, user.id)                                            # ses tendances de tactiques
     inbox.on_user_deleted(db, user.id)                                                    # ses notifications du site
+    communaute.on_user_deleted(db, user.id)                                               # ses voix et ses propositions pas encore sorties
     db.query(CardUsage).filter_by(user_id=user.id).delete()                               # ses cartes alignées (tournoi, défi du club), comme ses matchs 1v1
     db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
     db.query(Listing).filter_by(seller_id=user.id).delete()
@@ -1866,7 +1876,7 @@ def admin_create_unique_card(payload: schemas.AdminCreateUniqueCardRequest, db: 
         poste = game_logic.normalize_poste(payload.poste or "X")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    if poste.upper() in ("MASCOTTE", "EQUIPEMENT", "STADE", "MOMENT", "ECUSSON", "NUMEROTEE", "TROPHEE"):
+    if poste.upper() in ("MASCOTTE", "EQUIPEMENT", "STADE", "MOMENT", "ECUSSON", "NUMEROTEE", "TROPHEE", "COMMUNAUTE"):
         raise HTTPException(status_code=400, detail="Une carte unique est un joueur ou un fan (poste GB, DEF, MC, ATT, X ou FAN)")
     user = None
     if payload.grant_to_pseudo:
@@ -2146,6 +2156,7 @@ def _background_tick():
     _tick(auctions.tick)                    # fin des enchères
     _tick(club_auctions.tick)               # enchères du club : résultats, lot du jour à 17h00 (à partir de la date de démarrage)
     _tick(motm.tick)                        # fin des votes « homme du match » (24 h)
+    _tick(communaute.tick)                  # cartes de la communauté : résultat du vote du jour (20 h)
     _tick(draft.tick)                       # mode draft : parties abandonnées, tours écoulés
     _tick(backup.tick)                      # sauvegarde automatique (une fois par jour, à partir de 4h)
     _tick(battlepass.tick)                  # étoiles du Pass de la saison qui vient de finir

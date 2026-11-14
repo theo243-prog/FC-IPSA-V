@@ -118,7 +118,7 @@ COMPLETION_OWNED, COMPLETION_PER_LEVEL = 0.5, 0.1
 
 def game_completion(db: Session, user_ids=None) -> dict:
     """{utilisateur: complétion du jeu en %, à 0,1 près} pour les joueurs donnés (tous si None), en quelques requêtes."""
-    cards = db.query(Card).join(Player, Player.id == Card.player_id).filter(Card.tier.notin_([Tier.saison, Tier.numerotee])).all()
+    cards = db.query(Card).join(Player, Player.id == Card.player_id).filter(Card.tier.notin_(game_logic.hidden_collection_tiers(db))).all()
     evolvable = {c.id for c in cards if game_logic.card_kind(c.player) == "joueur" and group_of(c) is not None}
     ids = {c.id for c in cards}
     if not ids:
@@ -142,7 +142,7 @@ def ineligible_reason(card: Card):
             return "Cette carte ne peut pas évoluer : pour un Fan, un Loup ou un équipement, seules les communes, rares, éditions limitées, épiques et légendaires évoluent."
         return None
     if kind != "joueur":
-        labels = {"stade": "un stade", "moment": "un moment mémorable", "ecusson": "un écusson", "numerotee": "un exemplaire numéroté"}
+        labels = {"stade": "un stade", "moment": "un moment mémorable", "ecusson": "un écusson", "numerotee": "un exemplaire numéroté", "communaute": "une carte de la communauté"}
         return "Seuls les joueurs, les Fans, le Loup et les équipements évoluent : celle-ci est %s." % labels.get(kind, "une carte spéciale")
     if group_of(card) is None:
         t = card.tier.value

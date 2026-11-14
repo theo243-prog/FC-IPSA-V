@@ -33,6 +33,7 @@ def gen_id():
 class Tier(str, enum.Enum):
     # ordre de rareté : commune < rare < édition limitée < gold < secrete < speciale < epique < legendaire
     commune = "commune"
+    communaute = "communaute"  # carte de la COMMUNAUTÉ : proposée puis votée par les joueurs (communaute.py), entre commune et rare, collection seulement
     rare = "rare"
     halloween = "halloween"  # ÉDITION LIMITÉE : disponible dans les packs pendant ses dates seulement (voir game_logic.EDITIONS)
     noel = "noel"            # ÉDITION LIMITÉE de décembre
@@ -67,6 +68,7 @@ class Player(Base):
     surnom = Column(String, nullable=True)     # surnom du joueur : c'est lui qui s'écrit sur sa carte secrète
     numero = Column(String, nullable=True)     # numéro de maillot, en texte pour garder « 007 » ou « 0 »
     unique_card = Column(Boolean, nullable=False, default=False)   # carte unique : une seule rareté, aucune autre variante créée automatiquement (ni secrète, ni Édition Noire, ni spéciale, épique ou légendaire)
+    proposed_by = Column(String, nullable=True)  # carte de la communauté : pseudo du joueur qui l'a proposée (affiché sur la fiche)
     tier_photos = Column(Text, nullable=True)  # JSON {"rare": "/photos/mathis-rare.webp", ...} : photo propre à une rareté (prioritaire)
 
     # Statistiques de saison (vraie personne, pas liées à une carte précise)

@@ -182,10 +182,10 @@ def game_records(db: Session) -> list:
             out.append(_record(rid, label, "%d %s%s" % (n, unit, "s" if n > 1 else ""), real[uid].pseudo))
     # la plus grosse collection et la meilleure complétion du jeu (mêmes calculs que le classement)
     from .models import OwnedCard, Tier
-    total = db.query(Card).filter(Card.tier.notin_([Tier.saison, Tier.numerotee])).count()
+    total = db.query(Card).filter(Card.tier.notin_(game_logic.hidden_collection_tiers(db))).count()
     if total:
         owned = dict(db.query(OwnedCard.user_id, func.count(OwnedCard.card_id)).join(Card, Card.id == OwnedCard.card_id)
-                     .filter(OwnedCard.quantity > 0, Card.tier.notin_([Tier.saison, Tier.numerotee])).group_by(OwnedCard.user_id).all())
+                     .filter(OwnedCard.quantity > 0, Card.tier.notin_(game_logic.hidden_collection_tiers(db))).group_by(OwnedCard.user_id).all())
         owned = {u: n for u, n in owned.items() if u in real and n > 0}
         if owned:
             uid, n = min(owned.items(), key=lambda kv: (-kv[1], real[kv[0]].pseudo.lower()))
