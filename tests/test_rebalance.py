@@ -111,15 +111,17 @@ print("5) ÉQUIPEMENT : MOINS DE FATIGUE")
 ok(GL.EQUIPMENT_FATIGUE_REDUCTION == {"commune": 0.05, "rare": 0.10, "epique": 0.15, "legendaire": 0.25} and GL.EQUIPMENT_FATIGUE_MAX == 0.25, "réductions 5 / 10 / 15 / 25 %, plafond 25 %")
 ok([GL.equipment_fatigue_reduction([fake(t)]) for t in ("commune", "rare", "epique", "legendaire")] == [0.05, 0.10, 0.15, 0.25], "réduction par rareté")
 ok(GL.equipment_fatigue_reduction([fake("legendaire"), fake("epique")]) == 0.25 and abs(GL.equipment_fatigue_reduction([fake("rare"), fake("commune")]) - 0.15) < 1e-9, "plusieurs pièces : additionnées, plafonnées à 25 %")
-ok([FA.loss_per_match(r) for r in (0, 0.05, 0.10, 0.15, 0.25, 0.9)] == [100, 95, 90, 85, 75, 75], "perte par match : 1 %, 0,95 %, 0,9 %, 0,85 %, 0,75 % (jamais plus de 25 % de réduction)")
+ok([FA.loss_per_match(r) for r in (0, 0.05, 0.10, 0.15, 0.25, 0.30)] == [50, 48, 45, 42, 38, 35], "perte par match (centièmes de %) : 0,5 % sans équipement, puis -5 / -10 / -15 / -25 %, et -30 % avec un équipement légendaire niveau 5")
 ok(FA.form_from_loss(10 ** 6) == FA.MIN_FORM == 0.5, "la forme minimale reste 50 %")
+from datetime import datetime as _dt
 GL.today_paris = lambda: real_today() + timedelta(days=4)
+FA._now = lambda: _dt(2027, 1, 1, 12, 0)                   # (horloge figée, longtemps après les matchs précédents : tout le monde est reposé)
 gear = special("Gourde Légendaire", "EQUIPEMENT", "legendaire"); give("ana", gear)
 for _ in range(3):
     r = duel(cteam={**team, "equipment_card_ids": [gear.id], "mascot_card_id": wolf_l.id})
 fa = FA.forms_for(db, U("ana").id); fb = FA.forms_for(db, U("bob").id)
-ok(all(abs(fa[k.id] - 0.9775) < 1e-9 for k in [card(n) for n, _ in CORE] + [wolf_l, gear]), "équipement légendaire : 3 matchs = -2,25 % (joueurs, Loup et équipement à 97,75 %)")
-ok(all(abs(v - 0.97) < 1e-9 for v in fb.values()), "l'adversaire sans équipement : -1 % par match (97 %)")
+ok(all(abs(fa[k.id] - 0.9886) < 1e-9 for k in [card(n) for n, _ in CORE] + [wolf_l, gear]), "équipement légendaire : 3 matchs = -1,14 % (joueurs, Loup et équipement à 98,86 %)")
+ok(all(abs(v - 0.985) < 1e-9 for v in fb.values()), "l'adversaire sans équipement : -0,5 % par match (98,5 %)")
 ok(r["lineups"]["defender"]["fatigue_reduction_pct"] == 25 and r["lineups"]["challenger"]["fatigue_reduction_pct"] == 0, "le récapitulatif montre la réduction de fatigue de chaque équipe")
 before = dict(FA.forms_for(db, U("ana").id))
 tr = TN.simulate(TN._prepare(db, U("ana"), {**team, "captain_card_id": None, "equipment_card_ids": [gear.id]}), TN._prepare(db, U("bob"), {**team, "captain_card_id": None})); db.commit()
@@ -142,7 +144,7 @@ for f, t in combos:
     ok(abs(ratio - (1.02 if (f, t) in good else 1.0)) < 1e-9, "%s + %s : x%.2f" % (t, f, ratio))
 seen = []
 DE.expected_goals = lambda a, d: (seen.append((a, d)), real_xg(a, d))[1]
-GL.today_paris = lambda: real_today() + timedelta(days=6)              # (forme à 100 % pour tout le monde)
+GL.today_paris = lambda: real_today() + timedelta(days=6); FA._now = lambda: _dt(2027, 3, 1, 12, 0)              # (forme à 100 % pour tout le monde)
 syn_team = {**team, "tactic": "possession"}
 r = duel(creator="ana", player="bob", cteam={**team, "tactic": "contre"}, pteam=syn_team); one = seen[0]; seen.clear()
 TN.simulate(TN._prepare(db, U("bob"), {**syn_team, "captain_card_id": None}), TN._prepare(db, U("ana"), {**team, "tactic": "contre", "captain_card_id": None})); two = seen[0]
