@@ -9,10 +9,11 @@ Aucune commande à lancer et aucun changement de « Start Command » dans Railwa
 from sqlalchemy import inspect, text
 
 # valeurs ajoutées à l'énumération des raretés (cartes.tier) : les éditions limitées
-NEW_TIER_VALUES = ["halloween", "noel", "saison", "ed1", "ed2", "ed3", "ed4", "ed5", "ed6", "ed7", "ed8", "ed9", "ed10", "ed11", "ed12", "numerotee"]
+NEW_TIER_VALUES = ["halloween", "noel", "saison", "ed1", "ed2", "ed3", "ed4", "ed5", "ed6", "ed7", "ed8", "ed9", "ed10", "ed11", "ed12", "numerotee", "communaute"]
 
 # (table, colonne, type SQL)
 NEW_COLUMNS = [
+    ("players", "proposed_by", "VARCHAR"),   # carte de la communauté : pseudo de l'auteur de la proposition
     ("match_proposals", "referee_bid", "INTEGER NOT NULL DEFAULT 0"),      # enveloppe secrète pour l'arbitre (1v1)
     ("players", "surnom", "VARCHAR"),        # surnom affiché sur la carte secrète
     ("players", "numero", "VARCHAR"),        # numéro de maillot

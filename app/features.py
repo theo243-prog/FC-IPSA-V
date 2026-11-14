@@ -24,6 +24,7 @@ router = APIRouter()
 FEATURES = {                         # nom : ce que c'est (affiché dans l'administration)
     "draft": "Mode draft (match en direct, équipe aux enchères)",
     "pantheon": "Panthéon (palmarès et records du jeu et du club)",
+    "communaute": "Cartes de la communauté (propositions des joueurs, vote du jour)",
 }
 
 

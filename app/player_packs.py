@@ -180,7 +180,7 @@ def open_for_user(db: Session, user: User, pack_id: Optional[str]) -> dict:
     credits_won = int(game_logic._roll_weighted(game_logic.CREDIT_WEIGHTS))
     user.credits += credits_won
     counts = game_logic.tier_card_counts(db)
-    weights = game_logic.classic_tier_weights(counts, game_logic.weights_with_editions(db, game_logic.TIER_WEIGHTS, "classique", counts))
+    weights = game_logic.pack_weights(db, counts, game_logic.TIER_WEIGHTS, "classique", user)      # (+ cartes communauté si le joueur y a droit)
     cards, taken = [card], {card.id}
     for _ in range(2):
         c = game_logic._draw_distinct_card(db, game_logic._roll_weighted(weights), weights, taken)

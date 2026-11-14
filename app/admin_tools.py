@@ -112,6 +112,8 @@ def summarize(path: str, payload) -> str:
         if name == "feature-settings": return "Fonction en essai %s : %s%s" % (_s(p, "feature"), "ouverte à tous" if p.get("public") else "réservée à la liste", (" (" + ", ".join(p.get("allowed") or []) + ")") if p.get("allowed") is not None else "")
         if name == "draft-settings": return "Mode draft : %s%s" % ("ouvert à tous" if p.get("public") else "réservé à la liste", (" (" + ", ".join(p.get("allowed") or []) + ")") if p.get("allowed") is not None else "")
         if name == "draft-reset-ranking": return "Mode draft : classement effacé (%s)" % (_s(p, "season") or "mois en cours")
+        if name == "communaute-review": return "Carte de la communauté : proposition %s %s%s" % (_s(p, "proposal_id"), "acceptée" if _s(p, "decision") in ("accept", "accepter") else "refusée", (" (« " + _s(p, "name") + " »)") if _s(p, "name") else "")
+        if name == "communaute-release": return "Carte de la communauté : proposition %s sortie tout de suite" % _s(p, "proposal_id")
         if name == "draft-cancel": return "Mode draft : partie %s annulée" % str(_s(p, "room_id"))[:8]
         if name == "club-reset": return "Défi du club : essais et récompenses du jour remis à zéro pour %s" % who
         if name == "tournament-cancel": return "Tournoi du mois annulé (droits d'entrée remboursés)"
