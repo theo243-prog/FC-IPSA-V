@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-fatigue-recuperation", "date": "2026-11-14", "category": "règles", "title": "Fatigue plus douce, récupération en continu",
+     "text": "Chaque match 1v1 coûte maintenant 0,5 % de forme à tes cartes (au lieu de 1 %), et elles récupèrent 1 % par heure en continu, au lieu de revenir à 100 % à minuit. Une carte fatiguée affiche dans combien de temps elle sera en pleine forme. L'équipement réduit toujours la fatigue."},
     {"id": "2026-11-tournoi-equipe-gardee", "date": "2026-11-14", "category": "modes", "title": "Tournoi : ton équipe est gardée",
      "text": "Au tournoi, ton équipe est maintenant gardée jusqu'à la fin : enregistre-la une fois (même pendant les inscriptions), elle sera jouée à chacun de tes matchs si tu ne valides rien d'autre. Plus besoin de revenir chaque jour, et plus de forfait. Tu peux toujours la modifier."},
     {"id": "2026-11-stats-match", "date": "2026-11-12", "category": "modes", "title": "Les statistiques du match",

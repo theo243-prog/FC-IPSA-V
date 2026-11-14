@@ -155,7 +155,7 @@ def get_config() -> dict:
         "synergy": SYNERGY, "synergy_bonus": SYNERGY_BONUS, "home_bonus": HOME_BONUS,
         "elo_scale": ELO_SCALE, "elo_max_loss": ELO_MAX_LOSS, "elo_creator_loss_factor": ELO_CREATOR_LOSS_FACTOR, "elo_win_boost": ELO_WIN_BOOST, "level_note_bonus": list(card_levels.LEVEL_NOTE_BONUS),
         "referee_bonus": REFEREE_BONUS,
-        "form_loss_per_match": fatigue.FORM_LOSS_PER_MATCH, "min_form": fatigue.MIN_FORM,
+        "form_loss_per_match": fatigue.FORM_LOSS_PER_MATCH, "form_recovery_per_hour": fatigue.RECOVERY_PER_HOUR, "min_form": fatigue.MIN_FORM,
     }
 
 
@@ -306,7 +306,7 @@ def build_members(cards_with_slots, captain_card_id, levels=None, forms=None):
         members.append({
             "slot": slot, "player": card.player.name, "tier": card.tier.value,
             "poste": card.player.poste, "base_note": base, "effective": effective,
-            "out_of_position": out, "captain": is_captain, "level": level, "form": round(form * 100),
+            "out_of_position": out, "captain": is_captain, "level": level, "form": round(form * 100, 1),
         })
     return members
 
@@ -523,7 +523,7 @@ def _lineup_snapshot(side, fan_card, equipment_cards=(), mascot_card=None, refer
     forms = forms or {}
     lv = side.get("levels") or {}                                        # niveaux du propriétaire (Fan, Loup, équipement)
     pct = lambda x: round(x * 100, 2)
-    fp = lambda c: round(forms.get(c.id, 1.0) * 100)                     # forme du jour d'un Fan, d'un Loup ou d'un équipement (1v1)
+    fp = lambda c: round(forms.get(c.id, 1.0) * 100, 1)                   # forme du jour d'un Fan, d'un Loup ou d'un équipement (1v1)
     L = lambda c: game_logic._lv(lv, c.id)
     return {
         "referee_bonus_pct": round(referee_bonus * 100),

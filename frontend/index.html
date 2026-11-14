@@ -1698,6 +1698,7 @@
   const EQUIP_FATIGUE_PCT = { commune: 5, rare: 10, epique: 15, legendaire: 25 };
   const LEVEL_BONUS = [0, 2, 3, 4, 6, 8];          // bonus de note cumulé d'une carte évoluée, au niveau 0 à 5 (card_levels.LEVEL_NOTE_BONUS)
   const pctFr = x => String(Math.round((+x || 0) * 100) / 100).replace('.', ',');      // 1.5 -> « 1,5 »
+  const fullIn = min => min >= 60 ? Math.floor(min / 60) + ' h' + (min % 60 ? ' ' + String(min % 60).padStart(2, '0') : '') : min + ' min';      // 95 -> « 1 h 35 »
   const ITEM_ICONS = {
     'gourde': '💧', 'ballon du match': '⚽', 'protege-tibias': '🦵', 'chasuble': '🦺', 'chaussettes trouees': '🧦',
     'banc de touche': '🪑', 'galette-saucisse': '🌭', 'enceinte jbl': '🔊', 'trousse a pharmacie': '🩹',
@@ -1786,7 +1787,7 @@
     else if (bgPhoto) midHTML = '';
     else if (kind === 'equipement' || kind === 'stade' || kind === 'moment' || kind === 'numerotee') midHTML = itemMedalHTML(card);
     else midHTML = '<span class="ball-fallback">⚽</span>';
-    const formBar = card.form != null && card.form < 100 ? '<div class="form-bar" title="Forme en 1v1 : ' + card.form + ' % (remise à 100 % à minuit)"><i style="width:' + card.form + '%;background-position:' + (100 - card.form) + '% 0;"></i></div>' : '';
+    const formBar = card.form != null && card.form < 100 ? '<div class="form-bar" title="Forme en 1v1 : ' + pctFr(card.form) + ' %' + (card.form_full_in ? ' · pleine forme dans ' + fullIn(card.form_full_in) : '') + ' (+1 % par heure)"><i style="width:' + card.form + '%;background-position:' + (100 - card.form) + '% 0;"></i></div>' : '';
     return formBar + (kind === 'trophee' ? '' : editionDecor(card.tier)) + bgPhoto + '<div class="card-top"><span class="card-tier-label">'+(kind === 'trophee' && trophyKindLabel(trophyParts(card)) ? trophyKindLabel(trophyParts(card)) : tierLabel(card.tier))+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
       '<div class="card-mid">'+midHTML+'</div>'+
       '<div><div class="card-name"></div>'+statsRow+'</div>'+
@@ -2404,7 +2405,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.14.1';
+  const SITE_VERSION = '2026.11.14.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3675,8 +3676,8 @@
         '<li><b>1 Loup</b> (la mascotte) : aucun bonus de puissance, mais des <b>crédits</b> après chaque match 1v1 joué (victoire, nul ou défaite) : commune ' + lc.commune + ', rare ' + lc.rare + ', épique ' + lc.epique + ', légendaire ' + lc.legendaire + ' (édition limitée ' + lc.halloween + '). Seulement pendant tes <b>' + (cfg.loup_daily_matches || 10) + ' premiers matchs 1v1 du jour</b>, <b>' + (cfg.loup_daily_cap || 30) + ' crédits par jour au maximum</b>. Rien en tournoi ni au défi du club. Sa forme ne change pas ses crédits.</li>' +
         '<li><b>' + cfg.max_equipment + ' Équipement</b> : aucun bonus de puissance, mais <b>moins de fatigue</b> pour toutes les cartes du match : commune −' + pctFr((er.commune || 0) * 100) + ' %, rare −' + pctFr((er.rare || 0) * 100) + ' %, épique −' + pctFr((er.epique || 0) * 100) + ' %, légendaire −' + pctFr((er.legendaire || 0) * 100) + ' % de perte de forme. <b>Utile uniquement en 1v1</b> (le tournoi et le défi du club ne fatiguent pas).</li></ul>' +
         '<h3>La forme des cartes 💪</h3><ul>' +
-        '<li>Chaque carte que tu utilises dans un <b>match 1v1</b> (les 5 joueurs, le Fan, le Loup et l\'équipement) perd <b>1 % de forme</b> (moins avec un équipement) : la note d\'un joueur est multipliée par sa forme (85 à 97 % de forme vaut 82,5), tout comme le bonus d\'un Fan. Une petite barre sous la note montre la forme d\'une carte qui a déjà joué aujourd\'hui.</li>' +
-        '<li>La forme revient à <b>100 % chaque jour à minuit</b> (heure de Paris) et ne descend jamais sous 50 %. Les deux équipes d\'un défi se fatiguent. La forme est celle de la <b>personne</b> : toutes les versions d\'un même joueur (commune, rare, édition, spéciale…) partagent la même forme.</li>' +
+        '<li>Chaque carte que tu utilises dans un <b>match 1v1</b> (les 5 joueurs, le Fan, le Loup et l\'équipement) perd <b>0,5 % de forme</b> (moins avec un équipement) : la note d\'un joueur est multipliée par sa forme (85 à 97 % de forme vaut 82,5), tout comme le bonus d\'un Fan. Une petite barre sous la note montre la forme d\'une carte fatiguée ; en la survolant, tu vois dans combien de temps elle sera en pleine forme.</li>' +
+        '<li>La forme <b>remonte de 1 % par heure</b>, en continu (10 matchs d\'affilée : pleine forme 5 h plus tard), et ne descend jamais sous 50 %. Les deux équipes d\'un défi se fatiguent. La forme est celle de la <b>personne</b> : toutes les versions d\'un même joueur (commune, rare, édition, spéciale…) partagent la même forme.</li>' +
         '<li>Le <b>tournoi</b> et le <b>défi du club</b> jouent toujours à 100 % et ne fatiguent pas.</li>' +
         '<li>Pour garder une bonne note, <b>fais tourner tes cartes</b>, gardien compris. Le bouton <b>« ⚡ Meilleure équipe »</b> remplit chaque poste avec tes meilleures notes du moment.</li></ul>' +
         '<h3>Le niveau compte, le hasard un peu</h3><ul>' +
@@ -4774,7 +4775,7 @@
     byId('tmEquip').innerHTML = tm.equip.length ? Array.from({ length: cfg.max_equipment }, () => '<select>' + equipOptions + '</select>').join('') : '';
     refreshTeamBonus();
 
-    byId('tmAutoHint').textContent = tmUsesForm() ? 'Remplit chaque poste avec tes meilleures notes du moment (forme du jour comprise).' : 'Remplit chaque poste avec tes meilleures notes (ici, toutes les cartes sont à 100 % de forme).';
+    byId('tmAutoHint').textContent = tmUsesForm() ? 'Remplit chaque poste avec tes meilleures notes du moment (forme du moment comprise).' : 'Remplit chaque poste avec tes meilleures notes (ici, toutes les cartes sont à 100 % de forme).';
     renderTmSlots('1-2-1', null);
     applyLastTeam(cfg);
     await fillTargets(mode);          // défi privé : la liste des joueurs défiables (et le préréglage d'une revanche)
@@ -4835,13 +4836,13 @@
     const red = Math.min(cfg.equipment_fatigue_max || 0.6, eqCards.reduce((n, c) => n + ((cfg.equipment_fatigue_reduction || {})[c.tier] || 0), 0)) +
       Math.max(0, ...eqCards.map(c => (cfg.equipment_level_reduction || [])[c.level || 0] || 0));      // + le niveau de la pièce la mieux montée
     const lines = [];
-    lines.push(fan ? 'Bonus d\'équipe : Fan +' + pctFr(fanPct) + ' %' + (tmForm(fan) < 100 ? ' (forme ' + tmForm(fan) + ' %)' : '') : 'Aucun bonus d\'équipe (le Fan est le seul).');
+    lines.push(fan ? 'Bonus d\'équipe : Fan +' + pctFr(fanPct) + ' %' + (tmForm(fan) < 100 ? ' (forme ' + pctFr(tmForm(fan)) + ' %)' : '') : 'Aucun bonus d\'équipe (le Fan est le seul).');
     if (mascot) lines.push(tmUsesForm() ? 'Loup : +' + (((cfg.loup_credits || LOUP_CREDITS)[mascot.tier] || 0) + ((cfg.loup_level_credits || [])[mascot.level || 0] || 0)) + ' crédits après le match (' + loupRule() + ')' : 'Loup : aucun crédit ici (seulement en 1v1)');
     if (eqCards.length) lines.push(tmUsesForm() ? 'Équipement : −' + pctFr(red * 100) + ' % de fatigue' : 'Équipement : inutile ici (pas de fatigue, utile uniquement en 1v1)');
     if (tmUsesForm()) {                // forme de l'équipe : aujourd'hui, puis après ce match sans et avec l'équipement
       const players = tmSelects().map(s => tm.byId[s.value]).filter(Boolean);
       if (players.length) {
-        const avg = players.reduce((n, c) => n + tmForm(c), 0) / players.length, loss = (cfg.form_loss_per_match || 0.01) * 100, floor = (cfg.min_form || 0.5) * 100;
+        const avg = players.reduce((n, c) => n + tmForm(c), 0) / players.length, loss = (cfg.form_loss_per_match || 0.005) * 100, floor = (cfg.min_form || 0.5) * 100;
         const after = r => pctFr(Math.max(floor, avg - loss * (1 - r)));
         lines.push('Forme équipe : ' + pctFr(avg) + ' % · après ce match ' + after(0) + ' % sans équipement' + (red ? ', ' + after(red) + ' % avec' : ''));
       }
@@ -4860,7 +4861,7 @@
   //   2. les cartes sans poste défini (« X ») : jamais pénalisées ;
   //   3. les autres postes (hors poste = pénalité), un groupe par poste, chacun de la meilleure note à la moins bonne.
   const POSTE_GROUPES = { GB: 'Gardiens', DEF: 'Défenseurs', MC: 'Milieux', ATT: 'Attaquants' };
-  // Forme en 1v1 : chaque match fait perdre 1 % à une carte, jusqu'à minuit. Le tournoi et le défi du club jouent toujours à 100 %.
+  // Forme en 1v1 : chaque match fait perdre 0,5 % à une carte, qui remonte de 1 % par heure. Le tournoi et le défi du club jouent toujours à 100 %.
   const tmUsesForm = () => tm.mode !== 'tournament' && tm.mode !== 'club';
   const tmForm = c => tmUsesForm() && c.form != null ? c.form : 100;
   const tmNote = c => Math.round(c.display_note.value * tmForm(c) / 10) / 10;          // note du moment (forme comprise), à 0,1 près
@@ -4870,14 +4871,14 @@
   function lvTxt(c){ return c && c.level ? ', niv. ' + c.level : ''; }
   function fanValue(c){ const cfg = duelConfig || {}; return ((cfg.fan_bonus || {})[c.tier] || 0) + ((cfg.fan_level_bonus || [])[c.level || 0] || 0); }
   function equipValue(c){ const cfg = duelConfig || {}; return ((cfg.equipment_fatigue_reduction || {})[c.tier] || 0) + ((cfg.equipment_level_reduction || [])[c.level || 0] || 0); }
-  function bonusTxt(b, c){ const f = tmForm(c), v = Math.round((b || 0) * f * 100) / 100; return '+' + String(v).replace('.', ',') + ' %' + (f < 100 ? ' · forme ' + f + ' %' : ''); }
+  function bonusTxt(b, c){ const f = tmForm(c), v = Math.round((b || 0) * f * 100) / 100; return '+' + String(v).replace('.', ',') + ' %' + (f < 100 ? ' · forme ' + pctFr(f) + ' %' : ''); }
   function slotOptionsHTML(cat){
     const cfg = duelConfig, malus = Math.round(cfg.out_of_position_malus * 100);
     const naturalOf = c => cfg.poste_category[(c.poste || '').toUpperCase()] || null;
     const byNote = (a, b) => tmNote(b) - tmNote(a) || a.player_name.localeCompare(b.player_name, 'fr') || a.tier.localeCompare(b.tier);
     const option = c => {
       const off = naturalOf(c) && naturalOf(c) !== cat;
-      return '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' · ⭐' + tmNoteTxt(c) + (tmForm(c) < 100 ? ' (forme ' + tmForm(c) + ' %)' : '') + (c.level ? ' (Niv. ' + c.level + ')' : '') + ' · ' + escapeHtml(c.poste) + ' · ' + tierLabel(c.tier) + (off ? ' · ⚠ −' + malus + ' %' : '') + '</option>';
+      return '<option value="' + c.id + '">' + escapeHtml(c.player_name) + ' · ⭐' + tmNoteTxt(c) + (tmForm(c) < 100 ? ' (forme ' + pctFr(tmForm(c)) + ' %' + (c.form_full_in ? ', 100 % dans ' + fullIn(c.form_full_in) : '') + ')' : '') + (c.level ? ' (Niv. ' + c.level + ')' : '') + ' · ' + escapeHtml(c.poste) + ' · ' + tierLabel(c.tier) + (off ? ' · ⚠ −' + malus + ' %' : '') + '</option>';
     };
     const groups = [];
     groups.push([POSTE_GROUPES[cat] || cat, tm.owned.filter(c => naturalOf(c) === cat).sort(byNote)]);
@@ -4929,7 +4930,7 @@
     byId('tmCaptain').dataset.touched = ''; onTmChange();
     const tired = sels.map(s => tm.byId[s.value]).filter(c => c && tmForm(c) < 100).length;
     byId('tmAutoHint').textContent = (Object.keys(pick).length < sels.length ? 'Pas assez de cartes pour remplir tous les postes. ' : 'Équipe remplie avec tes meilleures notes du moment. ') +
-      (tmUsesForm() ? (tired ? tired + ' carte' + (tired > 1 ? 's ont' : ' a') + ' déjà joué aujourd\'hui (forme en baisse).' : 'Toutes tes cartes sont en pleine forme.') : 'Ici, toutes les cartes sont à 100 % de forme.');
+      (tmUsesForm() ? (tired ? tired + ' carte' + (tired > 1 ? 's sont encore fatiguées' : ' est encore fatiguée') + ' (forme en baisse, +1 % par heure).' : 'Toutes tes cartes sont en pleine forme.') : 'Ici, toutes les cartes sont à 100 % de forme.');
   }
   byId('tmAuto').addEventListener('click', autoFillTeam);
   byId('tmReferee').addEventListener('input', () => { tm.refConfirmed = null; if (tm.mode) byId('tmSubmit').textContent = tmSubmitLabel(); byId('tmError').textContent = ''; });      // changer le montant annule la confirmation
@@ -5065,10 +5066,10 @@
       const box = document.createElement('div'); box.className = 'lineup';
       let html = '<h4>' + escapeHtml(t.pseudo) + '</h4><div class="lu-sub">' + escapeHtml(t.formation) + ' · ' + escapeHtml(tacticLabel || '') +
         (t.synergy ? ' · Synergie ' + escapeHtml((tacticLabel || '').toLowerCase()) + ' + ' + escapeHtml(t.formation) + ' (+' + pctFr(t.synergy_bonus_pct) + ' %)' : '') +
-        (t.fan ? ' · Fan ' + escapeHtml(t.fan.player) + ' (+' + pctFr(t.fan.bonus_pct) + ' %' + (t.fan.form != null && t.fan.form < 100 ? ', forme ' + t.fan.form + ' %' : '') + ')' : '') +
+        (t.fan ? ' · Fan ' + escapeHtml(t.fan.player) + ' (+' + pctFr(t.fan.bonus_pct) + ' %' + (t.fan.form != null && t.fan.form < 100 ? ', forme ' + pctFr(t.fan.form) + ' %' : '') + ')' : '') +
         (t.mascot ? ' · Loup ' + escapeHtml(t.mascot.player) + (t.mascot.credits_per_match != null      // (avant le rééquilibrage, le Loup donnait un bonus en %)
           ? (t.mascot.credits_won ? ' (+' + t.mascot.credits_won + ' crédit' + (t.mascot.credits_won > 1 ? 's' : '') + ')' : '')
-          : ' (+' + t.mascot.bonus_pct + ' %' + (t.mascot.form != null && t.mascot.form < 100 ? ', forme ' + t.mascot.form + ' %' : '') + ')') : '') +
+          : ' (+' + t.mascot.bonus_pct + ' %' + (t.mascot.form != null && t.mascot.form < 100 ? ', forme ' + pctFr(t.mascot.form) + ' %' : '') + ')') : '') +
         (t.referee_bonus_pct ? ' · Arbitre +' + t.referee_bonus_pct + ' %' : '') +
         (t.home_bonus_pct ? ' · À domicile +' + pctFr(t.home_bonus_pct) + ' %' : '') +
         (t.club_bonus_pct ? ' · Bonus du club +' + t.club_bonus_pct + ' %' : '') +
@@ -5077,7 +5078,7 @@
           : ' (+' + t.equipment.reduce((n, e) => n + e.bonus_pct, 0) + ' %)') : '') + '</div>';
       players.forEach(p => {
         html += '<div class="lu-row"><span>' + SLOT_ICON[p.slot] + ' ' + escapeHtml(p.player) + (p.captain ? ' <span class="lu-flag" title="Capitaine">©</span>' : '') +
-          (p.level ? '<span class="lu-lvl" title="Carte évoluée : +' + (LEVEL_BONUS[p.level] || 0) + ' de note">Niv.' + p.level + '</span>' : '') + (p.form != null && p.form < 100 ? '<span class="lu-lvl" title="Forme du jour en 1v1" style="color:#B54708;">' + p.form + ' %</span>' : '') + (p.out_of_position ? ' <span class="lu-flag" title="Hors de son poste">⚠</span>' : '') + '</span><span>' + Math.round(p.effective_note) + '</span></div>';
+          (p.level ? '<span class="lu-lvl" title="Carte évoluée : +' + (LEVEL_BONUS[p.level] || 0) + ' de note">Niv.' + p.level + '</span>' : '') + (p.form != null && p.form < 100 ? '<span class="lu-lvl" title="Forme du jour en 1v1" style="color:#B54708;">' + pctFr(p.form) + ' %</span>' : '') + (p.out_of_position ? ' <span class="lu-flag" title="Hors de son poste">⚠</span>' : '') + '</span><span>' + Math.round(p.effective_note) + '</span></div>';
       });
       box.innerHTML = html; root.appendChild(box);
     });

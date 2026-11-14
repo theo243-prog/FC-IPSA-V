@@ -306,7 +306,8 @@ def get_collection(user: User = Depends(get_current_user), db: Session = Depends
     all_cards = db.query(Card).all()
     owned_rows = {o.card_id: o.quantity for o in db.query(OwnedCard).filter_by(user_id=user.id).all()}
     lv = card_levels.levels_for(db, user.id)               # copies évoluées : +niveau sur la note
-    fm = fatigue.forms_for(db, user.id)                    # forme du jour en 1v1 (100 % si la carte n'a pas joué aujourd'hui)
+    fm = fatigue.forms_for(db, user.id)                    # forme en 1v1 (100 % si la personne est reposée), au dixième près
+    rec = fatigue.recovery_for(db, user.id)                # minutes avant de retrouver 100 % (la forme remonte de 1 % par heure)
     qty_by_player = {}                      # joueur -> quantités possédées en commune / rare (pour la jauge de fusion)
     for c in all_cards:
         if c.tier in (Tier.commune, Tier.rare):
@@ -323,7 +324,9 @@ def get_collection(user: User = Depends(get_current_user), db: Session = Depends
         qty = owned_rows.get(c.id, 0)
         row = {**(with_level(card_out(c), lv.get(c.id, 0) if qty > 0 else 0) if (qty > 0 or reveal) else locked_out(c)), "quantity": qty}
         if qty > 0:
-            row["form"] = round(fm.get(c.id, 1.0) * 100)
+            row["form"] = round(fm.get(c.id, 1.0) * 100, 1)
+            if c.id in rec:
+                row["form_full_in"] = rec[c.id]
         if c.tier == Tier.secrete:
             q = qty_by_player.get(c.player_id, {})
             points = game_logic.fusion_points(q.get("commune", 0), q.get("rare", 0))
