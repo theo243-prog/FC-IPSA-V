@@ -237,6 +237,11 @@ def safe_unseen(db, user) -> list:
     """Les niveaux gagnés dont l'annonce n'a pas encore été vue (après vérification). Ne fait jamais échouer l'appelant."""
     try:
         check(db, user)
+        from . import secret_achievements
+        try:
+            secret_achievements.check(db, user)                 # succès secrets (en essai), au plus toutes les 2 minutes
+        except Exception:
+            db.rollback()
         by_id = {l["id"]: l for l in LADDERS}
         out = []
         for b in db.query(UserBadge).filter_by(user_id=user.id, seen=False).order_by(UserBadge.earned_at).all():
@@ -244,7 +249,7 @@ def safe_unseen(db, user) -> list:
             if lad:
                 lv = _levels(lad)[b.level - 1]
                 out.append({"id": b.badge_id, "title": lad["title"], "icon": lad["icon"], "level": b.level, "level_name": lv["name"], "reward": lv["reward"]})
-        return out
+        return out + secret_achievements.unseen(db, user)
     except Exception:
         try:
             db.rollback()
@@ -255,6 +260,8 @@ def safe_unseen(db, user) -> list:
 
 def mark_seen(db, user) -> None:
     db.query(UserBadge).filter_by(user_id=user.id, seen=False).update({"seen": True})
+    from . import secret_achievements
+    secret_achievements.mark_seen(db, user)
     db.commit()
 
 
@@ -333,4 +340,13 @@ def profile_out(db, user, rank=None) -> dict:
         "rank": rank, "elo": user.elo, "duels": duels, "tiers": tiers,
         "packs_opened": _counter(db, user.id, "open_packs"), "best_streak": _counter(db, user.id, "best_streak"),
         "badges": {"earned": earned_levels, "total": all_levels, "top": top},
+        "secrets": _secrets_count(db, user),            # succès secrets : seulement le nombre trouvé (None sans accès pendant l'essai)
     }
+
+
+def _secrets_count(db, user):
+    from . import secret_achievements
+    try:
+        return secret_achievements.summary(db, user, full=False) if secret_achievements.has_access(db, user) else None
+    except Exception:
+        return None

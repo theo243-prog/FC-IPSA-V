@@ -64,4 +64,7 @@ def sell_all_duplicates(payload: SellAllRequest, user: User = Depends(get_curren
     user.credits += total["credits"]
     db.commit()
     missions.safe_record(db, user, "sell_dupes", total["copies"])
+    from . import secret_achievements
+    if total["copies"] >= secret_achievements.GRAVEYARD_DUPES:              # succès secret « Le cimetière »
+        secret_achievements.flag(db, user.id, "cimetiere"); db.commit()
     return {"sold": total["copies"], "kinds": total["kinds"], "credits_gained": total["credits"], "credits_total": user.credits}

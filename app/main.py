@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon, communaute
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon, communaute, secret_achievements
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -55,6 +55,7 @@ app.include_router(first_steps.router)         # Premiers pas : objectifs des no
 app.include_router(shop_cosmetics.router)      # cosmétiques à paliers vendus au shop
 app.include_router(shop_sounds.router)          # son d'ouverture de la semaine au shop (100 crédits)
 app.include_router(features.router)             # fonctions en essai : cachées aux joueurs sauf aux comptes choisis, sorties ensemble
+app.include_router(secret_achievements.router)  # Succès secrets (en essai)
 app.include_router(communaute.router)           # Cartes de la communauté : propositions, tri par l'admin, vote du jour (en essai)
 app.include_router(pantheon.router)             # Panthéon : palmarès des saisons et des tournois, records du jeu et du club (en essai)
 app.include_router(duel_stats.router)           # mes stats 1v1 (bilan, face à face, cartes, buteurs), visibles par moi seul
@@ -288,6 +289,7 @@ def open_pack(
 
     missions.safe_record(db, user, "open_packs")
     missions.safe_record(db, user, "new_card", sum(1 for flag in result["new_flags"] if flag))
+    secret_achievements.on_pack(db, user, pack_type, result["cards_won"])        # succès secrets : légendaire en pack classique, 2 légendaires, packs sans épique
     legendary = [c for c in result["cards_won"] if c.tier == Tier.legendaire]
     if legendary:
         chat.post_event(db, "👑 %s a ouvert une légendaire : %s !" % (user.pseudo, legendary[0].player.name), user)        # annonce dans le chat
@@ -971,6 +973,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     tactic_trends.on_user_deleted(db, user.id)                                            # ses tendances de tactiques
     inbox.on_user_deleted(db, user.id)                                                    # ses notifications du site
     communaute.on_user_deleted(db, user.id)                                               # ses voix et ses propositions pas encore sorties
+    secret_achievements.on_user_deleted(db, user.id)                                      # ses succès secrets
     db.query(CardUsage).filter_by(user_id=user.id).delete()                               # ses cartes alignées (tournoi, défi du club), comme ses matchs 1v1
     db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
     db.query(Listing).filter_by(seller_id=user.id).delete()
