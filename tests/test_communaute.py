@@ -140,6 +140,13 @@ ok(c.post("/admin/delete-user", json={"pseudo": "cid"}, headers=A).status_code =
 db.expire_all()
 ok(db.query(CO.CommunityVote).filter_by(day="2026-11-17").count() == 0 and db.query(CO.CommunityProposal).filter_by(author="cid", status="released").count() == 1, "ses voix partent, la carte sortie reste")
 
+print("10 bis) SUPPRIMER UNE CARTE DE LA COMMUNAUTÉ")
+ok(c.post("/admin/delete-player", json={"player_name": "La panne de bus"}, headers=A).status_code == 200, "carte de test supprimée (Supprimer un joueur)")
+db.expire_all()
+ok(db.query(CO.CommunityProposal).filter_by(id=p3).first() is None, "sa proposition disparaît aussi")
+ok(all(x["name"] != "La panne de bus" for x in c.get("/communaute", headers=H["ana"]).json()["released"]), "plus dans l'historique des sorties")
+ok(c.post("/communaute/propose", json={"name": "La panne de bus", "image_desc": "Un bus en panne"}, headers=H["ana"]).status_code == 200, "le nom est de nouveau libre")
+
 print("11) OUVERTURE À TOUS")
 c.post("/admin/feature-settings", json={"feature": "communaute", "public": True}, headers=A)
 ok(GL.community_allowed(db) and Tier.communaute not in GL.hidden_collection_tiers(db), "ouverte à tous : comptée dans la collection")
