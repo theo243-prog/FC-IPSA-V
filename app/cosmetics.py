@@ -104,6 +104,9 @@ def catalog(db: Session, user: User) -> dict:
         (frames if it["kind"] == "frame" else titles if it["kind"] == "title" else []).append(row)
     for tid, name in trophy_titles(db, user.id):                                                  # une carte trophée possédée = un titre à son nom
         titles.append({"id": tid, "label": name, "desc": "Carte trophée", "unlocked": True, "trophy": True})
+    from . import secret_achievements
+    for tid, name in secret_achievements.titles(db, user.id):                                      # un succès secret trouvé = un titre à son nom
+        titles.append({"id": tid, "label": name, "desc": "Succès secret", "unlocked": True, "secret": True})
     sel = db.query(UserCosmetics).filter_by(user_id=user.id).first()
     return {"titles": titles, "frames": frames, "selected": {"title": sel.title if sel else None, "frame": sel.frame if sel else None}, "levels_total": ctx["total"]}
 
@@ -141,6 +144,9 @@ def _trophy_label(title_id, db=None):
 
 
 def title_label(title_id, db=None):
+    from . import secret_achievements
+    if title_id and str(title_id).startswith(secret_achievements.TITLE_PREFIX):       # titre d'un succès secret
+        return secret_achievements.title_label(title_id)
     if title_id and str(title_id).startswith(TROPHY_TITLE_PREFIX):         # titre d'une carte trophée
         return _trophy_label(title_id, db)
     if title_id and str(title_id).startswith(("pass-", "shop-")):          # titres du Pass et de la boutique
@@ -157,6 +163,8 @@ def display_map(db: Session) -> dict:
     labels.update({i: it["name"] for i, it in pass_catalog.ITEMS.items() if it["kind"] == "title"})        # titres du Pass
     from .models import Player
     labels.update({TROPHY_TITLE_PREFIX + p.id: p.name for p in db.query(Player).filter(Player.poste == "TROPHEE").all()})      # titres des cartes trophées
+    from . import secret_achievements
+    labels.update({secret_achievements.TITLE_PREFIX + s["id"]: s["name"] for s in secret_achievements.SECRETS})               # titres des succès secrets
     return {r.user_id: (labels.get(r.title), r.frame) for r in db.query(UserCosmetics).all() if r.title or r.frame}
 
 

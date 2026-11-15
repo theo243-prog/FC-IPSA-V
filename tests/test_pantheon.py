@@ -21,7 +21,7 @@ H = {p: {"Authorization": "Bearer " + c.post("/auth/register", json={"pseudo": p
 t = U("tst"); t.is_test = True; db.commit()
 
 print("1) FONCTIONS EN ESSAI")
-ok(c.get("/pantheon", headers=H["ana"]).status_code == 403 and c.get("/me", headers=H["ana"]).json()["features"] == {"draft": False, "pantheon": False, "communaute": False}, "fermé par défaut : 403, /me renvoie features à faux")
+ok(c.get("/pantheon", headers=H["ana"]).status_code == 403 and c.get("/me", headers=H["ana"]).json()["features"] == {"draft": False, "pantheon": False, "communaute": False, "succes_secrets": False}, "fermé par défaut : 403, /me renvoie features à faux")
 ok(c.post("/admin/feature-settings", json={"feature": "inconnue", "public": False}, headers=A).status_code == 400, "fonction inconnue : refusée")
 ok(c.post("/admin/feature-settings", json={"feature": "pantheon", "allowed": ["ana", "fantome"]}, headers=A).status_code == 400, "pseudo inconnu : refusé")
 ok(c.post("/admin/feature-settings", json={"feature": "pantheon", "allowed": ["ana"]}, headers=A).status_code == 200, "Panthéon réservé à ana")

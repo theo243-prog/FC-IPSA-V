@@ -69,6 +69,9 @@ def _tell(db, user_id, title, body):
 
 
 def _settle(db: Session, a: Auction) -> None:
+    if a.top_bidder_id and a.bids == 1 and a.current_bid is not None and a.current_bid == a.start_price:      # succès secret « Radin »
+        from . import secret_achievements
+        secret_achievements.flag(db, a.top_bidder_id, "radin")
     if a.seller_id == CLUB_SELLER:                              # enchère du club : pas de vendeur à créditer (crédits détruits)
         from . import club_auctions
         return club_auctions.settle(db, a)

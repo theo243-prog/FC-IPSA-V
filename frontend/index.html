@@ -206,6 +206,9 @@
   .badge-tile .b-title{font-weight:800;font-size:12.5px;margin-top:4px;line-height:1.15;}
   .badge-tile.locked{opacity:.6;}
   .badge-tile.locked .b-ico{filter:grayscale(1);}
+  .badge-tile.secret-tile{background:linear-gradient(160deg,#1F1A2E,#3A2F55);color:#F3E9FF;border-color:#6B5A92;}
+  .badge-tile.secret-tile .b-prog{color:#DCD0F5;}
+  .secret-count{display:inline-block;font-weight:800;font-size:13px;border-radius:999px;padding:3px 12px;background:linear-gradient(90deg,#2A2340,#4B3D70);color:#F3E9FF;}
   .badge-lvl{display:inline-block;font-size:10.5px;font-weight:800;border-radius:999px;padding:1px 9px;margin-top:5px;}
   .lvl-Bronze{background:#E7C9A5;color:#5A3A16;} .lvl-Argent{background:#E3E8EC;color:#3A4750;} .lvl-Or{background:#FFE08A;color:#6A4A00;}
   .lvl-Diamant{background:#BFE9FF;color:#0B4C6E;} .lvl-Légende{background:linear-gradient(90deg,#C7A2F5,#FFD45C);color:#2A0F3D;}
@@ -2339,8 +2342,9 @@
       if (!res.ok) throw new Error('Impossible de charger ce profil');
       const p = await res.json(), mine = !!(meInfo && meInfo.pseudo === pseudo);
       let badges = null; if (mine) { try { badges = await api('/badges'); } catch(e) { badges = null; } }
+      let secrets = null; if (mine && p.secrets) { try { secrets = await api('/secret-achievements'); p.secrets = { found: secrets.found, total: secrets.total }; } catch(e) { secrets = null; } }      // succès secrets (en essai) : la liste des trouvés, seulement sur mon profil
       document.getElementById('modalTitle').textContent = mine ? 'Mon profil' : 'Profil de ' + p.pseudo;
-      renderProfile(p, badges, mine);
+      renderProfile(p, badges, mine, secrets);
       document.getElementById('userCollectionModal').style.display = 'flex';
     } catch(e) { toast(e.message); }
   }
@@ -2363,7 +2367,15 @@
       line('Formations', tr.formations, ['2-1-1', '1-2-1', '1-1-2'], tr.formation_matches, null) +
       '<small class="muted">sur les ' + tr.window + ' derniers matchs (1v1 et tournoi), à partir de ' + tr.min_matches + ' matchs</small></div>';
   }
-  function renderProfile(p, badges, mine){
+  // Succès secrets : seulement « trouvés / total » ; sur mon profil, les succès trouvés (nom, explication) — jamais ceux qui restent
+  function secretsHTML(p, secrets){
+    if (!p.secrets) return '';
+    const head = '<div class="profile-section">Succès secrets<small><span class="secret-count">🔒 ' + p.secrets.found + ' / ' + p.secrets.total + '</span></small></div>';
+    if (!secrets) return head;
+    if (!secrets.list.length) return head + '<p class="muted">Aucun succès secret trouvé pour l\'instant. Ils se cachent partout dans le jeu…</p>';
+    return head + '<div class="badge-grid">' + secrets.list.map(s => '<div class="badge-tile secret-tile" title="' + escapeHtml(s.desc) + '"><div class="b-ico">' + s.icon + '</div><div class="b-title">' + escapeHtml(s.name) + '</div><div class="b-prog">' + escapeHtml(s.desc) + '</div></div>').join('') + '</div>';
+  }
+  function renderProfile(p, badges, mine, secrets){
     const body = document.getElementById('modalBody'), d = p.duels;
     const since = p.member_since ? 'Membre depuis le ' + p.member_since.split('-').reverse().join('/') : '';
     const tiersHTML = p.tiers.map(t => '<div class="tb"><span class="tb-name">' + escapeHtml(tierLabel(t.tier)) + '</span><span class="tb-bar"><i style="width:' + Math.round(100 * t.owned / t.total) + '%;background:' + (TIER_COLORS[t.tier] || '#999') + '"></i></span><span class="tb-n">' + t.owned + '/' + t.total + '</span></div>').join('');
@@ -2379,7 +2391,7 @@
       (mine ? '' : '<div id="versusBox"></div>') +
       '<div class="profile-section">Vitrine' + (mine ? ' <button class="btn-small ghost" type="button" id="profShowcaseEdit">Modifier</button>' : '<small>' + (p.showcase_auto ? 'ses cartes les plus rares' : 'ses cartes préférées') + '</small>') + '</div>' +
       '<div class="showcase-row" id="profShowcase"></div><div id="profShowcaseEditor"></div>' +
-      '<div class="profile-section">Succès<small>' + p.badges.earned + ' niveau' + (p.badges.earned > 1 ? 'x' : '') + ' sur ' + p.badges.total + '</small></div>' + achievementsHTML +
+      '<div class="profile-section">Succès<small>' + p.badges.earned + ' niveau' + (p.badges.earned > 1 ? 'x' : '') + ' sur ' + p.badges.total + '</small></div>' + achievementsHTML + secretsHTML(p, secrets) +
       '<div class="profile-section">Raretés<small>packs ouverts : ' + p.packs_opened + (p.best_streak ? ' · meilleure série : ' + p.best_streak + ' j' : '') + '</small></div><div class="tier-bars">' + tiersHTML + '</div>' +
       '<div class="share-actions" style="margin-top:18px;"><button class="btn-secondary" type="button" id="profCollection">' + (mine ? 'Voir ma collection' : 'Voir sa collection') + '</button>' + (mine ? '<button class="btn-secondary" type="button" id="profShare">📤 Partager mon profil en image</button><button class="btn-secondary" type="button" id="profInvite">🤝 Inviter un ami</button><button class="btn-secondary" type="button" id="profCosm">🎨 Titre et cadre</button>' + (p.avatar ? '<button class="btn-secondary" type="button" id="profPhotoDel">🗑️ Retirer ma photo</button>' : '') : '') + (mine ? '' : '<button class="btn-primary" type="button" id="profChallenge">⚔️ Défier ' + escapeHtml(p.pseudo) + '</button>') + '</div>';
     const row = document.getElementById('profShowcase');
@@ -2432,7 +2444,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.15.1';
+  const SITE_VERSION = '2026.11.15.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
