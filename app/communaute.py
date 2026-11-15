@@ -360,6 +360,14 @@ def admin_release(payload: ReleaseRequest, db: Session = Depends(get_db)):
     return {"status": "ok", "card_id": card.id, "name": p.name, "author": p.author}
 
 
+def on_cards_deleted(db: Session, card_ids: list) -> None:
+    """Carte communauté supprimée (ex. carte de test) : sa proposition disparaît aussi (historique « sorties », nom libéré)."""
+    ids = [p.id for p in db.query(CommunityProposal).filter(CommunityProposal.card_id.in_(card_ids)).all()]
+    if ids:
+        db.query(CommunityVote).filter(CommunityVote.proposal_id.in_(ids)).delete(synchronize_session=False)
+        db.query(CommunityProposal).filter(CommunityProposal.id.in_(ids)).delete(synchronize_session=False)
+
+
 def on_user_deleted(db: Session, user_id: str) -> None:
     """Ses voix et ses propositions pas encore sorties ; les cartes sorties restent (avec son pseudo comme auteur)."""
     db.query(CommunityVote).filter_by(user_id=user_id).delete()

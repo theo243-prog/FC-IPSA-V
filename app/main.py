@@ -926,6 +926,7 @@ def purge_card_rows(db: Session, card_ids: list):
     card_levels.on_cards_deleted(db, card_ids)          # niveaux de ces cartes
     fatigue.on_cards_deleted(db, card_ids)              # leur forme du jour
     player_packs.on_cards_deleted(db, card_ids)         # packs joueur : offres retirées, packs non ouverts remboursés
+    communaute.on_cards_deleted(db, card_ids)           # carte de la communauté : sa proposition disparaît aussi
     card_levels.cleanup_orphans(db)                     # niveaux des annonces et enchères disparues
     db.query(TeamSlot).filter(TeamSlot.card_id.in_(card_ids)).delete(synchronize_session=False)      # ancien 1v1
     db.query(Team).filter(Team.fan_card_id.in_(card_ids)).update({"fan_card_id": None}, synchronize_session=False)
