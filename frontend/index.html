@@ -986,7 +986,7 @@
   .mst-bar{display:flex;height:6px;border-radius:999px;overflow:hidden;background:var(--border);} .mst-bar .a{background:#7A4EC9;} .mst-bar .b{background:#2E9E5B;}
   /* ---- Mode draft ---- */
   .draft-box{border-top:5px solid #7A4EC9;}
-  .draft-beta{font-size:12px;font-weight:700;background:#7A4EC9;color:#fff;border-radius:999px;padding:2px 8px;vertical-align:middle;}
+  .draft-beta[hidden]{display:none;} .draft-beta{font-size:12px;font-weight:700;background:#7A4EC9;color:#fff;border-radius:999px;padding:2px 8px;vertical-align:middle;}
   .draft-create{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;} .draft-create input{flex:1;min-width:180px;}
   .draft-sub{margin:14px 0 6px;font-size:15px;}
   .draft-open-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;background:var(--bg-sunk);}
@@ -1347,15 +1347,15 @@
     </section>
 
     <section id="tab-pantheon" class="tab-panel">
-      <div class="panth-head"><h2>🏛️ Panthéon <span class="draft-beta">essai</span></h2><p class="duel-hint">La mémoire du club : les champions, les vainqueurs de tournoi, les records du jeu et les légendes des vrais matchs.</p></div>
+      <div class="panth-head"><h2>🏛️ Panthéon <span class="draft-beta" data-feature="pantheon">essai</span></h2><p class="duel-hint">La mémoire du club : les champions, les vainqueurs de tournoi, les records du jeu et les légendes des vrais matchs.</p></div>
       <div id="pantheonEl"></div>
     </section>
     <section id="tab-communaute" class="tab-panel">
-      <div class="panth-head"><h2>💡 Crée ta carte <span class="draft-beta">essai</span></h2><p class="duel-hint">Propose une carte : un nom, un souvenir, une blague du club… Une fois validée, elle entre dans le vote. Chaque jour à 20 h, la proposition qui a le plus de voix devient une vraie carte (rareté Communauté, entre commune et rare) et son auteur la reçoit.</p></div>
+      <div class="panth-head"><h2>💡 Crée ta carte <span class="draft-beta" data-feature="communaute">essai</span></h2><p class="duel-hint">Propose une carte : un nom, un souvenir, une blague du club… Une fois validée, elle entre dans le vote. Chaque jour à 20 h, la proposition qui a le plus de voix devient une vraie carte (rareté Communauté, entre commune et rare) et son auteur la reçoit.</p></div>
       <div id="communauteEl"></div>
     </section>
     <section id="tab-draft" class="tab-panel">
-      <div class="panel-box draft-box"><h2>🃏 Draft <span class="draft-beta">essai</span></h2><div id="draftMain"></div></div>
+      <div class="panel-box draft-box"><h2>🃏 Draft <span class="draft-beta" data-feature="draft">essai</span></h2><div id="draftMain"></div></div>
       <div class="panel-box" style="margin-top:16px;"><h2 id="draftRankTitle">🏆 Classement draft</h2><div class="cell-scroll" id="draftRanking"></div></div>
     </section>
     <section id="tab-duels" class="tab-panel">
@@ -2444,7 +2444,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.16.1';
+  const SITE_VERSION = '2026.11.16.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -5511,6 +5511,8 @@
     const f = (meInfo && meInfo.features) || {};
     const b = byId('pantheonTabBtn'); if (b) b.hidden = !f.pantheon;
     const cb = byId('communauteTabBtn'); if (cb) cb.hidden = !f.communaute;
+    const pub = (meInfo && meInfo.features_public) || {};                  // fonction ouverte à tous : plus de badge « essai »
+    document.querySelectorAll('.draft-beta[data-feature]').forEach(el => { el.hidden = !!pub[el.dataset.feature]; });
   }
 
   // ---------- Cartes de la communauté : proposer, voter (20 h), cartes déjà sorties (fonction en essai) ----------
