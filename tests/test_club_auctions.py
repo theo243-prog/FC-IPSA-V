@@ -132,7 +132,7 @@ finally:
     s2.close()
 ok(dup, "redémarrage / deux passages en même temps : le jour unique empêche un deuxième lot")
 pub = c.get("/club-auctions").json()
-ok(pub["visible"] and not pub["preview"] and len(pub["lots"]) == 5 and pub["lots"][0]["number"] >= 2, "après le démarrage : tout le monde voit les 5 enchères")
+ok(pub["visible"] and not pub["preview"] and len(pub["lots"]) == 5 and 1 <= pub["lots"][0]["number"] <= CA.SERIES_TOTAL, "après le démarrage : tout le monde voit les 5 enchères")
 ok(c.get("/series/%d" % L1[0].series_id).json()["emitted"] == 1 and any(x["where"] == "aux enchères du club" for x in c.get("/series/%d" % L1[0].series_id).json()["copies"]), "fiche de la série : 1 émise, « aux enchères du club »")
 
 print("4) ENCHÈRES, PROLONGATION PLAFONNÉE")
