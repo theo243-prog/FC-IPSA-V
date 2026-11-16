@@ -2019,6 +2019,7 @@
       if (card && card.id && !card.locked && card.tier !== 'saison' && (card._viewing || (card.quantity > 0 && kind !== 'numerotee'))) addOfferForm(body.querySelector('.sheet-bottom'), card);     // offre d'achat (la carte d'un autre, ou un exemplaire de plus de la mienne)
       if (card && card.quantity > 0 && !card._viewing && card.id) loadPriceBox(body, card);                         // prix moyen et prix max de ses ventes
       if (card && card.quantity > 0 && !card._viewing && card.id && ['joueur', 'fan', 'mascotte', 'equipement'].includes(kind)) loadLevelBox(body, card);      // faire évoluer cette carte (joueur, Fan, Loup, équipement)
+      if (card && card.quantity > 0 && !card._viewing && card.id && card.tier === 'commune') loadUpgradeRareBox(body, card);      // 5 doublons de la commune → la rare de la même personne
       document.getElementById('userCollectionModal').style.display = 'flex';
     } catch(e) { toast(e.message); }
   }
@@ -2102,6 +2103,27 @@
         toast('⬆️ ' + card.player_name + ' passe au niveau ' + r.level + (bonus ? ' (' + (r.info && r.info.effect || '') + ')' : ' (note ' + r.note + ')'));
         await refreshMe(true); await loadCollection();
         const fresh = myCollection.find(c => c.id === card.id) || card; openPlayerDetail(card.player_name, card.tier, fresh);
+      } catch(e) { toast(e.message); go.disabled = false; }
+    });
+  }
+  // Fiche d'une de mes communes : échanger 5 doublons contre la rare de la même personne (doublons consommés, la commune reste)
+  async function loadUpgradeRareBox(body, card){
+    let i; try { i = await api('/cards/' + encodeURIComponent(card.id) + '/upgrade-rare'); } catch(e) { return; }
+    if (!body.isConnected || !i.eligible) return;
+    const box = document.createElement('div'); box.className = 'lvl-box up-rare-box';
+    box.innerHTML = '<h4>💎 Échanger contre la rare</h4><div><b>' + i.needed + ' doublons</b> de cette commune = <b>1 carte rare</b> de ' + escapeHtml(card.player_name) + (i.rare_owned ? ' (tu en as déjà ' + i.rare_owned + ')' : '') + '. Tu as <b>' + i.dupes + ' doublon' + (i.dupes > 1 ? 's' : '') + '</b>.</div>' +
+      '<div style="margin-top:8px;"><button class="btn-primary" type="button" id="upRareGo"' + (i.can ? '' : ' disabled') + '>💎 Échanger ' + i.needed + ' doublons</button></div>' +
+      (i.reason ? '<p class="lvl-why">' + escapeHtml(i.reason) + '</p>' : '') + '<p class="lvl-why">Les doublons utilisés disparaissent ; ta carte commune (et son niveau) reste.</p>';
+    sheetAppend(body, box);
+    const go = box.querySelector('#upRareGo');
+    if (go && i.can) go.addEventListener('click', async () => {
+      if (!(await confirmDialog('Échanger contre la rare de ' + escapeHtml(card.player_name) + ' ?', '<p style="margin:0;"><b>' + i.needed + ' doublons</b> de la commune (il t\'en restera ' + (i.dupes - i.needed) + ') contre <b>1 carte rare</b>. Les doublons utilisés ne pourront plus être vendus, servir aux niveaux ni aux cartes secrètes.</p>', 'Échanger'))) return;
+      go.disabled = true;
+      try {
+        const r = await api('/cards/' + encodeURIComponent(card.id) + '/upgrade-rare', { method: 'POST' });
+        toast('💎 Tu reçois la carte rare de ' + r.player_name + ' !');
+        await refreshMe(true); await loadCollection();
+        const fresh = myCollection.find(c => c.id === r.rare_card_id); fresh ? openPlayerDetail(r.player_name, 'rare', fresh) : openPlayerDetail(card.player_name, card.tier, myCollection.find(c => c.id === card.id) || card);
       } catch(e) { toast(e.message); go.disabled = false; }
     });
   }
@@ -2455,7 +2477,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.17.1';
+  const SITE_VERSION = '2026.11.17.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
