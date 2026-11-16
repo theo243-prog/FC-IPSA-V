@@ -2452,7 +2452,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.16.4';
+  const SITE_VERSION = '2026.11.16.5';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -4625,6 +4625,7 @@
     return d.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   }
   function signed(n){ return (n > 0 ? '+' : '') + n; }
+  function eloGap(before, after){ return (typeof before === 'number' && typeof after === 'number') ? ' (' + signed(after - before) + ')' : ''; }     // écart d'Elo entre parenthèses
 
   async function loadDuelsTab(){
     try { await loadDuelConfig(); } catch(e) { toast('Impossible de charger les règles du 1v1'); return; }
@@ -5256,8 +5257,8 @@
     } else {
       const winner = sa > sb ? recap.challenger : (sb > sa ? recap.defender : null);
       html = '<div class="big">' + (winner ? '🏆 ' + escapeHtml(winner) : '🤝 Match nul') + '</div>mise ' + recap.stake + ' crédits · Elo ' +
-        escapeHtml(recap.challenger) + ' ' + recap.elo_challenger_before + ' → ' + recap.elo_challenger_after + ' · ' +
-        escapeHtml(recap.defender) + ' ' + recap.elo_defender_before + ' → ' + recap.elo_defender_after + refereeLine(recap, false);
+        escapeHtml(recap.challenger) + ' ' + recap.elo_challenger_before + ' → ' + recap.elo_challenger_after + eloGap(recap.elo_challenger_before, recap.elo_challenger_after) + ' · ' +
+        escapeHtml(recap.defender) + ' ' + recap.elo_defender_before + ' → ' + recap.elo_defender_after + eloGap(recap.elo_defender_before, recap.elo_defender_after) + refereeLine(recap, false);
     }
     root.innerHTML = '<div class="match-result">' + html + '</div>';
     const go = byId('msGoPacks');
