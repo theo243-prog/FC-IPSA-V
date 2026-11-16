@@ -873,6 +873,8 @@
   .modal-box{background:var(--bg-elevated);border-top:6px solid var(--accent);border-radius:0 0 10px 10px;padding:20px;max-width:620px;width:100%;max-height:82vh;overflow-y:auto;box-shadow:var(--shadow);}
   .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
   .modal-header h2{font-family:var(--font-head);font-weight:800;font-size:28px;margin:0;}
+  .modal-back{background:var(--bg-sunk);border:1px solid var(--border);border-radius:999px;font-size:18px;font-weight:800;line-height:1;cursor:pointer;color:var(--text);padding:5px 11px;margin-right:10px;flex-shrink:0;} .modal-back[hidden]{display:none;}
+  #userCollectionModal .modal-header h2{flex:1;min-width:0;}
   .modal-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);padding:4px 8px;}
 
   .match-card{background:var(--bg-elevated);border:1px solid var(--border);border-left:5px solid var(--accent);border-radius:0 8px 8px 0;padding:16px;margin-bottom:14px;}
@@ -1482,6 +1484,7 @@
 <div class="modal-overlay" id="userCollectionModal">
   <div class="modal-box">
     <div class="modal-header">
+      <button class="modal-back" id="modalBackBtn" type="button" hidden aria-label="Retour" title="Retour">←</button>
       <h2 id="modalTitle">Collection</h2>
       <button class="modal-close" id="modalCloseBtn">✕</button>
     </div>
@@ -1935,6 +1938,7 @@
   }
   function openTrophySheet(card){
     const t = trophyParts(card), preview = String(card.id || '').startsWith('trophy-');
+    modalHistoryPush();
     document.getElementById('modalTitle').textContent = card.player_name;
     const body = document.getElementById('modalBody');
     body.innerHTML = '<div style="text-align:center;font-size:64px;line-height:1.1;margin:6px 0;">' + trophyMedalOf(card) + '</div><p style="text-align:center;font-weight:700;">' + (preview ? 'Cette carte sera remise à la fin de la saison de ' + escapeHtml(t.label) + '.' : (t.rank === 6 ? 'Carte exclusive du Pass de ' : t.rank === 4 ? 'Trophée du tournoi de ' : t.rank === 5 ? 'Carte de finaliste du tournoi de ' : t.rank === 11 ? 'Carte de demi-finaliste du tournoi de ' : [7, 8, 9].includes(t.rank) ? 'Trophée d\'assiduité de la saison de ' : t.rank === 10 ? 'Carte souvenir (pas vraiment glorieuse) de la saison de ' : 'Trophée de la saison de ') + escapeHtml(t.label) + '.') + '</p><p class="muted" style="text-align:center;">Un trophée n\'est qu\'un souvenir : il n\'a ni note ni bonus, ne joue pas de match, ne se vend pas et ne s\'échange pas. Il ne compte pas dans le pourcentage de collection.</p>';
@@ -1954,6 +1958,7 @@
       const res = await fetch(API_BASE + '/players/' + encodeURIComponent(playerName) + '/detail?tier=' + encodeURIComponent(tier || 'commune'));
       if (!res.ok) throw new Error('Impossible de charger ce joueur');
       const p = await res.json();
+      modalHistoryPush();
       document.getElementById('modalTitle').textContent = p.name;
       const body = document.getElementById('modalBody');
       const photoHTML = p.photo_url
@@ -2343,6 +2348,7 @@
       const p = await res.json(), mine = !!(meInfo && meInfo.pseudo === pseudo);
       let badges = null; if (mine) { try { badges = await api('/badges'); } catch(e) { badges = null; } }
       let secrets = null; if (mine && p.secrets) { try { secrets = await api('/secret-achievements'); p.secrets = { found: secrets.found, total: secrets.total }; } catch(e) { secrets = null; } }      // succès secrets (en essai) : la liste des trouvés, seulement sur mon profil
+      modalHistoryPush();
       document.getElementById('modalTitle').textContent = mine ? 'Mon profil' : 'Profil de ' + p.pseudo;
       renderProfile(p, badges, mine, secrets);
       document.getElementById('userCollectionModal').style.display = 'flex';
@@ -2398,13 +2404,13 @@
     if (!p.showcase.length) row.innerHTML = '<p class="muted">Aucune carte pour l\'instant.</p>';
     p.showcase.forEach(c => { const el = makeMiniCard(c, { hideCount: true }); el.style.cursor = 'default'; row.appendChild(el); });
     document.getElementById('profCollection').addEventListener('click', () => {
-      if (mine) { document.getElementById('userCollectionModal').style.display = 'none'; document.querySelector('.tab[data-tab="collection"]').click(); } else openUserCollection(p.pseudo);
+      if (mine) { closeUserCollectionModal(); document.querySelector('.tab[data-tab="collection"]').click(); } else openUserCollection(p.pseudo);
     });
     if (mine) { document.getElementById('profCosm').addEventListener('click', () => openCosmetics(p)); document.getElementById('profAvatarBtn').addEventListener('click', pickAvatar); const pd = document.getElementById('profPhotoDel'); if (pd) pd.addEventListener('click', removeAvatar); }
     if (mine) document.getElementById('profShare').addEventListener('click', () => openShareImage({ title: 'Partager mon profil', file: 'profil-' + slugOf(p.pseudo), hint: 'Image 1080 × 1350, idéale pour un post Instagram.', text: 'Mon profil FC IPSA V : ' + fmtPct(p.completion_pct) + ' % de collection, ' + p.badges.earned + ' succès ⚽', render: () => renderProfileImage(p) }));
     if (mine) document.getElementById('profInvite').addEventListener('click', openReferral); else loadVersus(p.pseudo);
     if (mine) document.getElementById('profShowcaseEdit').addEventListener('click', () => editShowcase(p));
-    else document.getElementById('profChallenge').addEventListener('click', () => { document.getElementById('userCollectionModal').style.display = 'none'; startChallenge(p.pseudo, null); });
+    else document.getElementById('profChallenge').addEventListener('click', () => { closeUserCollectionModal(); startChallenge(p.pseudo, null); });
   }
   async function editShowcase(p){
     const box = document.getElementById('profShowcaseEditor');
@@ -2444,7 +2450,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.16.2';
+  const SITE_VERSION = '2026.11.16.3';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3515,12 +3521,37 @@
   document.getElementById('collSellAll').addEventListener('click', () => askSellAll());
 
   // ---------- Voir la collection d'un autre joueur (depuis le classement) ----------
+  // Bouton « ← » : la fenêtre garde ses vues précédentes (profil, collection, carte). Les éléments sont DÉPLACÉS (pas copiés) :
+  // boutons, cartes et défilement reviennent tels quels, sans recharger.
+  const modalHistory = [];          // vues précédentes de la fenêtre (bouton « ← »)
+  function modalHistoryPush(){
+    const modal = byId('userCollectionModal'), body = byId('modalBody'), box = modal.querySelector('.modal-box');
+    if (modal.style.display !== 'flex') { modalHistory.length = 0; updateModalBack(); return; }     // fenêtre fermée : nouvelle navigation
+    if (!body.childNodes.length) return;
+    const scroll = box.scrollTop;                                 // (avant de retirer le contenu, qui remet le défilement à 0)
+    const frag = document.createDocumentFragment();
+    while (body.firstChild) frag.appendChild(body.firstChild);
+    modalHistory.push({ title: byId('modalTitle').textContent, frag, scroll });
+    if (modalHistory.length > 10) modalHistory.shift();
+    updateModalBack();
+  }
+  function modalHistoryBack(){
+    const h = modalHistory.pop(); if (!h) return;
+    const body = byId('modalBody'), box = byId('userCollectionModal').querySelector('.modal-box');
+    byId('modalTitle').textContent = h.title;
+    body.innerHTML = ''; body.appendChild(h.frag);
+    box.scrollTop = h.scroll;
+    updateModalBack();
+  }
+  function updateModalBack(){ const b = byId('modalBackBtn'); if (b) b.hidden = !modalHistory.length; }
+  document.getElementById('modalBackBtn').addEventListener('click', modalHistoryBack);
   document.getElementById('modalCloseBtn').addEventListener('click', closeUserCollectionModal);
   document.getElementById('userCollectionModal').addEventListener('click', (e) => {
     if (e.target.id === 'userCollectionModal') closeUserCollectionModal();
   });
   function closeUserCollectionModal(){
     document.getElementById('userCollectionModal').style.display = 'none';
+    modalHistory.length = 0; updateModalBack();
   }
   // fenêtre de partage d'une carte, et accès à mon profil depuis mon pseudo
   function closeShareModal(){ const m = document.getElementById('shareModal'); m.style.display = 'none'; const i = document.getElementById('sharePreview'); if (i && i.src.startsWith('blob:')) URL.revokeObjectURL(i.src); }
@@ -3533,6 +3564,7 @@
       if (!res.ok) throw new Error('Impossible de charger cette collection');
       const cards = await res.json();
       cards.forEach(c => { c._viewing = pseudo; });
+      modalHistoryPush();
       document.getElementById('modalTitle').textContent = 'Collection de ' + pseudo;
       const body = document.getElementById('modalBody');
       body.innerHTML = '';
