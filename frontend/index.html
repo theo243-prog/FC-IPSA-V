@@ -1171,7 +1171,7 @@
     <button class="tab" data-tab="draft" id="draftTabBtn" hidden>Draft<span class="tab-dot" id="draftDot" hidden></span></button>
     <button class="tab" data-tab="tournoi">Tournoi<span class="tab-dot" id="tournoiDot" hidden></span></button>
     <button class="tab" data-tab="chat">Chat<span class="tab-dot" id="chatDot" hidden></span></button>
-    <button class="tab" data-tab="communaute" id="communauteTabBtn" hidden>Communauté</button>
+    <button class="tab" data-tab="communaute" id="communauteTabBtn" hidden>Crée ta carte</button>
     <button class="tab" data-tab="pantheon" id="pantheonTabBtn" hidden>Panthéon</button>
   </nav>
 
@@ -1351,7 +1351,7 @@
       <div id="pantheonEl"></div>
     </section>
     <section id="tab-communaute" class="tab-panel">
-      <div class="panth-head"><h2>💡 Cartes de la communauté <span class="draft-beta">essai</span></h2><p class="duel-hint">Propose une carte : un nom, un souvenir, une blague du club… Une fois validée, elle entre dans le vote. Chaque jour à 20 h, la proposition qui a le plus de voix devient une vraie carte (rareté Communauté, entre commune et rare) et son auteur la reçoit.</p></div>
+      <div class="panth-head"><h2>💡 Crée ta carte <span class="draft-beta">essai</span></h2><p class="duel-hint">Propose une carte : un nom, un souvenir, une blague du club… Une fois validée, elle entre dans le vote. Chaque jour à 20 h, la proposition qui a le plus de voix devient une vraie carte (rareté Communauté, entre commune et rare) et son auteur la reçoit.</p></div>
       <div id="communauteEl"></div>
     </section>
     <section id="tab-draft" class="tab-panel">
@@ -2444,7 +2444,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.15.2';
+  const SITE_VERSION = '2026.11.16.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
