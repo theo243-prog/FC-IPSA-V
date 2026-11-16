@@ -22,6 +22,7 @@ class OpenPackRequest(BaseModel):
 
 class SellDuplicateRequest(BaseModel):
     card_id: str
+    all: bool = False          # vendre TOUS les doublons de cette carte (on garde 1 exemplaire)
 
 
 class CreateListingRequest(BaseModel):

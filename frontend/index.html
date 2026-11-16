@@ -2009,11 +2009,13 @@
       body.innerHTML = photoHTML + '<div class="player-detail-poste">' + escapeHtml(posteText) + ' · ' + tierLabel(p.tier) + '</div>' + inner;
       if (card && card.id && !card.locked) addOwnershipLine(body.querySelector('.player-detail-poste'), card.id, kind === 'numerotee');
       if (kind === 'numerotee' && card && card.id) loadSeriesBox(body.querySelector('#seriesBox'), card.id);      // « 18 / 22 attribués » et les détenteurs      // « 👥 Possédée par N % des joueurs »
-      if (card && card._viewing && card.id) addOfferForm(body, card);          // la carte d'un autre joueur : on peut proposer de l'acheter
       if (card && card.quantity > 0 && !card._viewing) {          // une carte que JE possède : on peut la partager en image
         body.insertAdjacentHTML('beforeend', '<div class="share-actions" style="margin-top:16px;"><button class="btn-secondary" type="button" id="shareCardBtn">📤 Partager cette carte</button></div>');
         document.getElementById('shareCardBtn').addEventListener('click', () => openShareCard(card));
       }
+      body.insertAdjacentHTML('beforeend', '<div class="sheet-bottom"></div>');      // (vente et offre d'achat restent en bas : les blocs chargés ensuite se placent au-dessus)
+      if (card && card.quantity > 0 && !card._viewing && card.id && !card.locked && card.tier !== 'saison') addSellBox(body.querySelector('.sheet-bottom'), card);     // vendre ou mettre aux enchères MA carte
+      if (card && card.id && !card.locked && card.tier !== 'saison' && (card._viewing || (card.quantity > 0 && kind !== 'numerotee'))) addOfferForm(body.querySelector('.sheet-bottom'), card);     // offre d'achat (la carte d'un autre, ou un exemplaire de plus de la mienne)
       if (card && card.quantity > 0 && !card._viewing && card.id) loadPriceBox(body, card);                         // prix moyen et prix max de ses ventes
       if (card && card.quantity > 0 && !card._viewing && card.id && ['joueur', 'fan', 'mascotte', 'equipement'].includes(kind)) loadLevelBox(body, card);      // faire évoluer cette carte (joueur, Fan, Loup, équipement)
       document.getElementById('userCollectionModal').style.display = 'flex';
@@ -2071,13 +2073,13 @@
     const box = document.createElement('p'); box.className = 'tm-hint price-box'; box.style.textAlign = 'center';
     box.innerHTML = s.sales ? '💰 Prix moyen de vente : <b>' + s.avg_price + ' crédits</b> · prix max : <b>' + s.max_price + ' crédits</b> (' + s.sales + ' vente' + (s.sales > 1 ? 's' : '') + ')'
       : '💰 Cette carte n\'a encore jamais été vendue.';
-    const lvl = body.querySelector('.lvl-box'); lvl ? body.insertBefore(box, lvl) : body.appendChild(box);
+    const lvl = body.querySelector('.lvl-box'); lvl ? body.insertBefore(box, lvl) : sheetAppend(body, box);
   }
   async function loadLevelBox(body, card){
     let i; try { i = await api('/cards/' + encodeURIComponent(card.id) + '/level'); } catch(e) { return; }
     if (!body.isConnected) return;
     const box = document.createElement('div'); box.className = 'lvl-box';
-    if (!i.eligible) { box.innerHTML = '<h4>⬆️ Niveau de la carte</h4><p class="lvl-why" style="margin:0;">' + escapeHtml(i.reason) + '</p>'; body.appendChild(box); return; }
+    if (!i.eligible) { box.innerHTML = '<h4>⬆️ Niveau de la carte</h4><p class="lvl-why" style="margin:0;">' + escapeHtml(i.reason) + '</p>'; sheetAppend(body, box); return; }
     const pips = '★'.repeat(i.level) + '☆'.repeat(i.max_level - i.level), bonus = !!i.bonus_card;      // bonus : Fan, Loup ou équipement (un effet, pas de note)
     const dupesTxt = ' Tu as <b>' + i.dupes + ' doublon' + (i.dupes > 1 ? 's' : '') + '</b> de cette carte : chaque niveau en consomme (ta carte évoluée, elle, reste).';
     let h = '<h4>⬆️ Niveau ' + i.level + ' / ' + i.max_level + ' <span class="lvl-pips">' + pips + '</span></h4>' +
@@ -2089,7 +2091,7 @@
     h += '<div style="margin-top:8px;"><button class="btn-primary" type="button" id="lvlGo"' + (i.can ? '' : ' disabled') + '>' + (i.next_level ? '⬆️ Évoluer au niveau ' + i.next_level : 'Niveau maximal') + '</button></div>';
     if (i.reason) h += '<p class="lvl-why">' + escapeHtml(i.reason) + '</p>';
     h += '<p class="lvl-why">Le niveau suit la carte si tu la vends.</p>';
-    box.innerHTML = h; body.appendChild(box);
+    box.innerHTML = h; sheetAppend(body, box);
     const go = box.querySelector('#lvlGo');
     if (go && i.can) go.addEventListener('click', async () => {
       if (!(await confirmDialog('Faire évoluer ' + escapeHtml(card.player_name) + ' ?', '<p style="margin:0;">Niveau ' + i.next_level + ' pour <b>' + i.cost + ' crédits</b> et <b>' + i.dupes_needed + ' doublon' + (i.dupes_needed > 1 ? 's' : '') + '</b> (il t\'en restera ' + (i.dupes - i.dupes_needed) + ') : <b>' + change + '</b>. Les doublons utilisés ne pourront plus être vendus ni servir aux cartes secrètes.</p>', 'Évoluer'))) return;
@@ -2450,7 +2452,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.16.3';
+  const SITE_VERSION = '2026.11.16.4';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2528,8 +2530,50 @@
       b.appendChild(offerRow(o, '<b>' + escapeHtml(cardDisplayName(o.card)) + '</b> · ' + escapeHtml(tierLabel(o.card.tier)) + '<br>Ton offre : <b>' + o.price + ' crédit' + (o.price > 1 ? 's' : '') + '</b> <small>(mis de côté)</small>', btn));
     });
   }
+  function sheetAppend(body, box){ const end = body.querySelector('.sheet-bottom'); end ? body.insertBefore(box, end) : body.appendChild(box); }
+  // Vendre une de MES cartes depuis sa fiche : vente directe au marché (prix fixe) ou enchères (rare ou mieux), comme dans l'onglet Marché
+  async function addSellBox(root, card){
+    let mode = 'vente', minutes = 60, durations = [15, 30, 60, 180, 360, 720, 1440];
+    const canAuction = card.tier !== 'commune';
+    const copyHTML = card.level ? '<div class="form-row"><label for="sheetCopy">Quelle copie ?</label><select id="sheetCopy">' + (card.quantity > 1
+      ? '<option value="0">Un doublon normal (tu gardes ta carte niveau ' + card.level + ')</option><option value="1">Ma carte évoluée (Niv. ' + card.level + ')</option>'
+      : '<option value="1">Ma carte évoluée (Niv. ' + card.level + ') : c\'est ta seule copie</option>') + '</select></div>' : '';
+    const box = document.createElement('div'); box.className = 'offer-form sell-box';
+    box.innerHTML = '<div style="font-weight:800;margin-bottom:8px;">🏷️ Vendre cette carte</div>' +
+      '<div class="dur-btns" id="sheetSellMode"><button type="button" data-m="vente" class="on">Vente directe</button>' + (canAuction ? '<button type="button" data-m="encheres">Enchères</button>' : '') + '</div>' +
+      copyHTML + '<div class="form-row"><label for="sheetSellPrice" id="sheetPriceLabel">Prix de vente (crédits)</label><input id="sheetSellPrice" type="number" min="1" value="20"></div>' +
+      '<div class="form-row" id="sheetDurRow" hidden><label>Durée de l\'enchère</label><div class="dur-btns" id="sheetDur"></div></div>' +
+      '<div class="share-actions"><button class="btn-primary" type="button" id="sheetSellBtn">Mettre en vente</button></div>' +
+      '<div class="tm-hint" style="text-align:center;" id="sheetSellHint"></div>';
+    root.appendChild(box);
+    const $ = id => box.querySelector('#' + id);
+    const render = () => {
+      box.querySelectorAll('#sheetSellMode button').forEach(b => b.classList.toggle('on', b.dataset.m === mode));
+      $('sheetDurRow').hidden = mode !== 'encheres';
+      $('sheetPriceLabel').textContent = mode === 'encheres' ? 'Prix de départ (crédits)' : 'Prix de vente (crédits)';
+      $('sheetSellBtn').textContent = mode === 'encheres' ? '🔨 Lancer l\'enchère (' + durLabel(minutes) + ')' : '🏷️ Mettre en vente';
+      $('sheetDur').innerHTML = durations.map(m => '<button type="button" data-min="' + m + '" class="' + (m === minutes ? 'on' : '') + '">' + durLabel(m) + '</button>').join('');
+      $('sheetDur').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { minutes = parseInt(b.dataset.min, 10); render(); }));
+      $('sheetSellHint').textContent = mode === 'encheres'
+        ? 'La carte est mise de côté pendant l\'enchère. Le meilleur enchérisseur l\'emporte à la fin ; sans enchère, elle te revient.'
+        : 'La carte est mise de côté au marché : le premier joueur qui l\'achète te paie ce prix. Tu peux annuler ta vente dans l\'onglet Marché.' + (canAuction ? '' : ' (Les communes ne vont pas aux enchères.)');
+    };
+    box.querySelectorAll('#sheetSellMode button').forEach(b => b.addEventListener('click', () => { mode = b.dataset.m; render(); }));
+    render();
+    if (canAuction) { try { const a = auctionsState || await api('/auctions'); if (a && a.durations) { durations = a.durations; if (!durations.includes(minutes)) minutes = durations[0]; render(); } } catch(e) { /* durées par défaut */ } }
+    $('sheetSellBtn').addEventListener('click', async (e) => {
+      const price = parseInt($('sheetSellPrice').value, 10), evolved = !!($('sheetCopy') && $('sheetCopy').value === '1');
+      if (!(price >= 1)) { toast('Mets un prix d\'au moins 1 crédit'); return; }
+      e.target.disabled = true;
+      try {
+        if (mode === 'encheres') { await api('/auctions', { method: 'POST', body: JSON.stringify({ card_id: card.id, start_price: price, minutes, evolved }) }); toast('🔨 Enchère lancée pour ' + durLabel(minutes)); }
+        else { await api('/market/list', { method: 'POST', body: JSON.stringify({ card_id: card.id, price, evolved }) }); toast('🏷️ Mise en vente publiée au marché'); }
+        closeUserCollectionModal(); await loadCollection(); await refreshMe(); renderMarketForm();
+      } catch(err) { toast(err.message); e.target.disabled = false; }
+    });
+  }
   function addOfferForm(body, card){
-    body.insertAdjacentHTML('beforeend', '<div class="offer-form"><label for="offerPrice" style="font-weight:700;font-size:13px;">Offre d\'achat (en crédits)</label><input id="offerPrice" type="number" min="1" value="10"><div class="share-actions"><button class="btn-secondary" type="button" id="offerSend">💰 Faire une offre d\'achat</button></div><div class="tm-hint" style="text-align:center;">Tes crédits sont mis de côté. Si un joueur possède cette carte, il pourra te la vendre à ce prix ; sinon, annule ton offre quand tu veux (dans l\'onglet Marché).</div></div>');
+    body.insertAdjacentHTML('beforeend', '<div class="offer-form"><label for="offerPrice" style="font-weight:700;font-size:13px;">' + (card._viewing ? 'Offre d\'achat (en crédits)' : 'Acheter un exemplaire de plus (offre en crédits)') + '</label><input id="offerPrice" type="number" min="1" value="10"><div class="share-actions"><button class="btn-secondary" type="button" id="offerSend">💰 Faire une offre d\'achat</button></div><div class="tm-hint" style="text-align:center;">Tes crédits sont mis de côté. Si un joueur possède cette carte, il pourra te la vendre à ce prix ; sinon, annule ton offre quand tu veux (dans l\'onglet Marché).</div></div>');
     document.getElementById('offerSend').addEventListener('click', async (e) => {
       const price = parseInt(document.getElementById('offerPrice').value, 10); e.target.disabled = true;
       if (!(price >= 1)) { toast('Mets un prix d\'au moins 1 crédit'); e.target.disabled = false; return; }
@@ -2571,12 +2615,22 @@
   }
   async function askSellDuplicate(card){
     let price = 1; try { const r = await getGameRules(); price = (r.sell_values || {})[card.tier] || 1; } catch(e) { /* prix inconnu : le serveur applique le bon */ }
-    const word = n => n + ' crédit' + (n > 1 ? 's' : ''), left = card.quantity - 1;
+    const word = n => n + ' crédit' + (n > 1 ? 's' : ''), dupes = card.quantity - 1;
+    let all = false;
+    const text = () => all
+      ? '<p style="margin:0 0 6px;">Tu vas vendre <b>tous tes doublons</b> de <b>' + escapeHtml(cardDisplayName(card)) + '</b> (' + escapeHtml(tierLabel(card.tier)) + ') : <b>' + dupes + ' exemplaires</b> pour <b>' + word(price * dupes) + '</b>.</p><p style="margin:0;">Il te restera 1 exemplaire.</p>'
+      : '<p style="margin:0 0 6px;">Tu vas vendre <b>1 exemplaire</b> de <b>' + escapeHtml(cardDisplayName(card)) + '</b> (' + escapeHtml(tierLabel(card.tier)) + ') au prix prévu de <b>' + word(price) + '</b>.</p><p style="margin:0;">Il te restera ' + dupes + ' exemplaire' + (dupes > 1 ? 's' : '') + '.</p>';
+    const choice = dupes > 1 ? '<div class="dur-btns" id="dupeChoice" style="margin-bottom:10px;"><button type="button" data-all="0" class="on">1 doublon</button><button type="button" data-all="1">Tous les doublons de cette carte (' + dupes + ')</button></div>' : '';
     const ok = await confirmDialog('Vendre ce doublon ?',
-      '<p style="margin:0 0 6px;">Tu vas vendre <b>1 exemplaire</b> de <b>' + escapeHtml(cardDisplayName(card)) + '</b> (' + escapeHtml(tierLabel(card.tier)) + ') au prix prévu de <b>' + word(price) + '</b>.</p>' +
-      '<p style="margin:0;">Il te restera ' + left + ' exemplaire' + (left > 1 ? 's' : '') + '.</p>' +
-      '<div class="confirm-warn">⚠️ <b>Vente définitive, sans retour possible</b> : la carte quitte ta collection tout de suite, tu ne pourras ni annuler la vente ni la récupérer.</div>', 'Vendre pour ' + word(price));
-    if (ok) await sellDuplicate(card.id);
+      choice + '<div id="dupeText">' + text() + '</div>' +
+      '<div class="confirm-warn">⚠️ <b>Vente définitive, sans retour possible</b> : la carte quitte ta collection tout de suite, tu ne pourras ni annuler la vente ni la récupérer.</div>', 'Vendre pour ' + word(price),
+      (root, yes) => root.querySelectorAll('#dupeChoice button').forEach(b => b.addEventListener('click', () => {
+        all = b.dataset.all === '1';
+        root.querySelectorAll('#dupeChoice button').forEach(x => x.classList.toggle('on', x === b));
+        root.querySelector('#dupeText').innerHTML = text();
+        yes.textContent = 'Vendre pour ' + word(all ? price * dupes : price);
+      })));
+    if (ok) await sellDuplicate(card.id, all);
   }
 
   async function askSellAll(){
@@ -3582,10 +3636,10 @@
       await refreshMe();
     } catch(e) { toast(e.message); btn.disabled = false; }
   }
-  async function sellDuplicate(cardId){
+  async function sellDuplicate(cardId, all){
     try {
-      const res = await api('/collection/sell-duplicate', { method: 'POST', body: JSON.stringify({ card_id: cardId }) });
-      toast('+' + res.credits_gained + ' crédits');
+      const res = await api('/collection/sell-duplicate', { method: 'POST', body: JSON.stringify({ card_id: cardId, all: !!all }) });
+      toast((res.sold > 1 ? res.sold + ' doublons vendus : ' : '') + '+' + res.credits_gained + ' crédits');
       await loadCollection();
       await refreshMe();
     } catch(e) { toast(e.message); }

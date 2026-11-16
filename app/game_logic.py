@@ -580,13 +580,15 @@ def get_display_note(player: Player, tier: str = "commune", card=None):
     return {"label": "NOTE", "value": card_note(player, tier, card)}
 
 
-def sell_duplicate(db: Session, user: User, card_id: str) -> int:
-    """Vend UN exemplaire en doublon d'une carte contre des crédits. Lève ValueError si pas de doublon."""
+def sell_duplicate(db: Session, user: User, card_id: str, count: int = 1) -> int:
+    """Vend des exemplaires en doublon d'une carte contre des crédits : `count` (au plus ses doublons, on garde toujours 1 exemplaire),
+    ou tous ses doublons avec count=None. Renvoie les crédits gagnés. Lève ValueError si pas de doublon."""
     owned = db.query(OwnedCard).filter_by(user_id=user.id, card_id=card_id).first()
     if not owned or owned.quantity <= 1 or owned.card.tier == Tier.saison:      # (un trophée de saison ne se vend jamais)
         raise ValueError("no_duplicate")
-    value = DUPLICATE_SELL_VALUE[owned.card.tier.value]
-    owned.quantity -= 1
+    n = owned.quantity - 1 if count is None else max(1, min(int(count), owned.quantity - 1))
+    value = DUPLICATE_SELL_VALUE[owned.card.tier.value] * n
+    owned.quantity -= n
     user.credits += value
     db.commit()
     return value

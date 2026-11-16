@@ -366,12 +366,14 @@ def sell_duplicate(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    owned = db.query(OwnedCard).filter_by(user_id=user.id, card_id=payload.card_id).first()
+    sold = max(0, owned.quantity - 1) if (owned and payload.all) else 1          # « tous les doublons de cette carte » : on garde 1 exemplaire
     try:
-        credits_gained = game_logic.sell_duplicate(db, user, payload.card_id)
+        credits_gained = game_logic.sell_duplicate(db, user, payload.card_id, None if payload.all else 1)
     except ValueError:
         raise HTTPException(status_code=400, detail="Pas de doublon à vendre pour cette carte")
-    missions.safe_record(db, user, "sell_dupes")
-    return {"credits_gained": credits_gained, "credits_total": user.credits}
+    missions.safe_record(db, user, "sell_dupes", sold)              # (missions et succès « Recycleur » : chaque doublon compte)
+    return {"credits_gained": credits_gained, "credits_total": user.credits, "sold": sold}
 
 
 @app.get("/players/{player_name:path}/detail")      # « :path » : le nom d'un exemplaire numéroté contient « / » (« n° 12/22 »)
