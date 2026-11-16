@@ -1,6 +1,6 @@
 """
 Test : enchères quotidiennes du club (cartes uniques Édition Noire, app/club_auctions.py), avec une horloge simulée (FC_FAKE_NOW).
-Séries pour tous (5 chacune, n° 1 réservé), remplacement des anciennes séries de 22, création automatique à l'ajout d'une personne, activation différée (rien avant la date,
+Séries pour tous (5 chacune, tous les numéros aux enchères), remplacement des anciennes séries de 22, création automatique à l'ajout d'une personne, activation différée (rien avant la date,
 section masquée sauf testadmin, teaser, lot de test avant la date), 1 enchère par jour par défaut ; réglée à 5 : 5 enchères à 17h00 pour 5 personnes différentes, choix des moins
 émises, numéros parmi les restants, fin à 16h00 le lendemain, prolongation plafonnée à +60 min, gagnant servi avec son numéro,
 crédits détruits, pas de limite de gains, sans offre : retour en réserve, idempotence (deux passages, redémarrage), rattrapage
@@ -67,7 +67,7 @@ r = c.post("/admin/series-create-all", json={"dry_run": False}, headers=A).json(
 ok(r["status"] == "ok" and len(r["created"]) == 30, "30 séries créées")
 ok(c.post("/admin/series-create-all", json={"dry_run": False}, headers=A).json()["created"] == [], "relancer ne crée rien de plus")
 st = state()
-ok(len(st) == 31 and all(x["total"] == 5 and x["emitted"] == 0 and x["available"] == [2, 3, 4, 5] and x["number_one"] == "reserve" for x in st.values()), "31 séries de 5, tout dans la réserve, 4 numéros pour les enchères (le n° 1 est réservé)")
+ok(len(st) == 31 and all(x["total"] == 5 and x["emitted"] == 0 and x["available"] == [1, 2, 3, 4, 5] and x["number_one"] == "reserve" for x in st.values()), "31 séries de 5, tout dans la réserve, 5 numéros pour les enchères, n° 1 compris (avant : le n° 1 était réservé)")
 r = c.post("/admin/create-player", json={"name": "Yasmine", "poste": "ATT"}, headers=A).json()
 ok(r.get("edition_noire") is True and "Yasmine" in state(), "une joueuse créée ensuite : sa série aussi")
 s_lucas = NB.find_series(db, "Édition Noire — Lucas")
@@ -117,7 +117,7 @@ ok(len(bs) == 2 and b1.day == "2026-11-09" and b1.count == 5 and len(L1) == 5, "
 subjects = [db.get(NB.NumberedSeries, l.series_id).subject for l in L1]
 ok(len(set(subjects)) == 5, "5 personnes différentes")
 ok(test_person not in subjects and all(before[s]["emitted"] == 0 for s in subjects), "choisies parmi celles qui ont le moins d'exemplaires émis (pas celle du test)")
-ok(all(l.number != 1 and l.number in before[db.get(NB.NumberedSeries, l.series_id).subject]["available"] for l in L1), "numéros pris parmi les restants, jamais le n° 1")
+ok(all(l.number in before[db.get(NB.NumberedSeries, l.series_id).subject]["available"] for l in L1), "numéros pris parmi les restants")
 ok(all(db.get(AU.Auction, l.auction_id).ends_at == datetime(2026, 11, 10, 16, 0) and l.base_end == datetime(2026, 11, 10, 16, 0) for l in L1), "fin : le lendemain (mardi) à 16h00")
 ok(all(db.get(AU.Auction, l.auction_id).start_price == 20 and db.get(AU.Auction, l.auction_id).seller_id == "club" for l in L1), "prix de départ 20, vendeur « club »")
 msgs = club_msgs()
@@ -199,7 +199,7 @@ for d in range(11, 14):
     at("2026-11-%02dT17:00:00" % d); check_pick("lot du %d : les personnes choisies ont le moins d'exemplaires émis" % d)
 all_lots = db.query(CA.ClubAuctionLot).all()
 won = [(l.series_id, l.number) for l in all_lots if l.status == "won"]
-ok(len(won) == len(set(won)) and all(l.number != 1 for l in all_lots), "jamais le n° 1, jamais deux fois le même numéro gagné")
+ok(len(won) == len(set(won)), "jamais deux fois le même numéro gagné")
 openl = [(l.series_id, l.number) for l in all_lots if l.status == "open"]
 ok(len(openl) == len(set(openl)) and not set(openl) & set(won), "aucun numéro en vente deux fois ni déjà attribué")
 ok(c.post("/admin/series-mint", json={"series": str(openl[0][0]), "pseudo": "ana", "number": openl[0][1]}, headers=A).status_code == 400, "series-mint refuse un numéro aux enchères du club")
@@ -248,7 +248,7 @@ keep = ["Lucas", "Hugo", "Léo"]
 for r in CA.series_state(db):
     if r["subject"] not in keep:
         for cp in db.query(NB.NumberedCopy).filter_by(series_id=r["id"]).all():
-            if cp.number != 1: cp.status = "attribue"
+            cp.status = "attribue"
 db.commit()
 at("2026-11-17T17:00:00"); tick()
 b = batches()[-1]; L = lots(b)
@@ -256,21 +256,25 @@ ok(b.day == "2026-11-17" and len(L) == 3 and {db.get(NB.NumberedSeries, l.series
 ok(all(not r["available"] for s, r in state().items() if s not in keep), "une série épuisée n'est jamais choisie")
 for r in CA.series_state(db):
     for cp in db.query(NB.NumberedCopy).filter_by(series_id=r["id"]).all():
-        if cp.number != 1 and cp.status == "reserve" and not db.query(AU.Auction).filter_by(card_id=cp.card_id).first(): cp.status = "attribue"
+        if cp.status == "reserve" and not db.query(AU.Auction).filter_by(card_id=cp.card_id).first(): cp.status = "attribue"
 db.commit()
 at("2026-11-18T16:00:30"); tick()
 for r in CA.series_state(db):
     for cp in db.query(NB.NumberedCopy).filter_by(series_id=r["id"]).all():
-        if cp.number != 1: cp.status = "attribue"
+        cp.status = "reserve" if (r["subject"] == "Lucas" and cp.number == 1) else "attribue"         # il ne reste que le n° 1 de Lucas
 db.commit()
 at("2026-11-18T17:00:00"); tick()
+b = batches()[-1]; L = lots(b)
+ok(b.day == "2026-11-18" and len(L) == 1 and L[0].number == 1 and db.get(NB.NumberedSeries, L[0].series_id).subject == "Lucas", "le n° 1 sort aux enchères comme les autres numéros")
+at("2026-11-19T16:00:30"); tick()                      # sans enchère : il revient dans la réserve
+ok(all(r["number_one"] == "reserve" for r in CA.series_state(db) if r["subject"] == "Lucas"), "un n° 1 sans enchère revient dans la réserve")
+ok(c.post("/admin/series-mint", json={"series": "Édition Noire — Lucas", "pseudo": "ana", "number": 1}, headers=A).json().get("number") == 1, "le n° 1 se donne toujours avec series-mint")
+at("2026-11-19T17:00:00"); tick()
 b = batches()[-1]
-ok(b.day == "2026-11-18" and b.count == 0 and b.note, "plus aucune carte : lot vide enregistré, rien de créé")
+ok(b.day == "2026-11-19" and b.count == 0 and b.note, "plus aucune carte : lot vide enregistré, rien de créé")
 db.expire_all()
 ok(any("VIDE" in l.summary for l in db.query(AdminLog).all()), "et c'est signalé dans le journal de l'administration")
 ok(c.post("/admin/club-auctions-launch", json={}, headers=A).status_code == 400, "lancer un lot : refusé, plus rien à vendre")
-ok(all(r["number_one"] == "reserve" for r in CA.series_state(db)), "les n° 1 sont toujours dans la réserve")
-ok(c.post("/admin/series-mint", json={"series": "Édition Noire — Lucas", "pseudo": "ana", "number": 1}, headers=A).json().get("number") == 1, "le n° 1 se donne avec series-mint")
 
 print("11) REMPLACER LES ANCIENNES SÉRIES DE 22")
 from app.models import Card
