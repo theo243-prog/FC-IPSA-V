@@ -3,10 +3,10 @@ ENCHÈRES QUOTIDIENNES DU CLUB : cartes uniques « Édition Noire » (« Éditio
 
 - Chaque joueur et chaque fan (ni mascotte, ni équipement, ni moment gold) a sa série de SERIES_TOTAL = 5 exemplaires, créée avec le
   mécanisme des séries limitées (numbered.py) : une carte par exemplaire, dans la réserve du club tant qu'elle n'a pas de propriétaire.
-  Le n° 1 n'est JAMAIS mis aux enchères (il reste pour les récompenses de l'administration, commande series-mint).
+  Tous les numéros peuvent sortir aux enchères, n° 1 compris (depuis le 16/11/2026 ; avant, le n° 1 était gardé pour les récompenses de l'administration).
 - Chaque jour à 17h00 (heure de Paris, même calcul d'heure d'été que weekly.py), la tâche de fond crée un LOT de CLUB_AUCTIONS_PER_DAY
   enchère(s) (1 par défaut, réglable) : des personnes différentes parmi celles qui ont le moins d'exemplaires ÉMIS (attribués + en cours d'enchère),
-  égalité au hasard ; pour chacune, un numéro au hasard parmi les restants (ni le n° 1, ni un numéro attribué ou aux enchères).
+  égalité au hasard ; pour chacune, un numéro au hasard parmi les restants (ni un numéro attribué, ni un numéro aux enchères).
   Fin le LENDEMAIN à 16h00. Prolongation habituelle (+2 min), plafonnée à +60 min après 16h00 : jamais de chevauchement avec 17h00.
 - Même moteur que les enchères entre joueurs (auctions.py : hausse de 5 %, crédits mis de côté), vendeur réservé CLUB_SELLER sans
   compte, table `auctions` inchangée : la table club_auction_lots relie l'enchère à la série et au numéro. À la fin, le plus offrant
@@ -41,7 +41,7 @@ SERIES_TITLE = "Édition Noire"
 CLUB_AUCTIONS_PER_DAY = 1               # valeur par défaut (réglable depuis l'administration)
 CLUB_START_PRICE = 20                   # valeur par défaut (réglable depuis l'administration)
 CLUB_SELLER = "club"                    # vendeur réservé : le club n'est pas un compte
-RESERVED_NUMBER = 1                     # le n° 1 n'est jamais mis aux enchères
+RESERVED_NUMBER = None                  # aucun numéro gardé : le n° 1 sort aux enchères comme les autres (avant le 16/11/2026 : 1)
 LOT_HOUR = 17                           # création du lot (heure de Paris)
 END_HOUR = 16                           # fin des enchères, le lendemain (heure de Paris)
 MAX_EXTENSION = timedelta(minutes=60)   # prolongations au plus 60 min au-delà de 16h00 (donc fin au plus tard à 17h00)
@@ -211,7 +211,7 @@ def series_state(db: Session) -> list:
         attributed = sum(1 for c in copies if c.status == "attribue")
         auctioned = sum(1 for c in copies if c.status == "reserve" and c.card_id in in_auction)
         free = sorted(c.number for c in copies if c.status == "reserve" and c.card_id not in in_auction and c.number != RESERVED_NUMBER)
-        n1 = next((c for c in copies if c.number == RESERVED_NUMBER), None)
+        n1 = next((c for c in copies if c.number == 1), None)          # (état du n° 1, affiché à l'administration)
         out.append({"series": s, "id": s.id, "subject": s.subject, "total": s.total, "attributed": attributed, "in_auction": auctioned,
                     "emitted": attributed + auctioned, "available": free, "number_one": (n1.status if n1 else None),
                     "card_by_number": {c.number: c.card_id for c in copies}})

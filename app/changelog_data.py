@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-noire-numero-1", "date": "2026-11-16", "category": "cartes", "title": "Les n° 1 de l'Édition Noire aux enchères",
+     "text": "Tous les numéros des cartes Édition Noire peuvent maintenant sortir aux enchères du club, le n° 1 compris."},
     {"id": "2026-11-pass-bonus-credits", "date": "2026-11-16", "category": "économie", "title": "Points bonus du Pass convertis",
      "text": "Les points gagnés au-delà du niveau 30 du Pass ne sont plus perdus : à la fin du mois, ils sont transformés en crédits (20 points = 1 crédit), versés automatiquement avec une notification."},
     {"id": "2026-11-vente-collection", "date": "2026-11-16", "category": "économie", "title": "Vendre depuis sa collection",
