@@ -41,10 +41,10 @@ EDITION_TIERS = ("halloween", "noel") + CUSTOM_EDITION_SLOTS      # les édition
 
 # Types de packs. "guaranteed" = raretés garanties ; les autres cartes (jusqu'à 3) suivent les probas classiques.
 PACK_TYPES = {
-    "classique": {"label": "Pack classique", "price": 50, "guaranteed": [],
+    "classique": {"label": "Pack classique", "price": 10, "guaranteed": [],
                   "token_field": "shop_pack_tokens",
                   "description": "3 cartes aux probabilités classiques"},
-    "rare": {"label": "Pack rare", "price": 100, "guaranteed": ["rare", "rare"],
+    "rare": {"label": "Pack rare", "price": 50, "guaranteed": ["rare", "rare"],
              "token_field": "rare_pack_tokens",
              "description": "2 cartes rares garanties + 1 carte aux probabilités classiques"},
     "epique": {"label": "Pack épique", "price": 300, "guaranteed": ["epique"],
