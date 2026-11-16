@@ -34,6 +34,7 @@ from . import events
 router = APIRouter()
 PRICE, CATCHUP_DAYS, LEVEL_PRICE = 300, 7, 20       # Premium 300 crédits ; 20 crédits pour acheter directement le niveau suivant
 DAILY_CAPS = {"mission": 80, "duel": 50, "swap": 30, "prono": 30, "minigame": 50, "club": 60}          # points de base par jour et par source
+BONUS_POINTS_PER_CREDIT, BONUS_FROM = 20, "2026-11"     # fin du mois : les points au-delà du niveau 30 deviennent des crédits (20 points = 1 crédit, sans plafond), à partir du Pass de novembre 2026
 
 
 class PassProgress(Base):
@@ -47,6 +48,7 @@ class PassProgress(Base):
     premium_at = Column(DateTime, nullable=True)
     completed = Column(Integer, nullable=False, default=0)
     daily = Column(Text, nullable=True)                     # {"d": jour, "src": {source: points de base du jour}}
+    bonus_credits = Column(Integer, nullable=True)          # crédits versés pour les points bonus à la fin du mois (vide : pas encore converti)
 
 
 class PassClaim(Base):
@@ -140,6 +142,37 @@ def in_catchup(key: str, now: datetime) -> bool:
 def unlocked_level(points: int, key: str, now: datetime) -> int:
     cap = P.LEVELS if now >= season_end(key) else (P.LEVELS if now.day >= dim(key) else now.day)        # le niveau N se débloque le jour N
     return max(0, min(P.LEVELS, points // P.POINTS_PER_LEVEL, cap))
+
+
+def bonus_points(points: int) -> int:
+    """Les points gagnés au-delà des 30 niveaux (3000 points)."""
+    return max(0, int(points or 0) - P.LEVELS * P.POINTS_PER_LEVEL)
+
+
+def bonus_credits_of(points: int) -> int:
+    return bonus_points(points) // BONUS_POINTS_PER_CREDIT
+
+
+def convert_bonus(db: Session, key: str, now: datetime) -> int:
+    """Pass terminé : les points bonus de chaque joueur deviennent des crédits, une seule fois (passage atomique de bonus_credits vide à la somme versée).
+    Renvoie le nombre de joueurs payés. Ne s'applique qu'à partir du Pass BONUS_FROM (les Pass d'avant ne sont pas convertis)."""
+    if key < BONUS_FROM or now < season_end(key):
+        return 0
+    from . import push
+    paid = 0
+    rows = db.query(PassProgress).filter(PassProgress.season == key, PassProgress.bonus_credits.is_(None), PassProgress.points > P.LEVELS * P.POINTS_PER_LEVEL).all()
+    for row in rows:
+        credits = bonus_credits_of(row.points)
+        if not db.query(PassProgress).filter(PassProgress.id == row.id, PassProgress.bonus_credits.is_(None)).update({PassProgress.bonus_credits: credits}, synchronize_session=False):
+            continue                                            # (déjà converti par un autre passage)
+        u = db.get(User, row.user_id)
+        if u is None or credits <= 0:
+            continue
+        u.credits += credits; paid += 1
+        push.enqueue(db, u.id, "pass", "💰 Points bonus du Pass convertis", "Pass de %s : tes %d points bonus (au-delà du niveau 30) deviennent %d crédit%s." % (seasons.label_of(key), bonus_points(row.points), credits, "s" if credits > 1 else ""),
+                     url="/#shop", tag="pass-bonus-" + key)
+    db.commit()
+    return paid
 
 
 def multiplier(key: str, now: datetime) -> int:
@@ -305,7 +338,9 @@ def season_out(db: Session, user: User, key: str, now: datetime) -> dict:
     out = {"key": key, "label": seasons.label_of(key), "theme": {"id": theme_id, **{k: th[k] for k in ("name", "emoji", "c1", "c2", "accent")}}, "points": points, "level": level, "premium": premium,
            "day": min(now.day, d) if not over else d, "days": d, "ended": over, "double_points": multiplier(key, now) == 2, "ends_at": season_end(key).isoformat(),
            "points_in_level": points % P.POINTS_PER_LEVEL if level < P.LEVELS else P.POINTS_PER_LEVEL, "waiting_for_day": level < P.LEVELS and by_points > level and not over,
-           "completed": bool(row and row.completed), "levels": levels, "club": club_out(db, user, key, claims), "claimable": sum(1 for l in levels for t in ("free", "premium") if l[t] and l[t]["status"] == "ready") + sum(1 for t in club_out(db, user, key, claims)["tiers"] if t["reached"] and not t["claimed"])}
+           "completed": bool(row and row.completed), "levels": levels,
+           "bonus": {"points": bonus_points(points), "credits": (row.bonus_credits if row is not None and row.bonus_credits is not None else bonus_credits_of(points)), "converted": bool(row is not None and row.bonus_credits is not None),
+                     "per_credit": BONUS_POINTS_PER_CREDIT} if key >= BONUS_FROM else None, "club": club_out(db, user, key, claims), "claimable": sum(1 for l in levels for t in ("free", "premium") if l[t] and l[t]["status"] == "ready") + sum(1 for t in club_out(db, user, key, claims)["tiers"] if t["reached"] and not t["claimed"])}
     if over:
         out["catchup_until"] = (season_end(key) + timedelta(days=CATCHUP_DAYS)).isoformat()
     return out
@@ -559,6 +594,7 @@ def tick(db: Session) -> None:
     """Chaque minute (planificateur) : les étoiles de prestige de la saison qui vient de finir (rattrapage) sont attribuées même si le joueur ne se connecte pas."""
     now = now_paris(); key = seasons.key_of(now); pk = prev_key(key)
     if not in_catchup(pk, now): return
+    convert_bonus(db, pk, now)                                  # points bonus du Pass qui vient de finir -> crédits (une fois)
     for row in db.query(PassProgress).filter_by(season=pk, completed=0).filter(PassProgress.points >= P.LEVELS * P.POINTS_PER_LEVEL).all():
         u = db.get(User, row.user_id)
         if u is not None: ensure_completion(db, u, pk, now)

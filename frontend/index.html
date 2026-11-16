@@ -873,6 +873,7 @@
   .modal-box{background:var(--bg-elevated);border-top:6px solid var(--accent);border-radius:0 0 10px 10px;padding:20px;max-width:620px;width:100%;max-height:82vh;overflow-y:auto;box-shadow:var(--shadow);}
   .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
   .modal-header h2{font-family:var(--font-head);font-weight:800;font-size:28px;margin:0;}
+  .pseudo-link.pl{cursor:pointer;text-decoration:underline;text-decoration-color:var(--border);text-underline-offset:2px;overflow-wrap:anywhere;} .pseudo-link.pl:hover,.pseudo-link.pl:focus-visible{color:var(--accent);text-decoration-color:currentColor;}
   .modal-back{background:var(--bg-sunk);border:1px solid var(--border);border-radius:999px;font-size:18px;font-weight:800;line-height:1;cursor:pointer;color:var(--text);padding:5px 11px;margin-right:10px;flex-shrink:0;} .modal-back[hidden]{display:none;}
   #userCollectionModal .modal-header h2{flex:1;min-width:0;}
   .modal-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);padding:4px 8px;}
@@ -1795,7 +1796,7 @@
       statsRow = '<div class="card-stats" title="Écusson d\'un club adverse : carte de collection"><span>🛡️ ÉCUSSON</span></div>';
       posteLabel = '🛡️';
     } else if (kind === 'communaute') {
-      statsRow = '<div class="card-stats" title="Carte de la communauté : proposée et votée par les joueurs"><span>💡 ' + escapeHtml(card.proposed_by || 'Communauté') + '</span></div>';
+      statsRow = '<div class="card-stats" title="Carte de la communauté : proposée et votée par les joueurs"><span>💡 ' + (card.proposed_by ? pseudoLink(card.proposed_by) : 'Communauté') + '</span></div>';
       posteLabel = '💡';
     } else if (kind === 'trophee') {
       statsRow = '<div class="card-stats" title="' + (trophyParts(card).rank === 6 ? 'Carte exclusive du Pass' : [4, 5, 11].includes(trophyParts(card).rank) ? 'Carte de tournoi' : 'Trophée de saison') + ' : un souvenir"><span>🏆 ' + escapeHtml(trophyParts(card).label) + '</span></div>';
@@ -2054,7 +2055,7 @@
     box.innerHTML = (noir ? '<p class="series-count"><b>' + (se.emitted != null ? se.emitted : se.attributed) + ' / ' + se.total + '</b> émises' + (se.in_club_auction ? ' (dont ' + se.in_club_auction + ' aux enchères du club)' : '') + ' · le n° 1 est gardé par le club</p>'
       : '<p class="series-count"><b>' + se.attributed + ' / ' + se.total + '</b> attribués · ' + se.reserve + ' dans la réserve du club</p>') +
       '<button class="btn-small ghost" type="button">Voir les détenteurs</button><ol class="series-holders" hidden>' +
-      se.copies.map(c => '<li' + (c.number === r.number ? ' class="me"' : '') + '><span class="num-badge">N° ' + c.number + '/' + se.total + '</span> ' + (c.status === 'attribue' ? escapeHtml(c.holder || '?') + (c.where && c.where !== 'collection' ? ' <small>(' + escapeHtml(c.where) + ')</small>' : '') : '<i>' + escapeHtml(c.where || 'réserve du club') + '</i>') + '</li>').join('') + '</ol>';
+      se.copies.map(c => '<li' + (c.number === r.number ? ' class="me"' : '') + '><span class="num-badge">N° ' + c.number + '/' + se.total + '</span> ' + (c.status === 'attribue' ? pseudoLink(c.holder) + (c.where && c.where !== 'collection' ? ' <small>(' + escapeHtml(c.where) + ')</small>' : '') : '<i>' + escapeHtml(c.where || 'réserve du club') + '</i>') + '</li>').join('') + '</ol>';
     const btn = box.querySelector('button'), list = box.querySelector('ol');
     btn.addEventListener('click', () => { list.hidden = !list.hidden; btn.textContent = list.hidden ? 'Voir les détenteurs' : 'Masquer les détenteurs'; });
   }
@@ -2452,7 +2453,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.16.5';
+  const SITE_VERSION = '2026.11.16.7';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2470,7 +2471,7 @@
       let rankE = 0;
       const table = s.standings.length ? '<table class="duel-table"><thead><tr><th></th><th>Joueur</th><th class="num">Elo</th><th class="num">M</th><th class="num">V</th></tr></thead><tbody>' + s.standings.map(r => {
         const medal = r.eligible && ++rankE <= 3 ? ['🥇', '🥈', '🥉'][rankE - 1] : '#' + r.rank;
-        return '<tr class="' + (r.pseudo === myPseudo ? 'me' : '') + (r.eligible ? '' : ' dim') + '"><td><span class="rank-num">' + medal + '</span></td><td>' + escapeHtml(r.pseudo) + (r.pseudo === myPseudo ? ' (toi)' : '') + '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.matches + '</td><td class="num">' + r.wins + '</td></tr>';
+        return '<tr class="' + (r.pseudo === myPseudo ? 'me' : '') + (r.eligible ? '' : ' dim') + '"><td><span class="rank-num">' + medal + '</span></td><td>' + pseudoLink(r.pseudo) + (r.pseudo === myPseudo ? ' (toi)' : '') + '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.matches + '</td><td class="num">' + r.wins + '</td></tr>';
       }).join('') + '</tbody></table>' : '<div class="empty-state">Personne n\'a encore joué ce mois-ci : sois le premier !</div>';
       const me = s.me ? '<div class="season-me">Ta place : n°' + s.me.rank + ' · Elo ' + s.me.elo + ' · ' + s.me.matches + ' match' + (s.me.matches > 1 ? 's' : '') + (s.me.eligible ? ' · tu peux monter sur le podium 🎯' : ' · encore ' + (s.min_matches - s.me.matches) + ' match' + (s.min_matches - s.me.matches > 1 ? 's' : '') + ' pour être éligible') + '</div>' : (token ? '<div class="season-me">Joue un match pour entrer au classement du mois.</div>' : '');
       byId('seasonStandings').innerHTML = '<div class="season-scroll">' + table + '</div>' + me;
@@ -2480,7 +2481,7 @@
         if (p.card) { const el = makeMiniCard(p.card, { hideCount: true }); el.style.cursor = 'default'; d.appendChild(el); } else d.insertAdjacentHTML('beforeend', '<div class="p-none">carte « Saison » pas encore choisie</div>');
         prizes.appendChild(d);
       });
-      byId('seasonLast').textContent = s.last ? 'Podium de ' + s.last.label + ' : ' + s.last.podium.map(p => p.medal + ' ' + p.pseudo).join(' · ') : '';
+      byId('seasonLast').innerHTML = s.last ? 'Podium de ' + s.last.label + ' : ' + s.last.podium.map(p => p.medal + ' ' + pseudoLink(p.pseudo)).join(' · ') : '';
       box.hidden = false;
     } catch(e) { box.hidden = true; }
   }
@@ -2521,7 +2522,7 @@
         try { const r = await api('/market/offers/' + o.id + '/accept', { method: 'POST' }); toast('+' + r.credits_gained + ' crédits : carte vendue à ' + r.buyer + ' 💰'); await refreshMe(); loadCollection(); loadOffers(); }
         catch(e) { toast(e.message); btn.disabled = false; loadOffers(); }
       });
-      a.appendChild(offerRow(o, '<b>' + escapeHtml(cardDisplayName(o.card)) + '</b> · ' + escapeHtml(tierLabel(o.card.tier)) + '<br>Offre de <b>' + escapeHtml(o.buyer) + '</b> : <b>' + o.price + ' crédit' + (o.price > 1 ? 's' : '') + '</b><br><small>Tu en as ' + o.quantity + (o.quantity === 1 ? ' (ta dernière copie)' : '') + '</small>', btn));
+      a.appendChild(offerRow(o, '<b>' + escapeHtml(cardDisplayName(o.card)) + '</b> · ' + escapeHtml(tierLabel(o.card.tier)) + '<br>Offre de <b>' + pseudoLink(o.buyer) + '</b> : <b>' + o.price + ' crédit' + (o.price > 1 ? 's' : '') + '</b><br><small>Tu en as ' + o.quantity + (o.quantity === 1 ? ' (ta dernière copie)' : '') + '</small>', btn));
     });
     if (!mine.length) b.innerHTML = '<div class="empty-state">Tu n\'as aucune offre d\'achat ouverte.</div>';
     mine.forEach(o => {
@@ -2957,11 +2958,11 @@
         '<label>Je donne (un de mes doublons)<select id="swGive">' + mineDup.map(c => '<option value="' + c.id + '">' + escapeHtml(cardDisplayName(c)) + ' (' + escapeHtml(tierLabel(c.tier)) + ') ×' + c.quantity + '</option>').join('') + '</select></label>' +
         '<label>Je demande (un de ses doublons)<select id="swWant" disabled><option value="">— choisis d\'abord un joueur —</option></select></label>' +
         '<button class="btn-primary" type="button" id="swGo" disabled>Proposer l\'échange</button></div>' : '<div class="empty-state">Tu n\'as pas de doublon à échanger pour l\'instant : ouvre des packs !</div>';
-      const row = (s, btns) => '<div class="swap-row"><span><b>' + escapeHtml(s.from) + '</b> donne ' + (s.give ? nm(s.give) : '?') + ' contre ' + (s.want ? nm(s.want) : '?') + (btns ? '' : ' à <b>' + escapeHtml(s.to) + '</b>') + '</span>' + (btns ? '<span class="swap-btns">' + btns + '</span>' : '') + '</div>';
+      const row = (s, btns) => '<div class="swap-row"><span><b>' + pseudoLink(s.from) + '</b> donne ' + (s.give ? nm(s.give) : '?') + ' contre ' + (s.want ? nm(s.want) : '?') + (btns ? '' : ' à <b>' + pseudoLink(s.to) + '</b>') + '</span>' + (btns ? '<span class="swap-btns">' + btns + '</span>' : '') + '</div>';
       root.innerHTML = form +
         '<div class="prono-sub">Propositions reçues</div>' + (sw.incoming.length ? sw.incoming.map(s => row(s, '<button class="btn-small swap-acc" data-id="' + s.id + '">Accepter</button><button class="btn-small ghost swap-dec" data-id="' + s.id + '">Refuser</button>')).join('') : '<div class="empty-state">Aucune proposition reçue.</div>') +
-        '<div class="prono-sub">Mes propositions envoyées</div>' + (sw.outgoing.length ? sw.outgoing.map(s => row(s, '<button class="btn-small ghost swap-cancel" data-id="' + s.id + '">Annuler</button>').replace('donne', 'donne (à ' + escapeHtml(s.to) + ')')).join('') : '<div class="empty-state">Aucune proposition en attente.</div>') +
-        '<div class="prono-sub">Derniers échanges du club</div>' + (sw.recent.length ? sw.recent.map(s => '<div class="swap-row"><span>🔁 <b>' + escapeHtml(s.from) + '</b> ⇄ <b>' + escapeHtml(s.to) + '</b> : ' + (s.give ? nm(s.give) : '?') + ' contre ' + (s.want ? nm(s.want) : '?') + '</span></div>').join('') : '<div class="empty-state">Aucun échange pour le moment.</div>');
+        '<div class="prono-sub">Mes propositions envoyées</div>' + (sw.outgoing.length ? sw.outgoing.map(s => row(s, '<button class="btn-small ghost swap-cancel" data-id="' + s.id + '">Annuler</button>').replace('</b> donne', '</b> donne (à ' + pseudoLink(s.to) + ')')).join('') : '<div class="empty-state">Aucune proposition en attente.</div>') +
+        '<div class="prono-sub">Derniers échanges du club</div>' + (sw.recent.length ? sw.recent.map(s => '<div class="swap-row"><span>🔁 <b>' + pseudoLink(s.from) + '</b> ⇄ <b>' + pseudoLink(s.to) + '</b> : ' + (s.give ? nm(s.give) : '?') + ' contre ' + (s.want ? nm(s.want) : '?') + '</span></div>').join('') : '<div class="empty-state">Aucun échange pour le moment.</div>');
       const toSel = root.querySelector('#swTo'), want = root.querySelector('#swWant'), go = root.querySelector('#swGo');
       if (toSel) {
         toSel.addEventListener('change', async () => {
@@ -3024,12 +3025,12 @@
       const cur = (d.rounds || []).find(r => r.matches.some(m => m.state !== 'done'));
       html += '<p class="tn-when">' + (cur ? '<b>' + escapeHtml(cur.name) + '</b> · ' + (new Date(cur.opens_at) > new Date(d.now) ? 'ouvre ' + escapeHtml(tnDelay(cur.opens_at)) : 'se termine ' + escapeHtml(tnDelay(cur.deadline_at))) : 'Dernier match en cours…') + ' · ' + d.entries + ' joueurs · cagnotte de ' + d.pool + ' crédits</p>';
     } else if (d.phase === 'finished') {
-      html += '<div class="tn-champ">🏆 Champion : ' + escapeHtml(d.champion || '?') + '</div><p class="tn-when">Tournoi terminé · ' + d.entries + ' joueurs · cagnotte de ' + d.pool + ' crédits. Prochain tournoi : inscriptions du 1er au 7 (' + escapeHtml(d.next.label) + ').</p>';
+      html += '<div class="tn-champ">🏆 Champion : ' + pseudoLink(d.champion) + '</div><p class="tn-when">Tournoi terminé · ' + d.entries + ' joueurs · cagnotte de ' + d.pool + ' crédits. Prochain tournoi : inscriptions du 1er au 7 (' + escapeHtml(d.next.label) + ').</p>';
     } else {
       html += '<p class="tn-when">Ce tournoi a été annulé : les droits d\'entrée ont été remboursés. Prochain rendez-vous : inscriptions du 1er au 7 (' + escapeHtml(d.next.label) + ').</p>';
     }
     if (d.phase === 'registration' && d.players && d.players.length) {
-      html += '<div class="prono-sub">Inscrits (têtes de série provisoires, par Elo)</div><div class="tn-chips">' + d.players.map((p, i) => '<span class="tn-chip">' + escapeHtml(p.pseudo) + ' <small>' + p.elo + '</small></span>').join('') + '</div>';
+      html += '<div class="prono-sub">Inscrits (têtes de série provisoires, par Elo)</div><div class="tn-chips">' + d.players.map((p, i) => '<span class="tn-chip">' + pseudoLink(p.pseudo) + ' <small>' + p.elo + '</small></span>').join('') + '</div>';
     }
     head.innerHTML = html;
     const jb = byId('tnJoin'), lb = byId('tnLeave');
@@ -3058,7 +3059,7 @@
     if (!opp) {
       body += '<p class="tn-when">Tu passes ce tour directement (exempt, tête de série n°' + mine.seed + '). Ton prochain match apparaîtra ici.</p>';
     } else {
-      body += '<div class="tn-vs"><div>' + escapeHtml(mine.pseudo) + '<small>#' + mine.seed + ' · Elo ' + mine.elo + '</small></div><div>⚔️</div><div>' + escapeHtml(opp.pseudo) + '<small>#' + opp.seed + ' · Elo ' + opp.elo + '</small></div></div>';
+      body += '<div class="tn-vs"><div>' + pseudoLink(mine.pseudo) + '<small>#' + mine.seed + ' · Elo ' + mine.elo + '</small></div><div>⚔️</div><div>' + pseudoLink(opp.pseudo) + '<small>#' + opp.seed + ' · Elo ' + opp.elo + '</small></div></div>';
       if (m.state === 'done') {
         const won = m.winner === mine.pseudo;
         body += '<div class="tn-champ" style="font-size:16px;">' + (won ? '🏆 Qualifié' : '😔 Éliminé') + (m.via === 'play' ? ' · ' + m.score[side - 1] + '–' + m.score[side === 1 ? 1 : 0] + (m.pens ? ' (tirs au but ' + m.pens[side - 1] + '–' + m.pens[side === 1 ? 1 : 0] + ')' : '') : m.via === 'forfeit' ? ' · par forfait' : m.via === 'double_forfeit' ? ' · double forfait (le mieux classé passe)' : '') + '</div>' +
@@ -3066,7 +3067,7 @@
           (d.me.place === 1 ? '<p class="tn-when">🏆 Tu as gagné le tournoi : cagnotte et trophée versés !</p>' : d.me.place ? '<p class="tn-when">Place ' + d.me.place + (d.me.place === 3 ? ' (demi-finaliste)' : ' (finaliste)') + ' : ta part de la cagnotte est versée.</p>' : '');
       } else if (m.state === 'open') {
         const ready = m.my_team_ready || saved;
-        body += '<div class="tn-chips"><span class="tn-chip' + (ready ? ' ok' : '') + '">Ton équipe : ' + (m.my_team_ready ? '✅ prête' : saved ? '✅ équipe enregistrée' : '❌ pas encore composée') + '</span><span class="tn-chip' + (oppReady ? ' ok' : '') + '">' + escapeHtml(opp.pseudo) + ' : ' + (oppReady ? '✅ prêt' : 'en attente') + '</span></div>' +
+        body += '<div class="tn-chips"><span class="tn-chip' + (ready ? ' ok' : '') + '">Ton équipe : ' + (m.my_team_ready ? '✅ prête' : saved ? '✅ équipe enregistrée' : '❌ pas encore composée') + '</span><span class="tn-chip' + (oppReady ? ' ok' : '') + '">' + pseudoLink(opp.pseudo) + ' : ' + (oppReady ? '✅ prêt' : 'en attente') + '</span></div>' +
           '<p class="tn-when">⏳ Heure limite : <b>' + escapeHtml(tnFmt(m.deadline_at)) + '</b> (' + escapeHtml(tnDelay(m.deadline_at)) + '). ' + (ready ? 'Ton équipe ' + (m.my_team_ready ? 'validée' : 'enregistrée') + ' sera jouée à cette heure si le match ne s\'est pas joué avant : tu peux encore la modifier.' : 'Sans équipe à cette heure : <b>forfait</b>. Une fois validée, elle est gardée pour tout le tournoi.') + '</p><div class="tn-actions"><button class="btn-primary" type="button" id="tnTeam">' + (ready ? '✏️ Modifier mon équipe' : '⚽ Composer mon équipe') + '</button></div>';
       } else {
         body += '<p class="tn-when">Ce match s\'ouvre <b>' + escapeHtml(tnFmt(m.opens_at)) + '</b> (' + escapeHtml(tnDelay(m.opens_at)) + '). ' + (saved ? 'Ton équipe enregistrée sera jouée si tu ne la changes pas.' : 'Tu auras alors 24 h pour composer ton équipe, ou enregistre-la dès maintenant.') + '</p>' + saveBlock;
@@ -3075,7 +3076,7 @@
     const lm = d.me.last;                                         // le dernier match joué, quand le suivant est déjà annoncé
     if (lm && lm.state === 'done') {
       const lside = lm.me_side, lopp = lside === 1 ? lm.p2 : lm.p1, won = lm.winner === (lside === 1 ? lm.p1 : lm.p2).pseudo;
-      body += '<div class="tn-chips" style="margin-top:12px;"><span class="tn-chip ' + (won ? 'ok' : '') + '">Dernier match (' + escapeHtml(lm.round_name) + ') : ' + (won ? '🏆 qualifié' : '😔 éliminé') + ' contre ' + escapeHtml(lopp ? lopp.pseudo : '?') + (lm.via === 'play' ? ' · ' + lm.score[lside - 1] + '–' + lm.score[lside === 1 ? 1 : 0] + (lm.pens ? ' (tirs au but ' + lm.pens[lside - 1] + '–' + lm.pens[lside === 1 ? 1 : 0] + ')' : '') : lm.via === 'forfeit' ? ' · par forfait' : '') + '</span>' + (lm.replay ? '<button class="btn-small" type="button" id="tnReplay">▶️ Voir le match</button>' : '') + '</div>';
+      body += '<div class="tn-chips" style="margin-top:12px;"><span class="tn-chip ' + (won ? 'ok' : '') + '">Dernier match (' + escapeHtml(lm.round_name) + ') : ' + (won ? '🏆 qualifié' : '😔 éliminé') + ' contre ' + pseudoLink(lopp ? lopp.pseudo : '?') + (lm.via === 'play' ? ' · ' + lm.score[lside - 1] + '–' + lm.score[lside === 1 ? 1 : 0] + (lm.pens ? ' (tirs au but ' + lm.pens[lside - 1] + '–' + lm.pens[lside === 1 ? 1 : 0] + ')' : '') : lm.via === 'forfeit' ? ' · par forfait' : '') + '</span>' + (lm.replay ? '<button class="btn-small" type="button" id="tnReplay">▶️ Voir le match</button>' : '') + '</div>';
       d.me.lastId = lm.id;
     }
     box.innerHTML = '<div class="panel-box tn-mine">' + body + '</div>';
@@ -3099,7 +3100,7 @@
   }
   function renderTnPrizes(){ byId('tnPrizes').innerHTML = renderTnPrizesHTML(tnData); }
   function renderTnHistory(list){
-    byId('tnHistory').innerHTML = list.length ? list.map(h => '<div class="tn-hist"><span><b>' + escapeHtml(h.label) + '</b></span>' + (h.status === 'cancelled' ? '<span class="muted">annulé</span>' : '<span>🏆 ' + escapeHtml(h.champion || '?') + (h.finalist ? ' · 🥈 ' + escapeHtml(h.finalist) : '') + (h.semifinalists.length ? ' · 🥉 ' + h.semifinalists.map(escapeHtml).join(', ') : '') + '</span><span class="muted">' + h.players + ' joueurs · ' + h.pool + ' cr.</span>') + '</div>').join('') : '<div class="empty-state">Aucun tournoi terminé pour l\'instant.</div>';
+    byId('tnHistory').innerHTML = list.length ? list.map(h => '<div class="tn-hist"><span><b>' + escapeHtml(h.label) + '</b></span>' + (h.status === 'cancelled' ? '<span class="muted">annulé</span>' : '<span>🏆 ' + pseudoLink(h.champion) + (h.finalist ? ' · 🥈 ' + pseudoLink(h.finalist) : '') + (h.semifinalists.length ? ' · 🥉 ' + h.semifinalists.map(x => pseudoLink(x)).join(', ') : '') + '</span><span class="muted">' + h.players + ' joueurs · ' + h.pool + ' cr.</span>') + '</div>').join('') : '<div class="empty-state">Aucun tournoi terminé pour l\'instant.</div>';
   }
 
   // ---------- Pass de saison ----------
@@ -3124,12 +3125,20 @@
     if (it) parts.push(it.emoji + ' ' + escapeHtml(it.name) + ' <small style="color:var(--text-muted);">(' + ({ badge: 'badge', banner: 'bannière', frame: 'cadre', name_color: 'couleur du pseudo', title: 'titre', stickers: 'autocollants', share_bg: 'fond d\'image', sound: 'son d\'ouverture de packs' }[it.kind]) + ')</small>');
     return '<div class="pass-cell ' + cls + ' ' + r.status + '"><div>' + parts.join('<br>') + '</div><div>' + (r.status === 'ready' ? '<button class="btn-small" type="button" data-pclaim data-track="' + (cls === 'premium' ? 'premium' : 'free') + '" data-level="' + r.__lv + '">Récupérer</button>' : r.status === 'claimed' ? '<span class="pc-st">✓ récupéré</span>' : r.status === 'premium_locked' ? '<span class="pc-st">💎 Premium</span>' : '<span class="pc-st">🔒 jour ' + r.__day + '</span>') + '</div></div>';
   }
+  // Points bonus : au-delà du niveau 30, convertis en crédits à la fin du mois (20 points = 1 crédit)
+  function passBonusHTML(s){
+    const b = s.bonus; if (!b || (!b.points && s.level < 30)) return '';
+    const cr = n => n + ' crédit' + (n > 1 ? 's' : '');
+    return '<div style="font-size:13px;margin-top:4px;">🎁 ' + (b.converted ? b.points + ' points bonus convertis : <b>+' + cr(b.credits) + '</b> versés.'
+      : b.points ? '<b>' + b.points + ' points bonus</b> → <b>' + cr(b.credits) + '</b> ' + (s.ended ? 'versés dans quelques instants.' : 'à la fin du mois') + ' (' + b.per_credit + ' points = 1 crédit).'
+      : 'Au-delà du niveau 30, tes points deviennent des crédits à la fin du mois (' + b.per_credit + ' points = 1 crédit).') + '</div>';
+  }
   function renderPass(){
     const d = passData, cur = d.current, s = passView === 'previous' && d.previous ? d.previous : cur, th = s.theme, body = byId('modalBody'), isCur = s === cur;
     byId('modalTitle').textContent = 'Pass de ' + s.label;
     const status = s.completed ? '🌟 Pass terminé : étoile de prestige gagnée !' : s.level >= 30 ? 'Les 30 niveaux sont débloqués.' : s.waiting_for_day ? '⏳ Le niveau ' + (s.level + 1) + ' s\'ouvre demain : tes ' + s.points + ' points sont gardés.' : 'Encore ' + (100 - s.points_in_level) + ' points pour le niveau ' + (s.level + 1) + ' (un niveau s\'ouvre par jour : le niveau N le jour N).';
     let html = (d.previous ? '<div class="pass-tabs"><button type="button" data-pview="current" class="' + (isCur ? 'on' : '') + '">Pass de ' + escapeHtml(cur.label.split(' ')[0]) + '</button><button type="button" data-pview="previous" class="' + (!isCur ? 'on' : '') + '">↩️ Rattrapage ' + escapeHtml(d.previous.label.split(' ')[0]) + '</button></div>' : '') +
-      '<div class="help-row" style="margin:0 0 8px;"><button class="help-btn" type="button" data-help="pass"><span class="help-q">?</span> Aide</button></div><div class="pass-head" style="--pc1:' + th.c1 + ';--pc2:' + th.c2 + ';"><h3>' + th.emoji + ' ' + escapeHtml(th.name) + ' · niveau ' + s.level + ' / 30</h3><div class="pass-bar"><i style="width:' + (s.level >= 30 ? 100 : s.points_in_level) + '%;"></i></div><div style="font-size:13px;">' + s.points + ' points · ' + escapeHtml(status) + '</div>' +
+      '<div class="help-row" style="margin:0 0 8px;"><button class="help-btn" type="button" data-help="pass"><span class="help-q">?</span> Aide</button></div><div class="pass-head" style="--pc1:' + th.c1 + ';--pc2:' + th.c2 + ';"><h3>' + th.emoji + ' ' + escapeHtml(th.name) + ' · niveau ' + s.level + ' / 30</h3><div class="pass-bar"><i style="width:' + (s.level >= 30 ? 100 : s.points_in_level) + '%;"></i></div><div style="font-size:13px;">' + s.points + ' points · ' + escapeHtml(status) + '</div>' + passBonusHTML(s) +
       '<div class="pc-actions" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">' + (s.double_points ? '<span class="pc-chip hot">⚡ dernière semaine : points doublés</span>' : '') + (s.ended ? '<span class="pc-chip hot">↩️ rattrapage jusqu\'au ' + escapeHtml(passDateFmt(s.catchup_until)) + ' : plus de limite par jour</span>' : '') + (d.stars ? '<span class="pc-chip">' + starsHTML(d.stars) + ' ' + d.stars + ' Pass terminé' + (d.stars > 1 ? 's' : '') + '</span>' : '') + '</div></div>' +
       (isCur && !s.premium ? '<div class="panel-box" style="margin:0 0 10px;"><b>💎 Pass Premium : ' + d.price + ' crédits</b><div style="font-size:13px;color:var(--text-muted);margin:4px 0 8px;">Un objet décoratif par niveau (badges, bannières, cadres, couleurs de pseudo, titres, autocollants, fonds d\'image), un pack rare, 2 packs d\'édition limitée (niveaux 20 et 30) et la <b>carte exclusive du Pass</b> (niveau 25). Si tu l\'achètes en cours de mois, tout ce qui est déjà débloqué est immédiatement récupérable. Uniquement du décoratif : aucun avantage en match.</div><button class="btn-primary" type="button" id="passBuy">Acheter le Premium (' + d.price + ' crédits)</button></div>' : (s.premium ? '<div class="pc-chip" style="display:inline-block;background:var(--bg-sunk);margin-bottom:8px;">💎 Pass Premium actif</div>' : '')) +
       (isCur && !s.ended && s.points < 3000 ? '<div style="margin:0 0 10px;"><button class="btn-small" type="button" id="passBuyLevel">⏩ Acheter le niveau ' + (Math.floor(s.points / 100) + 1) + ' : ' + d.level_price + ' crédits</button><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Tu gagnes les points qui te manquent pour l\'atteindre ; un niveau ne s\'ouvre quand même que le jour qui lui correspond.</div></div>' : '') +
@@ -3203,7 +3212,7 @@
         const when = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + '<br>' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
         const card = t.card.masked ? 'Une carte <b>' + escapeHtml(tierLabel(t.card.tier)) + '</b> <small>' + (t.card.deleted ? '(supprimée du jeu)' : '(nom masqué : tu ne la possèdes pas encore)') + '</small>' : '<b>' + escapeHtml(cardDisplayName(t.card)) + '</b> · ' + escapeHtml(tierLabel(t.card.tier));
         const row = document.createElement('div'); row.className = 'trade-row' + (mine ? ' mine' : '');
-        row.innerHTML = '<div class="trade-date">' + when + '</div><div class="trade-main"><b>' + escapeHtml(t.seller) + '</b> → <b>' + escapeHtml(t.buyer) + '</b><span class="trade-kind">' + (t.kind === 'offre' ? 'Offre d\'achat' : t.kind === 'enchère' ? 'Enchère' : 'Annonce') + '</span><br>' + card + '</div><div class="trade-price">' + t.price + ' crédit' + (t.price > 1 ? 's' : '') + '</div>';
+        row.innerHTML = '<div class="trade-date">' + when + '</div><div class="trade-main"><b>' + pseudoLink(t.seller) + '</b> → <b>' + pseudoLink(t.buyer) + '</b><span class="trade-kind">' + (t.kind === 'offre' ? 'Offre d\'achat' : t.kind === 'enchère' ? 'Enchère' : 'Annonce') + '</span><br>' + card + '</div><div class="trade-price">' + t.price + ' crédit' + (t.price > 1 ? 's' : '') + '</div>';
         root.appendChild(row);
       });
     } catch(e) { /* silencieux : l'historique est un plus */ }
@@ -3599,6 +3608,13 @@
   }
   function updateModalBack(){ const b = byId('modalBackBtn'); if (b) b.hidden = !modalHistory.length; }
   document.getElementById('modalBackBtn').addEventListener('click', modalHistoryBack);
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('.pseudo-link[data-pseudo]'); if (!b) return;
+    e.preventDefault(); e.stopPropagation(); openProfile(b.dataset.pseudo);
+  }, true);
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.pseudo-link.pl[data-pseudo]')) { e.preventDefault(); openProfile(e.target.dataset.pseudo); }
+  });
   document.getElementById('modalCloseBtn').addEventListener('click', closeUserCollectionModal);
   document.getElementById('userCollectionModal').addEventListener('click', (e) => {
     if (e.target.id === 'userCollectionModal') closeUserCollectionModal();
@@ -3688,6 +3704,7 @@
         '<li><b>30 niveaux, un par jour.</b> Chaque niveau coûte 100 points ; le niveau N s\'ouvre le jour N du mois. Si tu dépasses 100 points dès le 1er jour, rien n\'est perdu : le niveau 2 attend simplement le lendemain. En février, les derniers niveaux s\'ouvrent le dernier jour.</li>' +
         '<li><b>Points</b> : mission +20 (jusqu\'à 80 par jour), match 1v1 +10 (50 par jour), échange de cartes +15 (30 par jour), pronostic +15 (30 par jour) puis score exact +60, mini-jeu du jour jusqu\'à +50, tournoi +30 à l\'inscription puis +20 par tour gagné, défi du club jusqu\'à +60 (première victoire du jour : +10 en Facile, +20 en Normal, +30 en Difficile).</li>' +
         '<li><b>Dernière semaine du mois : points doublés.</b></li>' +
+        '<li><b>Points bonus</b> : les points gagnés au-delà du niveau 30 (3000 points) ne sont pas perdus. À la fin du mois, ils deviennent des crédits : <b>20 points = 1 crédit</b>, versés automatiquement avec une notification.</li>' +
         '<li><b>Son d\'ouverture</b> : à partir de novembre 2026, le niveau 18 du Premium donne le son d\'ouverture de packs du thème du mois. Choisis-le (ou reviens au hurlement du loup) dans « 🎨 Mes objets » ; le bouton 🔊/🔇 coupe tous les sons.</li>' +
         '<li><b>Rattrapage</b> : les récompenses non réclamées restent disponibles 7 jours après la fin du mois, sans limite par jour. Passé ce délai, le Pass disparaît.</li>' +
         '<li><b>Récupérer tout</b> : le bouton en haut du Pass récupère d\'un coup toutes les récompenses déjà débloquées (gratuites, Premium et objectif du club), avec un seul récapitulatif.</li>' +
@@ -4134,7 +4151,7 @@
       (d.preview ? '<span class="noir-preview">Aperçu : visible seulement par toi jusqu\'au démarrage (' + escapeHtml(d.start_label) + ')</span>' : '') +
       '<p>Chaque jour à ' + d.lot_hour + 'h00, le club met aux enchères des cartes <b>uniques</b> Édition Noire (' + d.total + ' exemplaires numérotés par personne, jamais plus). Fin le lendemain à ' + d.end_hour + 'h00. ' + next + '</p>' +
       (d.lots.length ? '<div class="noir-grid"></div>' : '<p><i>Aucune enchère du club en cours.</i></p>') +
-      (d.results && d.results.length ? '<p style="margin-top:10px;"><b>Derniers gagnants</b></p><ul class="noir-results">' + d.results.map(r => '<li>' + escapeHtml(r.subject) + ' <span class="num-badge">N° ' + r.number + '/' + r.total + '</span> → <b>' + escapeHtml(r.winner || '?') + '</b> (' + r.price + ' crédits)</li>').join('') + '</ul>' : '') +
+      (d.results && d.results.length ? '<p style="margin-top:10px;"><b>Derniers gagnants</b></p><ul class="noir-results">' + d.results.map(r => '<li>' + escapeHtml(r.subject) + ' <span class="num-badge">N° ' + r.number + '/' + r.total + '</span> → <b>' + pseudoLink(r.winner) + '</b> (' + r.price + ' crédits)</li>').join('') + '</ul>' : '') +
       '</section>';
     const grid = root.querySelector('.noir-grid'); if (!grid) return;
     d.lots.forEach(l => {
@@ -4144,7 +4161,7 @@
       if (l.card) { cardEl.style.cursor = 'pointer'; cardEl.title = 'Voir la fiche'; cardEl.addEventListener('click', () => openPlayerDetail(l.card.player_name, l.card.tier, Object.assign({}, l.card, { quantity: 0 }))); }
       box.appendChild(cardEl);
       const info = document.createElement('div');
-      info.innerHTML = '<div>' + (l.current_bid === null ? 'Départ : <b>' + l.start_price + ' crédits</b>' : '<b>' + l.current_bid + ' crédits</b> · ' + (l.i_am_top ? 'toi 🏆' : escapeHtml(l.top_bidder))) + '</div>' +
+      info.innerHTML = '<div>' + (l.current_bid === null ? 'Départ : <b>' + l.start_price + ' crédits</b>' : '<b>' + l.current_bid + ' crédits</b> · ' + (l.i_am_top ? 'toi 🏆' : pseudoLink(l.top_bidder))) + '</div>' +
         '<div>Se termine ' + dayWord(l.ends_at) + ' à ' + hhmm(l.ends_at) + (ext ? ' (prolongée)' : '') + '</div><div>⏱ <span class="auc-left" data-end="' + end + '">' + fmtLeft(l.seconds_left) + '</span></div>';
       box.appendChild(info);
       if (token) {
@@ -4184,8 +4201,8 @@
     root.innerHTML = ''; const wrap = document.createElement('div'); wrap.className = 'listings';
     list.forEach(a => {
       const row = document.createElement('div'); row.className = 'listing auction'; const end = auctionsState.t0 + a.seconds_left * 1000;
-      row.innerHTML = '<div class="mini-badge tier-' + a.card.tier + noirClass(a.card) + '">' + escapeHtml(a.card.player_name.slice(0, 2)) + '</div><div class="listing-text"><b>' + (a.mine ? 'Toi' : escapeHtml(a.seller_pseudo)) + '</b> met <b>' + escapeHtml(a.card.player_name) + '</b> (' + tierLabel(a.card.tier) + ')' + (a.level ? ' <b>Niv. ' + a.level + '</b>' : '') + ' aux enchères' + (a.level ? ' <span class="muted">(niveau ' + a.level + ', perdu si tu as déjà un niveau ≥ ' + a.level + ')</span>' : '') +
-        '<div class="listing-meta">' + (a.current_bid === null ? 'Départ : ' + a.start_price + ' crédits · aucune enchère' : 'Meilleure enchère : <b>' + a.current_bid + ' crédits</b> par ' + (a.i_am_top ? 'toi 🏆' : escapeHtml(a.top_bidder)) + ' (' + a.bids + ' enchère' + (a.bids > 1 ? 's' : '') + ')') + ' · ⏱ <span class="auc-left" data-end="' + end + '">' + fmtLeft(a.seconds_left) + '</span></div></div>';
+      row.innerHTML = '<div class="mini-badge tier-' + a.card.tier + noirClass(a.card) + '">' + escapeHtml(a.card.player_name.slice(0, 2)) + '</div><div class="listing-text"><b>' + (a.mine ? 'Toi' : pseudoLink(a.seller_pseudo)) + '</b> met <b>' + escapeHtml(a.card.player_name) + '</b> (' + tierLabel(a.card.tier) + ')' + (a.level ? ' <b>Niv. ' + a.level + '</b>' : '') + ' aux enchères' + (a.level ? ' <span class="muted">(niveau ' + a.level + ', perdu si tu as déjà un niveau ≥ ' + a.level + ')</span>' : '') +
+        '<div class="listing-meta">' + (a.current_bid === null ? 'Départ : ' + a.start_price + ' crédits · aucune enchère' : 'Meilleure enchère : <b>' + a.current_bid + ' crédits</b> par ' + (a.i_am_top ? 'toi 🏆' : pseudoLink(a.top_bidder)) + ' (' + a.bids + ' enchère' + (a.bids > 1 ? 's' : '') + ')') + ' · ⏱ <span class="auc-left" data-end="' + end + '">' + fmtLeft(a.seconds_left) + '</span></div></div>';
       linkCardSheet(row, a.card);
       const act = document.createElement('div'); act.className = 'auc-actions';
       if (a.mine) { if (!a.bids) { const b = document.createElement('button'); b.className = 'btn-small ghost'; b.textContent = 'Annuler'; b.addEventListener('click', () => cancelAuction(a.id)); act.appendChild(b); } }
@@ -4368,7 +4385,7 @@
       const row = document.createElement('div'); row.className = 'listing';
       row.innerHTML =
         '<div class="mini-badge tier-' + l.card.tier + noirClass(l.card) + '">' + escapeHtml(l.card.player_name.slice(0,2)) + '</div>' +
-        '<div class="listing-text"><b>' + (mine ? 'Toi' : escapeHtml(l.seller_pseudo)) + '</b> vend <b>' + escapeHtml(l.card.player_name) + '</b> (' + tierLabel(l.card.tier) + ') pour <b>' + l.price + ' crédits</b>' +
+        '<div class="listing-text"><b>' + (mine ? 'Toi' : pseudoLink(l.seller_pseudo)) + '</b> vend <b>' + escapeHtml(l.card.player_name) + '</b> (' + tierLabel(l.card.tier) + ') pour <b>' + l.price + ' crédits</b>' +
         '<div class="listing-meta">' + (l.card.display_note ? ('⭐ ' + l.card.display_note.value) : cardKind(l.card) === 'fan' ? '🎉 Supporter' : cardKind(l.card) === 'numerotee' ? '<span class="num-badge">' + numBadgeText(l.card) + '</span>' : itemIcon(l.card) + ' Carte de collection') + (l.level ? ' · <b>Niv. ' + l.level + '</b> <span title="Si tu as déjà cette carte au niveau ' + l.level + ' ou plus, tu gardes ton niveau">(niveau ' + l.level + ', perdu si tu as déjà un niveau ≥ ' + l.level + ')</span>' : '') + '</div></div>';
       linkCardSheet(row, l.card);
       const btn = document.createElement('button');
@@ -4625,6 +4642,13 @@
     return d.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   }
   function signed(n){ return (n > 0 ? '+' : '') + n; }
+  // Un pseudo de joueur cliquable : ouvre son profil. Un seul gestionnaire pour tout le site (plus bas, phase de capture : il passe avant le clic
+  // de la ligne ou de la carte qui contient le pseudo). Un <span> et pas un <button> : il peut se placer dans un bouton ou une ligne cliquable.
+  function pseudoLink(pseudo){
+    if (!pseudo || pseudo === '?') return escapeHtml(pseudo || '?');
+    return '<span class="pseudo-link pl" role="button" tabindex="0" title="Voir le profil" data-pseudo="' + escapeHtml(pseudo) + '">' + escapeHtml(pseudo) + '</span>';
+  }
+  const recapName = (recap, n) => recap && recap.club && n === recap.defender ? escapeHtml(n) : pseudoLink(n);      // (le club n'a pas de profil)
   function eloGap(before, after){ return (typeof before === 'number' && typeof after === 'number') ? ' (' + signed(after - before) + ')' : ''; }     // écart d'Elo entre parenthèses
 
   async function loadDuelsTab(){
@@ -4663,7 +4687,7 @@
         : '🏅 Titre « ' + escapeHtml(t.label) + ' » : bats le club <b>' + t.needed + ' fois</b> au niveau Difficile' + (t.hard_wins != null ? ' (tu en es à <b>' + t.hard_wins + '</b>)' : '') + '.';
       byId('clubFoot').innerHTML = '<div><h3>🏆 Tombeurs du club</h3>' + (rank.length
         ? '<table><thead><tr><th>#</th><th>Joueur</th><th class="num">🔴</th><th class="num">🟠</th><th class="num">🟢</th></tr></thead><tbody>' +
-          rank.map((r, i) => '<tr' + (r.pseudo === me ? ' class="me"' : '') + '><td>' + (i + 1) + '</td><td>' + escapeHtml(r.pseudo) + '</td><td class="num"><b>' + r.difficile + '</b></td><td class="num">' + r.normal + '</td><td class="num">' + r.facile + '</td></tr>').join('') + '</tbody></table>'
+          rank.map((r, i) => '<tr' + (r.pseudo === me ? ' class="me"' : '') + '><td>' + (i + 1) + '</td><td>' + pseudoLink(r.pseudo) + '</td><td class="num"><b>' + r.difficile + '</b></td><td class="num">' + r.normal + '</td><td class="num">' + r.facile + '</td></tr>').join('') + '</tbody></table>'
         : '<div class="empty-state">Personne n\'a encore battu le club : à toi de jouer !</div>') + '</div><div><h3>Titre à débloquer</h3><p class="duel-hint" style="margin:0;">' + titleHTML + '</p></div>';
     } catch(e) { root.innerHTML = '<div class="empty-state">Le défi du club n\'a pas pu être chargé.</div>'; }
   }
@@ -4689,7 +4713,7 @@
         '<th class="num" title="Matchs joués">M</th><th class="num" title="Victoires">V</th><th class="num" title="Défaites">D</th><th class="num" title="Nuls">N</th><th class="num" title="Différence de buts : buts marqués moins buts encaissés">Diff</th></tr></thead><tbody>';
       rows.forEach((r, i) => {
         const mine = r.pseudo === myPseudo;
-        html += '<tr class="' + (mine ? 'me' : '') + '"><td><span class="rank-num">#' + (i + 1) + '</span></td><td>' + escapeHtml(r.pseudo) + (mine ? ' (toi)' : '') +
+        html += '<tr class="' + (mine ? 'me' : '') + '"><td><span class="rank-num">#' + (i + 1) + '</span></td><td>' + pseudoLink(r.pseudo) + (mine ? ' (toi)' : '') +
           '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.played + '</td><td class="num">' + r.wins + '</td><td class="num">' + r.losses + '</td><td class="num">' + r.draws + '</td>' +
           '<td class="num"><b class="' + (r.goal_diff > 0 ? 'diff-pos' : r.goal_diff < 0 ? 'diff-neg' : '') + '">' + (r.goal_diff > 0 ? '+' + r.goal_diff : r.goal_diff < 0 ? '−' + Math.abs(r.goal_diff) : '0') + '</b></td></tr>';
       });
@@ -4774,9 +4798,9 @@
       root.innerHTML = '';
       rows.forEach(h => {
         const row = document.createElement('div'); row.className = 'history-row';
-        const outcome = h.winner ? '🏆 ' + escapeHtml(h.winner) : '🤝 match nul';
-        row.innerHTML = '<div class="history-main"><b>' + escapeHtml(h.challenger) + '</b><span class="history-score">' + h.score_challenger + ' – ' + h.score_defender +
-          '</span><b>' + escapeHtml(h.defender) + '</b><div class="history-meta">' + formatDuelDate(h.date) + ' · mise ' + h.stake + ' cr. · ' + outcome + '</div></div>';
+        const outcome = h.winner ? '🏆 ' + pseudoLink(h.winner) : '🤝 match nul';
+        row.innerHTML = '<div class="history-main"><b>' + pseudoLink(h.challenger) + '</b><span class="history-score">' + h.score_challenger + ' – ' + h.score_defender +
+          '</span><b>' + pseudoLink(h.defender) + '</b><div class="history-meta">' + formatDuelDate(h.date) + ' · mise ' + h.stake + ' cr. · ' + outcome + '</div></div>';
         const btn = document.createElement('button'); btn.className = 'btn-small ghost'; btn.textContent = 'Voir le match';
         btn.addEventListener('click', () => openHistoryMatch(h.id));
         row.appendChild(btn); root.appendChild(row);
@@ -4804,7 +4828,7 @@
         const row = document.createElement('div'); row.className = 'proposal-row';
         // la disposition d'un défi est secrète (seul son créateur la voit) : elle va avec la tactique (synergie)
         const label = pr.formation && duelConfig && duelConfig.formation_labels[pr.formation] ? ' (' + duelConfig.formation_labels[pr.formation] + ')' : '';
-        row.innerHTML = '<div class="proposal-main"><b>' + escapeHtml(pr.creator) + '</b>' + (mine ? ' (toi)' : '') + ' · Elo ' + pr.creator_elo +
+        row.innerHTML = '<div class="proposal-main"><b>' + pseudoLink(pr.creator) + '</b>' + (mine ? ' (toi)' : '') + ' · Elo ' + pr.creator_elo +
           '<div class="proposal-meta">' + (pr.formation ? 'Disposition ' + escapeHtml(pr.formation) + label : 'Disposition secrète') + (pr.has_fan ? ' · avec un Fan' : '') + (pr.has_mascot ? ' · avec le Loup' : '') + (pr.equipment_count ? ' · ' + pr.equipment_count + ' équipement' + (pr.equipment_count > 1 ? 's' : '') : '') + ' · mise <b>' + pr.stake + ' crédits</b> · tactique secrète</div></div>';
         if (pr.target) row.querySelector('.proposal-meta').insertAdjacentHTML('beforeend', '<br>🎯 <b>Défi privé</b> ' + (pr.target_is_me ? 'pour toi' : 'pour ' + escapeHtml(pr.target)));
         const btn = document.createElement('button'); btn.className = 'btn-small' + (mine ? ' ghost' : '');
@@ -5175,7 +5199,7 @@
   function renderMatchStats(recap){
     const root = byId('msStats'), st = recap && recap.lineups && recap.lineups.stats;
     if (!st) { root.innerHTML = ''; return; }
-    root.innerHTML = '<h4>📊 Statistiques du match</h4><div class="mst-row"><span class="v">' + escapeHtml(recap.challenger) + '</span><span></span><span class="v b">' + escapeHtml(recap.defender) + '</span></div>' +
+    root.innerHTML = '<h4>📊 Statistiques du match</h4><div class="mst-row"><span class="v">' + recapName(recap, recap.challenger) + '</span><span></span><span class="v b">' + recapName(recap, recap.defender) + '</span></div>' +
       MATCH_STAT_ROWS.filter(([k]) => st[k]).map(([k, label, unit]) => {
         const [a, b] = st[k], tot = a + b, pa = tot ? a / tot * 100 : 50;
         return '<div class="mst-row"><span class="v">' + a + (unit || '') + '</span><div class="mst-mid"><span class="mst-label">' + label + '</span><div class="mst-bar"><span class="a" style="width:' + pa + '%"></span><span class="b" style="width:' + (100 - pa) + '%"></span></div></div><span class="v b">' + b + (unit || '') + '</span></div>';
@@ -5190,7 +5214,7 @@
       const players = t.players.slice().sort((a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot));
       const tacticLabel = cfg && cfg.tactics[t.tactic] ? cfg.tactics[t.tactic].label : t.tactic;
       const box = document.createElement('div'); box.className = 'lineup';
-      let html = '<h4>' + escapeHtml(t.pseudo) + '</h4><div class="lu-sub">' + escapeHtml(t.formation) + ' · ' + escapeHtml(tacticLabel || '') +
+      let html = '<h4>' + (t.club_bonus_pct != null ? escapeHtml(t.pseudo) : pseudoLink(t.pseudo)) + '</h4><div class="lu-sub">' + escapeHtml(t.formation) + ' · ' + escapeHtml(tacticLabel || '') +
         (t.synergy ? ' · Synergie ' + escapeHtml((tacticLabel || '').toLowerCase()) + ' + ' + escapeHtml(t.formation) + ' (+' + pctFr(t.synergy_bonus_pct) + ' %)' : '') +
         (t.fan ? ' · Fan ' + escapeHtml(t.fan.player) + ' (+' + pctFr(t.fan.bonus_pct) + ' %' + (t.fan.form != null && t.fan.form < 100 ? ', forme ' + pctFr(t.fan.form) + ' %' : '') + ')' : '') +
         (t.mascot ? ' · Loup ' + escapeHtml(t.mascot.player) + (t.mascot.credits_per_match != null      // (avant le rééquilibrage, le Loup donnait un bonus en %)
@@ -5213,17 +5237,17 @@
   function refereeLine(recap, isNew){
     const ref = recap.referee || (recap.lineups && recap.lineups.referee);
     if (!ref || (!ref.challenger && !ref.defender)) return '';
-    const who = ref.winner === 'challenger' ? (isNew ? 'tu as eu' : escapeHtml(recap.challenger) + ' a eu') + ' le bonus de l\'arbitre (+' + ref.bonus_pct + ' %)'
-      : ref.winner === 'defender' ? escapeHtml(recap.defender) + ' a eu le bonus de l\'arbitre (+' + ref.bonus_pct + ' %)'
+    const who = ref.winner === 'challenger' ? (isNew ? 'tu as eu' : recapName(recap, recap.challenger) + ' a eu') + ' le bonus de l\'arbitre (+' + ref.bonus_pct + ' %)'
+      : ref.winner === 'defender' ? recapName(recap, recap.defender) + ' a eu le bonus de l\'arbitre (+' + ref.bonus_pct + ' %)'
       : 'l\'arbitre a empoché les deux enveloppes sans favoriser personne';
-    const names = isNew ? 'toi ' + ref.challenger + ' · ' + escapeHtml(recap.defender) + ' ' + ref.defender : escapeHtml(recap.challenger) + ' ' + ref.challenger + ' · ' + escapeHtml(recap.defender) + ' ' + ref.defender;
+    const names = isNew ? 'toi ' + ref.challenger + ' · ' + recapName(recap, recap.defender) + ' ' + ref.defender : recapName(recap, recap.challenger) + ' ' + ref.challenger + ' · ' + recapName(recap, recap.defender) + ' ' + ref.defender;
     return '<br>🧧 Enveloppes pour l\'arbitre : ' + names + ' → ' + who + '.';
   }
   function renderMatchResult(recap, isNew){
     const root = byId('msResult');
     if (recap.tournament) {
       const tn = recap.tournament;
-      root.innerHTML = '<div class="match-result"><div class="big">🏆 ' + escapeHtml(tn.winner || '?') + ' se qualifie</div>' + escapeHtml(tn.round_name) + ' du tournoi de ' + escapeHtml(tn.label) + (tn.pens ? ' · égalité, tirs au but : <b>' + tn.pens[0] + '–' + tn.pens[1] + '</b>' : '') + '<br><span class="muted">Match de tournoi : il ne compte ni pour l\'Elo ni pour les statistiques, et ne rapporte ni pack ni crédits.</span></div>';
+      root.innerHTML = '<div class="match-result"><div class="big">🏆 ' + pseudoLink(tn.winner) + ' se qualifie</div>' + escapeHtml(tn.round_name) + ' du tournoi de ' + escapeHtml(tn.label) + (tn.pens ? ' · égalité, tirs au but : <b>' + tn.pens[0] + '–' + tn.pens[1] + '</b>' : '') + '<br><span class="muted">Match de tournoi : il ne compte ni pour l\'Elo ni pour les statistiques, et ne rapporte ni pack ni crédits.</span></div>';
       return;
     }
     if (recap.draft) {
@@ -5248,7 +5272,7 @@
       html = '<div class="big">' + head + '</div>' + escapeHtml(money) + ' · Elo ' + recap.elo_challenger_before + ' → ' + recap.elo_challenger_after +
         ' (' + signed(recap.elo_challenger_after - recap.elo_challenger_before) + ')' + refereeLine(recap, true);
       if (recap.pack_match_won) html += '<br>🎁 Tu gagnes un <b>pack match</b> !<br><button class="btn-small" id="msGoPacks" style="margin-top:6px;">Aller l\'ouvrir</button>';
-      else if (recap.result === 'défaite') html += ((recap.pack_none_to || []).includes(recap.defender) ? '<br>💰 ' + escapeHtml(recap.defender) + ' a déjà gagné ses ' + (recap.duel_pack_cap || 10) + ' packs 1v1 du jour : il reçoit des crédits à la place.' : '<br>🎁 Le pack match revient à ' + escapeHtml(recap.defender) + '.');
+      else if (recap.result === 'défaite') html += ((recap.pack_none_to || []).includes(recap.defender) ? '<br>💰 ' + pseudoLink(recap.defender) + ' a déjà gagné ses ' + (recap.duel_pack_cap || 10) + ' packs 1v1 du jour : il reçoit des crédits à la place.' : '<br>🎁 Le pack match revient à ' + pseudoLink(recap.defender) + '.');
       const myBonus = (recap.credits_instead || {})[recap.challenger];
       if (myBonus) html += '<br>💰 Tu as déjà gagné tes <b>' + (recap.duel_pack_cap || 10) + ' packs du jour en 1v1</b> : tu reçois <b>+' + myBonus + ' crédit' + (myBonus > 1 ? 's' : '') + '</b> à la place, pour acheter des packs au Shop. Les packs reviennent à minuit.';
       const myLoup = (recap.loup_credits || {})[recap.challenger];
@@ -5256,9 +5280,9 @@
       if (recap.pack_classique_won) html += '<br>🎁 Tu reçois un <b>pack classique</b> ' + (recap.result === 'nul' ? '(match nul : chacun en reçoit un) !' : 'en consolation !') + '<br><button class="btn-small" id="msGoPacks" style="margin-top:6px;">Aller l\'ouvrir</button>';
     } else {
       const winner = sa > sb ? recap.challenger : (sb > sa ? recap.defender : null);
-      html = '<div class="big">' + (winner ? '🏆 ' + escapeHtml(winner) : '🤝 Match nul') + '</div>mise ' + recap.stake + ' crédits · Elo ' +
-        escapeHtml(recap.challenger) + ' ' + recap.elo_challenger_before + ' → ' + recap.elo_challenger_after + eloGap(recap.elo_challenger_before, recap.elo_challenger_after) + ' · ' +
-        escapeHtml(recap.defender) + ' ' + recap.elo_defender_before + ' → ' + recap.elo_defender_after + eloGap(recap.elo_defender_before, recap.elo_defender_after) + refereeLine(recap, false);
+      html = '<div class="big">' + (winner ? '🏆 ' + pseudoLink(winner) : '🤝 Match nul') + '</div>mise ' + recap.stake + ' crédits · Elo ' +
+        pseudoLink(recap.challenger) + ' ' + recap.elo_challenger_before + ' → ' + recap.elo_challenger_after + eloGap(recap.elo_challenger_before, recap.elo_challenger_after) + ' · ' +
+        pseudoLink(recap.defender) + ' ' + recap.elo_defender_before + ' → ' + recap.elo_defender_after + eloGap(recap.elo_defender_before, recap.elo_defender_after) + refereeLine(recap, false);
     }
     root.innerHTML = '<div class="match-result">' + html + '</div>';
     const go = byId('msGoPacks');
@@ -5285,7 +5309,7 @@
     matchState.recap = recap; matchState.isNew = !!opts.isNew;
     const token = ++matchState.token;
     byId('msTitle').textContent = opts.isNew ? 'Match en direct' : 'Récap du match';
-    byId('msNameA').textContent = recap.challenger; byId('msNameB').textContent = recap.defender;
+    byId('msNameA').innerHTML = recapName(recap, recap.challenger); byId('msNameB').innerHTML = recapName(recap, recap.defender);
     byId('msTimeline').innerHTML = ''; byId('msResult').innerHTML = ''; byId('msStats').innerHTML = ''; byId('msLineups').innerHTML = ''; byId('msRematch').style.display = 'none';
     setMatchScore(0, 0, false); byId('msClock').textContent = "0'";
     byId('msReplay').style.display = 'none';
@@ -5361,7 +5385,7 @@
     const [y, m] = d.season.split('-');
     byId('draftRankTitle').textContent = '🏆 Classement draft · ' + new Date(+y, +m - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
     root.innerHTML = d.ranking.length ? '<table class="duel-table"><thead><tr><th></th><th>Joueur</th><th class="num">Elo</th><th class="num">M</th><th class="num">V</th><th class="num">N</th><th class="num">D</th></tr></thead><tbody>' +
-      d.ranking.map((r, i) => '<tr' + (r.pseudo === myPseudo ? ' class="me"' : '') + '><td><span class="rank-num">#' + (i + 1) + '</span></td><td>' + escapeHtml(r.pseudo) + '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.played + '</td><td class="num">' + r.wins + '</td><td class="num">' + r.draws + '</td><td class="num">' + r.losses + '</td></tr>').join('') + '</tbody></table>'
+      d.ranking.map((r, i) => '<tr' + (r.pseudo === myPseudo ? ' class="me"' : '') + '><td><span class="rank-num">#' + (i + 1) + '</span></td><td>' + pseudoLink(r.pseudo) + '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.played + '</td><td class="num">' + r.wins + '</td><td class="num">' + r.draws + '</td><td class="num">' + r.losses + '</td></tr>').join('') + '</tbody></table>'
       : '<div class="empty-state">Personne n\'a encore joué de draft ce mois-ci. Le classement repart de zéro chaque mois.</div>';
   }
 
@@ -5383,7 +5407,7 @@
     if (!d.open_rooms.length) open.innerHTML = '<div class="empty-state">Personne n\'attend pour l\'instant : crée une partie, ou invite quelqu\'un.</div>';
     d.open_rooms.forEach(o => {
       const row = document.createElement('div'); row.className = 'draft-open-row' + (o.invited ? ' invited' : '');
-      row.innerHTML = '<span>' + (o.invited ? '📩 <b>' + escapeHtml(o.host) + '</b> t\'invite' : '<b>' + escapeHtml(o.host) + '</b> cherche un adversaire') + ' <span class="muted">· encore ' + fmtSec(o.remaining) + '</span></span>';
+      row.innerHTML = '<span>' + (o.invited ? '📩 <b>' + pseudoLink(o.host) + '</b> t\'invite' : '<b>' + pseudoLink(o.host) + '</b> cherche un adversaire') + ' <span class="muted">· encore ' + fmtSec(o.remaining) + '</span></span>';
       const b = document.createElement('button'); b.className = 'btn-primary'; b.type = 'button'; b.textContent = 'Rejoindre';
       b.addEventListener('click', async () => {
         b.disabled = true;
@@ -5610,13 +5634,13 @@
     let d; try { d = await api('/communaute'); } catch(e) { root.innerHTML = '<div class="empty-state">' + escapeHtml(e.message) + '</div>'; return; }
     const day = s => s ? new Date(s + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : '';
     const empty = t => '<div class="empty-state">' + t + '</div>';
-    const last = d.last_result && d.last_result.name ? '<p class="duel-hint">🏆 Dernier vote (' + day(d.last_result.day) + ') : <b>' + escapeHtml(d.last_result.name) + '</b>, proposée par ' + escapeHtml(d.last_result.author) + ' (' + d.last_result.votes + ' voix).</p>' : '';
-    const cands = d.candidates.length ? '<div class="cm-list">' + d.candidates.map(p => '<div class="cm-item' + (d.my_vote === p.id ? ' voted' : '') + '"><div class="cm-main"><div class="cm-name">' + escapeHtml(p.name) + '</div><div class="cm-sub">par ' + escapeHtml(p.author) + ' · 🖼️ ' + escapeHtml(p.image_desc) + '</div></div>' +
+    const last = d.last_result && d.last_result.name ? '<p class="duel-hint">🏆 Dernier vote (' + day(d.last_result.day) + ') : <b>' + escapeHtml(d.last_result.name) + '</b>, proposée par ' + pseudoLink(d.last_result.author) + ' (' + d.last_result.votes + ' voix).</p>' : '';
+    const cands = d.candidates.length ? '<div class="cm-list">' + d.candidates.map(p => '<div class="cm-item' + (d.my_vote === p.id ? ' voted' : '') + '"><div class="cm-main"><div class="cm-name">' + escapeHtml(p.name) + '</div><div class="cm-sub">par ' + pseudoLink(p.author) + ' · 🖼️ ' + escapeHtml(p.image_desc) + '</div></div>' +
       (p.mine ? '<span class="muted" style="font-size:12px;">ta proposition</span>' : d.my_vote === p.id ? '<span class="cm-status accepted">✅ Ma voix</span>' : '<button type="button" class="btn-small" data-cm-vote="' + p.id + '">Voter</button>') + '</div>').join('') + '</div>'
       : empty('Aucune proposition dans le vote pour l\'instant : propose la tienne !');
     const mine = d.mine.length ? '<div class="cm-list">' + d.mine.map(p => '<div class="cm-item"><div class="cm-main"><div class="cm-name">' + escapeHtml(p.name) + '</div><div class="cm-sub">🖼️ ' + escapeHtml(p.image_desc) + (p.status === 'refused' && p.reason ? '<br>Raison : ' + escapeHtml(p.reason) : '') + '</div></div><span class="cm-status ' + p.status + '">' + CM_STATUS[p.status] + '</span>' +
       (p.status === 'pending' || p.status === 'accepted' ? '<button type="button" class="btn-small ghost" data-cm-withdraw="' + p.id + '" title="Retirer cette proposition">✕</button>' : '') + '</div>').join('') + '</div>' : empty('Tu n\'as encore rien proposé.');
-    const out = d.released.length ? '<div class="cm-list">' + d.released.map(p => '<div class="cm-item"><div class="cm-main"><div class="cm-name">💡 ' + escapeHtml(p.name) + '</div><div class="cm-sub">par ' + escapeHtml(p.author) + (p.released_day ? ' · vote du ' + day(p.released_day) + (p.votes != null ? ' (' + p.votes + ' voix)' : '') : '') + '</div></div></div>').join('') + '</div>' : empty('Aucune carte sortie pour l\'instant.');
+    const out = d.released.length ? '<div class="cm-list">' + d.released.map(p => '<div class="cm-item"><div class="cm-main"><div class="cm-name">💡 ' + escapeHtml(p.name) + '</div><div class="cm-sub">par ' + pseudoLink(p.author) + (p.released_day ? ' · vote du ' + day(p.released_day) + (p.votes != null ? ' (' + p.votes + ' voix)' : '') : '') + '</div></div></div>').join('') + '</div>' : empty('Aucune carte sortie pour l\'instant.');
     root.innerHTML =
       '<div class="panel-box"><h2>🗳️ Vote du jour</h2><p class="duel-hint">Une voix par jour (modifiable), pas pour ta propre proposition. Fin du vote ' + day(d.vote_day) + ' à ' + d.close_hour + ' h · ' + d.voters + ' votant' + (d.voters > 1 ? 's' : '') + ' pour l\'instant. Les voix restent secrètes jusqu\'au résultat.</p>' + last + cands + '</div>' +
       '<div class="panel-box"><h2>✍️ Proposer une carte</h2><form class="cm-form" id="cmForm"><input id="cmName" type="text" maxlength="' + d.limits.name_max + '" placeholder="Nom de la carte (ex. La panne du minibus)" required>' +
@@ -5645,10 +5669,10 @@
     root.innerHTML = '<div class="empty-state">Chargement…</div>';
     let d; try { d = await api('/pantheon'); } catch(e) { root.innerHTML = '<div class="empty-state">' + escapeHtml(e.message) + '</div>'; return; }
     const empty = t => '<div class="empty-state">' + t + '</div>';
-    const records = d.records.length ? '<div class="panth-records">' + d.records.map(r => '<div class="panth-rec"><div class="panth-rec-label">' + escapeHtml(r.label) + '</div><div class="panth-rec-value">' + escapeHtml(r.value) + '</div><div class="panth-rec-holder">👑 ' + escapeHtml(r.holder) + '</div>' +
+    const records = d.records.length ? '<div class="panth-records">' + d.records.map(r => '<div class="panth-rec"><div class="panth-rec-label">' + escapeHtml(r.label) + '</div><div class="panth-rec-value">' + escapeHtml(r.value) + '</div><div class="panth-rec-holder">👑 ' + pseudoLink(r.holder) + '</div>' +
       (r.detail || r.date ? '<div class="panth-rec-detail">' + escapeHtml(r.detail || '') + (r.detail && r.date ? ' · ' : '') + panthDate(r.date) + '</div>' : '') + '</div>').join('') + '</div>' : empty('Aucun record pour l\'instant : à vous de les écrire !');
-    const seasonsHTML = d.seasons.length ? d.seasons.map(s => '<div class="panth-row"><span class="panth-when">' + escapeHtml(s.label) + '</span><span class="panth-names">' + s.podium.map(p => PANTH_MEDAL[p.rank] + ' <b>' + escapeHtml(p.pseudo) + '</b> <span class="muted">' + p.elo + '</span>').join(' · ') + '</span></div>').join('') : empty('Aucune saison terminée pour l\'instant.');
-    const tourneysHTML = d.tournaments.length ? d.tournaments.map(t => '<div class="panth-row"><span class="panth-when">' + escapeHtml(t.label) + '</span><span class="panth-names">🏆 <b>' + escapeHtml(t.champion || '?') + '</b>' + (t.finalist ? ' · 🥈 ' + escapeHtml(t.finalist) : '') + (t.semifinalists.length ? ' · 🥉 ' + t.semifinalists.map(escapeHtml).join(', ') : '') + ' <span class="muted">(' + t.players + ' joueurs)</span></span></div>').join('') : empty('Aucun tournoi terminé pour l\'instant.');
+    const seasonsHTML = d.seasons.length ? d.seasons.map(s => '<div class="panth-row"><span class="panth-when">' + escapeHtml(s.label) + '</span><span class="panth-names">' + s.podium.map(p => PANTH_MEDAL[p.rank] + ' <b>' + pseudoLink(p.pseudo) + '</b> <span class="muted">' + p.elo + '</span>').join(' · ') + '</span></div>').join('') : empty('Aucune saison terminée pour l\'instant.');
+    const tourneysHTML = d.tournaments.length ? d.tournaments.map(t => '<div class="panth-row"><span class="panth-when">' + escapeHtml(t.label) + '</span><span class="panth-names">🏆 <b>' + pseudoLink(t.champion) + '</b>' + (t.finalist ? ' · 🥈 ' + pseudoLink(t.finalist) : '') + (t.semifinalists.length ? ' · 🥉 ' + t.semifinalists.map(x => pseudoLink(x)).join(', ') : '') + ' <span class="muted">(' + t.players + ' joueurs)</span></span></div>').join('') : empty('Aucun tournoi terminé pour l\'instant.');
     const top = (list, unit) => list.length ? '<ol class="panth-top">' + list.map(x => '<li><span>' + escapeHtml(x.player) + '</span><b>' + x.count + ' ' + unit + '</b></li>').join('') + '</ol>' : '<div class="muted" style="font-size:13px;">Pas encore de données.</div>';
     const cl = d.club;
     root.innerHTML =
@@ -5680,8 +5704,8 @@
       body.innerHTML = tabs + (s.scope === 'month' ? '<p class="duel-hint" style="margin:0 0 8px;">Saison de ' + escapeHtml(s.season_label) + '.</p>' : '') +
         '<div class="mys-tiles">' + tile(s.played, 'matchs') + tile(s.wins + ' / ' + s.draws + ' / ' + s.losses, 'V / N / D') + tile(s.win_pct + ' %', 'de victoires') +
           tile(s.goals_for + ' – ' + s.goals_against, 'buts pour – contre') + tile(s.best_streak, 'victoires de suite (record)') + tile(streak, 'série en cours') + '</div>' +
-        (s.biggest_win ? '<p class="mys-line">💥 Plus grosse victoire : <b>' + s.biggest_win.for + '–' + s.biggest_win.against + '</b> contre ' + escapeHtml(s.biggest_win.opponent) + ' (' + formatDuelDate(s.biggest_win.date) + ')</p>' : '') +
-        '<h3 class="mys-h">🤝 Face à face</h3>' + list(s.opponents, o => '<tr><td>' + escapeHtml(o.pseudo) + '</td><td class="num">' + o.played + ' m.</td><td class="num"><b>' + o.wins + '</b> V · ' + o.draws + ' N · ' + o.losses + ' D</td><td class="num">' + o.goals_for + '–' + o.goals_against + '</td></tr>') +
+        (s.biggest_win ? '<p class="mys-line">💥 Plus grosse victoire : <b>' + s.biggest_win.for + '–' + s.biggest_win.against + '</b> contre ' + pseudoLink(s.biggest_win.opponent) + ' (' + formatDuelDate(s.biggest_win.date) + ')</p>' : '') +
+        '<h3 class="mys-h">🤝 Face à face</h3>' + list(s.opponents, o => '<tr><td>' + pseudoLink(o.pseudo) + '</td><td class="num">' + o.played + ' m.</td><td class="num"><b>' + o.wins + '</b> V · ' + o.draws + ' N · ' + o.losses + ' D</td><td class="num">' + o.goals_for + '–' + o.goals_against + '</td></tr>') +
         '<div class="mys-cols"><div><h3 class="mys-h">🃏 Mes cartes les plus jouées</h3>' + list(s.top_cards, c => '<tr><td>' + escapeHtml(c.player || '?') + ' <span class="muted">' + escapeHtml(tierLabel(c.tier || '')) + '</span></td><td class="num">' + c.played + ' m.</td><td class="num">' + pct(c.wins, c.played) + '</td></tr>') + '</div>' +
           '<div><h3 class="mys-h">⚽ Mes buteurs</h3>' + list(s.scorers, x => '<tr><td>' + escapeHtml(x.player) + '</td><td class="num"><b>' + x.count + '</b></td></tr>') +
           '<h3 class="mys-h">🎯 Mes passeurs</h3>' + list(s.assists, x => '<tr><td>' + escapeHtml(x.player) + '</td><td class="num"><b>' + x.count + '</b></td></tr>') + '</div></div>' +
