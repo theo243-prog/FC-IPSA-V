@@ -71,6 +71,11 @@ def flags_for(db: Session, user) -> dict:
     return {name: has_access(db, user, name) for name in FEATURES}
 
 
+def public_flags(db: Session) -> dict:
+    """{nom: ouverte à tous ?} : le site retire le badge « essai » d'une fonction sortie (« Ouvert à tous » coché)."""
+    return {name: bool(get(db, name)["public"]) for name in FEATURES}
+
+
 def update(db: Session, name: str, public=None, allowed=None) -> dict:
     """Change l'accès d'une fonction (pseudos exacts, refus s'il y en a d'inconnus). Ne valide pas la transaction."""
     s = get(db, name)

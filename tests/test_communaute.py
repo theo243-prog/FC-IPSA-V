@@ -27,6 +27,7 @@ ok(c.get("/communaute", headers=H["ana"]).status_code == 403 and prop("ana", "Es
 ok(c.get("/me", headers=H["ana"]).json()["features"].get("communaute") is False, "/me renvoie features.communaute à faux")
 ok(c.post("/admin/feature-settings", json={"feature": "communaute", "allowed": ["ana", "bob", "cid"]}, headers=A).status_code == 200, "réservée à ana, bob et cid")
 ok(c.get("/communaute", headers=H["ana"]).status_code == 200 and c.get("/communaute", headers=H["dan"]).status_code == 403, "ana y a accès, dan non")
+ok(c.get("/me", headers=H["ana"]).json()["features_public"] == {"draft": False, "pantheon": False, "communaute": False, "succes_secrets": False}, "/me : aucune fonction ouverte à tous (badge « essai » affiché)")
 
 print("2) PROPOSER")
 at("2026-11-14T15:00:00")
@@ -150,6 +151,7 @@ ok(c.post("/communaute/propose", json={"name": "La panne de bus", "image_desc": 
 print("11) OUVERTURE À TOUS")
 c.post("/admin/feature-settings", json={"feature": "communaute", "public": True}, headers=A)
 ok(GL.community_allowed(db) and Tier.communaute not in GL.hidden_collection_tiers(db), "ouverte à tous : comptée dans la collection")
+ok(c.get("/me", headers=H["dan"]).json()["features_public"]["communaute"] is True, "/me : ouverte à tous (le site retire le badge « essai »)")
 ok("communaute" in GL.pack_weights(db, GL.tier_card_counts(db), GL.TIER_WEIGHTS, "classique", U("dan")), "dans les packs de tout le monde")
 ok(any(x["tier"] == "communaute" for x in c.get("/collection", headers=H["dan"]).json()), "cases visibles chez dan")
 ok("communaute" in c.get("/game/rules").json()["packs"]["classique"]["odds"], "chance affichée dans l'aide du site")

@@ -201,6 +201,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "player_packs": player_packs.owned_out(db, user.id),   # packs joueur achetés, pas encore ouverts
             "draft_access": draft.has_access(db, user),           # mode draft (ouvert aux comptes choisis dans l'administration)
             "features": features.flags_for(db, user),             # fonctions en essai : {nom: accès} (draft, pantheon…)
+            "features_public": features.public_flags(db),         # {nom: ouverte à tous} : plus de badge « essai » sur le site
         }
     return {
         "pseudo": user.pseudo,
@@ -221,6 +222,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "player_packs": player_packs.owned_out(db, user.id),   # packs joueur achetés, pas encore ouverts
             "draft_access": draft.has_access(db, user),           # mode draft (ouvert aux comptes choisis dans l'administration)
             "features": features.flags_for(db, user),             # fonctions en essai : {nom: accès} (draft, pantheon…)
+            "features_public": features.public_flags(db),         # {nom: ouverte à tous} : plus de badge « essai » sur le site
     }
 
 
