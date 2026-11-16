@@ -16,6 +16,7 @@ from typing import List
 
 from pydantic import BaseModel
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, and_, func, or_
+from sqlalchemy.orm import joinedload
 
 from .database import Base
 from .models import Card, Duel, OwnedCard, Tier, User
@@ -300,7 +301,7 @@ def showcase_cards(db, user):
     if chosen:
         cards = {c.id: c for c in db.query(Card).filter(Card.id.in_(chosen)).all()}
         return [cards[i] for i in chosen if i in cards], False
-    cards = db.query(Card).filter(Card.id.in_(owned)).all() if owned else []
+    cards = db.query(Card).options(joinedload(Card.player)).filter(Card.id.in_(owned)).all() if owned else []      # (joueurs chargés avec les cartes : une seule requête)
     rank = {t: i for i, t in enumerate(TIER_VALUE_ORDER)}
     cards.sort(key=lambda c: (rank.get(c.tier.value, 99), c.player.name))
     return cards[:SHOWCASE_MAX], True

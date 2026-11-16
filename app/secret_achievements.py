@@ -351,7 +351,8 @@ def check(db, user, force: bool = False) -> list:
     todo = set(BY_ID) - have
     if not todo:
         return []
-    new = [s for s in SECRETS if s["id"] in found(db, user, todo)]
+    got = found(db, user, todo)                                 # (une seule vérification, pas une par succès)
+    new = [s for s in SECRETS if s["id"] in got]
     for s in new:
         db.add(SecretAchievement(user_id=user.id, secret_id=s["id"], earned_at=datetime.utcnow(), seen=False))
         user.credits += REWARD

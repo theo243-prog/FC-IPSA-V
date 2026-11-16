@@ -875,7 +875,8 @@ def user_profile(pseudo: str, db: Session = Depends(get_db), authorization: str 
     out["title"], out["frame"] = cosmetics.user_display(db, user.id)
     out.update(battlepass.user_display(db, user.id))      # bannière, badge, couleur de pseudo, étoiles de prestige
     out["players_ranked"] = len(rows)
-    out["game_completion_pct"] = card_levels.game_completion(db, [user.id]).get(user.id, 0.0)      # cartes ET niveaux (100 % = tout, évolué au max)
+    lb_row = next((r for r in rows if r["pseudo"] == user.pseudo), None)                          # (déjà calculée par le classement : on ne la recalcule pas)
+    out["game_completion_pct"] = lb_row["game_completion_pct"] if lb_row and "game_completion_pct" in lb_row else card_levels.game_completion(db, [user.id]).get(user.id, 0.0)      # cartes ET niveaux (100 % = tout, évolué au max)
     viewer = None
     if authorization:
         try:

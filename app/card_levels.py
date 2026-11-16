@@ -20,7 +20,7 @@ pèsent plus que la tactique et le Fan ; les copies déjà montées profitent du
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import Column, Integer, String, UniqueConstraint
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, contains_eager
 
 from .database import Base, get_db
 from .models import Card, OwnedCard, Player, Tier, User
@@ -118,7 +118,8 @@ COMPLETION_OWNED, COMPLETION_PER_LEVEL = 0.5, 0.1
 
 def game_completion(db: Session, user_ids=None) -> dict:
     """{utilisateur: complétion du jeu en %, à 0,1 près} pour les joueurs donnés (tous si None), en quelques requêtes."""
-    cards = db.query(Card).join(Player, Player.id == Card.player_id).filter(Card.tier.notin_(game_logic.hidden_collection_tiers(db))).all()
+    cards = (db.query(Card).join(Player, Player.id == Card.player_id).options(contains_eager(Card.player))        # (le joueur de chaque carte vient avec : pas une requête par carte)
+             .filter(Card.tier.notin_(game_logic.hidden_collection_tiers(db))).all())
     evolvable = {c.id for c in cards if game_logic.card_kind(c.player) == "joueur" and group_of(c) is not None}
     ids = {c.id for c in cards}
     if not ids:

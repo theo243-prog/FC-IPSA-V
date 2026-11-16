@@ -2346,11 +2346,13 @@
   // ---------- Profil public, succès et vitrine ----------
   async function openProfile(pseudo){
     try {
+      const mine = !!(meInfo && meInfo.pseudo === pseudo);
+      const badgesP = mine ? api('/badges').catch(() => null) : null, secretsP = mine ? api('/secret-achievements').catch(() => null) : null;     // (chargés EN MÊME TEMPS que le profil, pas l'un après l'autre)
       const res = await fetch(API_BASE + '/users/' + encodeURIComponent(pseudo) + '/profile', { headers: token ? { Authorization: 'Bearer ' + token } : {} });      // (connecté : tendances des tactiques)
       if (!res.ok) throw new Error('Impossible de charger ce profil');
-      const p = await res.json(), mine = !!(meInfo && meInfo.pseudo === pseudo);
-      let badges = null; if (mine) { try { badges = await api('/badges'); } catch(e) { badges = null; } }
-      let secrets = null; if (mine && p.secrets) { try { secrets = await api('/secret-achievements'); p.secrets = { found: secrets.found, total: secrets.total }; } catch(e) { secrets = null; } }      // succès secrets (en essai) : la liste des trouvés, seulement sur mon profil
+      const p = await res.json();
+      const badges = mine ? await badgesP : null;
+      let secrets = mine ? await secretsP : null; if (secrets && p.secrets) p.secrets = { found: secrets.found, total: secrets.total }; else secrets = null;      // succès secrets (en essai) : la liste des trouvés, seulement sur mon profil
       modalHistoryPush();
       document.getElementById('modalTitle').textContent = mine ? 'Mon profil' : 'Profil de ' + p.pseudo;
       renderProfile(p, badges, mine, secrets);
@@ -2453,7 +2455,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.16.8';
+  const SITE_VERSION = '2026.11.16.9';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
