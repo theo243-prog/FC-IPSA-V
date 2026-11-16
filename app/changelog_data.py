@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-pass-bonus-credits", "date": "2026-11-16", "category": "économie", "title": "Points bonus du Pass convertis",
+     "text": "Les points gagnés au-delà du niveau 30 du Pass ne sont plus perdus : à la fin du mois, ils sont transformés en crédits (20 points = 1 crédit), versés automatiquement avec une notification."},
     {"id": "2026-11-vente-collection", "date": "2026-11-16", "category": "économie", "title": "Vendre depuis sa collection",
      "text": "Touche une de tes cartes pour la vendre au marché ou la mettre aux enchères directement depuis sa fiche, ou faire une offre pour en avoir un exemplaire de plus. « Vendre doublon » permet aussi de vendre d'un coup tous les doublons de cette carte."},
     {"id": "2026-11-fatigue-recuperation", "date": "2026-11-14", "category": "règles", "title": "Fatigue plus douce, récupération en continu",
