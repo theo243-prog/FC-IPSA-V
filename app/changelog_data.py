@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-doublons-vers-rare", "date": "2026-11-17", "category": "cartes", "title": "Tes doublons de communes valent une rare",
+     "text": "Dans la fiche d'une carte commune de ta collection, tu peux maintenant échanger 5 doublons contre la carte rare de la même personne. Ta carte commune reste dans ta collection."},
     {"id": "2026-11-shop-packs-moins-chers", "date": "2026-11-17", "category": "économie", "title": "Packs moins chers au shop",
      "text": "Le pack classique passe à 10 crédits (au lieu de 50) et le pack rare à 50 crédits (au lieu de 100)."},
     {"id": "2026-11-noire-numero-1", "date": "2026-11-16", "category": "cartes", "title": "Les n° 1 de l'Édition Noire aux enchères",
