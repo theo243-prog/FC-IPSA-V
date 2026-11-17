@@ -1,5 +1,5 @@
 """
-Test : au plus 10 packs gagnés par jour en 1v1 (pack match si on gagne, classique si on perd ou fait nul). Au-delà, chaque match rapporte 1 à 5 crédits
+Test : au plus 10 packs gagnés par jour en 1v1 (pack match si on gagne, classique si on perd ou fait nul). Au-delà, chaque match rapporte 5 à 15 crédits
 au hasard à la place (50 par jour au plus), tout en continuant à rapporter mises, Elo et missions.
 Lancer comme test_tournament.py (voir tests/LISEZMOI.md).
 """
@@ -37,27 +37,27 @@ print("1) 10 PACKS PAR JOUR : UN PACK MATCH À CHAQUE VICTOIRE, UN CLASSIQUE À 
 res = [match("bob") for _ in range(10)]
 ok(all(r["result"] == "victoire" and r["pack_match_won"] and r["pack_match_to"] == "bob" and r["pack_classique_to"] == ["alice"] and r["pack_none_to"] == [] for r in res), "bob gagne 10 matchs : un pack match à chaque victoire (plus de limite à 5)")
 ok(tokens("bob") == (10, 0) and tokens("alice") == (0, 10), "bob a 10 packs match ; alice (qui perd) a 10 packs classiques")
-print("2) AU-DELÀ DE 10 PACKS : 1 À 5 CRÉDITS À LA PLACE, SANS LIMITE")
+print("2) AU-DELÀ DE 10 PACKS : 5 À 15 CRÉDITS À LA PLACE")
 cb, ca = credits("bob"), credits("alice"); r11 = match("bob")
 bb, ba = r11["credits_instead"].get("bob"), r11["credits_instead"].get("alice")
 ok(set(r11["pack_none_to"]) == {"bob", "alice"} and not r11["pack_match_won"] and r11["pack_classique_to"] == [] and tokens("bob") == (10, 0) and tokens("alice") == (0, 10), "11e match : plus aucun pack, ni pour bob ni pour alice")
-ok(bb in range(1, 6) and ba in range(1, 6) and credits("bob") - cb == 1 + bb and credits("alice") - ca == -1 + ba, "chacun reçoit 1 à 5 crédits (bob +%s en plus de la mise gagnée, alice +%s malgré la défaite)" % (bb, ba))
+ok(bb in range(5, 16) and ba in range(5, 16) and credits("bob") - cb == 1 + bb and credits("alice") - ca == -1 + ba, "chacun reçoit 5 à 15 crédits (bob +%s en plus de la mise gagnée, alice +%s malgré la défaite)" % (bb, ba))
 ok(r11["elo_challenger_after"] > r11["elo_challenger_before"] and r11["duel_pack_cap"] == 10, "le match compte quand même : Elo en hausse")
 got = [match("bob")["credits_instead"] for _ in range(5)]; vals = [g[k] for g in got for k in g]
-ok(len(vals) == 10 and all(1 <= v <= 5 for v in vals), "5 matchs de plus : des crédits à chaque fois, toujours entre 1 et 5 (%s)" % sorted(set(vals)))
+ok(len(vals) == 10 and all(5 <= v <= 15 for v in vals), "5 matchs de plus : des crédits à chaque fois, toujours entre 5 et 15 (%s)" % sorted(set(vals)))
 rn = match("nul"); ok(rn["result"] == "nul" and set(rn["credits_instead"]) == {"bob", "alice"} and rn["pack_classique_to"] == [], "un nul après la limite : des crédits aussi, pas de pack")
-print("2 bis) 50 CRÉDITS PAR JOUR AU MAXIMUM APRÈS LA LIMITE DES PACKS")
+print("2 bis) 150 CRÉDITS PAR JOUR AU MAXIMUM APRÈS LA LIMITE DES PACKS")
 day = {"bob": bb + sum(g.get("bob", 0) for g in got) + rn["credits_instead"]["bob"], "alice": ba + sum(g.get("alice", 0) for g in got) + rn["credits_instead"]["alice"]}
 more = []
 for _ in range(60):
     if day["bob"] >= DE.AFTER_CAP_DAILY_MAX and day["alice"] >= DE.AFTER_CAP_DAILY_MAX: break
     g = match("bob")["credits_instead"]; more.append(g)
     for k in g: day[k] += g[k]
-ok(day == {"bob": 50, "alice": 50} and all(1 <= v <= 5 for g in more for v in g.values()), "après une vingtaine de matchs, chacun a reçu exactement 50 crédits de cette façon (le dernier gain est coupé pour ne pas dépasser)")
+ok(day == {"bob": 150, "alice": 150} and all(1 <= v <= 15 for g in more for v in g.values()), "après une quinzaine de matchs, chacun a reçu exactement 150 crédits de cette façon (le dernier gain est coupé pour ne pas dépasser)")
 dbc = lambda p: (db.expire_all(), db.query(User).filter_by(pseudo=p).first().credits)[1]      # lu en base : /me verserait les crédits d'un succès gagné entre-temps
 cb, ca = dbc("bob"), dbc("alice"); rx = match("bob")
-ok(rx["credits_instead"] == {} and set(rx["pack_none_to"]) == {"bob", "alice"} and dbc("bob") - cb == 1 and dbc("alice") - ca == -1 and rx["elo_challenger_after"] > rx["elo_challenger_before"], "au-delà de 50 : plus de crédits (seulement la mise), mais le match compte (Elo)")
-ok(c.get("/duel/config").json().get("after_cap_daily_max") == 50, "/duel/config annonce le plafond de 50 crédits")
+ok(rx["credits_instead"] == {} and set(rx["pack_none_to"]) == {"bob", "alice"} and dbc("bob") - cb == 1 and dbc("alice") - ca == -1 and rx["elo_challenger_after"] > rx["elo_challenger_before"], "au-delà de 150 : plus de crédits (seulement la mise), mais le match compte (Elo)")
+ok(c.get("/duel/config").json().get("after_cap_daily_max") == 150 and c.get("/duel/config").json().get("after_cap_credits") == [5, 15], "/duel/config annonce 5 à 15 crédits et le plafond de 150")
 print("3) LE CRÉATEUR DU DÉFI A LA MÊME RÈGLE")
 GL.today_paris = lambda: real_today() + timedelta(days=1)
 a0 = tokens("alice"); rs = [match("alice") for _ in range(11)]

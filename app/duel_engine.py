@@ -77,8 +77,8 @@ SYNERGY = {"pressing": "1-1-2", "possession": "1-2-1", "contre": "2-1-1"}
 SYNERGY_BONUS = 0.02
 
 DUEL_PACK_DAILY_CAP = 10   # au plus 10 packs gagnés en 1v1 par jour et par joueur : pack match si on gagne, classique si on perd ou fait nul
-AFTER_CAP_CREDITS = (1, 5) # au-delà des 10 packs du jour : chaque match rapporte à la place 1 à 5 crédits au hasard, plus aucune carte
-AFTER_CAP_DAILY_MAX = 50   # … et 50 crédits par jour au plus de cette façon (compteur « after_cap_credits » de missions.daily_count ; avant : sans limite)
+AFTER_CAP_CREDITS = (5, 15) # au-delà des 10 packs du jour : chaque match rapporte à la place 5 à 15 crédits au hasard, plus aucune carte (avant le 17/11/2026 : 1 à 5)
+AFTER_CAP_DAILY_MAX = 150    # … et 150 crédits par jour au plus de cette façon (compteur « after_cap_credits » de missions.daily_count ; avant le 17/11/2026 : 50 ; au tout début : sans limite)
 REFEREE_BONUS = 0.02     # bonus d'équipe (+2 %, avant 5 %) donné par l'arbitre à celui qui a mis la plus grosse enveloppe
 STAKE_MIN, STAKE_MAX = 1, 10
 MAX_OPEN_PROPOSALS = 3
@@ -146,6 +146,7 @@ def get_config() -> dict:
         "stake_max": STAKE_MAX,
         "max_open_proposals": MAX_OPEN_PROPOSALS,
         "after_cap_daily_max": AFTER_CAP_DAILY_MAX,
+        "after_cap_credits": list(AFTER_CAP_CREDITS),
         "fan_bonus": TIER_FAN_BONUS,
         "mascot_bonus": TIER_MASCOT_BONUS,
         "equipment_bonus": TIER_EQUIPMENT_BONUS,
