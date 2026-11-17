@@ -128,7 +128,7 @@ print("6) LIMITE DU JOUR, FORFAIT, ATTENTE")
 ua = U("ana"); missions.daily_add(db, ua, "duel_packs", 9); db.commit()
 mp = U("ana").pack_state.match_pack_tokens
 res = D._rewards(db, U("ana"), []); db.commit()
-ok(res["ana"]["pack"] is None and 1 <= res["ana"]["credits"] <= 5 and U("ana").pack_state.match_pack_tokens == mp, "10 packs déjà gagnés aujourd'hui : 1 à 5 crédits à la place")
+ok(res["ana"]["pack"] is None and 5 <= res["ana"]["credits"] <= 15 and U("ana").pack_state.match_pack_tokens == mp, "10 packs déjà gagnés aujourd'hui : 5 à 15 crédits à la place")
 rid2 = c.post("/draft/create", json={}, headers=H["ana"]).json()["id"]
 ok(any(o["id"] == rid2 for o in c.get("/draft", headers=H["carl"]).json()["open_rooms"]), "partie ouverte : visible par tous ceux qui ont accès")
 c.post("/draft/%s/join" % rid2, headers=H["carl"])

@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-credits-apres-packs", "date": "2026-11-17", "category": "économie", "title": "Plus de crédits après tes 10 packs du jour",
+     "text": "Une fois tes 10 packs du jour gagnés en 1v1, chaque match te rapporte maintenant 5 à 15 crédits au hasard (au lieu de 1 à 5), jusqu'à 150 crédits par jour (au lieu de 50)."},
     {"id": "2026-11-motm-podium-legendaires", "date": "2026-11-17", "category": "cartes", "title": "Homme du match : une légendaire pour tout le podium",
      "text": "Les trois premiers du vote de l'homme du match reçoivent maintenant leur carte légendaire s'ils ne l'ont pas encore. S'ils l'ont déjà, elle gagne +5 de note pour l'homme du match, +2 pour le 2e et +1 pour le 3e."},
     {"id": "2026-11-niveaux-renforces", "date": "2026-11-17", "category": "règles", "title": "Niveaux des cartes plus forts",
