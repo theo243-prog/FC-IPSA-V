@@ -894,6 +894,7 @@
   .stat-box .lab{font-size:11px;color:var(--text-muted);}
   .player-note{text-align:center;font-family:var(--font-head);font-size:34px;font-weight:600;margin:4px 0 16px;}
   .player-note small{display:block;font-family:var(--font-body);font-size:11px;font-weight:600;color:var(--text-muted);}
+  .form-now{text-align:center;margin:-8px auto 14px;padding:6px 12px;border-radius:12px;background:var(--surface-2,rgba(127,127,127,.1));font-size:14px;max-width:340px;} .form-now b{font-size:16px;} .form-now span{display:block;font-size:12px;color:var(--text-muted);margin-top:2px;} .form-now .fn-lvl{font-size:11px;color:var(--text-muted);} .form-now:not(.full){box-shadow:inset 0 0 0 1px rgba(230,120,30,.45);}
   .note-box{border-radius:10px;padding:10px 6px;text-align:center;background:var(--bg-sunk);}
   .note-box.active{background:var(--accent);color:var(--accent-text);}
   .note-box .num{font-family:var(--font-head);font-size:20px;font-weight:600;}
@@ -1993,7 +1994,7 @@
         inner = '<div class="player-note">🌟<small>' + escapeHtml(m ? m.action : parts.action) + ((m ? m.player : parts.who) ? ' — ' + escapeHtml(m ? m.player : parts.who) : '') + (!m ? '<br>Un souvenir de l\'année du club.' : '') +
           (m && m.opponent ? '<br>Match contre ' + escapeHtml(m.opponent) + (m.date ? ', le ' + escapeHtml(m.date.split('-').reverse().join('/')) : '') : '') + '</small></div>';
       } else {
-        inner = (p.display_note ? '<div class="player-note">⭐ ' + p.display_note.value + '<small>Note de la carte</small></div>' : '') +
+        inner = (p.display_note ? '<div class="player-note">⭐ ' + p.display_note.value + '<small>Note de la carte</small></div>' + formNowHTML(card) : '') +
           '<div class="stat-grid">' +
             statBox(p.matches_joues, 'Matchs joués') +
             statBox(p.buts, 'Buts') +
@@ -2126,6 +2127,13 @@
         const fresh = myCollection.find(c => c.id === r.rare_card_id); fresh ? openPlayerDetail(r.player_name, 'rare', fresh) : openPlayerDetail(card.player_name, card.tier, myCollection.find(c => c.id === card.id) || card);
       } catch(e) { toast(e.message); go.disabled = false; }
     });
+  }
+  // Fiche d'une de MES cartes : la note du moment en 1v1 ((note + niveau) × forme) et le temps avant de revenir à 100 % (1 % par heure)
+  function formNowHTML(card){
+    if (!card || !(card.quantity > 0) || card._viewing || card.form == null || !card.display_note || typeof card.display_note.value !== 'number') return '';
+    const real = Math.round(card.display_note.value * card.form / 10) / 10, full = card.form >= 100;
+    return '<div class="form-now' + (full ? ' full' : '') + '">⚡ Note du moment en 1v1 : <b>' + pctFr(real) + '</b>' + (card.level ? ' <small class="fn-lvl">(niveau ' + card.level + ' compris)</small>' : '') +
+      '<span>Forme ' + pctFr(card.form) + ' % · ' + (full ? 'pleine forme' : '100 % dans <b>' + fullIn(card.form_full_in || Math.ceil((100 - card.form) * 60)) + '</b>') + '</span></div>';
   }
   function statBox(num, label){
     return '<div class="stat-box"><div class="num">' + num + '</div><div class="lab">' + escapeHtml(label) + '</div></div>';
@@ -2477,7 +2485,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.17.7';
+  const SITE_VERSION = '2026.11.17.8';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
