@@ -4,15 +4,17 @@ ENCHÈRES QUOTIDIENNES DU CLUB : cartes uniques « Édition Noire » (« Éditio
 - Chaque joueur et chaque fan (ni mascotte, ni équipement, ni moment gold) a sa série de SERIES_TOTAL = 5 exemplaires, créée avec le
   mécanisme des séries limitées (numbered.py) : une carte par exemplaire, dans la réserve du club tant qu'elle n'a pas de propriétaire.
   Tous les numéros peuvent sortir aux enchères, n° 1 compris (depuis le 16/11/2026 ; avant, le n° 1 était gardé pour les récompenses de l'administration).
-- Chaque jour à 17h00 (heure de Paris, même calcul d'heure d'été que weekly.py), la tâche de fond crée un LOT de CLUB_AUCTIONS_PER_DAY
+- Chaque jour à 16h00 (heure de Paris, même calcul d'heure d'été que weekly.py ; 17h00 avant le 17/11/2026), au moment où le lot de la
+  veille se termine, la tâche de fond crée un LOT de CLUB_AUCTIONS_PER_DAY
   enchère(s) (1 par défaut, réglable) : des personnes différentes parmi celles qui ont le moins d'exemplaires ÉMIS (attribués + en cours d'enchère),
   égalité au hasard ; pour chacune, un numéro au hasard parmi les restants (ni un numéro attribué, ni un numéro aux enchères).
-  Fin le LENDEMAIN à 16h00. Prolongation habituelle (+2 min), plafonnée à +60 min après 16h00 : jamais de chevauchement avec 17h00.
+  Fin le LENDEMAIN à 16h00. Prolongation habituelle (+2 min), plafonnée à +60 min après 16h00 (une enchère prolongée peut donc
+  encore tourner jusqu'à 17h00 pendant que le lot suivant a commencé). Au même passage de 16h00 : d'abord les fins, puis le nouveau lot.
 - Même moteur que les enchères entre joueurs (auctions.py : hausse de 5 %, crédits mis de côté), vendeur réservé CLUB_SELLER sans
   compte, table `auctions` inchangée : la table club_auction_lots relie l'enchère à la série et au numéro. À la fin, le plus offrant
   reçoit l'exemplaire et ses crédits sont DÉTRUITS (personne ne les reçoit). Sans enchère, l'exemplaire reste dans la réserve.
 - Un lot par jour au plus (club_auction_batches.day est unique) : ni doublon après un redémarrage, ni lot raté (rattrapage au premier
-  passage après 17h00, la fin restant 16h00 le lendemain).
+  passage après 16h00, la fin restant 16h00 le lendemain).
 - ACTIVATION DIFFÉRÉE : rien n'est créé avant la date de démarrage (réglage en base, modifiable depuis l'administration ; par défaut
   START_AT_DEFAULT). Avant cette date, la section est masquée aux joueurs (sauf les comptes PREVIEW_PSEUDOS) ; un teaser est possible.
   « Lancer un lot tout de suite » (administration) marche même avant la date, pour tester.
@@ -42,9 +44,9 @@ CLUB_AUCTIONS_PER_DAY = 1               # valeur par défaut (réglable depuis l
 CLUB_START_PRICE = 20                   # valeur par défaut (réglable depuis l'administration)
 CLUB_SELLER = "club"                    # vendeur réservé : le club n'est pas un compte
 RESERVED_NUMBER = None                  # aucun numéro gardé : le n° 1 sort aux enchères comme les autres (avant le 16/11/2026 : 1)
-LOT_HOUR = 17                           # création du lot (heure de Paris)
+LOT_HOUR = 16                           # création du lot (heure de Paris), en même temps que la fin du précédent (17 avant le 17/11/2026)
 END_HOUR = 16                           # fin des enchères, le lendemain (heure de Paris)
-MAX_EXTENSION = timedelta(minutes=60)   # prolongations au plus 60 min au-delà de 16h00 (donc fin au plus tard à 17h00)
+MAX_EXTENSION = timedelta(minutes=60)   # prolongations au plus 60 min au-delà de 16h00 (donc fin au plus tard à 17h00, pendant le lot suivant)
 START_AT_DEFAULT = datetime(2026, 11, 9, 17, 0)      # lundi 9 novembre 2026, 17h00 heure de Paris : premier lot
 PREVIEW_PSEUDOS = {numbered.RESERVE_PSEUDO}          # voient la section (et peuvent enchérir) avant le démarrage
 SETTING_KEY = "club_auctions"
@@ -282,7 +284,7 @@ def create_batch(db: Session, now: datetime, manual: bool = False, minutes: int 
 
 
 def due_today(db: Session, now: datetime) -> bool:
-    """Le lot automatique du jour est-il à créer ? (démarré, pas en pause, 17h00 passé, pas encore de lot aujourd'hui)"""
+    """Le lot automatique du jour est-il à créer ? (démarré, pas en pause, LOT_HOUR passée, pas encore de lot aujourd'hui)"""
     s = get_settings(db)
     if s.get("paused") or now < start_at(db, s) or now.time() < time(LOT_HOUR, 0):
         return False
@@ -362,7 +364,7 @@ def announce_results(db: Session) -> int:
 
 
 def tick(db: Session, now: datetime = None) -> None:
-    """Toutes les minutes : fin des enchères, résultats, puis le lot du jour (17h00, ou rattrapage au premier passage après)."""
+    """Toutes les minutes : fin des enchères, résultats, puis le lot du jour (16h00, ou rattrapage au premier passage après)."""
     from . import auctions
     auctions.settle_due(db)
     if announce_results(db):
@@ -381,7 +383,7 @@ def tick(db: Session, now: datetime = None) -> None:
 # ---------------------------------------------------------------------- prévisions ----
 
 def next_lot_at(db: Session, now: datetime = None) -> Optional[datetime]:
-    """Le prochain lot automatique : 17h00 d'un jour, jamais avant la date de démarrage (None en pause). S'il est déjà dû
+    """Le prochain lot automatique : LOT_HOUR (16h00) d'un jour, jamais avant la date de démarrage (None en pause). S'il est déjà dû
     (rattrapage), c'est maintenant : la tâche de fond le crée à son prochain passage."""
     now = now or paris_now()
     s = get_settings(db)
