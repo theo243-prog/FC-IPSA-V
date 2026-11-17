@@ -52,6 +52,7 @@ def bid(p, aid, amount):
     return c.post("/auctions/%s/bid" % aid, json={"amount": amount}, headers=H[p])
 copy_of = lambda lot: (db.expire_all(), db.query(NB.NumberedCopy).filter_by(card_id=lot.card_id).first())[1]
 owner = lambda cid: [db.get(User, o.user_id).pseudo for o in db.query(OwnedCard).filter_by(card_id=cid).all() if o.quantity > 0]
+NEW_LOT_HOUR = CA.LOT_HOUR; CA.LOT_HOUR = 17     # sections 1 à 11 : scénario écrit avec l'ancien horaire (lot à 17h00) ; le nouveau (16h00) est vérifié en 12 et 13
 
 print("1) LES SÉRIES")
 r = c.post("/admin/create-player", json={"name": "Zoé", "poste": "FAN"}, headers=A).json()
@@ -326,7 +327,20 @@ c.post("/admin/club-auctions-settings", json={"paused": False}, headers=A)
 db.expire_all()
 ok(_json.loads(db.get(AppSetting, CA.SETTING_KEY).value) == {"paused": False, "_v": 2} and CA.get_settings(db)["per_day"] == 1, "réglage suivant : enregistré au nouveau format, toujours 1 par jour")
 
-print("12) HEURE D'ÉTÉ / D'HIVER (calcul de weekly.py)")
+print("12) LOT À 16h00, EN MÊME TEMPS QUE LA FIN DU PRÉCÉDENT")
+CA.LOT_HOUR = NEW_LOT_HOUR
+ok(CA.LOT_HOUR == 16 and CA.END_HOUR == 16, "nouveau lot à 16h00, fin le lendemain à 16h00")
+at("2026-11-20T15:59:00"); tick()
+ok(not [x for x in batches() if x.day == "2026-11-20"], "15h59 : pas encore de lot")
+at("2026-11-20T16:00:30"); tick()
+b20 = batches()[-1]; L20 = lots(b20)
+ok(b20.day == "2026-11-20" and len(L20) == 1 and L20[0].base_end == datetime(2026, 11, 21, 16, 0) and db.get(AU.Auction, L20[0].auction_id).ends_at == datetime(2026, 11, 21, 16, 0), "16h00 : le lot du jour est créé, fin le lendemain à 16h00")
+ok(c.get("/admin/club-auctions", headers=A).json()["next_lot_at"].startswith("2026-11-21T16:00"), "prochain lot annoncé : demain 16h00")
+at("2026-11-21T16:00:30"); tick()
+db.expire_all(); b21 = batches()[-1]
+ok(db.get(CA.ClubAuctionLot, L20[0].auction_id).status == "unsold" and b21.day == "2026-11-21" and len(lots(b21)) == 1, "le lendemain 16h00, au même passage : le lot de la veille se termine et le suivant commence")
+
+print("13) HEURE D'ÉTÉ / D'HIVER (calcul de weekly.py)")
 del os.environ["FC_FAKE_NOW"]
 real = CA.datetime
 class FakeDT(datetime):
@@ -335,12 +349,12 @@ class FakeDT(datetime):
     def utcnow(cls): return cls.U
 CA.datetime = FakeDT
 try:
-    FakeDT.U = datetime(2027, 7, 15, 15, 0); p = CA.paris_now()
-    ok(p == datetime(2027, 7, 15, 17, 0), "été : 15h00 UTC = 17h00 à Paris")
+    FakeDT.U = datetime(2027, 7, 15, 14, 0); p = CA.paris_now()
+    ok(p == datetime(2027, 7, 15, 16, 0), "été : 14h00 UTC = 16h00 à Paris")
+    FakeDT.U = datetime(2026, 12, 15, 14, 0); p = CA.paris_now()
+    ok(p == datetime(2026, 12, 15, 15, 0) and not CA.due_today(db, p), "hiver : 14h00 UTC = 15h00 à Paris, pas encore l'heure du lot")
     FakeDT.U = datetime(2026, 12, 15, 15, 0); p = CA.paris_now()
-    ok(p == datetime(2026, 12, 15, 16, 0) and not CA.due_today(db, p), "hiver : 15h00 UTC = 16h00 à Paris, pas encore l'heure du lot")
-    FakeDT.U = datetime(2026, 12, 15, 16, 0); p = CA.paris_now()
-    ok(p == datetime(2026, 12, 15, 17, 0) and CA.due_today(db, p), "hiver : 16h00 UTC = 17h00 à Paris, le lot est dû")
+    ok(p == datetime(2026, 12, 15, 16, 0) and CA.due_today(db, p), "hiver : 15h00 UTC = 16h00 à Paris, le lot est dû")
     ok(WK.from_paris(datetime(2027, 3, 29, 16, 0)) == datetime(2027, 3, 29, 14, 0) and WK.from_paris(datetime(2026, 10, 26, 16, 0)) == datetime(2026, 10, 26, 15, 0), "fin à 16h00 Paris = 14h00 UTC en été, 15h00 UTC en hiver")
 finally:
     CA.datetime = real

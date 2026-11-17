@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-noire-16h", "date": "2026-11-17", "category": "cartes", "title": "Enchères du club à 16h",
+     "text": "La carte Édition Noire du jour est maintenant mise aux enchères à 16h00, au moment où celle de la veille se termine (au lieu de 17h00)."},
     {"id": "2026-11-credits-apres-packs", "date": "2026-11-17", "category": "économie", "title": "Plus de crédits après tes 10 packs du jour",
      "text": "Une fois tes 10 packs du jour gagnés en 1v1, chaque match te rapporte maintenant 5 à 15 crédits au hasard (au lieu de 1 à 5), jusqu'à 150 crédits par jour (au lieu de 50)."},
     {"id": "2026-11-motm-podium-legendaires", "date": "2026-11-17", "category": "cartes", "title": "Homme du match : une légendaire pour tout le podium",
