@@ -2477,7 +2477,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.17.4';
+  const SITE_VERSION = '2026.11.17.5';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2926,7 +2926,8 @@
   function motmResultHTML(v){
     if (v.status === 'no_result') return '<div class="motm-card">Pas assez de votes (' + v.voters + ' bulletin' + (v.voters > 1 ? 's' : '') + ') : pas de résultat cette fois.</div>';
     let h = '<div class="motm-podium">' + (v.podium || []).map(p => '<span>' + MEDALS[p.rank - 1] + ' <b>' + escapeHtml(p.player) + '</b> · ' + p.points + ' pts</span>').join('') + '</div>';
-    if (v.created) h += '<div class="motm-card">🃏 Nouvelle carte <b>légendaire</b> : ' + escapeHtml(v.created.player) + ' (note ' + v.created.note + ')</div>';
+    const made = v.created_all && v.created_all.length ? v.created_all : (v.created ? [v.created] : []);
+    if (made.length) h += '<div class="motm-card">🃏 Nouvelle' + (made.length > 1 ? 's cartes' : ' carte') + ' <b>légendaire' + (made.length > 1 ? 's' : '') + '</b> : ' + made.map(c => escapeHtml(c.player) + ' (note ' + c.note + ')').join(', ') + '</div>';
     if (v.boosted && v.boosted.length) h += '<div class="motm-card">⬆️ Légendaire : ' + v.boosted.map(b => escapeHtml(b.player) + ' +' + (b.bonus || 2) + ' (' + b.note + ')').join(', ') + '</div>';
     return h + '<div class="motm-meta" style="margin:2px 0 0;">' + v.voters + ' votant' + (v.voters > 1 ? 's' : '') + '</div>';
   }
@@ -3819,7 +3820,7 @@
         '<li>Un joueur qui marque reçoit sa carte <b>épique</b> (note 85 au premier but, puis +2 par but supplémentaire).</li>' +
         '<li>Un moment mémorable crée une carte <b>gold</b>.</li>' +
         '<li>Un nouveau stade crée sa carte commune.</li>' +
-        '<li><b>Homme du match</b> : le podium du vote fait monter les cartes <b>légendaires</b> : <b>+5</b> pour l\'élu (le 1er), <b>+2</b> pour le 2e, <b>+1</b> pour le 3e, sans plafond (elle peut dépasser 99). Si l\'élu n\'a pas encore sa légendaire, elle est créée ; le 2e et le 3e ne gagnent rien s\'ils n\'en ont pas. La nouvelle note vaut pour tous ceux qui ont la carte.</li></ul>';
+        '<li><b>Homme du match</b> : le podium du vote fait monter les cartes <b>légendaires</b> : <b>+5</b> pour l\'élu (le 1er), <b>+2</b> pour le 2e, <b>+1</b> pour le 3e, sans plafond (elle peut dépasser 99). Un joueur du podium qui n\'a pas encore sa légendaire la reçoit (créée à 90). La nouvelle note vaut pour tous ceux qui ont la carte.</li></ul>';
     } },
     duels: { title: 'Les matchs 1v1', async html(){
       const [r, cfg] = [await getGameRules(), await loadDuelConfig()];
