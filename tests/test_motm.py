@@ -77,7 +77,8 @@ CLOCK[0] = T0 + timedelta(hours=24)
 g = pub(); h = g["history"][0]
 ok(g["current"] == [] and vrow(vid).status == "closed" and h["voters"] == 5, "à 24 h exactement : fermé au premier accès")
 ok([p["player"] for p in h["podium"]] == ["Lucas", "Hugo", "Tom"] and [p["points"] for p in h["podium"]] == [18, 10, 5], "podium révélé avec les points")
-ok(h["created"]["player"] == "Lucas" and h["boosted"] == [] and leg("Lucas") is not None and GL.card_note(leg("Lucas").player, "legendaire", leg("Lucas")) == 90, "cas 1 : le 1er n'a pas de légendaire → elle est créée (note 90)")
+ok(h["created"]["player"] == "Lucas" and [x["player"] for x in h["created_all"]] == ["Lucas", "Hugo", "Tom"] and h["boosted"] == [] and leg("Lucas") is not None and GL.card_note(leg("Lucas").player, "legendaire", leg("Lucas")) == 90 and leg("Tom") is not None,
+   "cas 1 : aucun des 3 du podium n'a de légendaire → les 3 sont créées (note 90)")
 ok(vote("v1", vid, "Hugo", "Lucas", "Nathan").status_code == 400, "après la fermeture : bulletin non modifiable (400)")
 names_pub = json.dumps(h["podium"]) + json.dumps({k: v for k, v in h.items() if k not in ("players", "my_ballot")})
 ok(not any(n in names_pub for n in ("Léo", "Enzo", "Nathan")) and db.query(M.MotmPoint).filter_by(vote_id=vid).count() == 6, "hors podium : jamais publiés, mais leurs points sont conservés (6 joueurs votés en base)")
@@ -101,13 +102,14 @@ def full_vote(ballots, lineup=LINEUP, hdm=None):
 
 print("6) RÈGLE DES CARTES")
 v2, res = full_vote([("Lucas", "Hugo", "Nathan")] * 3)
-ok(res["boosted"] == [{"player": "Lucas", "note": 95, "bonus": 5}] and res["created"] is None and leg("Hugo") is None, "cas 2 : l'élu a sa légendaire (+5 → 95) ; 2e et 3e sans légendaire : rien (pas de carte créée)")
+ok(res["boosted"] == [{"player": "Lucas", "note": 95, "bonus": 5}, {"player": "Hugo", "note": 92, "bonus": 2}] and [c["player"] for c in res["created_all"]] == ["Nathan"], "cas 2 : Lucas +5 (95), Hugo +2 (92) ; Nathan (3e) n'a pas de légendaire : elle est créée")
+ok(leg("Nathan") is not None and (leg("Nathan").note or 90) == 90, "la légendaire créée part à 90 (pas de bonus en plus)")
 v3, res = full_vote([("Hugo", "Lucas", "Nathan")] * 3)
-ok(res["boosted"] == [{"player": "Lucas", "note": 97, "bonus": 2}] and res["created"]["player"] == "Hugo" and leg("Nathan") is None, "cas 3 : l'élu n'a pas de légendaire : elle est créée ; Lucas 2e +2 (97) ; Nathan 3e sans carte : rien")
+ok(res["created_all"] == [] and res["boosted"] == [{"player": "Hugo", "note": 97, "bonus": 5}, {"player": "Lucas", "note": 97, "bonus": 2}, {"player": "Nathan", "note": 91, "bonus": 1}], "cas 3 : Hugo +5 (97), Lucas +2 (97), Nathan +1 (91)")
 v4, res = full_vote([("Nathan", "Lucas", "Hugo")] * 3)
-ok(res["created"]["player"] == "Nathan" and res["boosted"] == [{"player": "Lucas", "note": 99, "bonus": 2}, {"player": "Hugo", "note": 91, "bonus": 1}], "cas 4 : Nathan élu (créée), Lucas 2e +2 (99), Hugo 3e +1 (91)")
+ok(res["boosted"] == [{"player": "Nathan", "note": 96, "bonus": 5}, {"player": "Lucas", "note": 99, "bonus": 2}, {"player": "Hugo", "note": 98, "bonus": 1}], "cas 4 : Nathan +5 (96), Lucas +2 (99), Hugo +1 (98)")
 v5, res = full_vote([("Lucas", "Hugo", "Nathan")] * 3)
-ok(res["created"] is None and res["boosted"] == [{"player": "Lucas", "note": 104, "bonus": 5}, {"player": "Hugo", "note": 93, "bonus": 2}, {"player": "Nathan", "note": 91, "bonus": 1}], "tous ont leur légendaire : +5 / +2 / +1, Lucas passe à 104 (pas de plafond)")
+ok(res["created"] is None and res["boosted"] == [{"player": "Lucas", "note": 104, "bonus": 5}, {"player": "Hugo", "note": 100, "bonus": 2}, {"player": "Nathan", "note": 97, "bonus": 1}], "+5 / +2 / +1 sans plafond : Lucas passe à 104, Hugo à 100")
 L = leg("Lucas")
 ok(GL.get_display_note(L.player, "legendaire", L)["value"] == 104, "la note affichée de la carte est 104")
 mem = DE.build_members([(L, "ATT")], None)[0]
