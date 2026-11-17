@@ -13,6 +13,7 @@ NEW_TIER_VALUES = ["halloween", "noel", "saison", "ed1", "ed2", "ed3", "ed4", "e
 
 # (table, colonne, type SQL)
 NEW_COLUMNS = [
+    ("cards", "photo_size", "VARCHAR"),       # taille de la photo sur la carte (vide = classique, « maxi » = toute la carte)
     ("players", "proposed_by", "VARCHAR"),   # carte de la communauté : pseudo de l'auteur de la proposition
     ("match_proposals", "referee_bid", "INTEGER NOT NULL DEFAULT 0"),      # enveloppe secrète pour l'arbitre (1v1)
     ("players", "surnom", "VARCHAR"),        # surnom affiché sur la carte secrète

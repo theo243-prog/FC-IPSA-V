@@ -99,6 +99,7 @@ class Card(Base):
     vitesse = Column(Integer, nullable=False)
     tir = Column(Integer, nullable=False)
     note = Column(Integer, nullable=True)     # note fixe de la carte (cartes spéciales : 80, +1 à chaque nouvelle récompense)
+    photo_size = Column(String, nullable=True)      # taille de la photo sur la carte : vide = classique (recadrée sur la personne), « maxi » = toute la carte de bas en haut
 
     player = relationship("Player", back_populates="cards")
 
