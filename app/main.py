@@ -111,6 +111,7 @@ def card_out(card: Card) -> dict:
         "numero": card.player.numero,
         "trophy": seasons.trophy_info(card.player) if card.tier == Tier.saison else None,       # trophée de saison : rang, titre et mois
         "proposed_by": getattr(card.player, "proposed_by", None),    # carte de la communauté : pseudo de son auteur
+        "photo_size": getattr(card, "photo_size", None) or "classique",  # « maxi » : la photo remplit toute la carte (photo avec un fond)
     }
 
 
@@ -1335,6 +1336,36 @@ def admin_set_player_photo(payload: schemas.AdminSetPlayerPhotoRequest, db: Sess
     player.photo_url = payload.photo_url
     db.commit()
     return {"status": "ok", "player": player.name, "photo_url": player.photo_url, "photos_par_rarete": game_logic.tier_photos(player)}
+
+
+PHOTO_SIZES = ("classique", "maxi")
+
+
+class AdminCardPhotoSize(BaseModel):
+    player_name: str
+    tier: str
+    size: str = "classique"
+
+
+@app.post("/admin/card-photo-size", dependencies=[Depends(require_admin)])
+def admin_card_photo_size(payload: AdminCardPhotoSize, db: Session = Depends(get_db)):
+    """Taille de la photo sur UNE carte (joueur + rareté) : « classique » (recadrée sur la personne détourée, de l'air au-dessus de
+    la tête) ou « maxi » (l'image remplit toute la carte de bas en haut, pour une photo qui a un fond)."""
+    if payload.size not in PHOTO_SIZES:
+        raise HTTPException(status_code=400, detail="Taille : classique ou maxi")
+    player = db.query(Player).filter_by(name=payload.player_name).first()
+    if not player:
+        raise HTTPException(status_code=404, detail="Joueur introuvable")
+    try:
+        tier = Tier(payload.tier)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="tier doit être : " + ", ".join(game_logic.TIER_ORDER))
+    card = db.query(Card).filter_by(player_id=player.id, tier=tier).first()
+    if card is None:
+        raise HTTPException(status_code=404, detail="%s n'a pas de carte %s" % (player.name, tier.value))
+    card.photo_size = None if payload.size == "classique" else payload.size
+    db.commit()
+    return {"status": "ok", "player": player.name, "tier": tier.value, "photo_size": payload.size}
 
 
 def _checked_poste(player: Player, raw: str, label: str = None) -> str:

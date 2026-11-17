@@ -646,6 +646,7 @@
     position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;
     z-index:0;pointer-events:none;display:block;
   }
+  .card-bgphoto.photo-maxi{object-position:center center;}      /* taille « maxi » (réglée par l'admin) : la photo avec son fond couvre la carte de bas en haut */
   .card-scrim{position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;
     background:linear-gradient(to top,rgba(0,0,0,.78) 0,rgba(0,0,0,.5) 15%,rgba(0,0,0,.14) 28%,rgba(0,0,0,0) 36%);}
   .has-photo::before{z-index:1;}
@@ -1812,7 +1813,7 @@
       statsRow = '<div class="card-stats"><span>⭐ ' + (card.display_note ? card.display_note.value : '') + '</span>' + (card.level ? '<span class="lvl-chip" title="Carte évoluée : +' + (LEVEL_BONUS[card.level] || 0) + ' de note">Niv. ' + card.level + '</span>' : '') + (EDITION_TIERS.includes(card.tier) ? '<span class="tag-limitee">LIMITÉE</span>' : '') + '' + numChip(card) + '</div>';
       posteLabel = escapeHtml(card.poste);
     }
-    const bgPhoto = usesBgPhoto(card) ? '<img class="card-bgphoto" src="' + escapeHtml(card.player_photo_url) + '" alt=""><span class="card-scrim" aria-hidden="true"></span>' : '';
+    const bgPhoto = usesBgPhoto(card) ? '<img class="card-bgphoto' + (card.photo_size === 'maxi' ? ' photo-maxi' : '') + '" src="' + escapeHtml(card.player_photo_url) + '" alt=""><span class="card-scrim" aria-hidden="true"></span>' : '';
     if (kind === 'mascotte') midHTML = mascotMedalHTML(card.tier);
     else if (kind === 'trophee') midHTML = trophyMedalHTML(card);
     else if (kind === 'ecusson') midHTML = crestImgHTML(card);
@@ -1863,7 +1864,7 @@
   function attachPhotoFallback(container, card){
     const bg = container.querySelector('.card-bgphoto');
     if (bg) {
-      fitBgPhoto(container, bg);                                   // agrandit la photo détourée pour remplir la carte
+      if (!bg.classList.contains('photo-maxi')) fitBgPhoto(container, bg);      // agrandit la photo détourée pour remplir la carte (« maxi » : l'image entière couvre déjà toute la carte)
       bg.addEventListener('error', () => {                          // photo introuvable : on retombe sur le ballon ou l'icône
         const kind = card ? cardKind(card) : 'joueur';
         bg.remove();
@@ -2485,7 +2486,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.17.8';
+  const SITE_VERSION = '2026.11.17.9';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
