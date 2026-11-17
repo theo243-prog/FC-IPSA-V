@@ -37,18 +37,18 @@ fake = lambda tier, cid="x": NS(id=cid, tier=NS(value=tier))
 members = lambda note, slots=("GB", "DEF", "MC", "MC", "ATT"): [{"slot": s, "effective": note} for s in slots]
 
 print("1) BARÈME DES NIVEAUX")
-ok(CL.LEVEL_NOTE_BONUS == (0, 2, 3, 4, 6, 8) and [CL.note_bonus(i) for i in range(6)] == [0, 2, 3, 4, 6, 8], "LEVEL_NOTE_BONUS = (0, 2, 3, 4, 6, 8)")
+ok(CL.LEVEL_NOTE_BONUS == (0, 3, 5, 7, 11, 15) and [CL.note_bonus(i) for i in range(6)] == [0, 3, 5, 7, 11, 15], "LEVEL_NOTE_BONUS = (0, 3, 5, 7, 11, 15)")
 lc = card("Lucas")
-ok([DE.build_members([(lc, "ATT")], None, {lc.id: lv})[0]["base_note"] for lv in range(6)] == [75, 77, 78, 79, 81, 83], "commune 75 : 77 / 78 / 79 / 81 / 83 aux niveaux 1 à 5")
+ok([DE.build_members([(lc, "ATT")], None, {lc.id: lv})[0]["base_note"] for lv in range(6)] == [75, 78, 80, 82, 86, 90], "commune 75 : 78 / 80 / 82 / 86 / 90 aux niveaux 1 à 5")
 m = DE.build_members([(lc, "MC")], lc.id, {lc.id: 3}, {lc.id: 0.9})[0]
-ok(abs(m["effective"] - (75 + 4) * 0.9 * 0.9 * 1.1) < 1e-9, "(note + bonus du niveau) × forme, puis malus hors poste, puis capitaine")
+ok(abs(m["effective"] - (75 + 7) * 0.9 * 0.9 * 1.1) < 1e-9, "(note + bonus du niveau) × forme, puis malus hors poste, puis capitaine")
 CL.set_level(db, U("ana").id, lc.id, 2); db.commit()
 i = c.get("/cards/%s/level" % lc.id, headers=H["ana"]).json()
-ok(i["note"] == 78 and i["level_bonus"] == 3 and i.get("next_note") == 79, "fiche « Évoluer » : niveau 2 = 78, niveau 3 -> 79 (%s -> %s)" % (i["note"], i.get("next_note")))
+ok(i["note"] == 80 and i["level_bonus"] == 5 and i.get("next_note") == 82, "fiche « Évoluer » : niveau 2 = 80, niveau 3 -> 82 (%s -> %s)" % (i["note"], i.get("next_note")))
 col = {x["player_name"]: x for x in c.get("/collection", headers=H["ana"]).json() if x.get("quantity") and x["tier"] == "commune"}
-ok(col["Lucas"]["display_note"]["value"] == 78 and col["Lucas"]["level"] == 2, "collection : la note affichée suit le nouveau barème (78)")
+ok(col["Lucas"]["display_note"]["value"] == 80 and col["Lucas"]["level"] == 2, "collection : la note affichée suit le nouveau barème (80)")
 r = c.post("/admin/set-card-level", json={"pseudo": "ana", "player_name": "Lucas", "tier": "commune", "level": 4}, headers={"X-Admin-Key": "k"})
-ok(r.status_code == 200 and r.json().get("level_bonus") == 6, "commande admin set-card-level : renvoie le bonus du niveau (+6)")
+ok(r.status_code == 200 and r.json().get("level_bonus") == 11, "commande admin set-card-level : renvoie le bonus du niveau (+11)")
 CL.set_level(db, U("ana").id, lc.id, 0); db.commit()
 
 print("2) FAN : SEUL BONUS DE PUISSANCE")
