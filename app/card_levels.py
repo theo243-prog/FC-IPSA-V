@@ -1,6 +1,6 @@
 """
 Niveaux de cartes : un joueur fait monter UNE copie d'une de ses cartes de 5 niveaux au plus. Bonus de note en match, cumulé
-(LEVEL_NOTE_BONUS) : niveau 1 = +3, 2 = +5, 3 = +7, 4 = +11, 5 = +15 (renforcé le 17/11/2026, avant +2 / +3 / +4 / +6 / +8 ; rééquilibrage « les cartes d'abord » : les niveaux, qui coûtent cher,
+(LEVEL_NOTE_BONUS) : niveau 1 = +3, 2 = +5, 3 = +8, 4 = +11, 5 = +15 (renforcé le 17/11/2026, niveau 3 à +8 au lieu de +7 le même jour ; avant +2 / +3 / +4 / +6 / +8 ; rééquilibrage « les cartes d'abord » : les niveaux, qui coûtent cher,
 pèsent plus que la tactique et le Fan ; les copies déjà montées profitent du barème tout de suite, la note étant calculée à chaque match).
 
 - CARTES CONCERNÉES : les vrais joueurs (card_kind == « joueur ») en commune, rare ou édition limitée (Halloween, Noël, ed1 à ed12).
@@ -32,7 +32,7 @@ router = APIRouter()
 
 # ------------------------------------------------------------------ constantes réglables ----
 MAX_LEVEL = 5
-LEVEL_NOTE_BONUS = (0, 3, 5, 7, 11, 15)  # bonus de note cumulé au niveau 0, 1, 2, 3, 4, 5 (renforcé le 17/11/2026, avant 0, 2, 3, 4, 6, 8)
+LEVEL_NOTE_BONUS = (0, 3, 5, 8, 11, 15)  # bonus de note cumulé au niveau 0, 1, 2, 3, 4, 5 (renforcé le 17/11/2026, avant 0, 2, 3, 4, 6, 8)
 DUPES_REQUIRED = {                       # doublons consommés pour acheter le niveau 1, 2, 3, 4, 5
     "commune": [5, 10, 20, 50, 100],
     "rare": [1, 3, 5, 12, 25],

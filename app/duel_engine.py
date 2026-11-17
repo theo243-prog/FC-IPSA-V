@@ -179,20 +179,22 @@ def draw_goals(xg: float) -> int:
     return min(9, fixed + poisson_random(xg - fixed))
 
 
-def elo_delta(elo_me: int, elo_other: int, result: float, creator: bool = False, k: int = ELO_K) -> int:
-    """Variation d'Elo d'UN joueur : gain multiplié par ELO_WIN_BOOST, perte plafonnée à ELO_MAX_LOSS (puis x0,75 pour le créateur du défi)."""
+def elo_delta(elo_me: int, elo_other: int, result: float, creator: bool = False, k: int = ELO_K, loss_factor: float = 1.0) -> int:
+    """Variation d'Elo d'UN joueur : gain multiplié par ELO_WIN_BOOST, perte plafonnée à ELO_MAX_LOSS (puis x0,75 pour le créateur du défi,
+    puis x loss_factor : 0,5 pendant l'événement « Elo perdu divisé par 2 », events.elo_loss_factor)."""
     expected = 1 / (1 + 10 ** ((elo_other - elo_me) / ELO_SCALE))
     d = k * (result - expected)
     if d > 0:
         d *= ELO_WIN_BOOST
     elif d < 0:
-        d = max(d, -ELO_MAX_LOSS) * (ELO_CREATOR_LOSS_FACTOR if creator else 1.0)
+        d = max(d, -ELO_MAX_LOSS) * (ELO_CREATOR_LOSS_FACTOR if creator else 1.0) * loss_factor
     return round(d)
 
 
-def elo_update(elo_a: int, elo_b: int, result_a: float, k: int = ELO_K, b_is_creator: bool = False):
-    """result_a : 1 si A gagne, 0.5 nul, 0 si A perd. Retourne (nouvel_elo_a, nouvel_elo_b). B est le créateur du défi en 1v1."""
-    return (elo_a + elo_delta(elo_a, elo_b, result_a, False, k), elo_b + elo_delta(elo_b, elo_a, 1 - result_a, b_is_creator, k))
+def elo_update(elo_a: int, elo_b: int, result_a: float, k: int = ELO_K, b_is_creator: bool = False, loss_factor: float = 1.0):
+    """result_a : 1 si A gagne, 0.5 nul, 0 si A perd. Retourne (nouvel_elo_a, nouvel_elo_b). B est le créateur du défi en 1v1.
+    loss_factor : multiplie les pertes (0,5 pendant l'événement « Elo perdu divisé par 2 »)."""
+    return (elo_a + elo_delta(elo_a, elo_b, result_a, False, k, loss_factor), elo_b + elo_delta(elo_b, elo_a, 1 - result_a, b_is_creator, k, loss_factor))
 
 
 # ------------------------------------------------------------ Validation ----
@@ -707,7 +709,9 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     else:
         outcome, result_c = "nul", 0.5
     elo_c_before, elo_d_before = challenger.elo, creator.elo
-    challenger.elo, creator.elo = elo_update(elo_c_before, elo_d_before, result_c, b_is_creator=True)
+    from . import events as _events
+    loss_factor = _events.elo_loss_factor(db)                       # événement « Elo perdu divisé par 2 » : 0,5, sinon 1
+    challenger.elo, creator.elo = elo_update(elo_c_before, elo_d_before, result_c, b_is_creator=True, loss_factor=loss_factor)
 
     # crédits : la mise et l'enveloppe du créateur sont déjà séquestrées, celles du challenger sont prélevées maintenant.
     # Les DEUX enveloppes sont dépensées (celle de l'arbitre n'est jamais rendue, même au joueur qui a mis le moins)
@@ -759,6 +763,7 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     referee = {"challenger": referee_bid, "defender": bid_d, "winner": ref_winner, "bonus_pct": round(REFEREE_BONUS * 100) if ref_winner else 0}
     lineups = {"challenger": _lineup_snapshot(side_c, fan_c, equip_c, mascot_c, ref_c, forms_c, loup[challenger.pseudo]),
                "defender": {**_lineup_snapshot(side_d, fan_d, equip_d, mascot_d, ref_d, forms_d, loup[creator.pseudo]), "home_bonus_pct": round(HOME_BONUS * 100, 2)},
+               **({"elo_loss_factor": loss_factor} if loss_factor != 1.0 else {}),          # (pendant un événement : gardé pour rejouer l'Elo à l'identique)
                "referee": referee,                                      # (enregistré avec la composition : visible dans le récap APRÈS le match)
                "stats": match_stats(side_c, side_d, events, xg_c, xg_d)}         # statistiques de fin de match (possession, tirs…)
     duel = Duel(
@@ -932,7 +937,11 @@ def _replay_elo(user_ids, duels):
     for d in duels:
         a, b = elos.get(d.challenger_id, ELO_START), elos.get(d.defender_id, ELO_START)
         result = 1.0 if d.score_challenger > d.score_defender else (0.0 if d.score_challenger < d.score_defender else 0.5)
-        na, nb = elo_update(a, b, result, b_is_creator=True)        # (le défenseur est le créateur du défi)
+        try:
+            lf = float(json.loads(d.lineups_json or "{}").get("elo_loss_factor", 1.0))      # match joué pendant l'événement « Elo perdu ÷2 »
+        except Exception:
+            lf = 1.0
+        na, nb = elo_update(a, b, result, b_is_creator=True, loss_factor=lf)        # (le défenseur est le créateur du défi)
         steps.append((a, b, na, nb))
         elos[d.challenger_id], elos[d.defender_id] = na, nb
     return elos, steps

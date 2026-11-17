@@ -15,7 +15,7 @@ ENTRIES = [
     {"id": "2026-11-motm-podium-legendaires", "date": "2026-11-17", "category": "cartes", "title": "Homme du match : une légendaire pour tout le podium",
      "text": "Les trois premiers du vote de l'homme du match reçoivent maintenant leur carte légendaire s'ils ne l'ont pas encore. S'ils l'ont déjà, elle gagne +5 de note pour l'homme du match, +2 pour le 2e et +1 pour le 3e."},
     {"id": "2026-11-niveaux-renforces", "date": "2026-11-17", "category": "règles", "title": "Niveaux des cartes plus forts",
-     "text": "Faire évoluer une carte rapporte maintenant beaucoup plus de note en match : +3 au niveau 1, +5 au niveau 2, +7 au niveau 3, +11 au niveau 4 et +15 au niveau 5 (au lieu de +2, +3, +4, +6 et +8). Les coûts ne changent pas, et tes cartes déjà évoluées en profitent tout de suite."},
+     "text": "Faire évoluer une carte rapporte maintenant beaucoup plus de note en match : +3 au niveau 1, +5 au niveau 2, +8 au niveau 3, +11 au niveau 4 et +15 au niveau 5 (au lieu de +2, +3, +4, +6 et +8). Les coûts ne changent pas, et tes cartes déjà évoluées en profitent tout de suite."},
     {"id": "2026-11-motm-podium", "date": "2026-11-17", "category": "cartes", "title": "Homme du match : le podium fait monter les légendaires",
      "text": "Après un match, la carte légendaire de l'homme du match gagne +5 de note (elle est créée s'il ne l'a pas encore). Le 2e du vote gagne +2 et le 3e +1, s'ils ont déjà leur légendaire. Les autres joueurs du vote ne gagnent plus de points."},
     {"id": "2026-11-doublons-vers-rare", "date": "2026-11-17", "category": "cartes", "title": "Tes doublons de communes valent une rare",

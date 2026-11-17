@@ -1,10 +1,11 @@
 """
 Événements éphémères, pilotés depuis la page d'administration (onglet « Événements »).
 
-Trois sortes :
+Quatre sortes :
 - « shop_discount » : les packs de la boutique sont moins chers (par défaut -50 %) ;
 - « pass_double »   : les points du Pass sont doublés (ne se cumule pas avec le doublement de la dernière semaine du mois : le plus fort s'applique) ;
-- « free_pack »     : chaque joueur peut récupérer un pack gratuit par jour (à minuit, heure de Paris, il peut en reprendre un).
+- « free_pack »     : chaque joueur peut récupérer un pack gratuit par jour (à minuit, heure de Paris, il peut en reprendre un) ;
+- « elo_half »      : l'Elo perdu en 1v1 (défaite ou nul défavorable) est divisé par 2 (ELO_LOSS_FACTOR) ; les gains ne changent pas (17/11/2026).
 Un événement a un début et une fin (heure de Paris) ; il s'arrête tout seul. Un bandeau l'annonce en haut du site.
 """
 import json
@@ -23,7 +24,9 @@ from .prono import now_paris
 from . import game_logic
 
 router = APIRouter()
-KINDS = {"shop_discount": ("🏷️", "Packs en promotion"), "pass_double": ("⭐", "Points du Pass ×2"), "free_pack": ("🎁", "Un pack gratuit par jour")}
+KINDS = {"shop_discount": ("🏷️", "Packs en promotion"), "pass_double": ("⭐", "Points du Pass ×2"), "free_pack": ("🎁", "Un pack gratuit par jour"),
+         "elo_half": ("🛡️", "Elo perdu divisé par 2")}
+ELO_LOSS_FACTOR = 0.5       # événement « elo_half » : une perte d'Elo en 1v1 est multipliée par 0,5
 
 
 def _now() -> datetime:
@@ -82,6 +85,14 @@ def pass_double(db: Session) -> bool:
         return False
 
 
+def elo_loss_factor(db: Session) -> float:
+    """Multiplicateur des pertes d'Elo en 1v1 : 0,5 pendant un événement « elo_half », 1 sinon (jamais d'erreur)."""
+    try:
+        return ELO_LOSS_FACTOR if active(db, "elo_half") else 1.0
+    except Exception:
+        return 1.0
+
+
 def _out(e: SiteEvent, now: datetime, claimed: bool = False) -> dict:
     p = _params(e); icon, label = KINDS.get(e.kind, ("🎉", e.kind)); is_active = e.cancelled == 0 and e.starts_at <= now < e.ends_at
     return {"id": e.id, "kind": e.kind, "icon": icon, "title": e.title, "params": p, "active": is_active, "cancelled": bool(e.cancelled),
@@ -137,9 +148,9 @@ def admin_create(payload: EventRequest, db: Session = Depends(get_db)):
     spec = game_logic.PACK_TYPES.get(payload.pack)
     if payload.kind == "free_pack" and (not spec or spec.get("price") is None):
         raise HTTPException(status_code=422, detail="Pack inconnu (classique, rare, epique, legendaire, ultra)")
-    params = {"shop_discount": {"percent": payload.percent}, "pass_double": {}, "free_pack": {"pack": payload.pack, "per_day": payload.per_day}}[payload.kind]
+    params = {"shop_discount": {"percent": payload.percent}, "pass_double": {}, "free_pack": {"pack": payload.pack, "per_day": payload.per_day}, "elo_half": {}}[payload.kind]
     title = payload.title.strip() or {"shop_discount": ("Packs à moitié prix" if payload.percent == 50 else "Packs -%d %%" % payload.percent), "pass_double": "Points du Pass ×2",
-                                       "free_pack": "Un pack gratuit par jour"}[payload.kind]
+                                       "free_pack": "Un pack gratuit par jour", "elo_half": "Défaites moins chères : Elo perdu ÷2"}[payload.kind]
     start = _now() + timedelta(hours=payload.start_in_hours); e = SiteEvent(kind=payload.kind, title=title, starts_at=start, ends_at=start + timedelta(hours=payload.duration_hours), params=json.dumps(params))
     db.add(e); db.commit()
     return {"status": "ok", **_out(e, _now())}
@@ -149,7 +160,7 @@ def admin_create(payload: EventRequest, db: Session = Depends(get_db)):
 def admin_list(db: Session = Depends(get_db)):
     now = _now(); rows = db.query(SiteEvent).order_by(SiteEvent.starts_at.desc()).limit(40).all(); out = []
     for e in rows:
-        p = _params(e); detail = ("-%d %%" % p.get("percent", 50)) if e.kind == "shop_discount" else ("%d pack %s par jour" % (p.get("per_day", 1), p.get("pack", "classique")) if e.kind == "free_pack" else "×2")
+        p = _params(e); detail = ("-%d %%" % p.get("percent", 50)) if e.kind == "shop_discount" else ("%d pack %s par jour" % (p.get("per_day", 1), p.get("pack", "classique")) if e.kind == "free_pack" else ("Elo perdu ÷2" if e.kind == "elo_half" else "×2"))
         out.append({"id": e.id, "état": "annulé" if e.cancelled else ("en cours" if e.starts_at <= now < e.ends_at else ("à venir" if e.starts_at > now else "terminé")), "sorte": e.kind, "titre": e.title, "détail": detail,
                     "début (Paris)": e.starts_at.strftime("%d/%m %H:%M"), "fin (Paris)": e.ends_at.strftime("%d/%m %H:%M")})
     return out
