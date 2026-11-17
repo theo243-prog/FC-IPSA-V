@@ -38,8 +38,8 @@ lucas = P("Lucas")
 plan = W.plan_awards(db, [("most_used", "legendaire", [(P("Zinédine"), 9), (lucas, 3)])])
 ok(not any(a["player"] == "Zinédine" for e in plan for a in e["actions"]) and plan[0]["created"] == "Lucas", "spéciales du vendredi : la carte unique est ignorée (Lucas reçoit la spéciale)")
 res = MO.apply_cards(db, [{"player": "Commun Seul"}, {"player": "Zinédine"}, {"player": "Hugo"}]); db.commit()
-ok(cards_of("Commun Seul") == ["commune"] and res["boosted"] == [{"player": "Zinédine", "note": 92}] and res["created"]["player"] == "Hugo",
-   "homme du match : pas de légendaire créée pour une carte unique commune ; la légendaire unique prend +2 ; Hugo reçoit la sienne")
+ok(cards_of("Commun Seul") == ["commune"] and res["boosted"][:1] == [{"player": "Zinédine", "note": 92, "bonus": 2}] and res["created"] is None,
+   "homme du match : pas de légendaire créée pour une carte unique commune élue ; la légendaire unique (2e) prend +2")
 r = c.post("/admin/record-match", json={"date": "2026-11-10", "opponent": "AS Test", "score_us": 2, "score_them": 0, "buteurs": [{"player_name": "Commun Seul", "count": 1}, {"player_name": "Nathan", "count": 1}]}, headers=A)
 ok(r.status_code == 200 and cards_of("Commun Seul") == ["commune"] and "epique" in cards_of("Nathan"), "premier but : pas d'épique pour la carte unique (Nathan reçoit la sienne)")
 ok(sorted(k.tier.value for k in db.query(Card).filter_by(player_id=P("Hugo").id).all()).count("secrete") <= 1 and GL.has_secret_card(P("Hugo")), "un joueur normal garde sa carte secrète")

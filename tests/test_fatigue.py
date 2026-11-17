@@ -50,7 +50,7 @@ ok(col("ana")["Hugo"]["form"] == 97.5 and col("ana")["Hugo"]["form_full_in"] == 
 print("2) LA FORME DANS LE CALCUL DE LA NOTE")
 lc = card("Lucas")
 mem = DE.build_members([(lc, "MC")], lc.id, {lc.id: 5}, {lc.id: 0.9})[0]
-ok(abs(mem["effective"] - (75 + 8) * 0.9 * 0.9 * 1.1) < 1e-9 and mem["base_note"] == 83 and mem["form"] == 90, "note 75 + niveau 5 (+8) = 83, × forme 90 %, puis −10 % hors poste, puis +10 % capitaine")
+ok(abs(mem["effective"] - (75 + 15) * 0.9 * 0.9 * 1.1) < 1e-9 and mem["base_note"] == 90 and mem["form"] == 90, "note 75 + niveau 5 (+15) = 90, × forme 90 %, puis −10 % hors poste, puis +10 % capitaine")
 ok(DE.build_members([(lc, "ATT")], None)[0]["effective"] == 75, "sans forme indiquée : 100 %")
 
 print("3) RÉCUPÉRATION DE 1 % PAR HEURE, JAMAIS SOUS 50 %")
