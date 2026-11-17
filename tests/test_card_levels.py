@@ -88,7 +88,7 @@ DE.draw_goals = lambda xg: 1
 pid = c.post("/duel/proposals", json={**team, "stake": 1}, headers=H["cléo"]).json()["id"]
 res = c.post("/duel/proposals/%s/play" % pid, json=team, headers=H["dan"]).json(); DE.draw_goals = real_draw
 dm = {m["player"]: m for m in res["lineups"]["defender"]["players"]}; cm = {m["player"]: m for m in res["lineups"]["challenger"]["players"]}
-ok(dm["Hugo"]["level"] == 3 and dm["Hugo"]["base_note"] == 82 and cm["Lucas"]["level"] == 4 and cm["Lucas"]["base_note"] == 86 and cm["Hugo"]["level"] == 0, "défi 1v1 : le niveau de chaque joueur compte pour sa propre équipe (créateur Hugo 75+7 = 82, challenger Lucas 75+11 = 86)")
+ok(dm["Hugo"]["level"] == 3 and dm["Hugo"]["base_note"] == 83 and cm["Lucas"]["level"] == 4 and cm["Lucas"]["base_note"] == 86 and cm["Hugo"]["level"] == 0, "défi 1v1 : le niveau de chaque joueur compte pour sa propre équipe (créateur Hugo 75+8 = 83, challenger Lucas 75+11 = 86)")
 col = {(x["player_name"], x["tier"]): x for x in c.get("/collection", headers=H["dan"]).json() if x.get("quantity")}
 ok(col[("Lucas", "commune")]["level"] == 4 and col[("Lucas", "commune")]["display_note"]["value"] == 86 and col[("Lucas", "commune")]["base_note"] == 75, "collection : niveau 4 et note affichée 86 (base 75 + 11)")
 
@@ -97,7 +97,7 @@ H["eve"] = mk("eve"); H["fred"] = mk("fred")
 give("eve", LR, 1); CL.set_level(db, U("eve").id, LR.id, 3); db.commit()
 lid = c.post("/market/list", json={"card_id": LR.id, "price": 10}, headers=H["eve"]).json()["id"]
 ls = {l["id"]: l for l in c.get("/market/listings").json()}[lid]
-ok(lvl("eve", LR) == 0 and ls["level"] == 3 and ls["card"]["display_note"]["value"] == 92, "seule copie évoluée mise en vente : l'annonce porte le niveau 3 (note 85 + 7 = 92), le vendeur n'a plus de niveau")
+ok(lvl("eve", LR) == 0 and ls["level"] == 3 and ls["card"]["display_note"]["value"] == 93, "seule copie évoluée mise en vente : l'annonce porte le niveau 3 (note 85 + 8 = 93), le vendeur n'a plus de niveau")
 ok(c.delete("/market/listings/%s" % lid, headers=H["eve"]).status_code == 200 and lvl("eve", LR) == 3 and qty("eve", LR) == 1, "annonce annulée : la carte revient avec son niveau 3")
 lid = c.post("/market/list", json={"card_id": LR.id, "price": 10}, headers=H["eve"]).json()["id"]
 r = c.post("/market/buy/%s" % lid, headers=H["fred"]).json()

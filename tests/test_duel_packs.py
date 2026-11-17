@@ -1,6 +1,6 @@
 """
 Test : au plus 10 packs gagnés par jour en 1v1 (pack match si on gagne, classique si on perd ou fait nul). Au-delà, chaque match rapporte 5 à 15 crédits
-au hasard à la place (50 par jour au plus), tout en continuant à rapporter mises, Elo et missions.
+au hasard à la place (150 par jour au plus), tout en continuant à rapporter mises, Elo et missions.
 Lancer comme test_tournament.py (voir tests/LISEZMOI.md).
 """
 import itertools
