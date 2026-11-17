@@ -11,9 +11,11 @@ Homme du match : le vote des joueurs du site après un match officiel du club, e
   sont jamais publiés, mais leurs points restent en base (motm_points).
 - FERMETURE : par la tâche de fond (toutes les minutes) ET au premier accès après l'échéance. Elle n'est appliquée qu'UNE fois
   (passage atomique du statut « open » à « closing »). Moins de MIN_BULLETINS bulletins : clôturé sans résultat ni carte.
-- CARTES : on parcourt le classement complet (joueurs avec au moins 1 point). Chaque joueur qui a déjà sa légendaire gagne +2 de note
-  (sans plafond) ; le premier qui n'en a pas reçoit sa légendaire, créée à son nom (une carte de plus dans le jeu) ; on s'arrête là.
-  Si tous en ont une, tous gagnent +2.
+- CARTES (depuis le 17/11/2026) : seul le podium du vote compte (PODIUM_BONUS). Le 1er (l'homme du match) : +5 à sa légendaire, ou
+  elle est créée à son nom s'il n'en a pas (une carte de plus dans le jeu). Le 2e : +2, le 3e : +1, seulement s'ils ont déjà leur
+  légendaire (jamais de création pour eux). Sans plafond. Les places sont celles du classement : un joueur sans légendaire possible
+  (carte unique d'une autre rareté) ne gagne rien et ne passe pas sa place. Avant : +2 pour chaque joueur du classement qui avait
+  sa légendaire, jusqu'au premier qui n'en avait pas, dont la légendaire était créée.
 - HOMME DU MATCH DES STATISTIQUES : si l'administrateur a laissé vide le champ « Homme du match » du match, le 1er du vote le devient.
 - SAISON DES VOTES : créée par l'administrateur (nom, début, fin). Chaque vote clôturé avec résultat ajoute les points de TOUS ses
   joueurs votés au classement de la saison en cours. Ce classement n'est visible que par l'administrateur ; il le fige, puis publie
@@ -38,7 +40,8 @@ VOTE_HOURS = 24
 MIN_PLAYERS = 3                       # joueurs présents (vrais joueurs) nécessaires pour ouvrir un vote
 MIN_BULLETINS = 3                     # en dessous : vote clôturé sans résultat ni carte
 POINTS = (5, 3, 1)                    # 1er, 2e, 3e
-LEGEND_BONUS = 2                      # +2 de note pour une légendaire déjà existante
+PODIUM_BONUS = (5, 2, 1)              # +5 / +2 / +1 à la légendaire des 1er, 2e et 3e du vote (avant le 17/11/2026 : +2 à plusieurs joueurs)
+OLD_BONUS = 2                         # bonus des anciens résultats (sans « bonus » enregistré)
 HISTORY = 20
 
 
@@ -139,23 +142,23 @@ def _legend_note(card: Card) -> int:
 
 
 def apply_cards(db: Session, ranking: list) -> dict:
-    """Règle des cartes : +2 aux légendaires déjà existantes, du 1er au dernier, jusqu'au premier joueur sans légendaire,
-    dont la carte est créée. Si tous en ont une, tous gagnent +2."""
+    """Règle des cartes : le podium du vote. 1er : +5 à sa légendaire, ou elle est créée s'il n'en a pas ; 2e : +2 ; 3e : +1
+    (2e et 3e seulement s'ils ont déjà leur légendaire). Une carte unique d'une autre rareté ne gagne rien."""
     boosted, created = [], None
-    for r in ranking:
+    for place, r in enumerate(ranking[:len(PODIUM_BONUS)]):
         player = db.query(Player).filter_by(name=r["player"]).first()
         if player is None:
             continue
         leg = db.query(Card).filter_by(player_id=player.id, tier=Tier.legendaire).first()
-        if leg is None and player.unique_card:                          # carte unique d'une autre rareté : pas de légendaire créée, on passe au suivant
-            continue
         if leg is None:
-            card = Card(player_id=player.id, tier=Tier.legendaire, vitesse=0, tir=0)
-            db.add(card); db.flush()
-            created = {"player": player.name, "note": game_logic.card_note(player, "legendaire", card)}
-            break
-        leg.note = _legend_note(leg) + LEGEND_BONUS                     # pas de plafond : 99, 101, 103…
-        boosted.append({"player": player.name, "note": leg.note})
+            if place == 0 and not player.unique_card:                   # seul l'homme du match reçoit sa légendaire s'il ne l'a pas
+                card = Card(player_id=player.id, tier=Tier.legendaire, vitesse=0, tir=0)
+                db.add(card); db.flush()
+                created = {"player": player.name, "note": game_logic.card_note(player, "legendaire", card)}
+            continue
+        bonus = PODIUM_BONUS[place]
+        leg.note = _legend_note(leg) + bonus                            # pas de plafond : 95, 100, 105…
+        boosted.append({"player": player.name, "note": leg.note, "bonus": bonus})
     return {"created": created, "boosted": boosted}
 
 
@@ -214,14 +217,14 @@ def close_vote(db: Session, v: MotmVote, at: datetime = None) -> bool:
     if cards["created"]:
         text += " · nouvelle carte légendaire : %s" % cards["created"]["player"]
     if cards["boosted"]:
-        text += " · légendaire +%d : %s" % (LEGEND_BONUS, ", ".join("%s (%d)" % (b["player"], b["note"]) for b in cards["boosted"]))
+        text += " · légendaire : %s" % ", ".join("%s +%d (%d)" % (b["player"], b.get("bonus", OLD_BONUS), b["note"]) for b in cards["boosted"])
     chat.add_event(db, text)
     db.commit()
     body = "%s est l'homme du match !" % podium[0]["player"]
     if cards["created"]:
         body += " Nouvelle légendaire : %s." % cards["created"]["player"]
     if cards["boosted"]:
-        body += " Légendaire +%d : %s." % (LEGEND_BONUS, ", ".join(b["player"] for b in cards["boosted"]))
+        body += " Légendaire : %s." % ", ".join("%s +%d" % (b["player"], b.get("bonus", OLD_BONUS)) for b in cards["boosted"])
     push.safe(db, push.notify_all, "cards", "Homme du match 🏅 " + v.match_label, body, url="/#actualite", tag="motm")
     return True
 

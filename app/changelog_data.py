@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-motm-podium", "date": "2026-11-17", "category": "cartes", "title": "Homme du match : le podium fait monter les légendaires",
+     "text": "Après un match, la carte légendaire de l'homme du match gagne +5 de note (elle est créée s'il ne l'a pas encore). Le 2e du vote gagne +2 et le 3e +1, s'ils ont déjà leur légendaire. Les autres joueurs du vote ne gagnent plus de points."},
     {"id": "2026-11-doublons-vers-rare", "date": "2026-11-17", "category": "cartes", "title": "Tes doublons de communes valent une rare",
      "text": "Dans la fiche d'une carte commune de ta collection, tu peux maintenant échanger 5 doublons contre la carte rare de la même personne. Ta carte commune reste dans ta collection."},
     {"id": "2026-11-shop-packs-moins-chers", "date": "2026-11-17", "category": "économie", "title": "Packs moins chers au shop",
