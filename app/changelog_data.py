@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-fatigue-points", "date": "2026-11-18", "category": "règles", "title": "La fatigue pèse pareil sur toutes les cartes",
+     "text": "En 1v1, chaque % de forme perdu retire maintenant 0,85 point à la note d'un joueur, quelle que soit sa note. Avant, la fatigue était un pourcentage de la note : les meilleures cartes perdaient plus de points que les autres."},
     {"id": "2026-11-noire-16h", "date": "2026-11-17", "category": "cartes", "title": "Enchères du club à 16h",
      "text": "La carte Édition Noire du jour est maintenant mise aux enchères à 16h00, au moment où celle de la veille se termine (au lieu de 17h00)."},
     {"id": "2026-11-credits-apres-packs", "date": "2026-11-17", "category": "économie", "title": "Plus de crédits après tes 10 packs du jour",

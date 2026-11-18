@@ -2130,10 +2130,13 @@
       } catch(e) { toast(e.message); go.disabled = false; }
     });
   }
-  // Fiche d'une de MES cartes : la note du moment en 1v1 ((note + niveau) × forme) et le temps avant de revenir à 100 % (1 % par heure)
+  // Fatigue en 1v1 : 0,85 point de note retiré par % de forme perdu, le même pour toutes les cartes (fatigue.POINTS_PER_PCT, depuis le 18/11/2026)
+  const FATIGUE_PTS_PER_PCT = 0.85;
+  function fatiguePts(formPct){ return Math.max(0, (100 - (+formPct || 100)) * FATIGUE_PTS_PER_PCT); }
+  // Fiche d'une de MES cartes : la note du moment en 1v1 ((note + niveau) − fatigue) et le temps avant de revenir à 100 % (1 % par heure)
   function formNowHTML(card){
     if (!card || !(card.quantity > 0) || card._viewing || card.form == null || !card.display_note || typeof card.display_note.value !== 'number') return '';
-    const real = Math.round(card.display_note.value * card.form / 10) / 10, full = card.form >= 100;
+    const real = Math.round((card.display_note.value - fatiguePts(card.form)) * 10) / 10, full = card.form >= 100;
     return '<div class="form-now' + (full ? ' full' : '') + '">⚡ Note du moment en 1v1 : <b>' + pctFr(real) + '</b>' + (card.level ? ' <small class="fn-lvl">(niveau ' + card.level + ' compris)</small>' : '') +
       '<span>Forme ' + pctFr(card.form) + ' % · ' + (full ? 'pleine forme' : '100 % dans <b>' + fullIn(card.form_full_in || Math.ceil((100 - card.form) * 60)) + '</b>') + '</span></div>';
   }
@@ -2487,7 +2490,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.17.10';
+  const SITE_VERSION = '2026.11.18.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3853,7 +3856,7 @@
         '<li><b>1 Loup</b> (la mascotte) : aucun bonus de puissance, mais des <b>crédits</b> après chaque match 1v1 joué (victoire, nul ou défaite) : commune ' + lc.commune + ', rare ' + lc.rare + ', épique ' + lc.epique + ', légendaire ' + lc.legendaire + ' (édition limitée ' + lc.halloween + '). Seulement pendant tes <b>' + (cfg.loup_daily_matches || 10) + ' premiers matchs 1v1 du jour</b>, <b>' + (cfg.loup_daily_cap || 30) + ' crédits par jour au maximum</b>. Rien en tournoi ni au défi du club. Sa forme ne change pas ses crédits.</li>' +
         '<li><b>' + cfg.max_equipment + ' Équipement</b> : aucun bonus de puissance, mais <b>moins de fatigue</b> pour toutes les cartes du match : commune −' + pctFr((er.commune || 0) * 100) + ' %, rare −' + pctFr((er.rare || 0) * 100) + ' %, épique −' + pctFr((er.epique || 0) * 100) + ' %, légendaire −' + pctFr((er.legendaire || 0) * 100) + ' % de perte de forme. <b>Utile uniquement en 1v1</b> (le tournoi et le défi du club ne fatiguent pas).</li></ul>' +
         '<h3>La forme des cartes 💪</h3><ul>' +
-        '<li>Chaque carte que tu utilises dans un <b>match 1v1</b> (les 5 joueurs, le Fan, le Loup et l\'équipement) perd <b>0,5 % de forme</b> (moins avec un équipement) : la note d\'un joueur est multipliée par sa forme (85 à 97 % de forme vaut 82,5), tout comme le bonus d\'un Fan. Une petite barre sous la note montre la forme d\'une carte fatiguée ; en la survolant, tu vois dans combien de temps elle sera en pleine forme.</li>' +
+        '<li>Chaque carte que tu utilises dans un <b>match 1v1</b> (les 5 joueurs, le Fan, le Loup et l\'équipement) perd <b>0,5 % de forme</b> (moins avec un équipement) : chaque % de forme perdu retire <b>0,85 point</b> à la note d\'un joueur, quelle que soit sa note (à 97 % de forme : −2,55, une carte à 85 joue à 82,45 et une carte à 95 à 92,45). Le bonus d\'un Fan, lui, est multiplié par sa forme. Une petite barre sous la note montre la forme d\'une carte fatiguée ; en la survolant, tu vois dans combien de temps elle sera en pleine forme.</li>' +
         '<li>La forme <b>remonte de 1 % par heure</b>, en continu (10 matchs d\'affilée : pleine forme 5 h plus tard), et ne descend jamais sous 50 %. Les deux équipes d\'un défi se fatiguent. La forme est celle de la <b>personne</b> : toutes les versions d\'un même joueur (commune, rare, édition, spéciale…) partagent la même forme.</li>' +
         '<li>Le <b>tournoi</b> et le <b>défi du club</b> jouent toujours à 100 % et ne fatiguent pas.</li>' +
         '<li>Pour garder une bonne note, <b>fais tourner tes cartes</b>, gardien compris. Le bouton <b>« ⚡ Meilleure équipe »</b> remplit chaque poste avec tes meilleures notes du moment.</li></ul>' +
@@ -5049,7 +5052,7 @@
   // Forme en 1v1 : chaque match fait perdre 0,5 % à une carte, qui remonte de 1 % par heure. Le tournoi et le défi du club jouent toujours à 100 %.
   const tmUsesForm = () => tm.mode !== 'tournament' && tm.mode !== 'club';
   const tmForm = c => tmUsesForm() && c.form != null ? c.form : 100;
-  const tmNote = c => Math.round(c.display_note.value * tmForm(c) / 10) / 10;          // note du moment (forme comprise), à 0,1 près
+  const tmNote = c => Math.round((c.display_note.value - fatiguePts(tmForm(c))) * 10) / 10;          // note du moment (fatigue comprise, en points fixes), à 0,1 près
   const tmNoteTxt = c => String(tmNote(c)).replace('.', ',');
   // bonus d'un Fan, d'un Loup ou d'un équipement avec sa forme du jour (1v1) : « +7,76 % · forme 97 % »
   // niveaux des cartes Fan, Loup et équipement (card_levels) : petits gains en plus de la rareté
