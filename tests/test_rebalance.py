@@ -41,7 +41,7 @@ ok(CL.LEVEL_NOTE_BONUS == (0, 3, 5, 8, 11, 15) and [CL.note_bonus(i) for i in ra
 lc = card("Lucas")
 ok([DE.build_members([(lc, "ATT")], None, {lc.id: lv})[0]["base_note"] for lv in range(6)] == [75, 78, 80, 83, 86, 90], "commune 75 : 78 / 80 / 83 / 86 / 90 aux niveaux 1 à 5")
 m = DE.build_members([(lc, "MC")], lc.id, {lc.id: 3}, {lc.id: 0.9})[0]
-ok(abs(m["effective"] - (75 + 8) * 0.9 * 0.9 * 1.1) < 1e-9, "(note + bonus du niveau) × forme, puis malus hors poste, puis capitaine")
+ok(abs(m["effective"] - (75 + 8 - 8.5) * 0.9 * 1.1) < 1e-9, "(note + bonus du niveau) − fatigue (8,5 points à 90 %), puis malus hors poste, puis capitaine")
 CL.set_level(db, U("ana").id, lc.id, 2); db.commit()
 i = c.get("/cards/%s/level" % lc.id, headers=H["ana"]).json()
 ok(i["note"] == 80 and i["level_bonus"] == 5 and i.get("next_note") == 83, "fiche « Évoluer » : niveau 2 = 80, niveau 3 -> 83 (%s -> %s)" % (i["note"], i.get("next_note")))

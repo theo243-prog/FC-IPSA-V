@@ -10,7 +10,7 @@ pèsent plus que la tactique et le Fan ; les copies déjà montées profitent du
   du premier ; une copie mise en vente n'est plus dans la collection, donc ne compte pas). Ces doublons sont CONSOMMÉS : le joueur choisit
   entre faire évoluer ses cartes et garder ses doublons (revente, fusion des secrètes). La copie évoluée, elle, reste.
   On paie COSTS[groupe][n-1] crédits. Pas de limite par jour (l'ancien compteur « card_levels » de missions.daily_count reste en base, inutilisé).
-- EN MATCH : (note de base + bonus du niveau) x forme du jour (1v1), puis malus hors poste et bonus de capitaine (duel_engine.build_members).
+- EN MATCH : (note de base + bonus du niveau) moins la fatigue du jour (1v1 : 0,85 point par % de forme perdu), puis malus hors poste et bonus de capitaine (duel_engine.build_members).
 - LE NIVEAU SUIT LA CARTE : un joueur a au plus une copie évoluée par carte (table card_levels). Quand cette copie est vendue (annonce,
   enchère, offre d'achat), son niveau voyage avec elle (tables listing_levels, auction_levels, trade_levels) et le vendeur repasse au
   niveau 0. L'acheteur garde son meilleur niveau (le niveau reçu est perdu s'il en a déjà un supérieur ou égal). Une annonce annulée

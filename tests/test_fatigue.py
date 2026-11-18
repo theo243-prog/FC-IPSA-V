@@ -44,13 +44,19 @@ ok(card("Adrien").id not in fa if card("Adrien") else True, "une personne qui n'
 ok(card("Sacha").id not in fa and col("ana")["Sacha"]["form"] == 100, "une carte qui n'a pas joué reste à 100 %")
 for _ in range(4): r = duel()
 m = {x["player"]: x for x in r["lineups"]["defender"]["players"]}
-ok(m["Hugo"]["form"] == 98 and abs(m["Hugo"]["effective_note"] - 75 * 0.98) < 0.06, "5e match : joué à 98 %% (note 75 -> %.1f)" % m["Hugo"]["effective_note"])
+ok(m["Hugo"]["form"] == 98 and abs(m["Hugo"]["effective_note"] - (75 - 2 * 0.85)) < 0.06, "5e match : joué à 98 %% (note 75 - 1,7 point -> %.1f)" % m["Hugo"]["effective_note"])
 ok(col("ana")["Hugo"]["form"] == 97.5 and col("ana")["Hugo"]["form_full_in"] == 150, "après 5 matchs : forme 97,5 % dans la collection (au dixième près), pleine forme dans 2 h 30")
 
 print("2) LA FORME DANS LE CALCUL DE LA NOTE")
 lc = card("Lucas")
 mem = DE.build_members([(lc, "MC")], lc.id, {lc.id: 5}, {lc.id: 0.9})[0]
-ok(abs(mem["effective"] - (75 + 15) * 0.9 * 0.9 * 1.1) < 1e-9 and mem["base_note"] == 90 and mem["form"] == 90, "note 75 + niveau 5 (+15) = 90, × forme 90 %, puis −10 % hors poste, puis +10 % capitaine")
+ok(abs(mem["effective"] - (75 + 15 - 8.5) * 0.9 * 1.1) < 1e-9 and mem["base_note"] == 90 and mem["form"] == 90, "note 75 + niveau 5 (+15) = 90, − 8,5 points à 90 % de forme, puis −10 % hors poste, puis +10 % capitaine")
+from app.models import Card as _C, Player as _P, Tier as _T
+_cards = [c for c in db.query(_C).filter(_C.tier.in_([_T.commune, _T.rare])).all() if DE.poste_category(c.player.poste) is not None][:2]
+_low, _high = sorted(_cards, key=lambda c: DE.card_note(c.player, c.tier.value, c))
+_m = lambda c, f: DE.build_members([(c, DE.poste_category(c.player.poste))], None, None, {c.id: f})[0]
+ok(abs((_m(_low, 1.0)["effective"] - _m(_low, 0.9)["effective"]) - (_m(_high, 1.0)["effective"] - _m(_high, 0.9)["effective"])) < 1e-9 and abs(_m(_high, 1.0)["effective"] - _m(_high, 0.9)["effective"] - 8.5) < 1e-9,
+   "à 90 %% de forme, une carte à %d et une carte à %d perdent toutes les deux 8,5 points" % (DE.card_note(_low.player, _low.tier.value, _low), DE.card_note(_high.player, _high.tier.value, _high)))
 ok(DE.build_members([(lc, "ATT")], None)[0]["effective"] == 75, "sans forme indiquée : 100 %")
 
 print("3) RÉCUPÉRATION DE 1 % PAR HEURE, JAMAIS SOUS 50 %")

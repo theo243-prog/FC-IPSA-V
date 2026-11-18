@@ -1,8 +1,10 @@
 """
 Forme des cartes en 1v1. Depuis le 14/11/2026 (branche fatigue-recuperation) : chaque carte utilisée dans un match 1v1 (les 5 joueurs, le Fan,
 le Loup et l'équipement) coûte FORM_LOSS_PER_MATCH (0,5 %, avant 1 %) de forme à sa PERSONNE, et la forme REMONTE EN CONTINU de
-RECOVERY_PER_HOUR (1 % par heure), au lieu de revenir à 100 % à minuit. La forme multiplie la note d'un joueur (note + niveau, puis forme,
-puis malus hors poste et capitaine) et le bonus d'un Fan (le Loup et l'équipement n'ont plus de bonus de puissance).
+RECOVERY_PER_HOUR (1 % par heure), au lieu de revenir à 100 % à minuit. Depuis le 18/11/2026 (branche fatigue-points), la fatigue RETIRE
+un nombre FIXE de points à la note d'un joueur, le même pour toutes les cartes : POINTS_PER_PCT (0,85) par % de forme perdu (note + niveau,
+moins la fatigue, puis malus hors poste et capitaine). Avant, la forme multipliait la note : une carte très bien notée perdait plus de
+points qu'une carte faible. Le bonus d'un Fan reste multiplié par sa forme (le Loup et l'équipement n'ont plus de bonus de puissance).
 L'ÉQUIPEMENT réduit la perte de forme de toutes les cartes du match (game_logic.equipment_fatigue_reduction : -5 % à -25 %, plus ses niveaux).
 But : faire tourner les cartes pendant une session (le gardien compris), sans punir ceux qui reviennent jouer plus tard.
 
@@ -27,6 +29,12 @@ from . import game_logic
 FORM_LOSS_PER_MATCH = 0.005      # 0,5 % de forme en moins par match 1v1 joué (avant le 14/11/2026 : 1 %)
 RECOVERY_PER_HOUR = 0.01         # la forme remonte de 1 % par heure, en continu (avant : retour à 100 % à minuit)
 MIN_FORM = 0.50                  # plancher : une carte n'est jamais sous 50 % de forme
+POINTS_PER_PCT = 0.85            # points de note retirés par % de forme perdu, pour TOUTES les cartes (calé sur une carte à 85 ; 18/11/2026)
+
+
+def fatigue_points(form: float) -> float:
+    """Points de note retirés à un joueur pour sa forme (0,5 à 1) : 0,85 par % perdu, quelle que soit sa note (97 % -> 2,55)."""
+    return max(0.0, (1.0 - form) * 100 * POINTS_PER_PCT)
 _now = datetime.utcnow           # (remplaçable dans les tests)
 
 

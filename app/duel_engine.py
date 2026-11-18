@@ -156,6 +156,7 @@ def get_config() -> dict:
         "synergy": SYNERGY, "synergy_bonus": SYNERGY_BONUS, "home_bonus": HOME_BONUS,
         "elo_scale": ELO_SCALE, "elo_max_loss": ELO_MAX_LOSS, "elo_creator_loss_factor": ELO_CREATOR_LOSS_FACTOR, "elo_win_boost": ELO_WIN_BOOST, "level_note_bonus": list(card_levels.LEVEL_NOTE_BONUS),
         "referee_bonus": REFEREE_BONUS,
+        "form_points_per_pct": fatigue.POINTS_PER_PCT,
         "form_loss_per_match": fatigue.FORM_LOSS_PER_MATCH, "form_recovery_per_hour": fatigue.RECOVERY_PER_HOUR, "min_form": fatigue.MIN_FORM,
     }
 
@@ -291,8 +292,8 @@ def validate_team(db: Session, user: User, formation: str, tactic: str, slots: l
 # ---------------------------------------------------------------- Calculs ----
 
 def build_members(cards_with_slots, captain_card_id, levels=None, forms=None):
-    """Pour chaque carte : note de base (+ le bonus de son niveau, card_levels.LEVEL_NOTE_BONUS), puis la forme du jour (1v1 seulement, voir fatigue),
-    puis le malus hors poste, puis le bonus capitaine.
+    """Pour chaque carte : note de base (+ le bonus de son niveau, card_levels.LEVEL_NOTE_BONUS), moins la fatigue du jour (1v1 seulement :
+    fatigue.fatigue_points, 0,85 point par % de forme perdu, le même pour toutes les cartes), puis le malus hors poste, puis le bonus capitaine.
     levels : {carte: niveau} des copies évoluées du propriétaire de l'équipe ; forms : {carte: forme 0,5 à 1} (absent = 100 %)."""
     members = []
     levels, forms = levels or {}, forms or {}
@@ -302,7 +303,7 @@ def build_members(cards_with_slots, captain_card_id, levels=None, forms=None):
         base = card_note(card.player, card.tier.value, card) + card_levels.note_bonus(level)      # bonus cumulé du niveau (+2 / +3 / +4 / +6 / +8)
         natural = poste_category(card.player.poste)
         out = natural is not None and natural != slot
-        effective = base * form * (1 - OUT_OF_POSITION_MALUS if out else 1.0)
+        effective = (base - fatigue.fatigue_points(form)) * (1 - OUT_OF_POSITION_MALUS if out else 1.0)      # fatigue en points fixes (avant le 18/11/2026 : base × forme)
         is_captain = card.id == captain_card_id
         if is_captain:
             effective *= (1 + CAPTAIN_BONUS)
