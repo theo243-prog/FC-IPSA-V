@@ -57,8 +57,8 @@ PACK_TYPES = {
     # un pack classique (voir SLOT_RULES). Les cases sont listées dans l'ordre où on les tire (les plus contraignantes d'abord).
     "ultra": {"label": "Pack ultra", "price": 500, "guaranteed": [],
               "token_field": "ultra_pack_tokens",
-              "slots": [(1, "epique"), (1, "edition_min"), (2, "rare_plus"), (6, "toutes")],      # 1 épique garantie (plus de case « épique ou légendaire »)
-              "description": "10 cartes : 6 aux probabilités classiques, 2 rares ou mieux, 1 gold, édition limitée ou mieux, 1 épique garantie"},
+              "slots": [(1, "edition_min"), (3, "rare_plus"), (6, "toutes")],      # 19/11/2026 : plus d'épique garantie (avant : 1 épique, 1 gold+, 2 rare+, 6 classiques), le pack tombe tous les 20 matchs 1v1
+              "description": "10 cartes : 6 aux probabilités classiques, 3 rares ou mieux, 1 gold, édition limitée ou mieux"},
     # Récompense des matchs 1v1 : pas en vente (price None). Un peu mieux que le pack classique pour CHAQUE rareté
     # (rare 26 contre 15, gold 10,64 contre 8,29, épique 2,5 contre 1,2, légendaire 0,3 contre 0,15), et le seul où sortent les spéciales (8).
     # Gold : 10 % des cartes pendant une édition limitée (10 / (1 - 0,06) = 10,64) ; la commune absorbe la différence (total 100).
@@ -339,11 +339,11 @@ def _slot_weights(weights: dict, rule: str) -> dict:
 
 
 def pack_available(counts: dict, pack_type: str) -> bool:
-    """Un pack à carte garantie n'est disponible que si la rareté garantie existe déjà ; le pack ultra, que s'il existe au
-    moins une carte épique (sa case « épique garantie »)."""
+    """Un pack à carte garantie n'est disponible que si la rareté garantie existe déjà ; le pack ultra, que si chacune de ses
+    cases a au moins une rareté avec des cartes (depuis le 19/11/2026, il n'a plus de case « épique garantie »)."""
     spec = PACK_TYPES[pack_type]
-    if spec.get("slots"):
-        return counts.get("epique", 0) > 0
+    if spec.get("slots"):                                       # chaque case doit pouvoir tirer au moins une rareté qui a des cartes
+        return all(any(counts.get(t, 0) > 0 for t in (SLOT_RULES[rule] or counts)) for _, rule in spec["slots"])
     return all(counts.get(t, 0) > 0 for t in set(spec["guaranteed"]))
 
 

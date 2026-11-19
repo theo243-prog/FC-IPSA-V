@@ -59,15 +59,19 @@ ok(near(s["halloween"], 27.34, 0.05) and near(s["gold"], 62.49, 0.05), "avec une
 _, w = odds("ultra", False)
 s = GL._slot_weights(w, "edition_min"); t = sum(s.values()); s = {k: 100 * v / t for k, v in s.items()}
 ok(near(s["gold"], 86.0, 0.05) and near(s["epique"], 12.45, 0.05), "sans édition : gold %.2f %%, épique %.2f %%, légendaire %.2f %%" % (s["gold"], s["epique"], s["legendaire"]))
-ok(GL.PACK_TYPES["ultra"]["slots"] == [(1, "epique"), (1, "edition_min"), (2, "rare_plus"), (6, "toutes")] and GL.PACK_TYPES["ultra"]["description"].endswith("1 gold, édition limitée ou mieux, 1 épique garantie"), "pack ultra : la case « épique ou légendaire » devient « épique garantie », description exacte")
-ok(GL._slot_weights(w, "epique") == {"epique": w["epique"]}, "la case épique ne tire que des épiques")
+ok(GL.PACK_TYPES["ultra"]["slots"] == [(1, "edition_min"), (3, "rare_plus"), (6, "toutes")] and GL.PACK_TYPES["ultra"]["description"].endswith("3 rares ou mieux, 1 gold, édition limitée ou mieux"), "pack ultra : la case « épique ou légendaire » devient « épique garantie », description exacte")
+no_ep = 1.0
+for n, rule in GL.PACK_TYPES["ultra"]["slots"]:
+    sw = GL._slot_weights(w, rule); no_ep *= (1 - sw.get("epique", 0) / sum(sw.values())) ** n
+ok(near(100 * (1 - no_ep), 29.9, 0.2), "au moins une épique dans un pack ultra : %.1f %% (100 %% avant, épique garantie)" % (100 * (1 - no_ep)))
 no_leg = 1.0
 for n, rule in GL.PACK_TYPES["ultra"]["slots"]:
     sw = GL._slot_weights(w, rule); no_leg *= (1 - sw.get("legendaire", 0) / sum(sw.values())) ** n
-ok(near(100 * (1 - no_leg), 3.6, 0.1), "une légendaire dans un pack ultra : %.2f %% (28,5 %% avant)" % (100 * (1 - no_leg)))
-ok(GL.pack_available({"epique": 1}, "ultra") and not GL.pack_available({"legendaire": 5}, "ultra"), "le pack ultra n'est en vente que s'il existe au moins une épique")
+ok(near(100 * (1 - no_leg), 4.2, 0.1), "une légendaire dans un pack ultra : %.2f %% (3,6 %% avec l'épique garantie)" % (100 * (1 - no_leg)))
+ok(GL.pack_available({"commune": 5, "rare": 5, "gold": 2}, "ultra") and GL.pack_available({"commune": 5, "rare": 5, "legendaire": 1}, "ultra") and not GL.pack_available({"commune": 5, "rare": 5}, "ultra"),
+   "le pack ultra n'a plus besoin d'épique : chaque case doit juste pouvoir tirer une carte (gold, édition, épique ou légendaire pour la dernière)")
 r = c.get("/game/rules").json()["packs"]["ultra"]
-ok([sl["rule"] for sl in r["slots"]] == ["toutes", "rare_plus", "edition_min", "epique"], "aide du site : les 4 cases du pack ultra dans l'ordre d'affichage")
+ok([(sl["count"], sl["rule"]) for sl in r["slots"]] == [(6, "toutes"), (3, "rare_plus"), (1, "edition_min")], "aide du site : les 3 cases du pack ultra (6, 3, 1) dans l'ordre d'affichage")
 
 print("4) RÈGLES INCHANGÉES")
 ok({k: GL.TIER_REF_COUNT[k] for k in ("gold", "speciale", "epique", "legendaire", "halloween", "noel")} == {"gold": 6, "speciale": 6, "epique": 6, "legendaire": 3, "halloween": 5, "noel": 5}, "réductions par nombre de cartes inchangées")

@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-ultra-equilibrage", "date": "2026-11-19", "category": "cartes", "title": "Nouveau pack ultra",
+     "text": "Le pack ultra tombant maintenant tous les 20 matchs 1v1, il change : 6 cartes aux chances classiques, 3 rares ou mieux et 1 gold ou mieux (une édition limitée, une épique ou une légendaire peuvent y sortir). Il n'a plus d'épique garantie."},
     {"id": "2026-11-ultra-20-matchs", "date": "2026-11-19", "category": "économie", "title": "Un pack ultra tous les 20 matchs",
      "text": "Chaque jour, ton 20e match 1v1 te rapporte un pack ultra, puis le 40e, le 60e, et ainsi de suite, que tu gagnes ou que tu perdes."},
     {"id": "2026-11-tri-niveau", "date": "2026-11-19", "category": "autre", "title": "Trier sa collection par niveau",
