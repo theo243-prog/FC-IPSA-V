@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon, communaute, secret_achievements, dupe_upgrade
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon, communaute, secret_achievements, dupe_upgrade, fatigue_gel
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -54,6 +54,7 @@ app.include_router(club.router)                # défi du club (équipe du club 
 app.include_router(first_steps.router)         # Premiers pas : objectifs des nouveaux comptes
 app.include_router(shop_cosmetics.router)      # cosmétiques à paliers vendus au shop
 app.include_router(shop_sounds.router)          # son d'ouverture de la semaine au shop (100 crédits)
+app.include_router(fatigue_gel.router)          # gel de fatigue au shop : 5 matchs 1v1 sans fatigue (50 crédits, le prix double à chaque achat du jour)
 app.include_router(features.router)             # fonctions en essai : cachées aux joueurs sauf aux comptes choisis, sorties ensemble
 app.include_router(secret_achievements.router)  # Succès secrets (en essai)
 app.include_router(communaute.router)           # Cartes de la communauté : propositions, tri par l'admin, vote du jour (en essai)
@@ -202,6 +203,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
             "player_packs": player_packs.owned_out(db, user.id),   # packs joueur achetés, pas encore ouverts
             "ultra_progress": duel_engine.ultra_progress(db, user),  # barre de l'onglet 1v1 : matchs du jour vers le prochain pack ultra
+            "fatigue_gel": fatigue_gel.state(db, user),            # gel de fatigue : matchs 1v1 sans fatigue restants, prix du prochain achat
             "draft_access": draft.has_access(db, user),           # mode draft (ouvert aux comptes choisis dans l'administration)
             "features": features.flags_for(db, user),             # fonctions en essai : {nom: accès} (draft, pantheon…)
             "features_public": features.public_flags(db),         # {nom: ouverte à tous} : plus de badge « essai » sur le site
@@ -224,6 +226,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
             "player_packs": player_packs.owned_out(db, user.id),   # packs joueur achetés, pas encore ouverts
             "ultra_progress": duel_engine.ultra_progress(db, user),  # barre de l'onglet 1v1 : matchs du jour vers le prochain pack ultra
+            "fatigue_gel": fatigue_gel.state(db, user),            # gel de fatigue : matchs 1v1 sans fatigue restants, prix du prochain achat
             "draft_access": draft.has_access(db, user),           # mode draft (ouvert aux comptes choisis dans l'administration)
             "features": features.flags_for(db, user),             # fonctions en essai : {nom: accès} (draft, pantheon…)
             "features_public": features.public_flags(db),         # {nom: ouverte à tous} : plus de badge « essai » sur le site

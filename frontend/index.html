@@ -915,6 +915,10 @@
   @keyframes ubFire{from{background-position:0 0;}to{background-position:200% 0;}}
   @keyframes ubFlick{from{transform:translateY(0) scale(1);opacity:.85;}to{transform:translateY(-4px) scale(1.15);opacity:1;}}
   .ultra-bar.ub-pop{animation:ubPop .7s ease-out;}
+  /* Gel de fatigue : ligne sous la barre « pack ultra » */
+  .gel-line{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:-6px 0 14px;padding:8px 12px;border-radius:12px;font-size:13px;background:rgba(80,170,255,.10);color:var(--text);}
+  .gel-line[hidden]{display:none;}
+  .gel-line.on{background:linear-gradient(90deg,rgba(80,200,255,.25),rgba(160,230,255,.15));box-shadow:0 0 0 1px rgba(80,200,255,.55);}
   @keyframes ubPop{0%{transform:scale(1);}40%{transform:scale(1.04);}100%{transform:scale(1);}}
   @media (prefers-reduced-motion: reduce){.ultra-bar .ub-fill,.ultra-bar .ub-flames span,.ultra-bar.ub-pop{animation:none !important;}}
   .player-note small{display:block;font-family:var(--font-body);font-size:11px;font-weight:600;color:var(--text-muted);}
@@ -1307,6 +1311,7 @@
       <div id="playerPacksEl"></div>
       <div id="shopItemsEl"></div>
       <div id="shopSoundEl"></div>
+      <div id="shopGelEl"></div>
       <div id="shopCosmeticsEl"></div>
     </section>
 
@@ -1389,6 +1394,7 @@
     <section id="tab-duels" class="tab-panel">
       <div class="help-row"><button class="help-btn" type="button" data-help="duels"><span class="help-q">?</span> Aide</button></div>
       <div class="ultra-bar" id="ultraBar" hidden></div>
+      <div class="gel-line" id="gelLine" hidden></div>
       <div class="duel-grid">
         <div class="panel-box duel-proposals cell">
           <div class="duel-proposals-head">
@@ -2514,7 +2520,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.19.3';
+  const SITE_VERSION = '2026.11.19.4';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3376,6 +3382,7 @@
       if (meInfo.notices_unread !== noticeSeen) loadNotices();  // encadré « Notifications » : du nouveau
       updateNewsDot();                                         // point rouge de l'onglet Actualité (un vote « homme du match » à faire)
       try { renderUltraBar(); } catch(e) { /* la barre ne doit jamais bloquer /me */ }       // barre « pack ultra » de l'onglet 1v1
+      try { renderGelLine(); } catch(e) { /* idem */ }                                          // gel de fatigue (ligne sous la barre)
       document.getElementById('chipCredits').textContent = meInfo.credits;
       const bonusTotal = Object.values(meInfo.pack_tokens || {}).reduce((a, b) => a + b, 0);
       document.getElementById('chipPacks').textContent = meInfo.stored_packs + '/3' + (bonusTotal ? (' +' + bonusTotal + ' bonus') : '');
@@ -4534,7 +4541,7 @@
   }
 
   async function loadShop(){
-    loadPlayerPacks(); loadShopSound();
+    loadPlayerPacks(); loadShopSound(); loadShopGel();
     try {
       const items = await api('/shop/items');
       const root = document.getElementById('shopItemsEl');
@@ -4575,6 +4582,40 @@
       catch(e) { toast(e.message); buy.disabled = false; }
     });
     box.appendChild(play); box.appendChild(buy); row.appendChild(box); root.appendChild(row);
+  }
+
+  // ---------- Shop : gel de fatigue (5 matchs 1v1 sans fatigue ; 50 crédits, le prix double à chaque achat du jour) ----------
+  async function buyFatigueGel(btn){
+    const g = meInfo && meInfo.fatigue_gel, price = g ? g.price : 50;
+    if (!confirm('Acheter un gel de fatigue pour ' + price + ' crédits ?\nTes ' + (g ? g.matches : 5) + ' prochains matchs 1v1 ne fatigueront pas tes cartes.')) return;
+    try {
+      if (btn) btn.disabled = true;
+      const r = await api('/shop/fatigue-gel/buy', { method: 'POST' });
+      toast('🧊 Gel acheté (' + r.paid + ' crédits) : ' + r.left + ' match' + (r.left > 1 ? 's' : '') + ' 1v1 sans fatigue');
+      await refreshMe(); loadShopGel();
+    } catch(e) { toast(e.message); if (btn) btn.disabled = false; }
+  }
+  function loadShopGel(){
+    const root = document.getElementById('shopGelEl'); if (!root) return;
+    const g = meInfo && meInfo.fatigue_gel; if (!g) { root.innerHTML = ''; return; }
+    root.innerHTML = '<div class="shopc-head">🧊 Gel de fatigue</div><p class="shopc-sub">Tes <b>' + g.matches + ' prochains matchs 1v1</b> ne fatiguent pas tes cartes. La forme déjà perdue reste perdue (elle remonte toujours de 1 % par heure). ' +
+      'Le premier gel du jour coûte ' + g.base_price + ' crédits, puis le prix double à chaque achat (' + g.base_price + ', ' + 2 * g.base_price + ', ' + 4 * g.base_price + '…) et repart à ' + g.base_price + ' à minuit. Les matchs de gel s\'additionnent et ne se perdent pas.</p>';
+    const row = document.createElement('div'); row.className = 'shop-item';
+    row.innerHTML = '<div><div class="shop-item-name">🧊 Gel de fatigue · ' + g.matches + ' matchs</div><div class="shop-item-desc">' +
+      (g.left ? 'Il te reste <b>' + g.left + '</b> match' + (g.left > 1 ? 's' : '') + ' sans fatigue' : 'Aucun gel en cours') + (g.bought_today ? ' · ' + g.bought_today + ' acheté' + (g.bought_today > 1 ? 's' : '') + ' aujourd\'hui' : '') + '</div><div class="shop-item-price">' + g.price + ' crédits</div></div>';
+    const buy = document.createElement('button'); buy.className = 'btn-small'; buy.type = 'button'; buy.textContent = 'Acheter';
+    if ((meInfo.credits || 0) < g.price) { buy.disabled = true; buy.title = 'Pas assez de crédits'; }
+    buy.addEventListener('click', () => buyFatigueGel(buy));
+    row.appendChild(buy); root.appendChild(row);
+  }
+  function renderGelLine(){
+    const el = byId('gelLine'), g = meInfo && meInfo.fatigue_gel; if (!el) return;
+    if (!g) { el.hidden = true; return; }
+    el.hidden = false; el.classList.toggle('on', g.left > 0);
+    el.innerHTML = g.left > 0
+      ? '<span>🧊 <b>Gel actif</b> : encore ' + g.left + ' match' + (g.left > 1 ? 's' : '') + ' 1v1 sans fatigue</span><button class="btn-small ghost" type="button">+ ' + g.matches + ' (' + g.price + ' cr.)</button>'
+      : '<span>🧊 Tes cartes fatiguent ? Un <b>gel</b> : ' + g.matches + ' matchs sans fatigue</span><button class="btn-small ghost" type="button">' + g.price + ' crédits</button>';
+    el.querySelector('button').addEventListener('click', e => buyFatigueGel(e.currentTarget));
   }
 
   // ---------- Shop : cosmétiques à paliers (vendus uniquement ici) ----------
@@ -5364,6 +5405,7 @@
       else if (recap.result === 'défaite') html += ((recap.pack_none_to || []).includes(recap.defender) ? '<br>💰 ' + pseudoLink(recap.defender) + ' a déjà gagné ses ' + (recap.duel_pack_cap || 10) + ' packs 1v1 du jour : il reçoit des crédits à la place.' : '<br>🎁 Le pack match revient à ' + pseudoLink(recap.defender) + '.');
       const myBonus = (recap.credits_instead || {})[recap.challenger];
       if (myBonus) html += '<br>💰 Tu as déjà gagné tes <b>' + (recap.duel_pack_cap || 10) + ' packs du jour en 1v1</b> : tu reçois <b>+' + myBonus + ' crédit' + (myBonus > 1 ? 's' : '') + '</b> à la place, pour acheter des packs au Shop. Les packs reviennent à minuit.';
+      if ((recap.gel_to || []).includes(recap.challenger)) html += '<br>🧊 <b>Gel de fatigue</b> : tes cartes n\'ont pas perdu de forme pendant ce match.';
       if ((recap.ultra_to || []).includes(recap.challenger)) html += '<br>🎁 <b>' + (recap.ultra_every || 20) + ' matchs 1v1 de plus aujourd\'hui : un pack ultra</b> t\'attend dans l\'onglet Packs !';
       const myLoup = (recap.loup_credits || {})[recap.challenger];
       if (myLoup) html += '<br>🐺 Le Loup t\'a rapporté <b>+' + myLoup + ' crédit' + (myLoup > 1 ? 's' : '') + '</b>.';

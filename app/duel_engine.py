@@ -697,8 +697,17 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
               "members": build_members(cards_d, captain_d.id if captain_d else None, lv_d, forms_d)}       # niveaux et forme des deux équipes, au moment du match
     # chaque carte utilisée perd 1 % de forme (jusqu'à minuit) : les 5 joueurs, le Fan, le Loup et l'équipement ; l'équipement réduit cette perte
     used = lambda cards, fan, mascot, equip: [c.id for c, _ in cards] + [x.id for x in ([fan, mascot] + list(equip or [])) if x is not None]
-    fatigue.record_match(db, challenger.id, used(cards_c, fan_c, mascot_c, equip_c), equipment_fatigue_reduction(equip_c, lv_c))
-    fatigue.record_match(db, creator.id, used(cards_d, fan_d, mascot_d, equip_d), equipment_fatigue_reduction(equip_d, lv_d))
+    # gel de fatigue (fatigue_gel, acheté au shop) : ce match ne fatigue pas les cartes de ce joueur, et consomme un de ses matchs de gel
+    from . import fatigue_gel
+    gel_to = []
+    if fatigue_gel.use(db, challenger.id):
+        gel_to.append(challenger.pseudo)
+    else:
+        fatigue.record_match(db, challenger.id, used(cards_c, fan_c, mascot_c, equip_c), equipment_fatigue_reduction(equip_c, lv_c))
+    if fatigue_gel.use(db, creator.id):
+        gel_to.append(creator.pseudo)
+    else:
+        fatigue.record_match(db, creator.id, used(cards_d, fan_d, mascot_d, equip_d), equipment_fatigue_reduction(equip_d, lv_d))
 
     winner_tactic = tactic_advantage(tactic, proposal.tactic)          # 'a' = challenger, 'b' = créateur
     mult_c = 1 + TACTIC_BONUS if winner_tactic == "a" else 1.0
@@ -826,6 +835,7 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
         "credits_instead": credits_instead,                            # … mais 5 à 15 crédits au hasard à la place (150 par jour au plus) : {pseudo: crédits}
         "duel_pack_cap": DUEL_PACK_DAILY_CAP,
         "ultra_to": ultra_to,                                          # 20e, 40e, 60e… match 1v1 du jour : un pack ultra pour ces joueurs
+        "gel_to": gel_to,                                              # joueurs dont les cartes n'ont pas perdu de forme (gel de fatigue)
         "ultra_every": ULTRA_EVERY_MATCHES,
         "loup_credits": {k: v for k, v in loup.items() if v},               # crédits rapportés par le Loup à ce match : {pseudo: crédits}
         "tactics": {"challenger": tactic, "defender": proposal.tactic,
