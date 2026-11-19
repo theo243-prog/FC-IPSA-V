@@ -8,6 +8,10 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-ultra-20-matchs", "date": "2026-11-19", "category": "économie", "title": "Un pack ultra tous les 20 matchs",
+     "text": "Chaque jour, ton 20e match 1v1 te rapporte un pack ultra, puis le 40e, le 60e, et ainsi de suite, que tu gagnes ou que tu perdes."},
+    {"id": "2026-11-tri-niveau", "date": "2026-11-19", "category": "autre", "title": "Trier sa collection par niveau",
+     "text": "Dans ta collection, le nouveau tri « Niveau » montre d'abord tes cartes les plus évoluées dans chaque rareté."},
     {"id": "2026-11-fatigue-points", "date": "2026-11-18", "category": "règles", "title": "La fatigue pèse pareil sur toutes les cartes",
      "text": "En 1v1, chaque % de forme perdu retire maintenant 0,85 point à la note d'un joueur, quelle que soit sa note. Avant, la fatigue était un pourcentage de la note : les meilleures cartes perdaient plus de points que les autres."},
     {"id": "2026-11-noire-16h", "date": "2026-11-17", "category": "cartes", "title": "Enchères du club à 16h",
