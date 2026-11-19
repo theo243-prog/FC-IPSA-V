@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-gel-fatigue", "date": "2026-11-19", "category": "économie", "title": "🧊 Gel de fatigue au shop",
+     "text": "Nouveau au shop : le gel de fatigue. Tes 5 prochains matchs 1v1 ne fatiguent pas tes cartes. Le premier gel du jour coûte 50 crédits, puis le prix double à chaque achat (100, 200…) jusqu'à minuit. La forme déjà perdue n'est pas rendue, et les matchs de gel ne se perdent pas."},
     {"id": "2026-11-ultra-equilibrage", "date": "2026-11-19", "category": "cartes", "title": "Nouveau pack ultra",
      "text": "Le pack ultra tombant maintenant tous les 20 matchs 1v1, il change : 6 cartes aux chances classiques, 3 rares ou mieux et 1 gold ou mieux (une édition limitée, une épique ou une légendaire peuvent y sortir). Il n'a plus d'épique garantie."},
     {"id": "2026-11-ultra-20-matchs", "date": "2026-11-19", "category": "économie", "title": "Un pack ultra tous les 20 matchs",
