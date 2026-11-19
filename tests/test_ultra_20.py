@@ -48,4 +48,10 @@ r = match()
 ok(r["ultra_to"] == ["alice"] and ultra("alice") == u0["alice"] + 2, "40e match d'alice : son 2e pack ultra")
 ok(c.get("/duel/config").json().get("ultra_every_matches") == 20, "/duel/config annonce « tous les 20 matchs »")
 
+print("4) LA BARRE DU SITE (/me)")
+u = c.get("/me", headers=H["alice"]).json()["ultra_progress"]
+ok(u == {"matches": 40, "every": 20, "progress": 0, "lap": 2, "left": 20}, "alice : 40 matchs aujourd'hui, 2 packs ultra gagnés, la barre repart à 0 / 20 (%s)" % u)
+u = c.get("/me", headers=H["cyr"]).json()["ultra_progress"]
+ok(u["matches"] == 1 and u["progress"] == 1 and u["left"] == 19 and u["lap"] == 0, "cyr : 1 / 20, encore 19 matchs")
+
 print(); print("BILAN (pack ultra tous les 20 matchs) :", "TOUT EST VERT" if not FAILS else f"{len(FAILS)} ÉCHEC(S) : {FAILS}")

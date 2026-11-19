@@ -201,6 +201,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "pass_todo": battlepass.claimable_count(db, user),
             "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
             "player_packs": player_packs.owned_out(db, user.id),   # packs joueur achetés, pas encore ouverts
+            "ultra_progress": duel_engine.ultra_progress(db, user),  # barre de l'onglet 1v1 : matchs du jour vers le prochain pack ultra
             "draft_access": draft.has_access(db, user),           # mode draft (ouvert aux comptes choisis dans l'administration)
             "features": features.flags_for(db, user),             # fonctions en essai : {nom: accès} (draft, pantheon…)
             "features_public": features.public_flags(db),         # {nom: ouverte à tous} : plus de badge « essai » sur le site
@@ -222,6 +223,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "pass_todo": battlepass.claimable_count(db, user),
             "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
             "player_packs": player_packs.owned_out(db, user.id),   # packs joueur achetés, pas encore ouverts
+            "ultra_progress": duel_engine.ultra_progress(db, user),  # barre de l'onglet 1v1 : matchs du jour vers le prochain pack ultra
             "draft_access": draft.has_access(db, user),           # mode draft (ouvert aux comptes choisis dans l'administration)
             "features": features.flags_for(db, user),             # fonctions en essai : {nom: accès} (draft, pantheon…)
             "features_public": features.public_flags(db),         # {nom: ouverte à tous} : plus de badge « essai » sur le site

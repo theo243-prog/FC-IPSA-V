@@ -625,6 +625,18 @@ def create_proposal(db: Session, user: User, formation, tactic, stake, slots, ca
     return proposal
 
 
+def ultra_progress(db: Session, player: User) -> dict:
+    """Barre « pack ultra » de l'onglet 1v1 : matchs 1v1 joués aujourd'hui (Paris), où on en est vers le prochain pack ultra
+    (tous les ULTRA_EVERY_MATCHES), et combien de packs ultra ont déjà été gagnés ainsi aujourd'hui (lap : 0, 1, 2…)."""
+    from . import missions
+    try:
+        n = int(missions.daily_count(db, player, "duel_matches") or 0)
+    except Exception:
+        n = 0
+    return {"matches": n, "every": ULTRA_EVERY_MATCHES, "progress": n % ULTRA_EVERY_MATCHES, "lap": n // ULTRA_EVERY_MATCHES,
+            "left": ULTRA_EVERY_MATCHES - n % ULTRA_EVERY_MATCHES}
+
+
 def loup_credits(db: Session, player: User, mascot_card) -> int:
     """Après un match 1v1 joué : compte le match du jour du joueur et lui verse les crédits de son Loup (s'il en aligne un),
     seulement pendant ses DUEL_PACK_DAILY_CAP (10) premiers matchs 1v1 du jour et dans la limite de LOUP_DAILY_CAP (30) crédits par jour.
