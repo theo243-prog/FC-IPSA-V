@@ -894,6 +894,29 @@
   .stat-box .num{font-family:var(--font-head);font-size:24px;font-weight:600;}
   .stat-box .lab{font-size:11px;color:var(--text-muted);}
   .player-note{text-align:center;font-family:var(--font-head);font-size:34px;font-weight:600;margin:4px 0 16px;}
+  /* Barre « pack ultra » de l'onglet 1v1 : 20 matchs du jour = un pack ultra, puis elle repart… et prend feu (un peu plus à chaque tour) */
+  .ultra-bar{margin:0 0 14px;padding:12px 14px;border-radius:14px;background:var(--surface,#fff);box-shadow:0 2px 10px rgba(0,0,0,.08);position:relative;overflow:hidden;}
+  .ultra-bar .ub-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--font-head);font-weight:700;font-size:15px;margin-bottom:8px;}
+  .ultra-bar .ub-top small{font-family:var(--font-body);font-weight:600;font-size:12px;color:var(--text-muted);}
+  .ultra-bar .ub-track{position:relative;height:18px;border-radius:999px;background:rgba(127,127,127,.18);overflow:hidden;}
+  .ultra-bar .ub-fill{position:absolute;inset:0 auto 0 0;border-radius:999px;background:linear-gradient(90deg,#5b8cff,#9b5cff);transition:width .8s cubic-bezier(.2,.8,.2,1);}
+  .ultra-bar .ub-ticks{position:absolute;inset:0;display:grid;grid-template-columns:repeat(20,1fr);pointer-events:none;}
+  .ultra-bar .ub-ticks span{border-right:1px solid rgba(255,255,255,.35);} .ultra-bar .ub-ticks span:last-child{border-right:0;}
+  .ultra-bar .ub-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6);}
+  .ultra-bar .ub-flames{display:none;}
+  .ultra-bar.fire{background:linear-gradient(180deg,#2a0f05,#120603);color:#ffe8c7;box-shadow:0 0 0 1px #ff6a1a,0 0 18px rgba(255,90,20,.45);}
+  .ultra-bar.fire .ub-top small{color:#ffb97a;}
+  .ultra-bar.fire .ub-fill{background:linear-gradient(90deg,#ff2d00,#ff7a00,#ffd000,#ff7a00,#ff2d00);background-size:200% 100%;animation:ubFire 1.2s linear infinite;box-shadow:0 0 12px #ff6a00;}
+  .ultra-bar.fire.blaze .ub-fill{background:linear-gradient(90deg,#00b3ff,#7af0ff,#ffffff,#7af0ff,#00b3ff);background-size:200% 100%;box-shadow:0 0 14px #33d1ff;}
+  .ultra-bar.fire.blaze{box-shadow:0 0 0 1px #33d1ff,0 0 22px rgba(51,209,255,.5);} .ultra-bar.fire.blaze .ub-flames span{filter:hue-rotate(185deg) saturate(1.6) brightness(1.15);}      /* 3e tour : flammes bleues */
+  .ultra-bar.fire{padding-bottom:22px;}
+  .ultra-bar.fire .ub-flames{display:block;position:absolute;left:0;right:0;bottom:0;height:0;pointer-events:none;}      /* les flammes montent du bas de la barre */
+  .ultra-bar.fire .ub-flames span{position:absolute;bottom:-7px;font-size:20px;transform-origin:50% 100%;animation:ubFlick .9s ease-in-out infinite alternate;}
+  @keyframes ubFire{from{background-position:0 0;}to{background-position:200% 0;}}
+  @keyframes ubFlick{from{transform:translateY(0) scale(1);opacity:.85;}to{transform:translateY(-4px) scale(1.15);opacity:1;}}
+  .ultra-bar.ub-pop{animation:ubPop .7s ease-out;}
+  @keyframes ubPop{0%{transform:scale(1);}40%{transform:scale(1.04);}100%{transform:scale(1);}}
+  @media (prefers-reduced-motion: reduce){.ultra-bar .ub-fill,.ultra-bar .ub-flames span,.ultra-bar.ub-pop{animation:none !important;}}
   .player-note small{display:block;font-family:var(--font-body);font-size:11px;font-weight:600;color:var(--text-muted);}
   .form-now{text-align:center;margin:-8px auto 14px;padding:6px 12px;border-radius:12px;background:var(--surface-2,rgba(127,127,127,.1));font-size:14px;max-width:340px;} .form-now b{font-size:16px;} .form-now span{display:block;font-size:12px;color:var(--text-muted);margin-top:2px;} .form-now .fn-lvl{font-size:11px;color:var(--text-muted);} .form-now:not(.full){box-shadow:inset 0 0 0 1px rgba(230,120,30,.45);}
   .note-box{border-radius:10px;padding:10px 6px;text-align:center;background:var(--bg-sunk);}
@@ -1365,6 +1388,7 @@
     </section>
     <section id="tab-duels" class="tab-panel">
       <div class="help-row"><button class="help-btn" type="button" data-help="duels"><span class="help-q">?</span> Aide</button></div>
+      <div class="ultra-bar" id="ultraBar" hidden></div>
       <div class="duel-grid">
         <div class="panel-box duel-proposals cell">
           <div class="duel-proposals-head">
@@ -2490,7 +2514,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.19.2';
+  const SITE_VERSION = '2026.11.19.3';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3324,6 +3348,22 @@
       await refreshMe(true);
     } catch(e) { toast(e.message || 'Impossible de récupérer cette récompense'); if (btn) btn.disabled = false; }
   }
+  // Barre « pack ultra » (onglet 1v1) : les matchs 1v1 du jour vers le prochain pack ultra ; après le 1er pack ultra elle prend feu
+  // (orange), après le 2e elle brûle en bleu. Elle se met à jour à chaque /me (donc après chaque match).
+  var ultraLast = null;          // (var : lu avant que le script soit fini de charger)
+  function renderUltraBar(){
+    const el = byId('ultraBar'), u = meInfo && meInfo.ultra_progress; if (!el || !u) { if (el) el.hidden = true; return; }
+    const pct = Math.round(100 * u.progress / u.every), lap = u.lap || 0;
+    el.hidden = false; el.className = 'ultra-bar' + (lap >= 1 ? ' fire' : '') + (lap >= 2 ? ' blaze' : '');
+    const title = lap === 0 ? '🎁 Pack ultra' : (lap === 1 ? '🔥 En feu ! Prochain pack ultra' : '🔥🔥 Inarrêtable ! Pack ultra n° ' + (lap + 1));
+    const sub = u.progress === 0 && lap > 0 ? 'Pack ultra gagné ! La barre repart' : 'encore <b>' + u.left + '</b> match' + (u.left > 1 ? 's' : '') + ' 1v1';
+    el.innerHTML = '<div class="ub-flames" aria-hidden="true">' + (lap >= 1 ? [2, 12, 22, 32, 42, 52, 62, 72, 82, 92].map((x, i) => '<span style="left:' + x + '%;animation-delay:' + (i * 0.15) + 's">' + '🔥' + '</span>').join('') : '') + '</div>' +
+      '<div class="ub-top"><span>' + title + '</span><small>' + sub + ' · ' + u.matches + ' aujourd\'hui</small></div>' +
+      '<div class="ub-track" role="progressbar" aria-valuemin="0" aria-valuemax="' + u.every + '" aria-valuenow="' + u.progress + '" aria-label="Matchs 1v1 avant le prochain pack ultra">' +
+      '<div class="ub-fill" style="width:' + pct + '%"></div><div class="ub-ticks">' + '<span></span>'.repeat(u.every) + '</div><div class="ub-num">' + u.progress + ' / ' + u.every + '</div></div>';
+    if (ultraLast !== null && u.matches > ultraLast) { el.classList.remove('ub-pop'); void el.offsetWidth; el.classList.add('ub-pop'); }      // un match de plus : petit rebond
+    ultraLast = u.matches;
+  }
   async function refreshMe(skipMissions){
     try {
       meInfo = await api('/me');
@@ -3335,6 +3375,7 @@
       updateFeatureTabs();                                     // fonctions en essai (Panthéon…) : onglet caché sauf aux comptes choisis
       if (meInfo.notices_unread !== noticeSeen) loadNotices();  // encadré « Notifications » : du nouveau
       updateNewsDot();                                         // point rouge de l'onglet Actualité (un vote « homme du match » à faire)
+      try { renderUltraBar(); } catch(e) { /* la barre ne doit jamais bloquer /me */ }       // barre « pack ultra » de l'onglet 1v1
       document.getElementById('chipCredits').textContent = meInfo.credits;
       const bonusTotal = Object.values(meInfo.pack_tokens || {}).reduce((a, b) => a + b, 0);
       document.getElementById('chipPacks').textContent = meInfo.stored_packs + '/3' + (bonusTotal ? (' +' + bonusTotal + ' bonus') : '');
