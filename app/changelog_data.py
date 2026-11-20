@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-pack-edition-pass", "date": "2026-11-20", "category": "cartes", "title": "Le pack d'édition du Pass devient un vrai pack",
+     "text": "Aux niveaux 20 et 30 du Pass Premium, le pack d'édition limitée arrive maintenant dans ta réserve de l'onglet Packs : tu l'ouvres comme les autres, avec l'animation. Avant, ses cartes allaient directement dans ta collection, sans prévenir."},
     {"id": "2026-11-gel-fatigue", "date": "2026-11-19", "category": "économie", "title": "🧊 Gel de fatigue au shop",
      "text": "Nouveau au shop : le gel de fatigue. Tes 5 prochains matchs 1v1 ne fatiguent pas tes cartes. Le premier gel du jour coûte 50 crédits, puis le prix double à chaque achat (100, 200…) jusqu'à minuit. La forme déjà perdue n'est pas rendue, et les matchs de gel ne se perdent pas."},
     {"id": "2026-11-ultra-equilibrage", "date": "2026-11-19", "category": "cartes", "title": "Nouveau pack ultra",

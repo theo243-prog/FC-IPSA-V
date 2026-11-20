@@ -75,9 +75,13 @@ b = U("p3").pack_state.rare_pack_tokens; claim("p3", "premium", 10); ok(U("p3").
 b = U("p3").credits; claim("p3", "premium", 15); ok(U("p3").credits == b + 100, "niveau 15 : +100 crédits")
 at(30); grant("p3", 1500); import random
 for n in (2, 3, 4, 5, 6, 7, 8, 9): claim("p3", "premium", n)
-r = claim("p3", "premium", 20); cards = r.json()["reward"]["edition_pack"]["cards"]; ok(r.status_code == 200 and len(cards) == 2 and all(x["tier"] == "halloween" for x in cards), "niveau 20 : pack d'édition limitée = 2 cartes Halloween : " + ", ".join(x["player_name"] for x in cards))
+r = claim("p3", "premium", 20); ep = r.json()["reward"]["edition_pack"]; ok(r.status_code == 200 and ep.get("pack_id") and ep["edition"] == "halloween" and ep["size"] == 2, "niveau 20 : un pack d'édition Halloween de 2 cartes rangé dans la réserve (%s)" % ep)
+me = c.get("/me", headers=H["p3"]).json(); ok([(x["edition"], x["size"]) for x in me["edition_packs"]] == [("halloween", 2)], "/me : le pack d'édition est dans la réserve")
+r = c.post("/pack/open", json={"pack_type": "edition", "edition_pack_id": ep["pack_id"]}, headers=H["p3"]); cards = r.json().get("cards_won", [])
+ok(r.status_code == 200 and len(cards) == 2 and all(x["tier"] == "halloween" for x in cards) and r.json()["pack_type"] == "edition", "ouverture : 2 cartes Halloween : " + ", ".join(x["player_name"] for x in cards))
+ok(c.get("/me", headers=H["p3"]).json()["edition_packs"] == [] and c.post("/pack/open", json={"pack_type": "edition", "edition_pack_id": ep["pack_id"]}, headers=H["p3"]).status_code == 400, "le pack ouvert quitte la réserve ; l'ouvrir deux fois : refusé")
 r = claim("p3", "premium", 25); pc = r.json()["reward"]["pass_card"]; ok(r.status_code == 200 and pc["trophy"]["rank"] == 6 and pc["trophy"]["theme"]["id"] == "halloween" and pc["trophy"]["theme"]["c2"] == "#FF8A1F" and pc["trophy"]["title"] == "Pass Halloween", "niveau 25 : la carte exclusive « Pass Halloween (novembre 2026) » au style Halloween (orange et violet sombre)")
-r = claim("p3", "premium", 30); cards3 = r.json()["reward"]["edition_pack"]["cards"]; allc = {x["id"] for x in cards} | {x["id"] for x in cards3}
+r = claim("p3", "premium", 30); ep3 = r.json()["reward"]["edition_pack"]; cards3 = c.post("/pack/open", json={"pack_type": "edition", "edition_pack_id": ep3["pack_id"]}, headers=H["p3"]).json()["cards_won"]; allc = {x["id"] for x in cards} | {x["id"] for x in cards3}
 ok(r.status_code == 200 and len(cards3) == 3 and len(allc) == 4, "niveau 30 : 3 autres cartes Halloween (en privilégiant celles qu'on n'a pas) : 4 cartes différentes sur les 4 de l'édition")
 col = c.get("/collection", headers=H["p3"]).json(); ok(any(x.get("trophy") and x["trophy"]["rank"] == 6 and x["quantity"] == 1 for x in col), "la carte du Pass est dans la collection (en un exemplaire)")
 ok(claim("p3", "premium", 20).status_code == 400, "réclamer deux fois : refusé")

@@ -291,18 +291,17 @@ def pass_card(db: Session, key: str, theme_id: str) -> Card:
     return card
 
 
-def _edition_pack(db: Session, user: User, theme_id: str, n: int) -> dict:
-    """Un « pack d'édition limitée » : n cartes de l'édition du thème (de préférence nouvelles). Sans édition (ou sans carte), repli : packs rares."""
-    ed = P.THEMES[theme_id].get("edition"); cards = db.query(Card).filter(Card.tier == Tier(ed)).all() if ed else []
-    if not cards:
+def _edition_pack(db: Session, user: User, theme_id: str, n: int, season: str = None) -> dict:
+    """Un « pack d'édition limitée » de n cartes de l'édition du thème. Depuis le 20/11/2026 (branche pack-edition-pass), c'est un VRAI pack
+    rangé dans la réserve de l'onglet Packs (edition_packs), ouvert avec l'animation ; avant, les cartes allaient directement dans la
+    collection. Sans édition (ou sans carte), repli inchangé : packs rares."""
+    from . import edition_packs
+    ed = P.THEMES[theme_id].get("edition"); has_cards = bool(ed) and db.query(Card).filter(Card.tier == Tier(ed)).first() is not None
+    if not has_cards:
         ps = user.pack_state; ps.rare_pack_tokens = (getattr(ps, "rare_pack_tokens", 0) or 0) + (1 if n <= 2 else 2)
         return {"fallback": "pack rare", "count": 1 if n <= 2 else 2}
-    owned = {o.card_id for o in db.query(OwnedCard).filter(OwnedCard.user_id == user.id, OwnedCard.quantity > 0).all()}
-    fresh = [c for c in cards if c.id not in owned]; random.shuffle(fresh); rest = [c for c in cards if c.id in owned]; random.shuffle(rest)
-    won = (fresh + rest)[:n]
-    for c in won:
-        game_logic.get_or_create_owned(db, user, c).quantity += 1
-    return {"cards": [card_out(c) for c in won], "edition": ed}
+    row = edition_packs.grant(db, user, ed, n, season)
+    return {"pack_id": row.id, "edition": ed, "size": n}
 
 
 def _grant(db: Session, user: User, season: str, reward: dict, theme_id: str) -> dict:
@@ -312,7 +311,7 @@ def _grant(db: Session, user: User, season: str, reward: dict, theme_id: str) ->
     if reward.get("pack"):
         missions._grant(user, {"pack": reward["pack"]}); out["pack"] = reward["pack"]
     if reward.get("edition_pack"):
-        out["edition_pack"] = _edition_pack(db, user, theme_id, int(reward["edition_pack"]))
+        out["edition_pack"] = _edition_pack(db, user, theme_id, int(reward["edition_pack"]), season)
     if reward.get("pass_card"):
         c = pass_card(db, season, theme_id); o = game_logic.get_or_create_owned(db, user, c); o.quantity = max(o.quantity, 1); out["pass_card"] = card_out(c)
     if reward.get("item"):
@@ -437,7 +436,7 @@ def claim_all(payload: ClaimAllRequest, user: User = Depends(get_current_user), 
     if not done:
         raise HTTPException(status_code=400, detail="Rien à récupérer pour le moment")
     db.commit()
-    summary = {"credits": 0, "packs": {}, "items": [], "pass_cards": [], "edition_cards": [], "fallback_rare_packs": 0}
+    summary = {"credits": 0, "packs": {}, "items": [], "pass_cards": [], "edition_cards": [], "edition_packs": [], "fallback_rare_packs": 0}
     for d in done:
         g = d["reward"]
         summary["credits"] += g.get("credits", 0)
@@ -445,7 +444,9 @@ def claim_all(payload: ClaimAllRequest, user: User = Depends(get_current_user), 
         if g.get("item"): summary["items"].append(g["item"])
         if g.get("pass_card"): summary["pass_cards"].append(g["pass_card"])
         if g.get("edition_pack"):
-            summary["edition_cards"] += g["edition_pack"].get("cards", [])
+            summary["edition_cards"] += g["edition_pack"].get("cards", [])          # (anciennes récupérations : cartes données directement)
+            if g["edition_pack"].get("pack_id"):
+                summary["edition_packs"].append({"edition": g["edition_pack"]["edition"], "size": g["edition_pack"]["size"]})
             summary["fallback_rare_packs"] += g["edition_pack"].get("count", 0)
     return {"status": "ok", "claimed": len(done), "rewards": done, "summary": summary, "credits": user.credits}
 
