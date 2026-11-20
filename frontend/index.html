@@ -1025,7 +1025,7 @@
   /* ---- Mode draft ---- */
   .draft-box{border-top:5px solid #7A4EC9;}
   .draft-beta[hidden]{display:none;} .draft-beta{font-size:12px;font-weight:700;background:#7A4EC9;color:#fff;border-radius:999px;padding:2px 8px;vertical-align:middle;}
-  .draft-create{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;} .draft-create input{flex:1;min-width:180px;}
+  .draft-create{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;} .draft-create input,.draft-create select{flex:1;min-width:180px;}
   .draft-sub{margin:14px 0 6px;font-size:15px;}
   .draft-open-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;background:var(--bg-sunk);}
   .draft-open-row.invited{border-color:#7A4EC9;}
@@ -2527,7 +2527,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.20.4';
+  const SITE_VERSION = '2026.11.20.5';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -5576,8 +5576,12 @@
     if (!byId('draftOpen')) {
       main.innerHTML = '<p class="duel-hint">Un match à deux, <b>en même temps devant vos écrans</b>. Le jeu tire en secret <b>' + r.players + ' joueurs et ' + r.fans + ' fans</b> parmi les cartes du jeu (pas les vôtres), présentés un par un : on ne sait jamais combien de gardiens, défenseurs, milieux ou attaquants il reste. Chacun a <b>' + r.budget + ' pièces</b>, pour ce match seulement. À chaque carte, celui qui parle en premier change : il mise (dès 0) ou passe, puis on surenchérit d\'au moins ' + r.min_step + ' pièces. Passer sans mise laisse la carte à l\'adversaire pour 0. ' + r.bid_seconds + ' secondes pour répondre. Chaque équipe a 5 joueurs et 1 fan au plus. Si tu tombes à 0 pièce, l\'adversaire choisit pour toi ce qui reste.</p>' +
         '<p class="duel-hint">Ensuite, <b>' + r.lineup_seconds + ' secondes</b> pour choisir formation, tactique, postes et capitaine, et le match se joue en direct sur les deux écrans. Cartes au niveau 0 et à 100 % de forme. Récompenses comme en 1v1 : pack match au gagnant, pack classique au perdant ou aux deux en cas de nul, dans la même limite de ' + r.pack_cap + ' packs par jour. Le classement repart de zéro à chaque semaine draft ; podium à la fin.</p>' +
-        '<div class="draft-create"><input id="draftInvite" type="text" placeholder="Inviter un joueur (pseudo, facultatif)" maxlength="40"><button class="btn-primary" id="draftCreateBtn" type="button">🃏 Créer une partie</button></div>' +
+        '<div class="draft-create"><select id="draftInvite" aria-label="Inviter un joueur en particulier"><option value="">— n\'importe qui (partie ouverte) —</option></select><button class="btn-primary" id="draftCreateBtn" type="button">🃏 Créer une partie</button></div>' +
         '<h3 class="draft-sub">Parties qui attendent un adversaire</h3><div id="draftOpen"></div><p class="duel-hint" id="draftMine"></p>';
+      api('/duel/opponents').then(list => {                    // invitation : choisir le joueur dans une liste (comme un défi 1v1), sans taper son pseudo
+        const sel = byId('draftInvite'); if (!sel) return;
+        list.slice().sort((a, b) => a.pseudo.localeCompare(b.pseudo, 'fr', { sensitivity: 'base' })).forEach(o => { const op = document.createElement('option'); op.value = o.pseudo; op.textContent = o.pseudo; sel.appendChild(op); });
+      }).catch(() => { /* liste vide : partie ouverte à tous seulement */ });
       byId('draftCreateBtn').addEventListener('click', async e => {
         const b = e.currentTarget; b.disabled = true;
         try { draft.room = await api('/draft/create', { method: 'POST', body: JSON.stringify({ invite: byId('draftInvite').value.trim() }) }); draft.at = Date.now(); draft.key = null; draft.shownMatch = null; renderDraftRoom(); startDraftPoll(); }
