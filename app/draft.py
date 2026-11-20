@@ -139,12 +139,14 @@ def _save_settings(db: Session, s: dict) -> None:
 
 
 def has_access(db: Session, user) -> bool:
-    return features.has_access(db, user, SETTING_KEY)
+    """Tout le monde pendant la semaine draft du mois (draft_week) ; en dehors, seulement les comptes choisis dans l'administration (essais)."""
+    from . import draft_week
+    return features.has_access(db, user, SETTING_KEY) or draft_week.is_open(db)
 
 
 def _require_access(db, user):
     if not has_access(db, user):
-        raise HTTPException(status_code=403, detail="Le mode draft n'est pas encore ouvert")
+        raise HTTPException(status_code=403, detail="Le mode draft est fermé : rendez-vous à la prochaine semaine draft")
 
 
 def season_now() -> str:
@@ -558,23 +560,31 @@ def _mine(db, room_id, user) -> tuple:
 # --------------------------------------------------------------------------------- routes ----
 @router.get("/draft")
 def get_draft(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Le salon du draft : ma partie en cours, les parties qui attendent un adversaire, le classement du mois."""
-    _require_access(db, user)
+    """Le salon du draft : ma partie en cours, les parties qui attendent un adversaire, le classement du mois, et la semaine draft (`week`).
+    Hors de la semaine draft (sans accès d'essai) : seulement la semaine, le classement et ma partie en cours s'il y en a une (elle va au bout)."""
+    from . import draft_week
     now = _now()
+    access = has_access(db, user)
     mine = _active_room(db, user)
+    week = draft_week.status(db)
+    my_rating = db.query(DraftRating).filter_by(user_id=user.id, season=season_now()).first()
+    rules = {"budget": BUDGET, "min_step": MIN_STEP, "bid_seconds": BID_SECONDS, "lineup_seconds": LINEUP_SECONDS, "players": N_PLAYERS,
+             "fans": N_FANS, "wait_seconds": WAIT_SECONDS, "pack_cap": DE.DUEL_PACK_DAILY_CAP}
+    if not access and mine is None:
+        db.commit()
+        return {"access": False, "week": week, "season": season_now(), "my_room": None, "open_rooms": [], "ranking": ranking(db),
+                "my_rating": {"elo": my_rating.elo, "played": my_rating.played} if my_rating else {"elo": ELO_START, "played": 0}, "rules": rules}
     if mine is not None:
         _seen(mine, user, now)
     waiting = db.query(DraftRoom).filter(DraftRoom.status == "waiting", DraftRoom.host_id != user.id,
                                          or_(DraftRoom.invited_id == None, DraftRoom.invited_id == user.id)).all()   # noqa: E711
     for r in waiting:
         advance(db, r, now)
-    my_rating = db.query(DraftRating).filter_by(user_id=user.id, season=season_now()).first()
-    out = {"access": True, "season": season_now(), "my_room": room_out(db, mine, user, now) if mine else None,
+    out = {"access": access, "week": week, "season": season_now(), "my_room": room_out(db, mine, user, now) if mine else None,
            "open_rooms": [{"id": r.id, "host": _pseudo(db, r.host_id), "invited": r.invited_id == user.id,
                            "remaining": max(0, int((r.deadline - now).total_seconds()))} for r in waiting if r.status == "waiting"],
            "ranking": ranking(db), "my_rating": {"elo": my_rating.elo, "played": my_rating.played} if my_rating else {"elo": ELO_START, "played": 0},
-           "rules": {"budget": BUDGET, "min_step": MIN_STEP, "bid_seconds": BID_SECONDS, "lineup_seconds": LINEUP_SECONDS, "players": N_PLAYERS,
-                     "fans": N_FANS, "wait_seconds": WAIT_SECONDS, "pack_cap": DE.DUEL_PACK_DAILY_CAP}}
+           "rules": rules}
     db.commit()
     return out
 

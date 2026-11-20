@@ -28,10 +28,11 @@ def tick(s): T[0] += timedelta(seconds=s)
 G = lambda p, rid: c.get("/draft/%s" % rid, headers=H[p]).json()
 
 print("1) ACCÈS RÉSERVÉ")
-ok(c.get("/draft", headers=H["ana"]).status_code == 403 and c.get("/me", headers=H["ana"]).json()["draft_access"] is False, "fermé par défaut : 403, et /me renvoie draft_access faux")
+ok(c.get("/draft", headers=H["ana"]).json()["access"] is False and c.post("/draft/create", json={}, headers=H["ana"]).status_code == 403 and c.get("/me", headers=H["ana"]).json()["draft_access"] is False,
+   "fermé par défaut (hors semaine draft) : le salon dit « pas d'accès », créer une partie est refusé (403), /me renvoie draft_access faux")
 ok(c.post("/admin/draft-settings", json={"allowed": ["ana", "fantome"]}, headers=A).status_code == 400, "un pseudo inconnu dans la liste : refusé")
 ok(c.post("/admin/draft-settings", json={"allowed": ["ana", "bob"]}, headers=A).status_code == 200, "liste des comptes autorisés : ana et bob")
-ok(c.get("/draft", headers=H["ana"]).status_code == 200 and c.get("/me", headers=H["bob"]).json()["draft_access"] and c.get("/draft", headers=H["carl"]).status_code == 403,
+ok(c.get("/draft", headers=H["ana"]).json()["access"] is True and c.get("/me", headers=H["bob"]).json()["draft_access"] and c.get("/draft", headers=H["carl"]).json()["access"] is False and c.post("/draft/create", json={}, headers=H["carl"]).status_code == 403,
    "ana et bob y ont accès, carl non (le serveur refuse, pas seulement le site)")
 
 print("2) LE TIRAGE")

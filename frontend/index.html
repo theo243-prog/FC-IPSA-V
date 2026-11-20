@@ -918,6 +918,12 @@
   /* Gel de fatigue : ligne sous la barre « pack ultra » */
   .gel-line{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:-6px 0 14px;padding:8px 12px;border-radius:12px;font-size:13px;background:rgba(80,170,255,.10);color:var(--text);}
   .gel-line[hidden]{display:none;}
+  /* Semaine draft : bandeau de l'onglet 1v1 et encadré de l'onglet Draft */
+  .draft-week-banner{margin:0 0 14px;padding:10px 14px;border-radius:12px;font-size:13.5px;cursor:pointer;background:rgba(155,92,255,.12);box-shadow:0 0 0 1px rgba(155,92,255,.4);}
+  .draft-week-banner[hidden],.draft-week-box[hidden]{display:none;}
+  .draft-week-banner.open{background:linear-gradient(90deg,rgba(155,92,255,.28),rgba(255,47,209,.18));box-shadow:0 0 0 1px #9b5cff,0 0 14px rgba(155,92,255,.35);}
+  .draft-week-box{margin:0 0 12px;padding:10px 12px;border-radius:12px;font-size:13.5px;line-height:1.55;background:rgba(155,92,255,.10);}
+  .draft-week-box.open{background:linear-gradient(90deg,rgba(155,92,255,.25),rgba(255,47,209,.14));}
   .gel-line.on{background:linear-gradient(90deg,rgba(80,200,255,.25),rgba(160,230,255,.15));box-shadow:0 0 0 1px rgba(80,200,255,.55);}
   @keyframes ubPop{0%{transform:scale(1);}40%{transform:scale(1.04);}100%{transform:scale(1);}}
   @media (prefers-reduced-motion: reduce){.ultra-bar .ub-fill,.ultra-bar .ub-flames span,.ultra-bar.ub-pop{animation:none !important;}}
@@ -1200,7 +1206,7 @@
     <button class="tab" data-tab="classement">Classement</button>
     <button class="tab" data-tab="actualite">Actualité<span class="tab-dot" id="newsDot" hidden></span></button>
     <button class="tab" data-tab="duels">Matchs 1v1</button>
-    <button class="tab" data-tab="draft" id="draftTabBtn" hidden>Draft<span class="tab-dot" id="draftDot" hidden></span></button>
+    <button class="tab" data-tab="draft" id="draftTabBtn">Draft<span class="tab-dot" id="draftDot" hidden></span></button>
     <button class="tab" data-tab="tournoi">Tournoi<span class="tab-dot" id="tournoiDot" hidden></span></button>
     <button class="tab" data-tab="chat">Chat<span class="tab-dot" id="chatDot" hidden></span></button>
     <button class="tab" data-tab="communaute" id="communauteTabBtn" hidden>Crée ta carte</button>
@@ -1388,13 +1394,14 @@
       <div id="communauteEl"></div>
     </section>
     <section id="tab-draft" class="tab-panel">
-      <div class="panel-box draft-box"><h2>🃏 Draft <span class="draft-beta" data-feature="draft">essai</span></h2><div id="draftMain"></div></div>
+      <div class="panel-box draft-box"><h2>🃏 Draft</h2><div class="draft-week-box" id="draftWeekBox"></div><div id="draftMain"></div></div>
       <div class="panel-box" style="margin-top:16px;"><h2 id="draftRankTitle">🏆 Classement draft</h2><div class="cell-scroll" id="draftRanking"></div></div>
     </section>
     <section id="tab-duels" class="tab-panel">
       <div class="help-row"><button class="help-btn" type="button" data-help="duels"><span class="help-q">?</span> Aide</button></div>
       <div class="ultra-bar" id="ultraBar" hidden></div>
       <div class="gel-line" id="gelLine" hidden></div>
+      <div class="draft-week-banner" id="draftWeekBanner" hidden></div>
       <div class="duel-grid">
         <div class="panel-box duel-proposals cell">
           <div class="duel-proposals-head">
@@ -1724,12 +1731,12 @@
     return 'joueur';
   }
   // un trophée de saison s'appelle « Vainqueur de saison (octobre 2026) » : le titre en grand, le mois dessous
-  const TROPHY_MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉', 4: '🏆', 5: '🥈', 7: '🏃', 8: '🏃', 9: '🏃', 10: '🏮', 11: '🥉' };      // 7-9 : les plus assidus ; 10 : lanterne rouge ; 11 : demi-finaliste du tournoi
+  const TROPHY_MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉', 4: '🏆', 5: '🥈', 7: '🏃', 8: '🏃', 9: '🏃', 10: '🏮', 11: '🥉', 12: '⚔️', 13: '🥈', 14: '🥉' };      // 12-14 : podium de la semaine draft      // 7-9 : les plus assidus ; 10 : lanterne rouge ; 11 : demi-finaliste du tournoi
   const trophyKindLabel = t => t.rank === 6 ? 'Pass' : [4, 5, 11].includes(t.rank) ? 'Tournoi' : null;
   function trophyParts(card){
     if (card.trophy) return card.trophy;
     const m = /^(.*) \((.*)\)$/.exec(card.player_name || ''); const title = m ? m[1] : (card.player_name || '');
-    return { title, label: m ? m[2] : '', rank: /^Demi-finaliste du tournoi/.test(title) ? 11 : /^Finaliste du tournoi/.test(title) ? 5 : /^Vainqueur du tournoi/.test(title) ? 4 : /^Vainqueur/.test(title) ? 1 : /^Deuxi/.test(title) ? 2 : 3, season: null };
+    return { title, label: m ? m[2] : '', rank: /^Champion du draft/.test(title) ? 12 : /^Deuxième du draft/.test(title) ? 13 : /^Troisième du draft/.test(title) ? 14 : /^Demi-finaliste du tournoi/.test(title) ? 11 : /^Finaliste du tournoi/.test(title) ? 5 : /^Vainqueur du tournoi/.test(title) ? 4 : /^Vainqueur/.test(title) ? 1 : /^Deuxi/.test(title) ? 2 : 3, season: null };
   }
   const isTourneyCard = card => card.tier === 'saison' && [4, 5, 11].includes(trophyParts(card).rank);          // vainqueur, finaliste ou demi-finaliste d'un tournoi : carte violette et rose fluo
   const isPassCard = card => card.tier === 'saison' && trophyParts(card).rank === 6 && !!trophyParts(card).theme;          // carte exclusive du Pass : aux couleurs du thème du mois
@@ -1974,7 +1981,7 @@
     modalHistoryPush();
     document.getElementById('modalTitle').textContent = card.player_name;
     const body = document.getElementById('modalBody');
-    body.innerHTML = '<div style="text-align:center;font-size:64px;line-height:1.1;margin:6px 0;">' + trophyMedalOf(card) + '</div><p style="text-align:center;font-weight:700;">' + (preview ? 'Cette carte sera remise à la fin de la saison de ' + escapeHtml(t.label) + '.' : (t.rank === 6 ? 'Carte exclusive du Pass de ' : t.rank === 4 ? 'Trophée du tournoi de ' : t.rank === 5 ? 'Carte de finaliste du tournoi de ' : t.rank === 11 ? 'Carte de demi-finaliste du tournoi de ' : [7, 8, 9].includes(t.rank) ? 'Trophée d\'assiduité de la saison de ' : t.rank === 10 ? 'Carte souvenir (pas vraiment glorieuse) de la saison de ' : 'Trophée de la saison de ') + escapeHtml(t.label) + '.') + '</p><p class="muted" style="text-align:center;">Un trophée n\'est qu\'un souvenir : il n\'a ni note ni bonus, ne joue pas de match, ne se vend pas et ne s\'échange pas. Il ne compte pas dans le pourcentage de collection.</p>';
+    body.innerHTML = '<div style="text-align:center;font-size:64px;line-height:1.1;margin:6px 0;">' + trophyMedalOf(card) + '</div><p style="text-align:center;font-weight:700;">' + (preview ? 'Cette carte sera remise à la fin de la saison de ' + escapeHtml(t.label) + '.' : (t.rank === 6 ? 'Carte exclusive du Pass de ' : t.rank === 4 ? 'Trophée du tournoi de ' : t.rank === 5 ? 'Carte de finaliste du tournoi de ' : t.rank === 11 ? 'Carte de demi-finaliste du tournoi de ' : [12, 13, 14].includes(t.rank) ? 'Trophée de la semaine draft de ' : [7, 8, 9].includes(t.rank) ? 'Trophée d\'assiduité de la saison de ' : t.rank === 10 ? 'Carte souvenir (pas vraiment glorieuse) de la saison de ' : 'Trophée de la saison de ') + escapeHtml(t.label) + '.') + '</p><p class="muted" style="text-align:center;">Un trophée n\'est qu\'un souvenir : il n\'a ni note ni bonus, ne joue pas de match, ne se vend pas et ne s\'échange pas. Il ne compte pas dans le pourcentage de collection.</p>';
     if (!preview && card.id && !card.locked) addOwnershipLine(body.querySelector('p'), card.id);      // « 👥 Possédée par N % des joueurs »
     if (!preview && card.quantity > 0 && !card._viewing) {
       body.insertAdjacentHTML('beforeend', '<div class="share-actions" style="margin-top:14px;"><button class="btn-secondary" type="button" id="shareCardBtn">📤 Partager ce trophée</button></div>');
@@ -2520,7 +2527,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.20.2';
+  const SITE_VERSION = '2026.11.20.3';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3384,7 +3391,8 @@
       if (meInfo.notices_unread !== noticeSeen) loadNotices();  // encadré « Notifications » : du nouveau
       updateNewsDot();                                         // point rouge de l'onglet Actualité (un vote « homme du match » à faire)
       try { renderUltraBar(); } catch(e) { /* la barre ne doit jamais bloquer /me */ }       // barre « pack ultra » de l'onglet 1v1
-      try { renderGelLine(); } catch(e) { /* idem */ }                                          // gel de fatigue (ligne sous la barre)
+      try { renderGelLine(); } catch(e) { /* idem */ }
+      try { renderDraftWeekBanner(); } catch(e) { /* idem */ }                                          // gel de fatigue (ligne sous la barre)
       document.getElementById('chipCredits').textContent = meInfo.credits;
       const bonusTotal = Object.values(meInfo.pack_tokens || {}).reduce((a, b) => a + b, 0);
       document.getElementById('chipPacks').textContent = meInfo.stored_packs + '/3' + (bonusTotal ? (' +' + bonusTotal + ' bonus') : '');
@@ -5488,8 +5496,8 @@
   const draftNote = c => (c.display_note && c.display_note.value) || 0;
   function updateDraftTab(){
     const b = byId('draftTabBtn'); if (!b || !meInfo) return;
-    b.hidden = !meInfo.draft_access;
-    if (meInfo.draft_access && !draft.checked) { draft.checked = true; resumeDraft(); }
+    b.hidden = false;                                  // l'onglet est toujours là : il annonce la semaine draft du mois (ouverte à tous 7 jours par mois)
+    if (!draft.checked) { draft.checked = true; resumeDraft(); }
   }
   async function resumeDraft(){                     // une partie en cours (page rechargée) : on la reprend, même hors de l'onglet
     try { const d = await api('/draft'); if (d.my_room) { draft.room = d.my_room; draft.at = Date.now(); startDraftPoll(); updateDraftDot(); } } catch(e) {}
@@ -5515,10 +5523,42 @@
     const main = byId('draftMain'); if (!main) return;
     try { await loadDuelConfig(); } catch(e) {}
     let d; try { d = await api('/draft'); } catch(e) { if (e.message !== 'unauthorized') main.innerHTML = '<div class="empty-state">' + escapeHtml(e.message) + '</div>'; return; }
-    draft.rules = d.rules; renderDraftRanking(d);
+    draft.rules = d.rules; renderDraftRanking(d); renderDraftWeekBox(d.week, d.access);
+    if (!d.access && !d.my_room) { draft.room = null; main.innerHTML = '<div class="empty-state">' + draftWeekClosedText(d.week) + '</div>'; return; }
     if (d.my_room) { draft.room = d.my_room; draft.at = Date.now(); draft.key = null; renderDraftRoom(); startDraftPoll(); return; }
     if (draft.room && draft.room.status === 'done') { renderDraftRoom(); return; }          // le résultat reste affiché jusqu'au retour au salon
     draft.room = null; renderDraftLobby(d);
+  }
+  // ---------- Semaine draft : 7 jours par mois, à une date tirée au hasard (annoncée 48 h avant) ----------
+  function fmtLong(sec){ sec = Math.max(0, Math.round(sec)); const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60); return d ? d + ' j ' + h + ' h' : h ? h + ' h ' + String(m).padStart(2, '0') : m + ' min'; }
+  function fmtDayFr(iso){ return new Date(iso).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }); }
+  function draftLastDay(w){ const e = new Date(w.ends_at); e.setDate(e.getDate() - 1); return e.toISOString(); }
+  function draftPodiumHTML(list){ const md = ['', '🥇', '🥈', '🥉']; return list.map(p => md[p.rank] + ' ' + pseudoLink(p.pseudo) + ' <span class="muted">(' + p.elo + ', +' + p.credits + ' crédits)</span>').join(' · '); }
+  function draftWeekClosedText(w){
+    if (!w) return 'Le mode draft est fermé.';
+    if (w.state === 'announced') return '⚔️ La semaine draft ouvre le <b>' + fmtDayFr(w.starts_at) + '</b> à 0 h (dans ' + fmtLong(w.seconds_to_open) + '). Reviens à ce moment-là !';
+    if (w.state === 'closed') return 'La semaine draft de ' + escapeHtml(w.label) + ' est terminée. Rendez-vous le mois prochain : la date tombe au hasard et elle est annoncée 48 h avant.';
+    if (w.state === 'none') return 'Pas de semaine draft en ' + escapeHtml(w.label) + '. Rendez-vous le mois prochain !';
+    return 'Le mode draft s\'ouvre à tout le monde <b>une semaine par mois</b>, à une date tirée au hasard. La prochaine semaine draft est annoncée 48 h avant (notification et chat).';
+  }
+  function renderDraftWeekBox(w, access){
+    const box = byId('draftWeekBox'); if (!box || !w) return;
+    const prize = 'Podium à la fin : <b>' + w.podium_credits.join(' / ') + ' crédits</b> et une carte trophée (au moins ' + w.min_games + ' parties pour être classé).';
+    let html = '';
+    if (w.state === 'open') html = '⚔️ <b>Semaine draft ouverte</b> jusqu\'au ' + fmtDayFr(draftLastDay(w)) + ' soir (encore ' + fmtLong(w.seconds_left) + '). ' + prize;
+    else if (w.state === 'announced') html = '⚔️ <b>La semaine draft arrive</b> : ouverture le ' + fmtDayFr(w.starts_at) + ' à 0 h, pour 7 jours. ' + prize;
+    else if (access) html = '🧪 Accès d\'essai : tu peux jouer en dehors de la semaine draft (ces parties ne comptent pas pour le podium).';
+    if (w.podium && w.podium.length) html += (html ? '<br>' : '') + '🏁 Podium de ' + escapeHtml(w.label) + ' : ' + draftPodiumHTML(w.podium);
+    else if (w.last_podium) html += (html ? '<br>' : '') + '🏁 Podium de ' + escapeHtml(w.last_podium.label) + ' : ' + draftPodiumHTML(w.last_podium.podium);
+    box.innerHTML = html; box.hidden = !html; box.classList.toggle('open', w.state === 'open');
+  }
+  function renderDraftWeekBanner(){
+    const el = byId('draftWeekBanner'), w = meInfo && meInfo.draft_week; if (!el) return;
+    if (!w || !['open', 'announced'].includes(w.state)) { el.hidden = true; return; }
+    el.hidden = false; el.classList.toggle('open', w.state === 'open');
+    el.innerHTML = w.state === 'open' ? '⚔️ <b>Semaine draft ouverte</b> : encore ' + fmtLong(w.seconds_left) + ' pour défier les autres en direct. <u>Jouer</u>'
+      : '⚔️ <b>La semaine draft arrive</b> : ouverture le ' + fmtDayFr(w.starts_at) + ' à 0 h.';
+    el.onclick = () => { const t = document.querySelector('.tab[data-tab="draft"]'); if (t) t.click(); };
   }
   function backToLobby(){ draft.room = null; draft.key = null; draft.lineupFor = null; byId('draftMain').innerHTML = ''; loadDraft(); }
 
@@ -5528,14 +5568,14 @@
     byId('draftRankTitle').textContent = '🏆 Classement draft · ' + new Date(+y, +m - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
     root.innerHTML = d.ranking.length ? '<table class="duel-table"><thead><tr><th></th><th>Joueur</th><th class="num">Elo</th><th class="num">M</th><th class="num">V</th><th class="num">N</th><th class="num">D</th></tr></thead><tbody>' +
       d.ranking.map((r, i) => '<tr' + (r.pseudo === myPseudo ? ' class="me"' : '') + '><td><span class="rank-num">#' + (i + 1) + '</span></td><td>' + pseudoLink(r.pseudo) + '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.played + '</td><td class="num">' + r.wins + '</td><td class="num">' + r.draws + '</td><td class="num">' + r.losses + '</td></tr>').join('') + '</tbody></table>'
-      : '<div class="empty-state">Personne n\'a encore joué de draft ce mois-ci. Le classement repart de zéro chaque mois.</div>';
+      : '<div class="empty-state">Personne n\'a encore joué de draft ce mois-ci. Le classement repart de zéro à chaque semaine draft.</div>';
   }
 
   function renderDraftLobby(d){
     const main = byId('draftMain'), r = d.rules;
     if (!byId('draftOpen')) {
       main.innerHTML = '<p class="duel-hint">Un match à deux, <b>en même temps devant vos écrans</b>. Le jeu tire en secret <b>' + r.players + ' joueurs et ' + r.fans + ' fans</b> parmi les cartes du jeu (pas les vôtres), présentés un par un : on ne sait jamais combien de gardiens, défenseurs, milieux ou attaquants il reste. Chacun a <b>' + r.budget + ' pièces</b>, pour ce match seulement. À chaque carte, celui qui parle en premier change : il mise (dès 0) ou passe, puis on surenchérit d\'au moins ' + r.min_step + ' pièces. Passer sans mise laisse la carte à l\'adversaire pour 0. ' + r.bid_seconds + ' secondes pour répondre. Chaque équipe a 5 joueurs et 1 fan au plus. Si tu tombes à 0 pièce, l\'adversaire choisit pour toi ce qui reste.</p>' +
-        '<p class="duel-hint">Ensuite, <b>' + r.lineup_seconds + ' secondes</b> pour choisir formation, tactique, postes et capitaine, et le match se joue en direct sur les deux écrans. Cartes au niveau 0 et à 100 % de forme. Récompenses comme en 1v1 : pack match au gagnant, pack classique au perdant ou aux deux en cas de nul, dans la même limite de ' + r.pack_cap + ' packs par jour. Le classement draft repart de zéro chaque mois.</p>' +
+        '<p class="duel-hint">Ensuite, <b>' + r.lineup_seconds + ' secondes</b> pour choisir formation, tactique, postes et capitaine, et le match se joue en direct sur les deux écrans. Cartes au niveau 0 et à 100 % de forme. Récompenses comme en 1v1 : pack match au gagnant, pack classique au perdant ou aux deux en cas de nul, dans la même limite de ' + r.pack_cap + ' packs par jour. Le classement repart de zéro à chaque semaine draft ; podium à la fin.</p>' +
         '<div class="draft-create"><input id="draftInvite" type="text" placeholder="Inviter un joueur (pseudo, facultatif)" maxlength="40"><button class="btn-primary" id="draftCreateBtn" type="button">🃏 Créer une partie</button></div>' +
         '<h3 class="draft-sub">Parties qui attendent un adversaire</h3><div id="draftOpen"></div><p class="duel-hint" id="draftMine"></p>';
       byId('draftCreateBtn').addEventListener('click', async e => {
