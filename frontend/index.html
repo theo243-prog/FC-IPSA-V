@@ -2520,7 +2520,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.20.1';
+  const SITE_VERSION = '2026.11.20.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3237,7 +3237,8 @@
       if (g.credits) parts.push('💰 <b>+' + g.credits + ' crédits</b>'); if (g.pack) parts.push('📦 un <b>pack ' + escapeHtml(g.pack) + '</b> (dans tes packs bonus)');
       if (g.item) parts.push(g.item.emoji + ' <b>' + escapeHtml(g.item.name) + '</b> (à équiper dans « 🎨 Mes objets »)');
       if (g.pass_card) parts.push('🎴 la <b>carte exclusive du Pass</b> : ' + escapeHtml(g.pass_card.player_name));
-      if (g.edition_pack) parts.push(g.edition_pack.cards ? '🃏 <b>pack d\'édition limitée</b> : ' + g.edition_pack.cards.map(c => escapeHtml(c.player_name)).join(', ') : '📦 pas encore de carte d\'édition en jeu : tu reçois <b>' + g.edition_pack.count + ' pack(s) rare(s)</b> à la place');
+      if (g.edition_pack) parts.push(g.edition_pack.pack_id ? '🃏 un <b>pack d\'édition ' + escapeHtml(tierLabel(g.edition_pack.edition)) + '</b> (' + g.edition_pack.size + ' cartes) : ouvre-le dans l\'onglet Packs !'
+        : g.edition_pack.cards ? '🃏 <b>pack d\'édition limitée</b> : ' + g.edition_pack.cards.map(c => escapeHtml(c.player_name)).join(', ') : '📦 pas encore de carte d\'édition en jeu : tu reçois <b>' + g.edition_pack.count + ' pack(s) rare(s)</b> à la place');
       await refreshMe(); await openPass(); loadPassCard(); loadCollection();
       confirmDialog('🎁 Récompense récupérée', '<div style="line-height:1.7;">' + parts.join('<br>') + '</div>', 'Super !');
     } catch(e) { toast(e.message); btn.disabled = false; }
@@ -3251,6 +3252,7 @@
       if (s.credits) parts.push('💰 <b>+' + s.credits + ' crédits</b>');
       Object.entries(s.packs).forEach(([t, n]) => parts.push('📦 <b>' + n + ' pack' + (n > 1 ? 's' : '') + ' ' + escapeHtml(t) + '</b> (dans tes packs bonus)'));
       if (s.fallback_rare_packs) parts.push('📦 <b>' + s.fallback_rare_packs + ' pack(s) rare(s)</b> (à la place des packs d\'édition limitée)');
+      (s.edition_packs || []).forEach(p => parts.push('🃏 un <b>pack d\'édition ' + escapeHtml(tierLabel(p.edition)) + '</b> (' + p.size + ' cartes) : ouvre-le dans l\'onglet Packs !'));
       if (s.edition_cards.length) parts.push('🃏 <b>cartes d\'édition limitée</b> : ' + s.edition_cards.map(c => escapeHtml(c.player_name)).join(', '));
       s.pass_cards.forEach(c => parts.push('🎴 la <b>carte exclusive du Pass</b> : ' + escapeHtml(c.player_name)));
       if (s.items.length) parts.push(s.items.map(it => it.emoji + ' ' + escapeHtml(it.name)).join('<br>') + '<br><small style="color:var(--text-muted);">(à équiper dans « 🎨 Mes objets »)</small>');
@@ -3536,6 +3538,14 @@
       btn.textContent = 'Ouvrir le pack ' + p.player_name + ' (' + tierLabel(p.tier).toLowerCase() + ' garantie)';
       btn.disabled = opening;
       btn.addEventListener('click', () => openPack('joueur', p.id));
+      root.appendChild(btn);
+    });
+    (meInfo.edition_packs || []).forEach(p => {                 // packs d'édition limitée gagnés dans le Pass Premium : un bouton par pack
+      const btn = document.createElement('button');
+      btn.className = 'btn-secondary';
+      btn.textContent = '🃏 Ouvrir le pack d\'édition ' + tierLabel(p.edition) + ' (' + p.size + ' cartes)';
+      btn.disabled = opening;
+      btn.addEventListener('click', () => openPack('edition', p.id));
       root.appendChild(btn);
     });
   }
@@ -4168,7 +4178,7 @@
     document.getElementById('revealArea').classList.remove('many');
     updateRevealHint();
 
-    const apiPromise = api('/pack/open', { method: 'POST', body: JSON.stringify({ pack_type: packType === 'free' ? null : packType, player_pack_id: playerPackId || null }) });
+    const apiPromise = api('/pack/open', { method: 'POST', body: JSON.stringify({ pack_type: packType === 'free' ? null : packType, player_pack_id: packType === 'joueur' ? (playerPackId || null) : null, edition_pack_id: packType === 'edition' ? (playerPackId || null) : null }) });
 
     try {
       await new Promise(r => setTimeout(r, SHAKE_MS));              // le pack tremble pendant que la requête part

@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon, communaute, secret_achievements, dupe_upgrade, fatigue_gel, rename_player
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon, communaute, secret_achievements, dupe_upgrade, fatigue_gel, rename_player, edition_packs
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -203,6 +203,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "pass_todo": battlepass.claimable_count(db, user),
             "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
             "player_packs": player_packs.owned_out(db, user.id),   # packs joueur achetés, pas encore ouverts
+            "edition_packs": edition_packs.owned_out(db, user.id), # packs d'édition limitée gagnés dans le Pass, pas encore ouverts
             "ultra_progress": duel_engine.ultra_progress(db, user),  # barre de l'onglet 1v1 : matchs du jour vers le prochain pack ultra
             "fatigue_gel": fatigue_gel.state(db, user),            # gel de fatigue : matchs 1v1 sans fatigue restants, prix du prochain achat
             "draft_access": draft.has_access(db, user),           # mode draft (ouvert aux comptes choisis dans l'administration)
@@ -226,6 +227,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "pass_todo": battlepass.claimable_count(db, user),
             "open_sound": battlepass.open_sound(db, user),       # son d'ouverture de packs choisi (None = hurlement du loup)
             "player_packs": player_packs.owned_out(db, user.id),   # packs joueur achetés, pas encore ouverts
+            "edition_packs": edition_packs.owned_out(db, user.id), # packs d'édition limitée gagnés dans le Pass, pas encore ouverts
             "ultra_progress": duel_engine.ultra_progress(db, user),  # barre de l'onglet 1v1 : matchs du jour vers le prochain pack ultra
             "fatigue_gel": fatigue_gel.state(db, user),            # gel de fatigue : matchs 1v1 sans fatigue restants, prix du prochain achat
             "draft_access": draft.has_access(db, user),           # mode draft (ouvert aux comptes choisis dans l'administration)
@@ -288,11 +290,15 @@ def open_pack(
     try:
         if pack_type == "joueur":                       # pack joueur du shop (player_packs) : une carte d'un joueur garantie
             result = player_packs.open_for_user(db, user, payload.player_pack_id)
+        elif pack_type == "edition":                    # pack d'édition limitée gagné dans le Pass Premium (edition_packs)
+            result = edition_packs.open_for_user(db, user, payload.edition_pack_id or payload.player_pack_id)
         else:
             result = game_logic.open_pack_for_user(db, user, pack_type=pack_type)
     except ValueError as e:
         if str(e) == "tier_unavailable":
             raise HTTPException(status_code=400, detail="Ce pack n'est pas encore disponible : aucune carte de cette rareté n'existe cette saison")
+        if str(e) == "edition_empty":
+            raise HTTPException(status_code=400, detail="Cette édition n'a plus aucune carte : ton pack d'édition est remplacé par un pack rare (dans ta réserve)")
         if str(e) == "unknown_pack":
             raise HTTPException(status_code=400, detail="Type de pack inconnu")
         raise HTTPException(status_code=400, detail="Aucun pack disponible pour le moment")
@@ -983,6 +989,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     card_levels.on_user_deleted(db, user.id)                                              # ses cartes évoluées
     fatigue.on_user_deleted(db, user.id)                                                  # la forme de ses cartes
     player_packs.on_user_deleted(db, user.id)                                             # ses packs joueur pas encore ouverts
+    edition_packs.on_user_deleted(db, user.id)                                            # ses packs d'édition du Pass pas encore ouverts
     tactic_trends.on_user_deleted(db, user.id)                                            # ses tendances de tactiques
     inbox.on_user_deleted(db, user.id)                                                    # ses notifications du site
     communaute.on_user_deleted(db, user.id)                                               # ses voix et ses propositions pas encore sorties
