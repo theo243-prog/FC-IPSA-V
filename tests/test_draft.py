@@ -1,5 +1,5 @@
 """
-Test : mode draft (accès réservé aux comptes choisis, tirage secret de 10 joueurs et 2 fans, enchères ouvertes à 500 pièces, composition
+Test : mode draft (accès réservé aux comptes choisis, tirage secret de 10 joueurs et 2 fans, enchères ouvertes à 200 pièces, composition
 d'une minute, match, récompenses du 1v1 avec les mêmes compteurs du jour, classement par mois, forfait). Lancé par tests/run_tests.py.
 """
 import json, random
@@ -55,7 +55,7 @@ c.post("/admin/draft-settings", json={"allowed": ["ana", "bob", "carl"]}, header
 ok(c.post("/draft/%s/join" % rid, headers=H["carl"]).status_code == 403, "partie réservée à bob : carl ne peut pas la rejoindre")
 ok(any(o["id"] == rid and o["invited"] for o in c.get("/draft", headers=H["bob"]).json()["open_rooms"]), "bob voit l'invitation dans le salon")
 s = c.post("/draft/%s/join" % rid, headers=H["bob"]).json()
-ok(s["status"] == "bidding" and s["coins"] == {"me": 500, "opp": 500} and s["lot"]["number"] == 1 and s["lot"]["opener"] == "opp", "bob rejoint : enchères, 500 pièces chacun, ana parle en premier")
+ok(s["status"] == "bidding" and s["coins"] == {"me": 200, "opp": 200} and s["lot"]["number"] == 1 and s["lot"]["opener"] == "opp", "bob rejoint : enchères, 200 pièces chacun, ana parle en premier")
 room_db = db.get(D.DraftRoom, rid); db.refresh(room_db); st0 = D._st(room_db)
 if st0["lots"][0]["kind"] == "fan":                                  # (pour un test stable : les premières cartes sont des joueurs, les fans à la fin ;
     k = next(i for i, l in enumerate(st0["lots"]) if l["kind"] == "joueur"); st0["lots"][0], st0["lots"][k] = st0["lots"][k], st0["lots"][0]   #  sinon le 2e fan part d'office
@@ -68,10 +68,10 @@ print("4) LES ENCHÈRES")
 ok(c.post("/draft/%s/bid" % rid, json={"amount": 10}, headers=H["bob"]).status_code == 400, "miser quand ce n'est pas son tour : refusé")
 c.post("/draft/%s/bid" % rid, json={"amount": 0}, headers=H["ana"])
 ok(c.post("/draft/%s/bid" % rid, json={"amount": 3}, headers=H["bob"]).status_code == 400, "surenchère de moins de 5 : refusée")
-ok(c.post("/draft/%s/bid" % rid, json={"amount": 600}, headers=H["bob"]).status_code == 400, "miser plus que ses pièces : refusé")
+ok(c.post("/draft/%s/bid" % rid, json={"amount": 250}, headers=H["bob"]).status_code == 400, "miser plus que ses pièces : refusé")
 c.post("/draft/%s/bid" % rid, json={"amount": 10}, headers=H["bob"])
 s = c.post("/draft/%s/pass" % rid, headers=H["ana"]).json()
-ok(s["picks"]["opp"] and s["picks"]["opp"][0]["price"] == 10 and s["coins"]["opp"] == 490 and s["lot"]["number"] == 2 and s["lot"]["opener"] == "opp",
+ok(s["picks"]["opp"] and s["picks"]["opp"][0]["price"] == 10 and s["coins"]["opp"] == 190 and s["lot"]["number"] == 2 and s["lot"]["opener"] == "opp",
    "ana passe : bob prend la carte pour 10 ; carte 2, c'est bob qui parle en premier (alternance)")
 s = c.post("/draft/%s/pass" % rid, headers=H["bob"]).json()
 ok(len(s["picks"]["opp"]) == 1 and s["log"][0]["how"] == "given" and s["log"][0]["to"] == "opp" and s["log"][0]["price"] == 0, "passer sans mise : la carte va à l'adversaire pour 0")
