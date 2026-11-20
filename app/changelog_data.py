@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-draft-200", "date": "2026-11-20", "category": "modes", "title": "Draft : 200 pièces",
+     "text": "En draft, chaque joueur a maintenant 200 pièces pour les enchères (au lieu de 500). Chaque pièce compte : il faut choisir ses cartes avec soin."},
     {"id": "2026-11-semaine-draft", "date": "2026-11-20", "category": "modes", "title": "⚔️ La semaine draft",
      "text": "Le mode draft arrive pour tout le monde, une semaine par mois ! La date tombe au hasard et elle est annoncée 48 h avant. Pendant 7 jours, affronte les autres en direct : les cartes sont mises aux enchères, chacun construit son équipe et le match se joue devant vos deux écrans. À la fin de la semaine, le podium gagne 150, 100 et 50 crédits et une carte trophée (au moins 5 parties pour être classé)."},
     {"id": "2026-11-pack-edition-pass", "date": "2026-11-20", "category": "cartes", "title": "Le pack d'édition du Pass devient un vrai pack",

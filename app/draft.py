@@ -9,7 +9,7 @@ Déroulé :
   gardiens, défenseurs, milieux et attaquants change à chaque partie (1 à 3 gardiens, 2 à 4 par ligne) : on ne peut pas deviner ce qui reste.
   Raretés au hasard (TIER_WEIGHTS) : communes, rares, éditions, épiques, spéciales, légendaires ; jamais de secrète, de trophée ni d'édition
   pas encore commencée. Les cartes jouent au niveau 0, à 100 % de forme, sans Loup, équipement, arbitre ni avantage du terrain.
-- ENCHÈRES OUVERTES : BUDGET (500) pièces chacune, valables pour ce match seulement. À chaque carte, celui qui parle en premier change
+- ENCHÈRES OUVERTES : BUDGET (200, avant le 20/11/2026 : 500) pièces chacune, valables pour ce match seulement. À chaque carte, celui qui parle en premier change
   (alternance). Celui dont c'est le tour mise (à partir de 0 pour la première mise, puis au moins MIN_STEP de plus) ou passe :
   passer sans aucune mise laisse la carte à l'adversaire pour 0 ; passer après une mise de l'adversaire la lui laisse à ce prix.
   BID_SECONDS pour répondre (sinon : il passe). On peut tomber à 0 pièce : on ne peut plus surenchérir et on subit les choix de l'adversaire.
@@ -42,7 +42,7 @@ from . import duel_engine as DE, features, game_logic, tournament
 router = APIRouter()
 
 SETTING_KEY = "draft"
-BUDGET = 500
+BUDGET = 200                     # pièces de chaque joueur pour ce match (avant le 20/11/2026 : 500)
 MIN_STEP = 5                     # surenchère minimale
 N_PLAYERS = 2 * DE.TEAM_SIZE     # 10 joueurs : 5 par équipe
 N_FANS = 2
