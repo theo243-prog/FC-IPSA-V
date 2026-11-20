@@ -112,7 +112,7 @@ def catalog(db: Session, user: User) -> dict:
 
 
 TROPHY_TITLE_PREFIX = "trophee-"        # titre d'une carte trophée : « trophee-<id de la fiche> », son texte est le nom de la carte
-TROPHY_TITLE_RANKS = (1, 2, 3, 4, 5, 7, 8, 9, 10, 11)       # podium de saison, tournoi (vainqueur, finaliste, demi-finalistes), assidus, lanterne rouge (pas la carte du Pass, rang 6)
+TROPHY_TITLE_RANKS = (1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14)       # podium de saison, tournoi (vainqueur, finaliste, demi-finalistes), assidus, lanterne rouge (pas la carte du Pass, rang 6)
 
 
 def trophy_titles(db: Session, user_id: str) -> list:

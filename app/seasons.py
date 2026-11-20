@@ -64,7 +64,8 @@ class SeasonResult(Base):
 # ------------------------------------------------------------------ trophées
 RANK_TITLES = {1: "Vainqueur de saison", 2: "Deuxième de la saison", 3: "Troisième de la saison", 4: "Vainqueur du tournoi", 5: "Finaliste du tournoi",      # (les rangs 4 et 5 sont les cartes du tournoi mensuel ; 6 : carte du Pass)
                7: "Joueur le plus assidu de la saison", 8: "Deuxième joueur le plus assidu de la saison", 9: "Troisième joueur le plus assidu de la saison",
-               10: "Lanterne rouge de la saison", 11: "Demi-finaliste du tournoi"}      # 11 : chacun des 2 demi-finalistes battus du tournoi (depuis le 12/11/2026)
+               10: "Lanterne rouge de la saison", 11: "Demi-finaliste du tournoi",      # 11 : chacun des 2 demi-finalistes battus du tournoi (depuis le 12/11/2026)
+               12: "Champion du draft", 13: "Deuxième du draft", 14: "Troisième du draft"}      # 12-14 : podium de la semaine draft du mois (draft_week, 20/11/2026)
 ASSIDUOUS_RANKS = (7, 8, 9)       # les 3 joueurs qui ont joué le plus de matchs 1v1 dans le mois (égalité : le meilleur Elo)
 LANTERN_RANK = 10                 # SURPRISE : le dernier en Elo parmi ceux qui ont joué au moins MIN_MATCHES matchs (jamais annoncée à l'avance)
 LANTERN_MIN_ELIGIBLE = 4          # au moins 4 joueurs classés, pour que la lanterne rouge ne soit jamais aussi sur le podium

@@ -113,6 +113,7 @@ def summarize(path: str, payload) -> str:
         if name == "chat-silent": return "Annonces automatiques du chat %s pour %s" % ("coupées" if p.get("enabled", True) else "rétablies", who)
         if name == "feature-settings": return "Fonction en essai %s : %s%s" % (_s(p, "feature"), "ouverte à tous" if p.get("public") else "réservée à la liste", (" (" + ", ".join(p.get("allowed") or []) + ")") if p.get("allowed") is not None else "")
         if name == "draft-settings": return "Mode draft : %s%s" % ("ouvert à tous" if p.get("public") else "réservé à la liste", (" (" + ", ".join(p.get("allowed") or []) + ")") if p.get("allowed") is not None else "")
+        if name == "draft-week": return "Semaine draft %s : %s" % (_s(p, "month") or "du mois", ", ".join(x for x in ("départ " + _s(p, "start") if _s(p, "start") else "", "nouveau tirage" if p.get("redraw") else "", "ouverte tout de suite" if p.get("open_now") else "", ("pause" if p.get("paused") else "reprise") if p.get("paused") is not None else "") if x) or "rien")
         if name == "draft-reset-ranking": return "Mode draft : classement effacé (%s)" % (_s(p, "season") or "mois en cours")
         if name == "communaute-review": return "Carte de la communauté : proposition %s %s%s" % (_s(p, "proposal_id"), "acceptée" if _s(p, "decision") in ("accept", "accepter") else "refusée", (" (« " + _s(p, "name") + " »)") if _s(p, "name") else "")
         if name == "communaute-release": return "Carte de la communauté : proposition %s sortie tout de suite" % _s(p, "proposal_id")
