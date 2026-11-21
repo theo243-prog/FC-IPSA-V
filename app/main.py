@@ -1348,6 +1348,12 @@ def admin_set_player_photo(payload: schemas.AdminSetPlayerPhotoRequest, db: Sess
     if not player:
         raise HTTPException(status_code=404, detail="Joueur introuvable")
     payload.photo_url = _photo_path(payload.photo_url)
+    if payload.tier in collection_bonus.KINDS:          # carte Prisme / Couronne noire de cette personne (récompense secrète)
+        game_logic.set_tier_photo(player, payload.tier, payload.photo_url)
+        exists = collection_bonus.sync_photo(db, player, payload.tier)
+        db.commit()
+        return {"status": "ok", "player": player.name, "tier": payload.tier, "photo_url": payload.photo_url or None,
+                "note": "carte déjà débloquée : photo mise à jour" if exists else "pas encore débloquée : la photo sera utilisée à sa création"}
     if payload.tier:
         if payload.tier not in game_logic.TIER_ORDER:
             raise HTTPException(status_code=400, detail="tier doit être : " + ", ".join(game_logic.TIER_ORDER))

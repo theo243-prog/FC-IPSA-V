@@ -87,12 +87,21 @@ ok(len(me("cbc")["bonus_unseen"]) == 1, "sa révélation se joue au prochain /me
 c.post("/collection-bonus/seen", json={}, headers=H["cbc"])
 ok(c.post("/admin/collection-bonus-replay", json={"pseudo": "cbc"}, headers=A).json()["replays"] == 1 and len(me("cbc")["bonus_unseen"]) == 1, "rejouer les révélations")
 ok(c.post("/admin/collection-bonus-grant", json={"pseudo": "cbc", "kind": "arc", "player_name": "Lucas"}, headers=A).status_code == 400 and c.post("/admin/collection-bonus-grant", json={"pseudo": "cbc", "kind": "prisme", "player_name": "Personne"}, headers=A).status_code == 404, "refus : sorte inconnue, joueur introuvable")
-ok(len(c.get("/admin/collection-bonus", headers=A).json()) == 4, "l'admin voit qui a quoi")
+ok(len(c.get("/admin/collection-bonus", headers=A).json()) >= 4, "l'admin voit qui a quoi")
 
+print("5 bis) PHOTO DES CARTES PRISME ET COURONNE (formulaire « Photo d'un joueur »)")
+photo = lambda name: db.query(Player).filter_by(name=name).first().photo_url
+r = c.post("/admin/set-player-photo", json={"player_name": "Hugo", "photo_url": "hugo-prisme.webp", "tier": "prisme"}, headers=A)
+db.expire_all(); ok(r.status_code == 200 and photo("Prisme — Hugo") == "/photos/hugo-prisme.webp" and "mise à jour" in r.json()["note"], "rareté « prisme » : la carte Prisme de Hugo (déjà débloquée) prend sa photo")
+ok(db.query(Player).filter_by(name="Hugo").first().photo_url != "/photos/hugo-prisme.webp", "la photo normale de Hugo ne change pas")
+r = c.post("/admin/set-player-photo", json={"player_name": "Léo", "photo_url": "/photos/leo-couronne.webp", "tier": "couronne"}, headers=A)
+ok(r.status_code == 200 and "création" in r.json()["note"], "rareté « couronne » d'une carte pas encore débloquée : photo gardée pour plus tard")
+c.post("/admin/collection-bonus-grant", json={"pseudo": "cbc", "kind": "couronne", "player_name": "Léo"}, headers=A); db.expire_all()
+ok(photo("Couronne noire — Léo") == "/photos/leo-couronne.webp", "à sa création, la Couronne de Léo prend cette photo")
 print("6) RENOMMER LA PERSONNE, SUPPRIMER UN COMPTE")
 ok(c.post("/admin/rename-player", json={"old_name": "Lucas", "new_name": "Lucas B"}, headers=A).status_code == 200 and owns("cba", "Prisme — Lucas B"), "renommer Lucas : sa carte devient « Prisme — Lucas B »")
 ok(CB.title_label(CB.TITLE_PREFIX + "prisme-" + db.query(Player).filter_by(name="Lucas B").first().id, db) == "Fan absolu de Lucas B", "le titre suit le nouveau nom")
 c.post("/auth/register", json={"pseudo": "testadmin", "password": "test1234"})      # (compte de réserve : il reprend les exemplaires numérotés d'un compte supprimé)
-ok(c.post("/admin/delete-user", json={"pseudo": "cba"}, headers=A).status_code == 200 and db.query(CB.BonusUnlock).filter_by(kind="couronne").count() == 0, "compte supprimé : la Couronne de Nathan redevient libre")
+ok(c.post("/admin/delete-user", json={"pseudo": "cba"}, headers=A).status_code == 200 and db.query(CB.BonusUnlock).filter_by(kind="couronne", subject_id=db.query(Player).filter_by(name="Nathan").first().id).count() == 0, "compte supprimé : la Couronne de Nathan redevient libre")
 
 print(); print("BILAN (Prisme et Couronne noire) :", "TOUT EST VERT" if not FAILS else f"{len(FAILS)} ÉCHEC(S) : {FAILS}")

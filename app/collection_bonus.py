@@ -67,16 +67,31 @@ class PseudoRequest(BaseModel):
 
 
 # ------------------------------------------------------------------ les cartes
+def photo_of(subject: Player, kind: str):
+    """La photo de la carte Prisme / Couronne : celle réglée pour cette « rareté » (formulaire « Photo d'un joueur », rareté prisme ou
+    couronne, rangée dans les photos par rareté de la personne), sinon la photo de la personne."""
+    return game_logic.tier_photos(subject).get(kind) or subject.photo_url
+
+
+def sync_photo(db: Session, subject: Player, kind: str) -> bool:
+    """Met la carte Prisme / Couronne existante de la personne à jour avec sa photo (sans commit). Renvoie True si la carte existe."""
+    k = KINDS[kind]
+    fiche = db.query(Player).filter_by(name=k["prefix"] + subject.name, poste=k["poste"]).first()
+    if fiche is not None:
+        fiche.photo_url = photo_of(subject, kind)
+    return fiche is not None
+
+
 def bonus_card(db: Session, kind: str, subject: Player) -> Card:
-    """La carte Prisme / Couronne d'une personne (créée la première fois ; sa photo suit celle de la personne)."""
+    """La carte Prisme / Couronne d'une personne (créée la première fois ; sa photo suit photo_of)."""
     k = KINDS[kind]
     name = k["prefix"] + subject.name
     fiche = db.query(Player).filter_by(name=name, poste=k["poste"]).first()
     if fiche is None:
-        fiche = Player(name=name, poste=k["poste"], photo_url=subject.photo_url)
+        fiche = Player(name=name, poste=k["poste"], photo_url=photo_of(subject, kind))
         db.add(fiche); db.flush()
-    elif subject.photo_url and fiche.photo_url != subject.photo_url:
-        fiche.photo_url = subject.photo_url
+    elif photo_of(subject, kind) and fiche.photo_url != photo_of(subject, kind):
+        fiche.photo_url = photo_of(subject, kind)
     card = db.query(Card).filter_by(player_id=fiche.id, tier=Tier.saison).first()
     if card is None:
         card = Card(player_id=fiche.id, tier=Tier.saison, vitesse=0, tir=0)
