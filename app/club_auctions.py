@@ -6,8 +6,10 @@ ENCHÈRES QUOTIDIENNES DU CLUB : cartes uniques « Édition Noire » (« Éditio
   Tous les numéros peuvent sortir aux enchères, n° 1 compris (depuis le 16/11/2026 ; avant, le n° 1 était gardé pour les récompenses de l'administration).
 - Chaque jour à 16h00 (heure de Paris, même calcul d'heure d'été que weekly.py ; 17h00 avant le 17/11/2026), au moment où le lot de la
   veille se termine, la tâche de fond crée un LOT de CLUB_AUCTIONS_PER_DAY
-  enchère(s) (1 par défaut, réglable) : des personnes différentes parmi celles qui ont le moins d'exemplaires ÉMIS (attribués + en cours d'enchère),
-  égalité au hasard ; pour chacune, un numéro au hasard parmi les restants (ni un numéro attribué, ni un numéro aux enchères).
+  enchère(s) (3 par défaut depuis le 21/11/2026, avant 1 ; réglable) : des personnes DIFFÉRENTES tirées au hasard, de façon UNIFORME parmi
+  celles qui ont encore un numéro disponible (depuis le 21/11/2026, décidé par Théo pour sortir plus vite les Édition Noire ; avant, celles
+  qui avaient le moins d'exemplaires émis passaient d'abord) ; pour chacune, un numéro au hasard parmi les restants (ni un numéro attribué,
+  ni un numéro aux enchères).
   Fin le LENDEMAIN à 16h00. Prolongation habituelle (+2 min), plafonnée à +60 min après 16h00 (une enchère prolongée peut donc
   encore tourner jusqu'à 17h00 pendant que le lot suivant a commencé). Au même passage de 16h00 : d'abord les fins, puis le nouveau lot.
 - Même moteur que les enchères entre joueurs (auctions.py : hausse de 5 %, crédits mis de côté), vendeur réservé CLUB_SELLER sans
@@ -40,7 +42,7 @@ router = APIRouter()
 
 SERIES_TOTAL = 5                        # exemplaires par personne (avant : 22 ; series-replace-black remplace les anciennes séries)
 SERIES_TITLE = "Édition Noire"
-CLUB_AUCTIONS_PER_DAY = 1               # valeur par défaut (réglable depuis l'administration)
+CLUB_AUCTIONS_PER_DAY = 3               # valeur par défaut (réglable depuis l'administration) ; 1 avant le 21/11/2026
 CLUB_START_PRICE = 20                   # valeur par défaut (réglable depuis l'administration)
 CLUB_SELLER = "club"                    # vendeur réservé : le club n'est pas un compte
 RESERVED_NUMBER = None                  # aucun numéro gardé : le n° 1 sort aux enchères comme les autres (avant le 16/11/2026 : 1)
@@ -221,11 +223,11 @@ def series_state(db: Session) -> list:
 
 
 def pick(db: Session, count: int) -> list:
-    """Les exemplaires du prochain lot : `count` personnes différentes parmi celles qui ont le moins d'exemplaires émis (égalité au
-    hasard), un numéro au hasard parmi les restants pour chacune. Liste de (état de la série, numéro, card_id)."""
+    """Les exemplaires du prochain lot : `count` personnes DIFFÉRENTES tirées au hasard (uniforme, sans tenir compte des exemplaires
+    déjà émis) parmi celles qui ont encore un numéro disponible, un numéro au hasard parmi les restants pour chacune.
+    Liste de (état de la série, numéro, card_id)."""
     rows = [r for r in series_state(db) if r["available"]]
-    RNG.shuffle(rows)
-    rows.sort(key=lambda r: r["emitted"])                  # tri stable : l'ordre au hasard départage les égalités
+    RNG.shuffle(rows)                                       # une série = une personne : jamais deux fois la même personne dans un lot
     out = []
     for r in rows[:max(0, count)]:
         n = RNG.choice(r["available"])

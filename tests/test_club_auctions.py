@@ -73,7 +73,7 @@ r = c.post("/admin/create-player", json={"name": "Yasmine", "poste": "ATT"}, hea
 ok(r.get("edition_noire") is True and "Yasmine" in state(), "une joueuse créée ensuite : sa série aussi")
 s_lucas = NB.find_series(db, "Édition Noire — Lucas")
 ok(s_lucas.total == CA.SERIES_TOTAL == 5 and db.get(Player, db.get(__import__("app.models", fromlist=["x"]).Card, db.query(NB.NumberedCopy).filter_by(series_id=s_lucas.id, number=3).first().card_id).player_id).name == "Édition Noire — Lucas · n° 3/5", "SERIES_TOTAL = 5 (« Édition Noire — Lucas · n° 3/5 »)")
-ok(CA.get_settings(db)["per_day"] == 1 == CA.CLUB_AUCTIONS_PER_DAY, "une enchère par jour par défaut")
+ok(CA.get_settings(db)["per_day"] == 3 == CA.CLUB_AUCTIONS_PER_DAY, "trois enchères par jour par défaut")
 
 print("2) AVANT LE DÉMARRAGE (lundi 9 novembre 2026, 17h00)")
 cfg = c.get("/admin/club-auctions", headers=A).json()
@@ -92,7 +92,7 @@ pv = c.get("/club-auctions", headers=H["testadmin"]).json()
 ok(pv["visible"] is True and pv["preview"] is True and pv["lots"] == [], "testadmin voit la section (aperçu)")
 nmsg = len(club_msgs())
 r = c.post("/admin/club-auctions-launch", json={"minutes": 5}, headers=A).json()
-ok(r["status"] == "ok" and r["count"] == 1 and r["public"] is False and r["note"] and "Test avant le démarrage" in r["note"], "lancer un lot tout de suite AVANT la date : 1 enchère (réglage par défaut), avec une note claire")
+ok(r["status"] == "ok" and r["count"] == 3 and r["public"] is False and r["note"] and "Test avant le démarrage" in r["note"], "lancer un lot tout de suite AVANT la date : 3 enchères (réglage par défaut), avec une note claire")
 ok(len(club_msgs()) == nmsg, "lot de test : aucune annonce dans le chat")
 test_lots = lots(batches()[0])
 ok(bid("ana", test_lots[0].auction_id, 20).status_code == 400, "lot de test : un joueur ne peut pas enchérir")
@@ -100,7 +100,7 @@ ok(bid("testadmin", test_lots[0].auction_id, 20).status_code == 200, "testadmin 
 ok(len(c.get("/auctions").json()["auctions"]) == 0, "les enchères du club ne sont pas dans la liste des enchères entre joueurs")
 at("2026-11-08T17:40:00"); tick()
 won_test = lots(batches()[0])
-ok(len(won_test) == 1 and won_test[0].status == "won" and owner(test_lots[0].card_id) == ["testadmin"], "fin du lot de test : testadmin servi")
+ok(len(won_test) == 3 and [l.status for l in won_test if l.auction_id == test_lots[0].auction_id] == ["won"] and owner(test_lots[0].card_id) == ["testadmin"], "fin du lot de test : testadmin servi")
 test_person = db.get(NB.NumberedSeries, test_lots[0].series_id).subject
 ok(state()[test_person]["emitted"] == 1, "la personne du lot de test a 1 exemplaire émis")
 
@@ -117,7 +117,7 @@ bs = batches(); b1 = bs[-1]; L1 = lots(b1)
 ok(len(bs) == 2 and b1.day == "2026-11-09" and b1.count == 5 and len(L1) == 5, "17h00 : un lot de 5 enchères")
 subjects = [db.get(NB.NumberedSeries, l.series_id).subject for l in L1]
 ok(len(set(subjects)) == 5, "5 personnes différentes")
-ok(test_person not in subjects and all(before[s]["emitted"] == 0 for s in subjects), "choisies parmi celles qui ont le moins d'exemplaires émis (pas celle du test)")
+ok(all(before[s]["available"] for s in subjects), "tirées au hasard parmi celles qui ont encore un numéro disponible (celle du test peut ressortir)")
 ok(all(l.number in before[db.get(NB.NumberedSeries, l.series_id).subject]["available"] for l in L1), "numéros pris parmi les restants")
 ok(all(db.get(AU.Auction, l.auction_id).ends_at == datetime(2026, 11, 10, 16, 0) and l.base_end == datetime(2026, 11, 10, 16, 0) for l in L1), "fin : le lendemain (mardi) à 16h00")
 ok(all(db.get(AU.Auction, l.auction_id).start_price == 20 and db.get(AU.Auction, l.auction_id).seller_id == "club" for l in L1), "prix de départ 20, vendeur « club »")
@@ -188,16 +188,23 @@ msgs = club_msgs()
 ok(any("Résultats des enchères du club" in m and last_who in m and str(last_amount) in m for m in msgs[nmsg:]), "résultat annoncé dans le chat (gagnants, prix)")
 ok(c.get("/club-auctions").json()["results"], "les derniers gagnants sont dans la section")
 
-print("6) MOINS D'ÉMIS, NUMÉROS JAMAIS REPRIS")
+print("6) TIRAGE AU HASARD (PERSONNES DIFFÉRENTES), NUMÉROS JAMAIS REPRIS")
 def check_pick(label):
     s0 = SessionLocal(); AU.settle_due(s0); s0.close()   # (les enchères de la veille se terminent d'abord, comme dans la tâche)
     before = state(); tick(); b = batches()[-1]; L = lots(b)
-    chosen = {db.get(NB.NumberedSeries, l.series_id).subject for l in L}
-    others = [s for s, x in before.items() if s not in chosen and x["available"]]
-    ok(len(chosen) == len(L) and (not others or max(before[s]["emitted"] for s in chosen) <= min(before[s]["emitted"] for s in others)), label)
+    chosen = [db.get(NB.NumberedSeries, l.series_id).subject for l in L]
+    ok(len(chosen) == len(set(chosen)) == len(L) and all(before[s]["available"] for s in chosen), label)
     return b
 for d in range(11, 14):
-    at("2026-11-%02dT17:00:00" % d); check_pick("lot du %d : les personnes choisies ont le moins d'exemplaires émis" % d)
+    at("2026-11-%02dT17:00:00" % d); check_pick("lot du %d : des personnes toutes différentes, qui avaient encore un numéro disponible" % d)
+s0 = SessionLocal(); st0 = {r["subject"]: r for r in CA.series_state(s0)}
+hi = max(st0.values(), key=lambda r: r["emitted"]); lo = min(st0.values(), key=lambda r: r["emitted"])
+seen_hi = False
+for seed in range(300):
+    CA.RNG.seed(seed)
+    if hi["subject"] in [r["subject"] for r, _, _ in CA.pick(s0, 3)]: seen_hi = True; break
+s0.close(); CA.RNG.seed()
+ok(hi["emitted"] > lo["emitted"] and seen_hi, "aléatoire complet : une personne qui a déjà plus d'exemplaires émis (%s : %d, contre %d) peut être tirée" % (hi["subject"], hi["emitted"], lo["emitted"]))
 all_lots = db.query(CA.ClubAuctionLot).all()
 won = [(l.series_id, l.number) for l in all_lots if l.status == "won"]
 ok(len(won) == len(set(won)), "jamais deux fois le même numéro gagné")
@@ -322,10 +329,10 @@ from app.models import AppSetting
 row = db.get(AppSetting, CA.SETTING_KEY)
 row.value = _json.dumps({"start_at": "2026-11-09T17:00", "paused": True, "per_day": 5, "start_price": 20, "teaser": True, "teaser_text": ""}); db.commit()
 st_old = CA.get_settings(db)
-ok(st_old["per_day"] == 1 and st_old["paused"] is True, "anciens réglages (tout enregistré, dont 5 par jour) : 1 par jour, ce qui avait été changé (pause) est gardé")
+ok(st_old["per_day"] == CA.CLUB_AUCTIONS_PER_DAY and st_old["paused"] is True, "anciens réglages (tout enregistré, dont 5 par jour) : la valeur du code par jour, ce qui avait été changé (pause) est gardé")
 c.post("/admin/club-auctions-settings", json={"paused": False}, headers=A)
 db.expire_all()
-ok(_json.loads(db.get(AppSetting, CA.SETTING_KEY).value) == {"paused": False, "_v": 2} and CA.get_settings(db)["per_day"] == 1, "réglage suivant : enregistré au nouveau format, toujours 1 par jour")
+ok(_json.loads(db.get(AppSetting, CA.SETTING_KEY).value) == {"paused": False, "_v": 2} and CA.get_settings(db)["per_day"] == CA.CLUB_AUCTIONS_PER_DAY, "réglage suivant : enregistré au nouveau format, toujours la valeur du code")
 
 print("12) LOT À 16h00, EN MÊME TEMPS QUE LA FIN DU PRÉCÉDENT")
 CA.LOT_HOUR = NEW_LOT_HOUR
@@ -334,11 +341,11 @@ at("2026-11-20T15:59:00"); tick()
 ok(not [x for x in batches() if x.day == "2026-11-20"], "15h59 : pas encore de lot")
 at("2026-11-20T16:00:30"); tick()
 b20 = batches()[-1]; L20 = lots(b20)
-ok(b20.day == "2026-11-20" and len(L20) == 1 and L20[0].base_end == datetime(2026, 11, 21, 16, 0) and db.get(AU.Auction, L20[0].auction_id).ends_at == datetime(2026, 11, 21, 16, 0), "16h00 : le lot du jour est créé, fin le lendemain à 16h00")
+ok(b20.day == "2026-11-20" and 1 <= len(L20) <= CA.get_settings(db)["per_day"] and all(l.base_end == datetime(2026, 11, 21, 16, 0) for l in L20) and L20[0].base_end == datetime(2026, 11, 21, 16, 0) and db.get(AU.Auction, L20[0].auction_id).ends_at == datetime(2026, 11, 21, 16, 0), "16h00 : le lot du jour est créé, fin le lendemain à 16h00")
 ok(c.get("/admin/club-auctions", headers=A).json()["next_lot_at"].startswith("2026-11-21T16:00"), "prochain lot annoncé : demain 16h00")
 at("2026-11-21T16:00:30"); tick()
 db.expire_all(); b21 = batches()[-1]
-ok(db.get(CA.ClubAuctionLot, L20[0].auction_id).status == "unsold" and b21.day == "2026-11-21" and len(lots(b21)) == 1, "le lendemain 16h00, au même passage : le lot de la veille se termine et le suivant commence")
+ok(db.get(CA.ClubAuctionLot, L20[0].auction_id).status == "unsold" and b21.day == "2026-11-21" and 1 <= len(lots(b21)) <= CA.get_settings(db)["per_day"], "le lendemain 16h00, au même passage : le lot de la veille se termine et le suivant commence")
 
 print("13) HEURE D'ÉTÉ / D'HIVER (calcul de weekly.py)")
 del os.environ["FC_FAKE_NOW"]

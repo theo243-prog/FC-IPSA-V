@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-noire-3-par-jour", "date": "2026-11-21", "category": "économie", "title": "🖤 3 Édition Noire par jour",
+     "text": "Les enchères du club mettent maintenant en vente 3 cartes Édition Noire chaque jour à 16h00 (au lieu d'une), de 3 joueurs différents tirés au hasard. Plus de chances de compléter ta collection !"},
     {"id": "2026-11-draft-200", "date": "2026-11-20", "category": "modes", "title": "Draft : 200 pièces",
      "text": "En draft, chaque joueur a maintenant 200 pièces pour les enchères (au lieu de 500). Chaque pièce compte : il faut choisir ses cartes avec soin."},
     {"id": "2026-11-semaine-draft", "date": "2026-11-20", "category": "modes", "title": "⚔️ La semaine draft",

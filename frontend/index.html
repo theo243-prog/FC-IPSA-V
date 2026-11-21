@@ -2637,7 +2637,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.21.4';
+  const SITE_VERSION = '2026.11.21.5';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3973,7 +3973,7 @@
         '<li><b>Enchères 🔨</b> : pour une carte rare ou mieux, tu choisis le prix de départ et la durée (de 15 minutes à 24 heures). Chaque enchère doit dépasser la précédente d\'au moins 5 %. Tes crédits sont mis de côté et rendus si quelqu\'un te dépasse. Une enchère dans les 2 dernières minutes prolonge l\'enchère de 2 minutes. À la fin, la carte va au meilleur enchérisseur ; sans enchère, elle te revient.</li></ul>' +
         '<h3>🖤 Les enchères du club (Édition Noire)</h3><ul>' +
         '<li>Chaque joueur et chaque fan du club a sa série <b>Édition Noire</b> de <b>5 cartes uniques</b>, numérotées de 1 à 5 (« N° 3/5 »). Il n\'en existera jamais plus : chaque numéro n\'a qu\'un seul propriétaire. N\'importe quel numéro peut sortir aux enchères, le n° 1 compris.</li>' +
-        '<li>Chaque jour à <b>16h00</b>, au moment où la précédente se termine, le club met <b>une carte</b> aux enchères, d\'une personne qui a le moins de cartes déjà sorties. L\'enchère se termine le <b>lendemain à 16h00</b>.</li>' +
+        '<li>Chaque jour à <b>16h00</b>, au moment où la précédente se termine, le club met <b>trois cartes</b> aux enchères, de trois personnes différentes tirées au hasard. Les enchères se terminent le <b>lendemain à 16h00</b>.</li>' +
         '<li>Mêmes règles que les autres enchères : +5 % au moins, crédits mis de côté et rendus si on te dépasse, +2 minutes pour une enchère dans les 2 dernières minutes (jamais au-delà de 17h00 le lendemain).</li>' +
         '<li>Le gagnant reçoit la carte avec son numéro. Les crédits payés vont au club : personne ne les reçoit. Une carte sans enchère retourne dans la réserve et reviendra un autre jour. Pas de limite : tu peux en gagner plusieurs le même jour.</li>' +
         '<li>Ces cartes sont des pièces de collection : elles ne jouent pas en match et ne sortent jamais d\'un pack. Tu peux les revendre au marché ou aux enchères.</li></ul>' +
