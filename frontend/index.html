@@ -895,6 +895,68 @@
   .stat-box .lab{font-size:11px;color:var(--text-muted);}
   .player-note{text-align:center;font-family:var(--font-head);font-size:34px;font-weight:600;margin:4px 0 16px;}
   /* Barre « pack ultra » de l'onglet 1v1 : 20 matchs du jour = un pack ultra, puis elle repart… et prend feu (un peu plus à chaque tour) */
+  /* ===== Récompenses secrètes : carte Prisme (arc-en-ciel holographique) et Couronne noire (noir et or liquide) ===== */
+  @property --bxa{syntax:'<angle>';inherits:false;initial-value:0deg;}
+  .card.bonus-card{position:relative;overflow:hidden;isolation:isolate;color:#fff;}
+  .card.bonus-prisme{background:radial-gradient(120% 90% at 50% 0%,#2a0b5e 0%,#0b0418 60%,#05010c 100%) !important;}
+  .card.bonus-couronne{background:radial-gradient(120% 90% at 50% 0%,#1a1406 0%,#050403 55%,#000 100%) !important;}
+  .card.bonus-card .card-bgphoto{z-index:0;}
+  .card.bonus-card .bx-ring{position:absolute;inset:0;border-radius:inherit;padding:3px;pointer-events:none;z-index:4;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;}
+  .card.bonus-prisme .bx-ring{background:conic-gradient(from var(--bxa),#ff004c,#ff8a00,#ffe600,#2bff88,#00c3ff,#7a5cff,#ff00d4,#ff004c);animation:bxSpin 3.2s linear infinite;}
+  .card.bonus-couronne .bx-ring{padding:3px;background:linear-gradient(110deg,#7a5a12 0%,#f6d56b 20%,#fff6c8 30%,#d4af37 45%,#7a5a12 60%,#f6d56b 80%,#fff6c8 90%,#7a5a12 100%);background-size:300% 100%;animation:bxGold 3s linear infinite;}
+  .card.bonus-card .bx-sheen{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:3;background-size:260% 260%;animation:bxSheen 3.6s ease-in-out infinite;}
+  .card.bonus-prisme .bx-sheen{background-image:linear-gradient(115deg,transparent 22%,rgba(255,0,170,.30) 34%,rgba(0,255,240,.30) 44%,rgba(255,240,0,.25) 54%,rgba(140,90,255,.28) 62%,transparent 76%);mix-blend-mode:color-dodge;}
+  .card.bonus-couronne .bx-sheen{background-image:linear-gradient(115deg,transparent 30%,rgba(255,215,0,.0) 38%,rgba(255,230,150,.45) 48%,rgba(255,215,0,.0) 58%,transparent 70%);mix-blend-mode:screen;}
+  .card.bonus-card .card-top,.card.bonus-card .card-mid,.card.bonus-card .card-name,.card.bonus-card .card-stats{position:relative;z-index:5;}
+  .card.bonus-prisme .card-tier-label{background:linear-gradient(90deg,#ff004c,#ffe600,#2bff88,#00c3ff,#ff00d4);background-size:200% 100%;color:#14002b;animation:bxGold 3s linear infinite;}
+  .card.bonus-couronne .card-tier-label{background:linear-gradient(90deg,#b8860b,#fff3b0,#d4af37,#b8860b);background-size:200% 100%;color:#000;animation:bxGold 3s linear infinite;}
+  .card.bonus-card .card-name{text-shadow:0 2px 6px #000,0 0 12px rgba(0,0,0,.8);}
+  .card.bonus-prisme .card-name{background:linear-gradient(90deg,#fff,#ffd6fb,#c9fbff,#fff);-webkit-background-clip:text;background-clip:text;}
+  .card.bonus-couronne .card-name{color:#f6d56b;}
+  .card.bonus-card .card-stats span{font-weight:800;letter-spacing:.06em;}
+  .card.bonus-couronne .card-stats span{color:#f6d56b;}
+  .card.bonus-couronne .bx-crown{position:absolute;top:2%;left:50%;transform:translateX(-50%);font-size:22px;z-index:5;filter:drop-shadow(0 0 10px #ffd700);animation:bxCrown 2.2s ease-in-out infinite;pointer-events:none;}
+  .card.bonus-prisme .bx-sparks{position:absolute;inset:0;z-index:5;pointer-events:none;}
+  .card.bonus-prisme .bx-sparks i{position:absolute;width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 8px 2px #fff,0 0 16px 4px #ff6bea;animation:bxTwinkle 2.4s ease-in-out infinite;}
+  .card.bonus-prisme .bx-sparks i:nth-child(1){left:14%;top:20%;} .card.bonus-prisme .bx-sparks i:nth-child(2){left:82%;top:16%;animation-delay:.5s;}
+  .card.bonus-prisme .bx-sparks i:nth-child(3){left:72%;top:48%;animation-delay:1s;} .card.bonus-prisme .bx-sparks i:nth-child(4){left:20%;top:58%;animation-delay:1.5s;}
+  .card.bonus-prisme .bx-sparks i:nth-child(5){left:50%;top:8%;animation-delay:2s;}
+  @keyframes bxSpin{to{--bxa:360deg;}}
+  @keyframes bxGold{from{background-position:0% 0;}to{background-position:300% 0;}}
+  @keyframes bxSheen{0%,100%{background-position:100% 100%;}50%{background-position:0% 0%;}}
+  @keyframes bxCrown{0%,100%{transform:translateX(-50%) translateY(0) scale(1);}50%{transform:translateX(-50%) translateY(-4px) scale(1.12);}}
+  @keyframes bxTwinkle{0%,100%{opacity:0;transform:scale(.3);}50%{opacity:1;transform:scale(1);}}
+  .bonus-sheet-card{display:flex;justify-content:center;margin:6px 0 14px;} .bonus-sheet-card .card{width:200px;}
+  /* révélation plein écran */
+  .bonus-reveal{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;}
+  .bonus-reveal[hidden]{display:none;}
+  .bonus-reveal .br-bg{position:absolute;inset:0;background:#000;animation:brFade .7s ease-out both;}
+  .bonus-reveal.br-out{animation:brOut .45s ease-in forwards;}
+  .bonus-reveal .br-burst{position:absolute;left:50%;top:44%;width:140vmax;height:140vmax;transform:translate(-50%,-50%) scale(0);border-radius:50%;opacity:0;animation:brBurst 1.4s ease-out 2s both;pointer-events:none;}
+  .bonus-reveal.br-prisme .br-burst{background:conic-gradient(from 0deg,rgba(255,0,76,.55),rgba(255,230,0,.5),rgba(43,255,136,.5),rgba(0,195,255,.55),rgba(255,0,212,.55),rgba(255,0,76,.55));filter:blur(30px);}
+  .bonus-reveal.br-couronne .br-burst{background:radial-gradient(circle,rgba(255,224,130,.9) 0%,rgba(212,175,55,.5) 25%,transparent 55%);}
+  .bonus-reveal .br-stage{position:relative;display:flex;flex-direction:column;align-items:center;gap:14px;max-width:420px;text-align:center;color:#fff;}
+  .bonus-reveal .br-icon{font-size:72px;line-height:1;opacity:0;}
+  .bonus-reveal.br-couronne .br-icon{filter:drop-shadow(0 0 22px #ffd700);animation:brCrownDrop 1.3s cubic-bezier(.2,.9,.25,1.2) .7s both;}
+  .bonus-reveal.br-prisme .br-icon{animation:brSpinIn 1.3s ease-out .7s both;}
+  .bonus-reveal .br-card{opacity:0;transform:scale(.2) rotateY(180deg);animation:brCard 1s cubic-bezier(.2,.9,.25,1.15) 2s both;}
+  .bonus-reveal .br-card .card{width:210px;}
+  .bonus-reveal.br-prisme .br-card .card{box-shadow:0 0 40px rgba(255,107,234,.7),0 0 80px rgba(0,195,255,.45);}
+  .bonus-reveal.br-couronne .br-card .card{box-shadow:0 0 40px rgba(255,215,0,.75),0 0 90px rgba(212,175,55,.45);}
+  .bonus-reveal .br-text{opacity:0;animation:brUp .7s ease-out 2.9s both;}
+  .bonus-reveal .br-title{font-family:var(--font-head);font-weight:900;font-size:26px;letter-spacing:.12em;}
+  .bonus-reveal.br-prisme .br-title{background:linear-gradient(90deg,#ff004c,#ffe600,#2bff88,#00c3ff,#ff00d4,#ff004c);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:bxGold 3s linear infinite;}
+  .bonus-reveal.br-couronne .br-title{color:#f6d56b;text-shadow:0 0 16px rgba(255,215,0,.6);}
+  .bonus-reveal .br-sub{margin-top:8px;font-size:14px;line-height:1.55;color:#e8e2f5;}
+  .bonus-reveal .br-ok{opacity:0;animation:brUp .5s ease-out 3.5s both;}
+  @keyframes brFade{from{opacity:0;}to{opacity:.94;}}
+  @keyframes brOut{to{opacity:0;}}
+  @keyframes brBurst{0%{opacity:0;transform:translate(-50%,-50%) scale(0);}30%{opacity:1;}100%{opacity:0;transform:translate(-50%,-50%) scale(1);}}
+  @keyframes brCrownDrop{0%{opacity:0;transform:translateY(-60vh) scale(.6);}70%{opacity:1;transform:translateY(8px) scale(1.15);}100%{opacity:1;transform:translateY(0) scale(1);}}
+  @keyframes brSpinIn{0%{opacity:0;transform:scale(0) rotate(-270deg);}100%{opacity:1;transform:scale(1) rotate(0);}}
+  @keyframes brCard{0%{opacity:0;transform:scale(.2) rotateY(180deg);}60%{opacity:1;transform:scale(1.12) rotateY(0);}100%{opacity:1;transform:scale(1) rotateY(0);}}
+  @keyframes brUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+  @media (prefers-reduced-motion: reduce){.card.bonus-card .bx-ring,.card.bonus-card .bx-sheen,.card.bonus-card .bx-crown,.card.bonus-card .bx-sparks i,.card.bonus-card .card-tier-label,.bonus-reveal *{animation:none !important;opacity:1 !important;transform:none !important;}.bonus-reveal .br-burst{display:none;}}
   .ultra-bar{margin:0 0 14px;padding:12px 14px;border-radius:14px;background:var(--surface,#fff);box-shadow:0 2px 10px rgba(0,0,0,.08);position:relative;overflow:hidden;}
   .ultra-bar .ub-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--font-head);font-weight:700;font-size:15px;margin-bottom:8px;}
   .ultra-bar .ub-top small{font-family:var(--font-body);font-weight:600;font-size:12px;color:var(--text-muted);}
@@ -1728,6 +1790,8 @@
     if (poste === 'ECUSSON') return 'ecusson';          // écusson d'un club adverse : carte gold de collection
     if (poste === 'TROPHEE') return 'trophee';
     if (poste === 'COMMUNAUTE') return 'communaute';    // carte de la communauté : proposée et votée par les joueurs
+    if (poste === 'PRISME') return 'prisme';            // récompense secrète : commune, rare, édition limitée, secrète et Édition Noire d'une personne
+    if (poste === 'COURONNE') return 'couronne';        // récompense secrète : toute l'Édition Noire d'une personne (unique au monde)
     return 'joueur';
   }
   // un trophée de saison s'appelle « Vainqueur de saison (octobre 2026) » : le titre en grand, le mois dessous
@@ -1742,7 +1806,9 @@
   const isPassCard = card => card.tier === 'saison' && trophyParts(card).rank === 6 && !!trophyParts(card).theme;          // carte exclusive du Pass : aux couleurs du thème du mois
   const isBlackCard = card => !!card && cardKind(card) === 'numerotee' && numberedParts(card.player_name).title === 'Édition Noire';      // carte unique des enchères du club
   const noirClass = card => isBlackCard(card) ? ' edition-noire' : '';
-  const tourneyClass = card => (isTourneyCard(card) ? ' trophy-tournoi' : isPassCard(card) ? ' trophy-pass' : '') + noirClass(card);
+  const bonusKind = card => card && (card.bonus ? card.bonus.kind : ['prisme', 'couronne'].includes(cardKind(card)) ? cardKind(card) : null);
+  const bonusSubject = card => card.bonus ? card.bonus.subject : String(card.player_name || '').replace(/^(Prisme|Couronne noire) — /, '');
+  const tourneyClass = card => (bonusKind(card) ? ' bonus-card bonus-' + bonusKind(card) : isTourneyCard(card) ? ' trophy-tournoi' : isPassCard(card) ? ' trophy-pass' : '') + noirClass(card);
   function applyCardTheme(el, card){ if (isPassCard(card)) { const th = trophyParts(card).theme; el.style.setProperty('--tp1', th.c1); el.style.setProperty('--tp2', th.c2); el.style.setProperty('--tpa', th.accent); el.style.setProperty('--tpg', th.c2 + '99'); } }
   const trophyMedalOf = card => { const t = trophyParts(card); return t.rank === 6 && t.theme ? t.theme.emoji : (TROPHY_MEDALS[t.rank] || '🏆'); };
   function trophyMedalHTML(card){ return '<div class="item-medal trophy-medal"><span class="item-icon" aria-hidden="true">' + trophyMedalOf(card) + '</span></div>'; }
@@ -1759,7 +1825,7 @@
   }
   const numBadgeText = card => { const n = numberedParts(card.player_name); return 'N° ' + n.number + '/' + n.total; };
   // Sur une carte SECRÈTE, c'est le surnom du joueur qui s'écrit (à défaut, son prénom) ; son numéro de maillot est dans la ligne du bas.
-  function cardDisplayName(card){ if (cardKind(card) === 'trophee') return trophyParts(card).title; if (cardKind(card) === 'moment') return momentParts(card.player_name).action; if (cardKind(card) === 'numerotee') return numberedParts(card.player_name).subject; return (card.tier === 'secrete' && card.surnom) ? card.surnom : card.player_name; }
+  function cardDisplayName(card){ if (bonusKind(card)) return bonusSubject(card); if (cardKind(card) === 'trophee') return trophyParts(card).title; if (cardKind(card) === 'moment') return momentParts(card.player_name).action; if (cardKind(card) === 'numerotee') return numberedParts(card.player_name).subject; return (card.tier === 'secrete' && card.surnom) ? card.surnom : card.player_name; }
   function numChip(card){ return (card.tier === 'secrete' && card.numero != null && card.numero !== '') ? '<span class="card-num" title="Numéro de maillot">#' + escapeHtml(String(card.numero)) + '</span>' : ''; }
   // Équipement : plus de bonus de puissance, il réduit la fatigue (perte de forme) des cartes du match, en 1v1 seulement (en %)
   const EQUIP_FATIGUE_PCT = { commune: 5, rare: 10, epique: 15, legendaire: 25 };
@@ -1837,6 +1903,9 @@
     } else if (kind === 'communaute') {
       statsRow = '<div class="card-stats" title="Carte de la communauté : proposée et votée par les joueurs"><span>💡 ' + (card.proposed_by ? pseudoLink(card.proposed_by) : 'Communauté') + '</span></div>';
       posteLabel = '💡';
+    } else if (kind === 'prisme' || kind === 'couronne') {
+      statsRow = '<div class="card-stats" title="Récompense secrète"><span>' + (kind === 'prisme' ? '🌈 PRISME' : '👑 5 / 5') + '</span></div>';
+      posteLabel = kind === 'prisme' ? '🌈' : '👑';
     } else if (kind === 'trophee') {
       statsRow = '<div class="card-stats" title="' + (trophyParts(card).rank === 6 ? 'Carte exclusive du Pass' : [4, 5, 11].includes(trophyParts(card).rank) ? 'Carte de tournoi' : 'Trophée de saison') + ' : un souvenir"><span>🏆 ' + escapeHtml(trophyParts(card).label) + '</span></div>';
       posteLabel = trophyMedalOf(card);
@@ -1858,7 +1927,10 @@
     else if (kind === 'equipement' || kind === 'stade' || kind === 'moment' || kind === 'numerotee' || kind === 'communaute') midHTML = itemMedalHTML(card);
     else midHTML = '<span class="ball-fallback">⚽</span>';
     const formBar = card.form != null && card.form < 100 ? '<div class="form-bar" title="Forme en 1v1 : ' + pctFr(card.form) + ' %' + (card.form_full_in ? ' · pleine forme dans ' + fullIn(card.form_full_in) : '') + ' (+1 % par heure)"><i style="width:' + card.form + '%;background-position:' + (100 - card.form) + '% 0;"></i></div>' : '';
-    return formBar + (kind === 'trophee' ? '' : editionDecor(card.tier)) + bgPhoto + '<div class="card-top"><span class="card-tier-label">'+(kind === 'trophee' && trophyKindLabel(trophyParts(card)) ? trophyKindLabel(trophyParts(card)) : tierLabel(card.tier))+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
+    const isBonus = kind === 'prisme' || kind === 'couronne';
+    const bonusFx = kind === 'prisme' ? '<span class="bx-ring" aria-hidden="true"></span><span class="bx-sheen" aria-hidden="true"></span><span class="bx-sparks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>'
+      : kind === 'couronne' ? '<span class="bx-ring" aria-hidden="true"></span><span class="bx-sheen" aria-hidden="true"></span><span class="bx-crown" aria-hidden="true">👑</span>' : '';
+    return formBar + (kind === 'trophee' || isBonus ? '' : editionDecor(card.tier)) + bgPhoto + bonusFx + '<div class="card-top"><span class="card-tier-label">'+(isBonus ? (kind === 'prisme' ? 'Prisme' : 'Couronne') : kind === 'trophee' && trophyKindLabel(trophyParts(card)) ? trophyKindLabel(trophyParts(card)) : tierLabel(card.tier))+'</span><span class="card-poste">'+posteLabel+'</span></div>'+
       '<div class="card-mid">'+midHTML+'</div>'+
       '<div><div class="card-name"></div>'+statsRow+'</div>'+
       crestIco('card-watermark');
@@ -1973,8 +2045,46 @@
       el.appendChild(badge);
     }
     el.style.cursor = 'pointer';
-    el.addEventListener('click', () => cardKind(card) === 'trophee' ? openTrophySheet(card) : openPlayerDetail(card.player_name, card.tier, card));
+    el.addEventListener('click', () => bonusKind(card) ? openBonusSheet(card) : cardKind(card) === 'trophee' ? openTrophySheet(card) : openPlayerDetail(card.player_name, card.tier, card));
     return el;
+  }
+  // ---------- Récompenses secrètes : Prisme (commune, rare, édition limitée, secrète, Édition Noire d'une personne) et Couronne noire (toute son Édition Noire, unique au monde) ----------
+  function bonusText(kind, who){
+    return kind === 'prisme'
+      ? '🌈 Tu as réuni <b>5 cartes</b> de ' + who + ' : sa commune, sa rare, une édition limitée, sa secrète et un exemplaire de son Édition Noire. Sa carte <b>Prisme</b> est à toi, avec le titre « Fan absolu de ' + who + ' ».'
+      : '👑 Tu as réuni <b>toute l\'Édition Noire</b> de ' + who + ', du n° 1 au n° 5. Sa <b>Couronne noire</b> est unique au monde, avec le titre « Seigneur noir de ' + who + ' ».';
+  }
+  function openBonusSheet(card){
+    const kind = bonusKind(card), who = escapeHtml(bonusSubject(card));
+    modalHistoryPush();
+    document.getElementById('modalTitle').textContent = (kind === 'prisme' ? '🌈 Prisme — ' : '👑 Couronne noire — ') + bonusSubject(card);
+    const body = document.getElementById('modalBody');
+    body.innerHTML = '<div class="bonus-sheet-card"></div><p style="text-align:center;line-height:1.6;">' + bonusText(kind, who) + '</p><p class="muted" style="text-align:center;">Une récompense secrète : elle ne se vend pas, ne s\'échange pas et ne joue pas de match. Elle est à toi pour toujours.</p>';
+    body.querySelector('.bonus-sheet-card').appendChild(makeMiniCard({ ...card, quantity: 1 }, { hideCount: true }));
+    document.getElementById('userCollectionModal').style.display = 'flex';
+  }
+  const bonusQueue = [], bonusDone = new Set(); let bonusShowing = false;
+  function announceBonus(list){
+    (list || []).forEach(b => { if (!bonusDone.has(b.id) && !bonusQueue.some(x => x.id === b.id)) bonusQueue.push(b); });
+    if (!bonusShowing) nextBonusReveal();
+  }
+  function nextBonusReveal(){
+    const b = bonusQueue.shift(), el = byId('bonusReveal');
+    if (!b || !el) { bonusShowing = false; return; }
+    bonusShowing = true; bonusDone.add(b.id);
+    const who = escapeHtml(b.subject);
+    el.className = 'bonus-reveal br-' + b.kind;
+    el.innerHTML = '<div class="br-bg"></div><div class="br-burst" aria-hidden="true"></div>' +
+      '<div class="br-stage"><div class="br-icon" aria-hidden="true">' + (b.kind === 'prisme' ? '🌈' : '👑') + '</div><div class="br-card"></div>' +
+      '<div class="br-text"><div class="br-title">' + (b.kind === 'prisme' ? 'PRISME DÉBLOQUÉ' : 'COURONNE NOIRE') + '</div><div class="br-sub">' + bonusText(b.kind, who) + '</div></div>' +
+      '<button class="btn-primary br-ok" type="button">' + (b.kind === 'prisme' ? 'Magnifique !' : 'Je suis le seigneur noir') + '</button></div>';
+    el.querySelector('.br-card').appendChild(makeMiniCard({ ...b.card, quantity: 1 }, { hideCount: true }));
+    el.hidden = false;
+    el.querySelector('.br-ok').addEventListener('click', () => {
+      api('/collection-bonus/seen', { method: 'POST', body: JSON.stringify({ ids: [b.id] }) }).catch(() => {});
+      el.classList.add('br-out');
+      setTimeout(() => { el.hidden = true; el.innerHTML = ''; if (!bonusQueue.length) loadCollection(); nextBonusReveal(); }, 450);
+    });
   }
   function openTrophySheet(card){
     const t = trophyParts(card), preview = String(card.id || '').startsWith('trophy-');
@@ -2188,7 +2298,7 @@
   function loadImg(src, cross){ return new Promise(res => { const i = new Image(); if (cross) i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
   function roundRect(g, x, y, w, h, r){ g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
   // la palette d'une carte précise : celle de sa rareté, sauf les cartes de tournoi (violet et rose fluo)
-  function cardPalette(card){ if (isBlackCard(card)) return { c1: '#000000', c2: '#000000', label: '#E9C46A', labelText: '#000000', border: '#D4AF37', glow: '#F6D56B' }; if (isPassCard(card)) { const th = trophyParts(card).theme; return { c1: th.c2, c2: th.c1, label: th.accent, labelText: '#FFFFFF', border: th.accent, glow: th.c2 }; } return isTourneyCard(card) ? { c1: '#FF2FD1', c2: '#7B2FF7', label: '#FF9BEF', labelText: '#2A0540', border: '#FF7BE8', glow: '#FF2FD1' } : tierPalette(card.tier); }
+  function cardPalette(card){ if (bonusKind(card) === 'prisme') return { c1: '#2A0B5E', c2: '#05010C', label: '#FF6BEA', labelText: '#1A0033', border: '#7AF0FF', glow: '#FF6BEA' }; if (bonusKind(card) === 'couronne') return { c1: '#000000', c2: '#000000', label: '#F6D56B', labelText: '#000000', border: '#F6D56B', glow: '#FFD700' }; if (isBlackCard(card)) return { c1: '#000000', c2: '#000000', label: '#E9C46A', labelText: '#000000', border: '#D4AF37', glow: '#F6D56B' }; if (isPassCard(card)) { const th = trophyParts(card).theme; return { c1: th.c2, c2: th.c1, label: th.accent, labelText: '#FFFFFF', border: th.accent, glow: th.c2 }; } return isTourneyCard(card) ? { c1: '#FF2FD1', c2: '#7B2FF7', label: '#FF9BEF', labelText: '#2A0540', border: '#FF7BE8', glow: '#FF2FD1' } : tierPalette(card.tier); }
   function tierPalette(tier){
     const v = n => cssVar(n);
     if (tier === 'halloween') return { c1: '#2B1424', c2: '#0C0910', label: '#FF8A1F', labelText: '#1A0B00', border: '#FF8A1F', glow: '#FF8A1F' };
@@ -2527,7 +2637,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.20.5';
+  const SITE_VERSION = '2026.11.21.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3383,6 +3493,7 @@
     try {
       meInfo = await api('/me');
       announceBadges(meInfo.unseen_badges);
+      try { announceBonus(meInfo.bonus_unseen); } catch(e) { /* la révélation ne doit jamais bloquer /me */ }
       if (meInfo.welcome) showWelcome(meInfo.welcome);        // compte tout neuf : pop-up de bienvenue
       updateChatDot();                                         // point rouge de l'onglet Chat
       updateTournamentDot();                                   // point rouge de l'onglet Tournoi (un match à composer)
@@ -3621,8 +3732,8 @@
   function rememberFold(st, tier, c){ st.delete(c ? '+' + tier : tier); st.add(c ? tier : '+' + tier); }
   function buildTierGroups(cards, withSell, view){
     const frag = document.createDocumentFragment(), collapsedSet = getCollapsed();
-    ['numerotee','saison','legendaire','epique','speciale','secrete','gold', ...ED_SLOTS.slice().reverse(), 'noel','halloween','rare','communaute','commune'].forEach(tier => {
-      const allOfTier = cards.filter(c => c.tier === tier);
+    ['bonus','numerotee','saison','legendaire','epique','speciale','secrete','gold', ...ED_SLOTS.slice().reverse(), 'noel','halloween','rare','communaute','commune'].forEach(tier => {
+      const allOfTier = cards.filter(c => (bonusKind(c) ? 'bonus' : c.tier) === tier);
       if (!allOfTier.length) return;
       const cardsOfTier = viewCards(allOfTier, view);
       if (!cardsOfTier.length) return;                            // un filtre actif : on ne montre pas les raretés sans carte correspondante
@@ -3631,8 +3742,8 @@
       const group = document.createElement('div'); group.className = 'tier-group' + (EDITION_TIERS.includes(tier) ? ' edition-group' : ''); group.dataset.tier = tier;
       const ed = editionsInfo[tier];
       const edNote = ed ? '<span class="edition-note">' + ed.icon + ' Édition limitée · ' + (ed.status === 'active' ? 'dans les packs jusqu\'au ' + formatDay(ed.end) : ed.status === 'ended' ? 'terminée le ' + formatDay(ed.end) : 'à partir du ' + formatDay(ed.start)) + '</span>' : '';
-      group.innerHTML = '<h3>' + (tier === 'saison' ? 'Trophées' : tier === 'numerotee' ? 'Éditions numérotées' : tierLabel(tier)) + (tier === 'saison' || tier === 'numerotee' ? '' : ' <span style="color:var(--text-muted);font-size:14px;font-family:var(--font-body);">' + owned + '/' + allOfTier.length + '</span>') + edNote + '</h3>';
-      const h3 = group.querySelector('h3'), tg = document.createElement('button'), gLabel = (tier === 'saison' ? 'Trophées' : tier === 'numerotee' ? 'Éditions numérotées' : tierLabel(tier));
+      group.innerHTML = '<h3>' + (tier === 'bonus' ? '✨ Récompenses secrètes' : tier === 'saison' ? 'Trophées' : tier === 'numerotee' ? 'Éditions numérotées' : tierLabel(tier)) + (tier === 'saison' || tier === 'numerotee' || tier === 'bonus' ? '' : ' <span style="color:var(--text-muted);font-size:14px;font-family:var(--font-body);">' + owned + '/' + allOfTier.length + '</span>') + edNote + '</h3>';
+      const h3 = group.querySelector('h3'), tg = document.createElement('button'), gLabel = (tier === 'bonus' ? 'Récompenses secrètes' : tier === 'saison' ? 'Trophées' : tier === 'numerotee' ? 'Éditions numérotées' : tierLabel(tier));
       tg.type = 'button'; tg.className = 'tier-toggle'; tg.setAttribute('aria-label', 'Replier ou déplier ' + gLabel);      // (la flèche est dessinée en CSS : elle ne fait pas partie du texte du titre)
       const applyCollapsed = c => { group.classList.toggle('collapsed', c); tg.setAttribute('aria-expanded', String(!c)); tg.title = (c ? 'Déplier « ' : 'Replier « ') + gLabel + ' »'; };
       h3.insertBefore(tg, h3.firstChild); applyCollapsed(isFolded(collapsedSet, tier, cardsOfTier.length, view));
@@ -6114,5 +6225,6 @@
   }
 })();
 </script>
+<div class="bonus-reveal" id="bonusReveal" hidden></div>
 </body>
 </html>

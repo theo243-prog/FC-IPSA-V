@@ -27,7 +27,7 @@ ok(c.get("/communaute", headers=H["ana"]).status_code == 403 and prop("ana", "Es
 ok(c.get("/me", headers=H["ana"]).json()["features"].get("communaute") is False, "/me renvoie features.communaute à faux")
 ok(c.post("/admin/feature-settings", json={"feature": "communaute", "allowed": ["ana", "bob", "cid"]}, headers=A).status_code == 200, "réservée à ana, bob et cid")
 ok(c.get("/communaute", headers=H["ana"]).status_code == 200 and c.get("/communaute", headers=H["dan"]).status_code == 403, "ana y a accès, dan non")
-ok(c.get("/me", headers=H["ana"]).json()["features_public"] == {"draft": False, "pantheon": False, "communaute": False, "succes_secrets": False}, "/me : aucune fonction ouverte à tous (badge « essai » affiché)")
+ok(c.get("/me", headers=H["ana"]).json()["features_public"] == {"draft": False, "pantheon": False, "communaute": False, "succes_secrets": False, "prisme": False, "couronne_noire": False}, "/me : aucune fonction ouverte à tous (badge « essai » affiché)")
 
 print("2) PROPOSER")
 at("2026-11-14T15:00:00")
