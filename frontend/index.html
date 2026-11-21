@@ -1790,7 +1790,7 @@
     if (poste === 'ECUSSON') return 'ecusson';          // écusson d'un club adverse : carte gold de collection
     if (poste === 'TROPHEE') return 'trophee';
     if (poste === 'COMMUNAUTE') return 'communaute';    // carte de la communauté : proposée et votée par les joueurs
-    if (poste === 'PRISME') return 'prisme';            // récompense secrète : les 5 cartes de base d'une personne
+    if (poste === 'PRISME') return 'prisme';            // récompense secrète : commune, rare, édition limitée, secrète et Édition Noire d'une personne
     if (poste === 'COURONNE') return 'couronne';        // récompense secrète : toute l'Édition Noire d'une personne (unique au monde)
     return 'joueur';
   }
@@ -2048,10 +2048,10 @@
     el.addEventListener('click', () => bonusKind(card) ? openBonusSheet(card) : cardKind(card) === 'trophee' ? openTrophySheet(card) : openPlayerDetail(card.player_name, card.tier, card));
     return el;
   }
-  // ---------- Récompenses secrètes : Prisme (5 cartes de base d'une personne) et Couronne noire (toute son Édition Noire, unique au monde) ----------
+  // ---------- Récompenses secrètes : Prisme (commune, rare, édition limitée, secrète, Édition Noire d'une personne) et Couronne noire (toute son Édition Noire, unique au monde) ----------
   function bonusText(kind, who){
     return kind === 'prisme'
-      ? '🌈 Tu as réuni les <b>5 cartes de base</b> de ' + who + ' : commune, rare, épique, légendaire et secrète. Sa carte <b>Prisme</b> est à toi, avec le titre « Fan absolu de ' + who + ' ».'
+      ? '🌈 Tu as réuni <b>5 cartes</b> de ' + who + ' : sa commune, sa rare, une édition limitée, sa secrète et un exemplaire de son Édition Noire. Sa carte <b>Prisme</b> est à toi, avec le titre « Fan absolu de ' + who + ' ».'
       : '👑 Tu as réuni <b>toute l\'Édition Noire</b> de ' + who + ', du n° 1 au n° 5. Sa <b>Couronne noire</b> est unique au monde, avec le titre « Seigneur noir de ' + who + ' ».';
   }
   function openBonusSheet(card){
@@ -2637,7 +2637,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.21.1';
+  const SITE_VERSION = '2026.11.21.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }

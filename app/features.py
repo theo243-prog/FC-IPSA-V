@@ -26,7 +26,7 @@ FEATURES = {                         # nom : ce que c'est (affiché dans l'admin
     "pantheon": "Panthéon (palmarès et records du jeu et du club)",
     "communaute": "Cartes de la communauté (propositions des joueurs, vote du jour)",
     "succes_secrets": "Succès secrets (21 succès cachés, 20 crédits et un titre chacun)",
-    "prisme": "Prisme (secret) : les 5 cartes de base d'une personne débloquent sa carte Prisme",
+    "prisme": "Prisme (secret) : commune, rare, édition limitée, secrète et un exemplaire Édition Noire d'une personne débloquent sa carte Prisme",
     "couronne_noire": "Couronne noire (secret) : toute l'Édition Noire d'une personne débloque sa Couronne, unique au monde",
 }
 

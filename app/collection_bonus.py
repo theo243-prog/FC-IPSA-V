@@ -1,9 +1,10 @@
 """
 Bonus de collection SECRETS (branche prisme-couronne, 21/11/2026, en essai) : deux récompenses cachées, jamais annoncées à l'avance.
 
-- « Prisme » (fonction en essai `prisme`) : posséder les 5 cartes de base d'une même personne du club (joueur ou fan) — commune, rare,
-  épique, légendaire et secrète (BASE_TIERS) — débloque sa carte « Prisme — Nom ». Seulement pour une personne qui a ces 5 cartes dans le
-  jeu (pas une carte unique). Chaque joueur qui réunit les 5 reçoit la carte (une seule carte Prisme par personne du club, partagée).
+- « Prisme » (fonction en essai `prisme`) : posséder 5 cartes d'une même personne du club (joueur ou fan) — sa commune, sa rare, sa
+  secrète (BASE_TIERS), AU MOINS UNE de ses cartes d'édition limitée (halloween, noel, ed1–ed12 : n'importe laquelle) et AU MOINS UN
+  exemplaire de sa série Édition Noire — débloque sa carte « Prisme — Nom ». Décidé par Théo (21/11/2026) : ni spéciale, ni épique, ni
+  légendaire (elles dépendent des matchs réels). Chaque joueur qui réunit les 5 reçoit la carte (une seule carte Prisme par personne, partagée).
 - « Couronne noire » (fonction en essai `couronne_noire`) : posséder TOUS les exemplaires de la série Édition Noire d'une personne
   (n° 1/5 à 5/5) débloque « Couronne noire — Nom », carte UNIQUE au monde : seul le premier à réunir la série la reçoit.
 - Les deux cartes : fiche de poste réservé PRISME / COURONNE (game_logic.card_kind « prisme » / « couronne »), rareté « saison » (comme
@@ -30,7 +31,7 @@ from .security import get_current_user
 from . import features, game_logic
 
 router = APIRouter()
-BASE_TIERS = ("commune", "rare", "epique", "legendaire", "secrete")
+BASE_TIERS = ("commune", "rare", "secrete")      # + une édition limitée + un exemplaire Édition Noire (prisme_candidates)
 KINDS = {
     "prisme": {"feature": "prisme", "poste": "PRISME", "prefix": "Prisme — ", "title": "Fan absolu de %s", "emoji": "🌈"},
     "couronne": {"feature": "couronne_noire", "poste": "COURONNE", "prefix": "Couronne noire — ", "title": "Seigneur noir de %s", "emoji": "👑"},
@@ -111,19 +112,27 @@ def _unlock(db: Session, user: User, kind: str, subject: Player) -> BonusUnlock:
 
 # ------------------------------------------------------------------ les conditions
 def prisme_candidates(db: Session, user: User) -> list:
-    """Les personnes dont le joueur possède les 5 cartes de base (et qui ont bien ces 5 cartes dans le jeu)."""
-    tiers = [Tier(t) for t in BASE_TIERS]
+    """Les personnes dont le joueur possède la commune, la rare, la secrète, une édition limitée et un exemplaire Édition Noire."""
+    from . import numbered, club_auctions
+    tiers = [Tier(t) for t in BASE_TIERS + tuple(game_logic.EDITION_TIERS)]
     owned = (db.query(Card.player_id, Card.tier).join(OwnedCard, OwnedCard.card_id == Card.id)
              .filter(OwnedCard.user_id == user.id, OwnedCard.quantity > 0, Card.tier.in_(tiers)).all())
     have = {}
     for pid, tier in owned:
-        have.setdefault(pid, set()).add(tier.value)
+        t = tier.value
+        have.setdefault(pid, set()).add("edition" if t in game_logic.EDITION_TIERS else t)
+    need = set(BASE_TIERS) | {"edition"}
+    ready = [pid for pid, ts in have.items() if need <= ts]
+    if not ready:
+        return []
+    noire = {s for (s,) in db.query(numbered.NumberedSeries.subject).join(numbered.NumberedCopy, numbered.NumberedCopy.series_id == numbered.NumberedSeries.id)
+             .join(OwnedCard, OwnedCard.card_id == numbered.NumberedCopy.card_id)
+             .filter(numbered.NumberedSeries.title == club_auctions.SERIES_TITLE, OwnedCard.user_id == user.id, OwnedCard.quantity > 0).all()}
     out = []
-    for pid, ts in have.items():
-        if len(ts) == len(BASE_TIERS):
-            p = db.get(Player, pid)
-            if p is not None and game_logic.card_kind(p) in ("joueur", "fan") and not getattr(p, "unique_card", False):
-                out.append(p)
+    for pid in ready:
+        p = db.get(Player, pid)
+        if p is not None and p.name in noire and game_logic.card_kind(p) in ("joueur", "fan") and not getattr(p, "unique_card", False):
+            out.append(p)
     return out
 
 

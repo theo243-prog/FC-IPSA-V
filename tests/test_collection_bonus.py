@@ -1,5 +1,5 @@
 """
-Test : récompenses secrètes de collection (en essai) : Prisme (5 cartes de base d'une personne) et Couronne noire (toute son Édition Noire).
+Test : récompenses secrètes de collection (en essai) : Prisme (commune, rare, édition limitée, secrète et Édition Noire d'une personne) et Couronne noire (toute son Édition Noire).
 Lancé par tests/run_tests.py.
 """
 from fastapi.testclient import TestClient
@@ -31,7 +31,16 @@ def give(p, name, tier, q=1):
 owns = lambda p, name: db.query(OwnedCard).join(Card).join(Player).filter(OwnedCard.user_id == U(p).id, OwnedCard.quantity > 0, Player.name == name).count() > 0
 
 print("1) PRISME : FERMÉ SANS ACCÈS, PUIS LES 5 CARTES")
-for t in CB.BASE_TIERS: give("cba", "Lucas", t)
+for n in ("Lucas", "Hugo"):
+    c.post("/admin/series-create", json={"title": "Édition Noire", "subject": n, "total": 5}, headers=A)
+for t in ("commune", "rare", "secrete", "epique", "legendaire", "speciale"): give("cba", "Lucas", t)
+ok(True, "(cba a commune, rare, secrète, épique, légendaire et spéciale de Lucas)")
+features.save(db, "prisme", {"public": False, "allowed": ["cba", "cbb"]}); db.commit()
+ok(me("cba")["bonus_unseen"] == [], "sans édition limitée ni Édition Noire : rien (épique, légendaire et spéciale ne comptent pas)")
+give("cba", "Lucas", "halloween")
+ok(me("cba")["bonus_unseen"] == [], "avec une édition limitée mais sans Édition Noire : rien")
+features.save(db, "prisme", {"public": False, "allowed": []}); db.commit()
+c.post("/admin/series-mint", json={"series": "Édition Noire — Lucas", "pseudo": "cba", "number": 3}, headers=A)
 ok(me("cba")["bonus_unseen"] == [] and not owns("cba", "Prisme — Lucas"), "sans accès à l'essai : rien n'est débloqué (secret)")
 features.save(db, "prisme", {"public": False, "allowed": ["cba", "cbb"]}); features.save(db, "couronne_noire", {"public": False, "allowed": ["cba", "cbb"]}); db.commit()
 u = me("cba")["bonus_unseen"]
@@ -39,9 +48,10 @@ ok(len(u) == 1 and u[0]["kind"] == "prisme" and u[0]["subject"] == "Lucas" and u
 ok(owns("cba", "Prisme — Lucas") and u[0]["title"] == "Fan absolu de Lucas", "la carte « Prisme — Lucas » est dans sa collection, avec son titre")
 ok(len(me("cba")["bonus_unseen"]) == 1 and db.query(CB.BonusUnlock).filter_by(user_id=U("cba").id).count() == 1, "une seule fois")
 ok(c.post("/collection-bonus/seen", json={"ids": [u[0]["id"]]}, headers=H["cba"]).status_code == 200 and me("cba")["bonus_unseen"] == [], "révélation vue : elle ne revient plus")
-for t in ("commune", "rare", "epique", "legendaire"): give("cbb", "Hugo", t)
-ok(me("cbb")["bonus_unseen"] == [], "4 cartes sur 5 : rien")
-give("cbb", "Hugo", "secrete"); ok([b["subject"] for b in me("cbb")["bonus_unseen"]] == ["Hugo"], "la 5e : le Prisme de Hugo")
+for t in ("commune", "rare", "secrete"): give("cbb", "Hugo", t)
+give("cbb", "Hugo", "noel"); ok(me("cbb")["bonus_unseen"] == [], "4 cartes sur 5 (commune, rare, secrète, Noël) : rien")
+c.post("/admin/series-mint", json={"series": "Édition Noire — Hugo", "pseudo": "cbb"}, headers=A)
+ok([b["subject"] for b in me("cbb")["bonus_unseen"]] == ["Hugo"], "la 5e (un exemplaire Édition Noire, n'importe lequel) : le Prisme de Hugo")
 tids = [t["id"] for t in c.get("/cosmetics", headers=H["cbb"]).json()["titles"] if t.get("label") == "Fan absolu de Hugo"] if c.get("/cosmetics", headers=H["cbb"]).status_code == 200 else [tid for tid, _ in CB.titles(db, U("cbb").id)]
 ok(tids and cosmetics.title_label(tids[0], db) == "Fan absolu de Hugo", "le titre « Fan absolu de Hugo » est disponible")
 
@@ -82,6 +92,7 @@ ok(len(c.get("/admin/collection-bonus", headers=A).json()) == 4, "l'admin voit q
 print("6) RENOMMER LA PERSONNE, SUPPRIMER UN COMPTE")
 ok(c.post("/admin/rename-player", json={"old_name": "Lucas", "new_name": "Lucas B"}, headers=A).status_code == 200 and owns("cba", "Prisme — Lucas B"), "renommer Lucas : sa carte devient « Prisme — Lucas B »")
 ok(CB.title_label(CB.TITLE_PREFIX + "prisme-" + db.query(Player).filter_by(name="Lucas B").first().id, db) == "Fan absolu de Lucas B", "le titre suit le nouveau nom")
+c.post("/auth/register", json={"pseudo": "testadmin", "password": "test1234"})      # (compte de réserve : il reprend les exemplaires numérotés d'un compte supprimé)
 ok(c.post("/admin/delete-user", json={"pseudo": "cba"}, headers=A).status_code == 200 and db.query(CB.BonusUnlock).filter_by(kind="couronne").count() == 0, "compte supprimé : la Couronne de Nathan redevient libre")
 
 print(); print("BILAN (Prisme et Couronne noire) :", "TOUT EST VERT" if not FAILS else f"{len(FAILS)} ÉCHEC(S) : {FAILS}")
