@@ -31,7 +31,7 @@ from .models import Player, Card, Match, MatchMoment, Duel, CardUsage
 
 router = APIRouter()
 NAME_KEYS = {"player", "scorer", "assist", "created", "player_name"}     # clés JSON qui contiennent un nom de personne du club
-RESERVED_POSTES = {"MOMENT", "NUMEROTEE", "TROPHEE", "ECUSSON", "COMMUNAUTE"}   # fiches qui ne sont pas « une personne »
+RESERVED_POSTES = {"MOMENT", "NUMEROTEE", "TROPHEE", "ECUSSON", "COMMUNAUTE", "PRISME", "COURONNE"}   # fiches qui ne sont pas « une personne »
 
 
 class RenameRequest(BaseModel):
@@ -123,12 +123,18 @@ def rename(db: Session, old_name: str, new_name: str) -> dict:
             card = db.get(Card, c.card_id)
             if card is not None:
                 copies.append(card.player); new_names[card.player.id] = numbered.copy_name(s.title, new, c.number, s.total)
+    from . import collection_bonus                          # ses cartes Prisme / Couronne noire (« Prisme — Nom »)
+    bonus = []
+    for kind, k in collection_bonus.KINDS.items():
+        p = db.query(Player).filter_by(name=k["prefix"] + old, poste=k["poste"]).first()
+        if p is not None:
+            bonus.append(p); new_names[p.id] = k["prefix"] + new
     for pid, nm in new_names.items():                       # aucun nom dérivé ne doit tomber sur une autre fiche
         if taken.get(nm.casefold(), pid) != pid:
             raise HTTPException(status_code=400, detail="Renommage impossible : « %s » existe déjà" % nm)
 
     person.name = new
-    for p in moments + copies:
+    for p in moments + copies + bonus:
         p.name = new_names[p.id]
     for s in series:
         s.subject = new

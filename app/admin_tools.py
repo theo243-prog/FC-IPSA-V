@@ -58,6 +58,8 @@ def summarize(path: str, payload) -> str:
         if name == "create-player": return "Joueur %s créé (poste %s)%s" % (_s(p, "name"), _s(p, "poste", "X"), ", cartes offertes à " + who if who else "")
         if name == "delete-player": return "Joueur %s supprimé" % _s(p, "player_name")
         if name == "set-player-info": return "Surnoms / numéros : %d personne(s)%s" % (len(p.get("players") or []), " (aperçu, rien enregistré)" if p.get("dry_run") else "")
+        if name == "collection-bonus-grant": return "Récompense secrète %s de %s donnée à %s" % (_s(p, "kind"), _s(p, "player_name"), who)
+        if name == "collection-bonus-replay": return "Révélations des récompenses secrètes rejouées pour %s" % who
         if name == "rename-player": return "Joueur renommé : %s → %s" % (_s(p, "old_name"), _s(p, "new_name"))
         if name == "card-photo-size": return "Taille de la photo de %s (%s) : %s" % (_s(p, "player_name"), _s(p, "tier"), _s(p, "size"))
         if name == "set-player-photo": return "Photo de %s%s" % (_s(p, "player_name"), " (rareté " + _s(p, "tier") + ")" if _s(p, "tier") else "")

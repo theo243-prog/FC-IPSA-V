@@ -509,6 +509,10 @@ def card_kind(player) -> str:
         return "communaute"               # carte de la communauté (communaute.py) : proposée et votée par les joueurs, collection seulement
     if poste == "TROPHEE":
         return "trophee"                  # trophée de saison : ni note, ni bonus, ni match, ni échange
+    if poste == "PRISME":
+        return "prisme"                   # récompense secrète (collection_bonus) : les 5 cartes de base d'une personne réunies
+    if poste == "COURONNE":
+        return "couronne"                 # récompense secrète (collection_bonus) : toute la série Édition Noire d'une personne, unique au monde
     return "joueur"
 
 

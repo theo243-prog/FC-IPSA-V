@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon, communaute, secret_achievements, dupe_upgrade, fatigue_gel, rename_player, edition_packs, draft_week
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon, communaute, secret_achievements, dupe_upgrade, fatigue_gel, rename_player, edition_packs, draft_week, collection_bonus
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -54,6 +54,7 @@ app.include_router(club.router)                # défi du club (équipe du club 
 app.include_router(first_steps.router)         # Premiers pas : objectifs des nouveaux comptes
 app.include_router(shop_cosmetics.router)      # cosmétiques à paliers vendus au shop
 app.include_router(shop_sounds.router)          # son d'ouverture de la semaine au shop (100 crédits)
+app.include_router(collection_bonus.router)    # récompenses secrètes de collection : Prisme et Couronne noire (en essai)
 app.include_router(draft_week.router)          # semaine draft du mois : tirage, annonce, podium (admin)
 app.include_router(rename_player.router)        # admin : renommer une personne du club (fiche, cartes gold, Édition Noire, historique)
 app.include_router(fatigue_gel.router)          # gel de fatigue au shop : 5 matchs 1v1 sans fatigue (50 crédits, le prix double à chaque achat du jour)
@@ -113,6 +114,7 @@ def card_out(card: Card) -> dict:
         "surnom": card.player.surnom,       # (affichés sur la carte secrète)
         "numero": card.player.numero,
         "trophy": seasons.trophy_info(card.player) if card.tier == Tier.saison else None,       # trophée de saison : rang, titre et mois
+        "bonus": collection_bonus.info(card.player) if card.tier == Tier.saison else None,     # récompense secrète : Prisme ou Couronne noire
         "proposed_by": getattr(card.player, "proposed_by", None),    # carte de la communauté : pseudo de son auteur
         "photo_size": getattr(card, "photo_size", None) or "classique",  # « maxi » : la photo remplit toute la carte (photo avec un fond)
     }
@@ -183,6 +185,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     game_logic.regen_user_packs(db, user)
     db.refresh(user.pack_state)
     unseen_badges = profiles.safe_unseen(db, user)       # succès gagnés depuis la dernière visite (les crédits sont déjà ajoutés ci-dessous)
+    bonus_unseen = collection_bonus.safe_unseen(db, user)    # récompenses secrètes (Prisme, Couronne noire) pas encore révélées
     welcome_info = welcome.status(db, user)              # pop-up de bienvenue d'un compte tout neuf (sinon None)
     tokens = pack_tokens_out(user)
     if user.is_test:
@@ -196,6 +199,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "seconds_until_next_pack": None,
             "is_test": True,
             "unseen_badges": unseen_badges,
+            "bonus_unseen": bonus_unseen,
             "welcome": welcome_info,
             "chat_last_id": chat.last_id(db),
             "tournament_todo": tournament.todo(db, user),
@@ -221,6 +225,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         "seconds_until_next_pack": game_logic.seconds_until_next_pack(user),
         "is_test": False,
         "unseen_badges": unseen_badges,
+        "bonus_unseen": bonus_unseen,
             "welcome": welcome_info,
             "chat_last_id": chat.last_id(db),
             "tournament_todo": tournament.todo(db, user),
@@ -992,7 +997,8 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     card_levels.on_user_deleted(db, user.id)                                              # ses cartes évoluées
     fatigue.on_user_deleted(db, user.id)                                                  # la forme de ses cartes
     player_packs.on_user_deleted(db, user.id)                                             # ses packs joueur pas encore ouverts
-    edition_packs.on_user_deleted(db, user.id)                                            # ses packs d'édition du Pass pas encore ouverts
+    edition_packs.on_user_deleted(db, user.id)
+    collection_bonus.on_user_deleted(db, user.id)                                         # ses récompenses secrètes (une Couronne redevient libre)                                            # ses packs d'édition du Pass pas encore ouverts
     tactic_trends.on_user_deleted(db, user.id)                                            # ses tendances de tactiques
     inbox.on_user_deleted(db, user.id)                                                    # ses notifications du site
     communaute.on_user_deleted(db, user.id)                                               # ses voix et ses propositions pas encore sorties
@@ -1891,7 +1897,7 @@ def admin_create_card(payload: schemas.AdminCreateCardRequest, db: Session = Dep
     player = db.query(Player).filter_by(name=payload.player_name).first()
     if not player:
         raise HTTPException(status_code=404, detail="Joueur introuvable")
-    if (game_logic.card_kind(player) == "trophee") != (tier == Tier.saison):
+    if (game_logic.card_kind(player) in ("trophee", "prisme", "couronne")) != (tier == Tier.saison):
         raise HTTPException(status_code=400, detail="La rareté « saison » est réservée aux trophées de saison (créés automatiquement à la clôture d'une saison), et un trophée n'existe qu'en rareté « saison »")
     card = db.query(Card).filter_by(player_id=player.id, tier=tier).first()
     created = False
@@ -1933,7 +1939,7 @@ def admin_create_unique_card(payload: schemas.AdminCreateUniqueCardRequest, db: 
         poste = game_logic.normalize_poste(payload.poste or "X")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    if poste.upper() in ("MASCOTTE", "EQUIPEMENT", "STADE", "MOMENT", "ECUSSON", "NUMEROTEE", "TROPHEE", "COMMUNAUTE"):
+    if poste.upper() in ("MASCOTTE", "EQUIPEMENT", "STADE", "MOMENT", "ECUSSON", "NUMEROTEE", "TROPHEE", "COMMUNAUTE", "PRISME", "COURONNE"):
         raise HTTPException(status_code=400, detail="Une carte unique est un joueur ou un fan (poste GB, DEF, MC, ATT, X ou FAN)")
     user = None
     if payload.grant_to_pseudo:
