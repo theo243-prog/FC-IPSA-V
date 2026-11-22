@@ -1085,6 +1085,14 @@
   .cl-ico{font-size:18px;width:24px;text-align:center;flex:none;} .cl-txt{flex:1;min-width:0;} .cl-txt small{display:block;color:var(--text-muted);font-size:11.5px;overflow-wrap:anywhere;}
   .cl-amt{font-weight:800;white-space:nowrap;text-align:right;} .cl-amt small{display:block;font-weight:500;color:var(--text-muted);font-size:11px;}
   .cl-plus, .mys-tile span.cl-plus{color:var(--gain);font-size:inherit;} .cl-minus, .mys-tile span.cl-minus{color:var(--spend);font-size:inherit;}
+  /* ---- comparer sa collection avec celle d'un joueur ---- */
+  .cmp-list{display:grid;gap:4px;max-height:260px;overflow:auto;padding-right:2px;margin-bottom:6px;}
+  .cmp-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13.5px;}
+  .cmp-item:has(input:checked){border-color:var(--accent);background:var(--bg-sunk);}
+  .cmp-item input{accent-color:var(--accent);flex:none;} .cmp-item span{flex:1;min-width:0;overflow-wrap:anywhere;} .cmp-item small{color:var(--text-muted);}
+  .cmp-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media (max-width:600px){.cmp-cols{grid-template-columns:1fr;}}
+  .cmp-go{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:10px;text-align:center;}
   .mys-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
   .mys-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px;}
   .mys-tile{background:var(--bg-sunk);border-radius:10px;padding:8px;text-align:center;display:flex;flex-direction:column;gap:2px;} .mys-tile b{font-size:18px;} .mys-tile span{font-size:11.5px;color:var(--text-muted);}
@@ -1622,6 +1630,12 @@
       <button class="modal-close" id="shareClose" type="button">✕</button>
     </div>
     <div id="shareBody"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="compareModal">
+  <div class="modal-box help-box" role="dialog" aria-modal="true" aria-labelledby="compareTitle" style="max-width:720px;">
+    <div class="modal-header"><h2 id="compareTitle">🔄 Comparer nos collections</h2><button class="modal-close" id="compareClose" type="button" aria-label="Fermer">✕</button></div>
+    <div id="compareBody"></div>
   </div>
 </div>
 <div class="modal-overlay" id="confirmModal">
@@ -2608,7 +2622,7 @@
       '<div class="showcase-row" id="profShowcase"></div><div id="profShowcaseEditor"></div>' +
       '<div class="profile-section">Succès<small>' + p.badges.earned + ' niveau' + (p.badges.earned > 1 ? 'x' : '') + ' sur ' + p.badges.total + '</small></div>' + achievementsHTML + secretsHTML(p, secrets) +
       '<div class="profile-section">Raretés<small>packs ouverts : ' + p.packs_opened + (p.best_streak ? ' · meilleure série : ' + p.best_streak + ' j' : '') + '</small></div><div class="tier-bars">' + tiersHTML + '</div>' +
-      '<div class="share-actions" style="margin-top:18px;"><button class="btn-secondary" type="button" id="profCollection">' + (mine ? 'Voir ma collection' : 'Voir sa collection') + '</button>' + (mine ? '<button class="btn-secondary" type="button" id="profShare">📤 Partager mon profil en image</button><button class="btn-secondary" type="button" id="profInvite">🤝 Inviter un ami</button><button class="btn-secondary" type="button" id="profCosm">🎨 Titre et cadre</button>' + (p.avatar ? '<button class="btn-secondary" type="button" id="profPhotoDel">🗑️ Retirer ma photo</button>' : '') : '') + (mine ? '' : '<button class="btn-primary" type="button" id="profChallenge">⚔️ Défier ' + escapeHtml(p.pseudo) + '</button>') + '</div>';
+      '<div class="share-actions" style="margin-top:18px;"><button class="btn-secondary" type="button" id="profCollection">' + (mine ? 'Voir ma collection' : 'Voir sa collection') + '</button>' + (mine ? '<button class="btn-secondary" type="button" id="profShare">📤 Partager mon profil en image</button><button class="btn-secondary" type="button" id="profInvite">🤝 Inviter un ami</button><button class="btn-secondary" type="button" id="profCosm">🎨 Titre et cadre</button>' + (p.avatar ? '<button class="btn-secondary" type="button" id="profPhotoDel">🗑️ Retirer ma photo</button>' : '') : '') + (mine ? '' : '<button class="btn-primary" type="button" id="profChallenge">⚔️ Défier ' + escapeHtml(p.pseudo) + '</button>' + (meInfo ? '<button class="btn-secondary" type="button" id="profCompare">🔄 Comparer nos collections</button>' : '') + '') + '</div>';
     const row = document.getElementById('profShowcase');
     if (!p.showcase.length) row.innerHTML = '<p class="muted">Aucune carte pour l\'instant.</p>';
     p.showcase.forEach(c => { const el = makeMiniCard(c, { hideCount: true }); el.style.cursor = 'default'; row.appendChild(el); });
@@ -2620,6 +2634,7 @@
     if (mine) document.getElementById('profInvite').addEventListener('click', openReferral); else loadVersus(p.pseudo);
     if (mine) document.getElementById('profShowcaseEdit').addEventListener('click', () => editShowcase(p));
     else document.getElementById('profChallenge').addEventListener('click', () => { closeUserCollectionModal(); startChallenge(p.pseudo, null); });
+    if (!mine && byId('profCompare')) byId('profCompare').addEventListener('click', () => openCompare(p.pseudo));
   }
   async function editShowcase(p){
     const box = document.getElementById('profShowcaseEditor');
@@ -2659,7 +2674,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.22.2';
+  const SITE_VERSION = '2026.11.22.3';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -6051,6 +6066,41 @@
   byId('myStatsBtn').addEventListener('click', () => openMyStats());
   byId('myStatsClose').addEventListener('click', () => { byId('myStatsModal').style.display = 'none'; });
   byId('myStatsModal').addEventListener('click', e => { if (e.target.id === 'myStatsModal') byId('myStatsModal').style.display = 'none'; });
+
+  // ---------- Comparer ma collection avec celle d'un joueur : ce que chacun peut donner à l'autre, échange en un clic ----------
+  async function openCompare(pseudo){
+    const body = byId('compareBody'); byId('compareModal').style.display = 'flex';
+    byId('compareTitle').textContent = '🔄 Toi et ' + pseudo;
+    body.innerHTML = '<div class="empty-state">Chargement…</div>';
+    let d; try { d = await api('/swaps/compare/' + encodeURIComponent(pseudo)); } catch(e) { body.innerHTML = '<div class="empty-state">' + escapeHtml(e.message) + '</div>'; return; }
+    const tile = (v, l) => '<div class="mys-tile"><b>' + v + '</b><span>' + l + '</span></div>';
+    const item = (c, name) => '<label class="cmp-item"><input type="radio" name="' + name + '" value="' + c.id + '"><span>' + escapeHtml(c.display_name || c.player_name) + ' <small>(' + escapeHtml(tierLabel(c.tier)) + ')</small></span><small>×' + c.quantity + '</small></label>';
+    const list = (arr, name, empty) => arr.length ? '<div class="cmp-list">' + arr.map(c => item(c, name)).join('') + '</div>' : '<div class="empty-state" style="padding:12px;">' + empty + '</div>';
+    const who = escapeHtml(d.pseudo);
+    body.innerHTML = '<div class="mys-tiles">' + tile(d.common, 'cartes en commun') + tile(d.only_me, 'que tu es seul à avoir') + tile(d.only_them, 'que ' + who + ' est seul à avoir') + '</div>' +
+      '<div class="cmp-cols"><div><h3 class="mys-h">🎁 Ses doublons qui te manquent</h3>' + list(d.their_doubles_i_lack, 'cmpWant', who + ' n\'a aucun doublon d\'une carte qui te manque.') + '</div>' +
+      '<div><h3 class="mys-h">🤲 Tes doublons qui lui manquent</h3>' + list(d.my_doubles_they_lack, 'cmpGive', 'Tu n\'as aucun doublon d\'une carte qui lui manque.') + '</div></div>' +
+      (d.their_doubles_i_lack.length && d.my_doubles_they_lack.length
+        ? '<div class="cmp-go"><button class="btn-primary" type="button" id="cmpGo" disabled>Choisis une carte de chaque côté</button><small class="muted">Un doublon contre un doublon : personne ne perd une carte de sa collection. ' + d.open_swaps + ' / ' + d.max_open + ' propositions envoyées en attente.</small></div>'
+        : '<p class="duel-hint" style="text-align:center;margin-top:10px;">Pas d\'échange possible pour l\'instant : il faut un doublon de chaque côté.</p>') +
+      '<p class="duel-hint" style="margin-top:8px;">Seules les cartes qu\'au moins l\'un de vous deux possède sont montrées.</p>';
+    const go = byId('cmpGo'); if (!go) return;
+    const sel = n => body.querySelector('input[name="' + n + '"]:checked');
+    const nameOf = (arr, id) => { const c = arr.find(x => x.id === id); return c ? escapeHtml(c.display_name || c.player_name) + ' (' + escapeHtml(tierLabel(c.tier)) + ')' : '?'; };
+    body.addEventListener('change', () => {
+      const w = sel('cmpWant'), g = sel('cmpGive'); go.disabled = !(w && g);
+      go.textContent = w && g ? 'Proposer l\'échange à ' + d.pseudo : 'Choisis une carte de chaque côté';
+    });
+    go.addEventListener('click', async () => {
+      const w = sel('cmpWant').value, g = sel('cmpGive').value;
+      if (!(await confirmDialog('Proposer l\'échange ?', '<p style="margin:0;">Tu donnes <b>' + nameOf(d.my_doubles_they_lack, g) + '</b> et tu demandes <b>' + nameOf(d.their_doubles_i_lack, w) + '</b> à <b>' + who + '</b>. La proposition reste ouverte 7 jours.</p>', 'Proposer'))) return;
+      go.disabled = true;
+      try { await api('/swaps', { method: 'POST', body: JSON.stringify({ to: d.pseudo, give_card_id: g, want_card_id: w }) }); toast('Proposition envoyée à ' + d.pseudo + ' 🔁'); openCompare(d.pseudo); if (typeof loadSwaps === 'function') loadSwaps(); }
+      catch(e) { toast(e.message); go.disabled = false; }
+    });
+  }
+  byId('compareClose').addEventListener('click', () => { byId('compareModal').style.display = 'none'; });
+  byId('compareModal').addEventListener('click', e => { if (e.target.id === 'compareModal') byId('compareModal').style.display = 'none'; });
 
   // ---------- Historique des crédits (toucher ses crédits en haut du site) : visible par moi seul ----------
   let creditsKind = 'all', creditsItems = [], creditsMore = false;
