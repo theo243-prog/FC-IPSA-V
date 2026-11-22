@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-draft-en-direct", "date": "2026-11-22", "category": "modes", "title": "👀 Le draft en direct",
+     "text": "Dans l'onglet Draft, la liste « En direct » montre les parties en cours : regarde les enchères, la composition et le match en même temps que les joueurs. Les joueurs voient combien de spectateurs les regardent."},
     {"id": "2026-11-comparer-collections", "date": "2026-11-22", "category": "cartes", "title": "🔄 Compare ta collection",
      "text": "Sur le profil d'un joueur, touche « Comparer nos collections » : tu vois ses doublons qui te manquent et les tiens qui lui manquent, et tu proposes l'échange en un clic."},
     {"id": "2026-11-historique-credits", "date": "2026-11-22", "category": "autre", "title": "💰 Historique de tes crédits",
