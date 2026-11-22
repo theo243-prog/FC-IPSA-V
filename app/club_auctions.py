@@ -33,6 +33,7 @@ from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .database import Base, get_db
 from .models import AppSetting, Card, Player, User
 from .common import optional_user, require_admin
@@ -315,11 +316,11 @@ def settle(db: Session, a) -> tuple:
             except Exception:
                 pass
         except HTTPException:                                # (l'exemplaire n'est plus libre : on rembourse, rien n'est perdu)
-            winner.credits += a.current_bid
+            credit_log.add(winner, a.current_bid, "Enchère du club remboursée")
             lot.status = "unsold"
     else:
         if lot is None and winner is not None and a.current_bid:
-            winner.credits += a.current_bid                  # (enchère du club sans lien : on rembourse)
+            credit_log.add(winner, a.current_bid, "Enchère du club remboursée")                  # (enchère du club sans lien : on rembourse)
         if lot is not None:
             lot.status = "unsold"                            # l'exemplaire reste dans la réserve : son numéro redevient disponible
     if lot is not None:
@@ -551,7 +552,7 @@ def admin_series_replace_black(payload: ReplaceBlack, db: Session = Depends(get_
         for uid, amount in p["_refunds"].items():                 # crédits de test rendus
             u = db.get(User, uid)
             if u is not None:
-                u.credits += amount
+                credit_log.add(u, amount, "Remboursement (Édition Noire remplacée)")
         purge_card_rows(db, p["_ids"])                             # enchères annulées (meilleur enchérisseur remboursé), collections, annonces
         db.flush()
         for lot in db.query(ClubAuctionLot).filter(ClubAuctionLot.series_id == s.id).all():

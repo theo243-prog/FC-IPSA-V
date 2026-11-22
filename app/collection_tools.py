@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .database import get_db
 from .models import Card, OwnedCard, Tier, User
 from . import game_logic, missions
@@ -61,7 +62,7 @@ def sell_all_duplicates(payload: SellAllRequest, user: User = Depends(get_curren
     total = _totals(chosen)
     for owned, extra, value, useful in chosen:
         owned.quantity = 1
-    user.credits += total["credits"]
+    credit_log.add(user, total["credits"], "Vente des doublons")
     db.commit()
     missions.safe_record(db, user, "sell_dupes", total["copies"])
     from . import secret_achievements

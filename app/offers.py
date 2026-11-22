@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Integer, String
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .database import Base, get_db
 from .models import Card, OwnedCard, User
 from . import game_logic, missions, push
@@ -92,7 +93,7 @@ def refund_for_cards(db: Session, card_ids: list) -> int:
     for o in db.query(BuyOffer).filter(BuyOffer.card_id.in_(card_ids)).all():
         buyer = db.query(User).filter_by(id=o.buyer_id).first()
         if buyer:
-            buyer.credits += o.price
+            credit_log.add(buyer, o.price, "Offre d'achat remboursée")
         db.delete(o)
         n += 1
     return n
@@ -125,7 +126,7 @@ def create_offer(payload: CreateOfferRequest, user: User = Depends(get_current_u
         raise HTTPException(status_code=400, detail="Tu as déjà une offre pour cette carte : annule-la d'abord pour changer le prix")
     if user.credits < payload.price:
         raise HTTPException(status_code=400, detail="Pas assez de crédits pour cette offre")
-    user.credits -= payload.price            # mis de côté : rendu si tu annules, versé au vendeur si une offre est prise
+    credit_log.add(user, -payload.price, "Offre d'achat (crédits mis de côté)")            # mis de côté : rendu si tu annules, versé au vendeur si une offre est prise
     offer = BuyOffer(buyer_id=user.id, card_id=card.id, price=payload.price)
     db.add(offer)
     db.commit()
@@ -144,7 +145,7 @@ def cancel_offer(offer_id: str, user: User = Depends(get_current_user), db: Sess
     o = db.query(BuyOffer).filter_by(id=offer_id, buyer_id=user.id).first()
     if o is None:
         raise HTTPException(status_code=404, detail="Offre introuvable")
-    user.credits += o.price
+    credit_log.add(user, o.price, "Offre d'achat annulée : crédits rendus")
     db.delete(o)
     db.commit()
     return {"status": "ok", "credits": user.credits}
@@ -177,7 +178,7 @@ def accept_offer(offer_id: str, user: User = Depends(get_current_user), db: Sess
     card = db.query(Card).filter_by(id=o.card_id).first()
     if buyer is None or card is None:                                     # l'offreur ou la carte a disparu : on nettoie
         if buyer:
-            buyer.credits += o.price
+            credit_log.add(buyer, o.price, "Offre d'achat remboursée")
         db.delete(o)
         db.commit()
         raise HTTPException(status_code=404, detail="Cette offre n'existe plus")
@@ -187,7 +188,7 @@ def accept_offer(offer_id: str, user: User = Depends(get_current_user), db: Sess
     mine.quantity -= 1
     game_logic.get_or_create_owned(db, buyer, card).quantity += 1
     card_levels.copy_arriving(db, buyer.id, card.id, level)
-    user.credits += price                    # les crédits de l'offreur étaient déjà mis de côté
+    credit_log.add(user, price, "Vente (offre d'achat acceptée)", credit_log.card_name(card))                    # les crédits de l'offreur étaient déjà mis de côté
     db.delete(o)
     db.commit()
     record_trade(db, "offre", user, buyer, card, price, level)

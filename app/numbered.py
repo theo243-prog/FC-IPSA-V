@@ -23,6 +23,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .database import Base, get_db
 from .models import Card, Listing, OwnedCard, Player, Tier, User
 from .common import require_admin
@@ -197,7 +198,7 @@ def on_user_deleted(db: Session, user: User) -> None:
         if a.top_bidder_id:
             bidder = db.get(User, a.top_bidder_id)
             if bidder:
-                bidder.credits += a.current_bid or 0
+                credit_log.add(bidder, a.current_bid or 0, "Enchère annulée : remboursement")
         moving.add(a.card_id); db.delete(a)
     for o in owned:
         db.delete(o)

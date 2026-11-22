@@ -33,6 +33,7 @@ from pydantic import BaseModel
 from sqlalchemy import Column, DateTime, Integer, String, Text, Boolean, UniqueConstraint, or_
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .database import Base, get_db
 from .models import AppSetting, Card, User, gen_id
 from .common import card_out, require_admin
@@ -364,7 +365,7 @@ def _rewards(db: Session, winner, classic_to) -> dict:
             return
         n = min(RNG.randint(*DE.AFTER_CAP_CREDITS), max(0, DE.AFTER_CAP_DAILY_MAX - missions.daily_count(db, user, "after_cap_credits")))
         if n > 0:
-            user.credits += n
+            credit_log.add(user, n, "Draft (après les 10 packs du jour)")
             missions.daily_add(db, user, "after_cap_credits", n)
         out[user.pseudo] = {"pack": None, "credits": n}
 

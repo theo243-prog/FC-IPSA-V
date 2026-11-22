@@ -24,6 +24,7 @@ from sqlalchemy import Column, DateTime, Integer, String, UniqueConstraint
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .database import Base, get_db
 from .models import Card, Tier, User, gen_id
 from .security import get_current_user
@@ -162,7 +163,7 @@ def buy(db: Session, user: User, offer_id: str) -> OwnedPlayerPack:
     price = events.shop_price(db, offer.price)
     if user.credits < price:
         raise ValueError("Pas assez de crédits (il en faut %d)" % price)
-    user.credits -= price
+    credit_log.add(user, -price, "Pack joueur")
     row = OwnedPlayerPack(user_id=user.id, card_id=offer.card_id, kind=offer.kind, price_paid=price)
     db.add(row)
     db.commit()
@@ -178,7 +179,7 @@ def open_for_user(db: Session, user: User, pack_id: Optional[str]) -> dict:
         raise ValueError("no_pack_available")
     db.delete(row)
     credits_won = int(game_logic._roll_weighted(game_logic.CREDIT_WEIGHTS))
-    user.credits += credits_won
+    credit_log.add(user, credits_won, "Crédits d'un pack", "pack joueur")
     counts = game_logic.tier_card_counts(db)
     weights = game_logic.pack_weights(db, counts, game_logic.TIER_WEIGHTS, "classique", user)      # (+ cartes communauté si le joueur y a droit)
     cards, taken = [card], {card.id}
@@ -208,7 +209,7 @@ def on_cards_deleted(db: Session, card_ids) -> None:
     for r in db.query(OwnedPlayerPack).filter(OwnedPlayerPack.card_id.in_(ids)).all():
         u = db.get(User, r.user_id)
         if u is not None:
-            u.credits += r.price_paid or 0
+            credit_log.add(u, r.price_paid or 0, "Pack joueur remboursé")
         db.delete(r)
 
 

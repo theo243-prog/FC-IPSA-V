@@ -29,6 +29,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .database import Base, get_db
 from .models import AppSetting, User, gen_id
 from .common import require_admin, optional_user
@@ -251,7 +252,7 @@ def _cancel(db, t, reason: str):
     users = _users(db, [e.user_id for e in _entries(db, t)])
     for e in _entries(db, t):
         if e.user_id in users:
-            users[e.user_id].credits += e.paid
+            credit_log.add(users[e.user_id], e.paid, "Tournoi annulé : inscription rendue")
     t.status, t.finished_at = "cancelled", datetime.utcnow()
     _chat(db, "🏆 Le tournoi de %s est annulé (%s). Les droits d'entrée sont remboursés." % (seasons.label_of(t.month_key), reason))
 
@@ -368,7 +369,7 @@ def _finish(db, t, now):
     if champ is not None:
         pay[champ.user_id] = pool - sum(pay.values())
     for uid, amount in pay.items():
-        if uid in users: users[uid].credits += amount
+        if uid in users: credit_log.add(users[uid], amount, "Cagnotte du tournoi")
     t.status, t.finished_at, t.paid_out = "finished", now, sum(pay.values())
     fin_e = (by_place.get(2) or [None])[0]                     # le finaliste reçoit sa carte « Finaliste du tournoi (mois année) »
     if fin_e is not None and fin_e.user_id in users:
@@ -552,7 +553,7 @@ def join(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     cost = fee(db)
     if user.credits < cost:
         raise HTTPException(status_code=400, detail="Il te faut %d crédits pour t'inscrire (tu en as %d)" % (cost, user.credits))
-    user.credits -= cost
+    credit_log.add(user, -cost, "Inscription au tournoi")
     db.add(TournamentEntry(tournament_id=t.id, user_id=user.id, paid=cost)); battlepass.add_points(db, user, "tournoi", 30); db.commit()
     return {"status": "ok", "paid": cost, "credits_total": user.credits, "entries": len(_entries(db, t)), "pool": pool_of(db, t)}
 
@@ -565,7 +566,7 @@ def leave(user: User = Depends(get_current_user), db: Session = Depends(get_db))
         raise HTTPException(status_code=404, detail="Tu n'es pas inscrit")
     if t.status != "registration" or now >= reg_close(t.month_key):
         raise HTTPException(status_code=400, detail="Les inscriptions sont closes : tu ne peux plus te désinscrire")
-    user.credits += e.paid; db.delete(e); db.commit()
+    credit_log.add(user, e.paid, "Désinscription du tournoi"); db.delete(e); db.commit()
     return {"status": "ok", "refunded": e.paid, "credits_total": user.credits}
 
 

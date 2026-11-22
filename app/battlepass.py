@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .database import Base, get_db
 from .models import AppSetting, Card, OwnedCard, Player, Tier, User, gen_id
 from .common import card_out, require_admin
@@ -168,7 +169,7 @@ def convert_bonus(db: Session, key: str, now: datetime) -> int:
         u = db.get(User, row.user_id)
         if u is None or credits <= 0:
             continue
-        u.credits += credits; paid += 1
+        credit_log.add(u, credits, "Points bonus du Pass", key); paid += 1
         push.enqueue(db, u.id, "pass", "💰 Points bonus du Pass convertis", "Pass de %s : tes %d points bonus (au-delà du niveau 30) deviennent %d crédit%s." % (seasons.label_of(key), bonus_points(row.points), credits, "s" if credits > 1 else ""),
                      url="/#shop", tag="pass-bonus-" + key)
     db.commit()
@@ -307,7 +308,7 @@ def _edition_pack(db: Session, user: User, theme_id: str, n: int, season: str = 
 def _grant(db: Session, user: User, season: str, reward: dict, theme_id: str) -> dict:
     out = {}
     if reward.get("credits"):
-        user.credits += int(reward["credits"]); out["credits"] = int(reward["credits"])
+        credit_log.add(user, int(reward["credits"]), "Récompense du Pass", season); out["credits"] = int(reward["credits"])
     if reward.get("pack"):
         missions._grant(user, {"pack": reward["pack"]}); out["pack"] = reward["pack"]
     if reward.get("edition_pack"):
@@ -456,7 +457,7 @@ def buy_premium(user: User = Depends(get_current_user), db: Session = Depends(ge
     now = now_paris(); key = seasons.key_of(now); row = _progress(db, user.id, key, create=True)
     if row.premium: raise HTTPException(status_code=400, detail="Tu as déjà le Pass Premium de ce mois")
     if user.credits < PRICE: raise HTTPException(status_code=400, detail="Il te faut %d crédits (tu en as %d)" % (PRICE, user.credits))
-    user.credits -= PRICE; row.premium, row.premium_at = 1, datetime.utcnow()
+    credit_log.add(user, -PRICE, "Pass Premium", key); row.premium, row.premium_at = 1, datetime.utcnow()
     from . import chat
     chat.add_event(db, "💎 %s a pris le Pass Premium de %s !" % (user.pseudo, seasons.label_of(key)), user)
     db.commit()
@@ -472,7 +473,7 @@ def buy_level(user: User = Depends(get_current_user), db: Session = Depends(get_
     if user.credits < LEVEL_PRICE:
         raise HTTPException(status_code=400, detail="Il te faut %d crédits (tu en as %d)" % (LEVEL_PRICE, user.credits))
     target = ((row.points or 0) // P.POINTS_PER_LEVEL + 1) * P.POINTS_PER_LEVEL; gained = target - (row.points or 0)
-    user.credits -= LEVEL_PRICE; row.points = target
+    credit_log.add(user, -LEVEL_PRICE, "Niveau du Pass acheté"); row.points = target
     ensure_completion(db, user, key, now); db.commit()
     reached = min(P.LEVELS, row.points // P.POINTS_PER_LEVEL)
     return {"status": "ok", "credits": user.credits, "points": row.points, "gained": gained, "reached": reached, "unlocked": unlocked_level(row.points, key, now), "opens_day": min(reached, dim(key))}

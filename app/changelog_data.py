@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-historique-credits", "date": "2026-11-22", "category": "autre", "title": "💰 Historique de tes crédits",
+     "text": "Touche tes crédits en haut du site pour voir d'où ils viennent et où ils sont partis : Loup, mises, ventes, Pass, shop… avec tes gains et dépenses du jour et de la semaine. L'historique commence avec cette mise à jour."},
     {"id": "2026-11-noire-3-par-jour", "date": "2026-11-21", "category": "économie", "title": "🖤 3 Édition Noire par jour",
      "text": "Les enchères du club mettent maintenant en vente 3 cartes Édition Noire chaque jour à 16h00 (au lieu d'une), de 3 joueurs différents tirés au hasard. Plus de chances de compléter ta collection !"},
     {"id": "2026-11-draft-200", "date": "2026-11-20", "category": "modes", "title": "Draft : 200 pièces",
