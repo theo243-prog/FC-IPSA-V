@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-draft-en-direct", "date": "2026-11-22", "category": "modes", "title": "👀 Le draft en direct",
+     "text": "Dans l'onglet Draft, la liste « En direct » montre les parties en cours : regarde les enchères, la composition et le match en même temps que les joueurs. Les joueurs voient combien de spectateurs les regardent."},
     {"id": "2026-11-historique-credits", "date": "2026-11-22", "category": "autre", "title": "💰 Historique de tes crédits",
      "text": "Touche tes crédits en haut du site pour voir d'où ils viennent et où ils sont partis : Loup, mises, ventes, Pass, shop… avec tes gains et dépenses du jour et de la semaine. L'historique commence avec cette mise à jour."},
     {"id": "2026-11-noire-3-par-jour", "date": "2026-11-21", "category": "économie", "title": "🖤 3 Édition Noire par jour",
