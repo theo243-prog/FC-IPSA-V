@@ -859,6 +859,7 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
 def duel_board(db: Session) -> list:
     """Profils des joueurs qui jouent (au moins un match ou un défi ouvert), classés par Elo.
     Les comptes de test n'y apparaissent pas."""
+    from . import divisions
     stats = {}
     for d in db.query(Duel).all():
         for uid, mine, theirs in ((d.challenger_id, d.score_challenger, d.score_defender),
@@ -883,8 +884,10 @@ def duel_board(db: Session) -> list:
         if not s and user.id not in open_by_user:
             continue
         s = s or {"played": 0, "wins": 0, "losses": 0, "draws": 0, "goals_for": 0, "goals_against": 0}
+        dv = divisions.division_of(user.elo)
         rows.append({"pseudo": user.pseudo, "elo": user.elo, "open_proposals": open_by_user.get(user.id, 0), **s,
-                     "goal_diff": s["goals_for"] - s["goals_against"]})
+                     "goal_diff": s["goals_for"] - s["goals_against"],
+                     "division": {"id": dv["id"], "name": dv["name"], "icon": dv["icon"]}})          # icône de division à côté du pseudo
     rows.sort(key=lambda r: (-r["elo"], -r["wins"], -r["goal_diff"], r["pseudo"]))
     return rows
 
