@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon, communaute, secret_achievements, dupe_upgrade, fatigue_gel, rename_player, edition_packs, draft_week, collection_bonus
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon, communaute, secret_achievements, dupe_upgrade, fatigue_gel, rename_player, edition_packs, draft_week, collection_bonus, presence
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -186,6 +186,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     db.refresh(user.pack_state)
     unseen_badges = profiles.safe_unseen(db, user)       # succès gagnés depuis la dernière visite (les crédits sont déjà ajoutés ci-dessous)
     bonus_unseen = collection_bonus.safe_unseen(db, user)    # récompenses secrètes (Prisme, Couronne noire) pas encore révélées
+    presence.mark(user, "site")                               # joueurs connectés : /me est appelé toutes les 30 s par une page ouverte
     welcome_info = welcome.status(db, user)              # pop-up de bienvenue d'un compte tout neuf (sinon None)
     tokens = pack_tokens_out(user)
     if user.is_test:
@@ -200,6 +201,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "is_test": True,
             "unseen_badges": unseen_badges,
             "bonus_unseen": bonus_unseen,
+            "online": presence.counts(),                      # joueurs connectés : {site, draft} (points verts des onglets 1v1 et Draft)
             "welcome": welcome_info,
             "chat_last_id": chat.last_id(db),
             "tournament_todo": tournament.todo(db, user),
@@ -226,6 +228,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         "is_test": False,
         "unseen_badges": unseen_badges,
         "bonus_unseen": bonus_unseen,
+        "online": presence.counts(),
             "welcome": welcome_info,
             "chat_last_id": chat.last_id(db),
             "tournament_todo": tournament.todo(db, user),

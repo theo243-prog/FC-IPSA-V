@@ -980,6 +980,13 @@
   /* Gel de fatigue : ligne sous la barre « pack ultra » */
   .gel-line{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:-6px 0 14px;padding:8px 12px;border-radius:12px;font-size:13px;background:rgba(80,170,255,.10);color:var(--text);}
   .gel-line[hidden]{display:none;}
+  /* Joueurs connectés : point vert + nombre sur les onglets 1v1 et Draft */
+  .online-dot{display:inline-flex;align-items:center;gap:4px;margin-left:6px;font-size:11px;font-weight:800;color:#16a34a;vertical-align:middle;}
+  .online-dot[hidden]{display:none;}
+  .online-dot::before{content:'';width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:onlinePulse 2s ease-out infinite;}
+  .online-dot.zero{color:var(--text-muted);} .online-dot.zero::before{background:#9ca3af;animation:none;}
+  @keyframes onlinePulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.6);}70%{box-shadow:0 0 0 6px rgba(34,197,94,0);}100%{box-shadow:0 0 0 0 rgba(34,197,94,0);}}
+  @media (prefers-reduced-motion: reduce){.online-dot::before{animation:none;}}
   /* Semaine draft : bandeau de l'onglet 1v1 et encadré de l'onglet Draft */
   .draft-week-banner{margin:0 0 14px;padding:10px 14px;border-radius:12px;font-size:13.5px;cursor:pointer;background:rgba(155,92,255,.12);box-shadow:0 0 0 1px rgba(155,92,255,.4);}
   .draft-week-banner[hidden],.draft-week-box[hidden]{display:none;}
@@ -1267,8 +1274,8 @@
     <button class="tab" data-tab="shop">Shop</button>
     <button class="tab" data-tab="classement">Classement</button>
     <button class="tab" data-tab="actualite">Actualité<span class="tab-dot" id="newsDot" hidden></span></button>
-    <button class="tab" data-tab="duels">Matchs 1v1</button>
-    <button class="tab" data-tab="draft" id="draftTabBtn">Draft<span class="tab-dot" id="draftDot" hidden></span></button>
+    <button class="tab" data-tab="duels">Matchs 1v1<span class="online-dot" id="onlineDuels" hidden></span></button>
+    <button class="tab" data-tab="draft" id="draftTabBtn">Draft<span class="online-dot" id="onlineDraft" hidden></span><span class="tab-dot" id="draftDot" hidden></span></button>
     <button class="tab" data-tab="tournoi">Tournoi<span class="tab-dot" id="tournoiDot" hidden></span></button>
     <button class="tab" data-tab="chat">Chat<span class="tab-dot" id="chatDot" hidden></span></button>
     <button class="tab" data-tab="communaute" id="communauteTabBtn" hidden>Crée ta carte</button>
@@ -2637,7 +2644,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.21.5';
+  const SITE_VERSION = '2026.11.22.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3503,7 +3510,8 @@
       updateNewsDot();                                         // point rouge de l'onglet Actualité (un vote « homme du match » à faire)
       try { renderUltraBar(); } catch(e) { /* la barre ne doit jamais bloquer /me */ }       // barre « pack ultra » de l'onglet 1v1
       try { renderGelLine(); } catch(e) { /* idem */ }
-      try { renderDraftWeekBanner(); } catch(e) { /* idem */ }                                          // gel de fatigue (ligne sous la barre)
+      try { renderDraftWeekBanner(); } catch(e) { /* idem */ }
+      try { renderOnline(meInfo.online); } catch(e) { /* idem */ }                                          // gel de fatigue (ligne sous la barre)
       document.getElementById('chipCredits').textContent = meInfo.credits;
       const bonusTotal = Object.values(meInfo.pack_tokens || {}).reduce((a, b) => a + b, 0);
       document.getElementById('chipPacks').textContent = meInfo.stored_packs + '/3' + (bonusTotal ? (' +' + bonusTotal + ' bonus') : '');
@@ -5635,10 +5643,23 @@
     try { await loadDuelConfig(); } catch(e) {}
     let d; try { d = await api('/draft'); } catch(e) { if (e.message !== 'unauthorized') main.innerHTML = '<div class="empty-state">' + escapeHtml(e.message) + '</div>'; return; }
     draft.rules = d.rules; renderDraftRanking(d); renderDraftWeekBox(d.week, d.access);
+    if (d.online != null) setOnlineDot('onlineDraft', d.online, 'sur la page draft en ce moment');
     if (!d.access && !d.my_room) { draft.room = null; main.innerHTML = '<div class="empty-state">' + draftWeekClosedText(d.week) + '</div>'; return; }
     if (d.my_room) { draft.room = d.my_room; draft.at = Date.now(); draft.key = null; renderDraftRoom(); startDraftPoll(); return; }
     if (draft.room && draft.room.status === 'done') { renderDraftRoom(); return; }          // le résultat reste affiché jusqu'au retour au salon
     draft.room = null; renderDraftLobby(d);
+  }
+  // ---------- Joueurs connectés : point vert sur les onglets 1v1 (site ouvert) et Draft (sur la page draft) ----------
+  function setOnlineDot(id, n, what){
+    const el = byId(id); if (!el) return;
+    if (n == null) { el.hidden = true; return; }
+    el.hidden = false; el.textContent = n; el.classList.toggle('zero', !n);
+    el.title = n + ' joueur' + (n > 1 ? 's' : '') + ' ' + what;
+  }
+  function renderOnline(o){
+    if (!o) return;
+    setOnlineDot('onlineDuels', o.site, 'connecté' + (o.site > 1 ? 's' : '') + ' en ce moment');
+    setOnlineDot('onlineDraft', o.draft, 'sur la page draft en ce moment');
   }
   // ---------- Semaine draft : 7 jours par mois, à une date tirée au hasard (annoncée 48 h avant) ----------
   function fmtLong(sec){ sec = Math.max(0, Math.round(sec)); const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60); return d ? d + ' j ' + h + ' h' : h ? h + ' h ' + String(m).padStart(2, '0') : m + ' min'; }

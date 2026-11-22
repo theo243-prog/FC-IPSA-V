@@ -562,7 +562,8 @@ def _mine(db, room_id, user) -> tuple:
 def get_draft(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Le salon du draft : ma partie en cours, les parties qui attendent un adversaire, le classement du mois, et la semaine draft (`week`).
     Hors de la semaine draft (sans accès d'essai) : seulement la semaine, le classement et ma partie en cours s'il y en a une (elle va au bout)."""
-    from . import draft_week
+    from . import draft_week, presence
+    presence.mark(user, "draft")                     # joueurs sur la page draft (point vert de l'onglet)
     now = _now()
     access = has_access(db, user)
     mine = _active_room(db, user)
@@ -572,7 +573,7 @@ def get_draft(user: User = Depends(get_current_user), db: Session = Depends(get_
              "fans": N_FANS, "wait_seconds": WAIT_SECONDS, "pack_cap": DE.DUEL_PACK_DAILY_CAP}
     if not access and mine is None:
         db.commit()
-        return {"access": False, "week": week, "season": season_now(), "my_room": None, "open_rooms": [], "ranking": ranking(db),
+        return {"access": False, "online": presence.counts()["draft"], "week": week, "season": season_now(), "my_room": None, "open_rooms": [], "ranking": ranking(db),
                 "my_rating": {"elo": my_rating.elo, "played": my_rating.played} if my_rating else {"elo": ELO_START, "played": 0}, "rules": rules}
     if mine is not None:
         _seen(mine, user, now)
@@ -580,7 +581,7 @@ def get_draft(user: User = Depends(get_current_user), db: Session = Depends(get_
                                          or_(DraftRoom.invited_id == None, DraftRoom.invited_id == user.id)).all()   # noqa: E711
     for r in waiting:
         advance(db, r, now)
-    out = {"access": access, "week": week, "season": season_now(), "my_room": room_out(db, mine, user, now) if mine else None,
+    out = {"access": access, "online": presence.counts()["draft"], "week": week, "season": season_now(), "my_room": room_out(db, mine, user, now) if mine else None,
            "open_rooms": [{"id": r.id, "host": _pseudo(db, r.host_id), "invited": r.invited_id == user.id,
                            "remaining": max(0, int((r.deadline - now).total_seconds()))} for r in waiting if r.status == "waiting"],
            "ranking": ranking(db), "my_rating": {"elo": my_rating.elo, "played": my_rating.played} if my_rating else {"elo": ELO_START, "played": 0},
@@ -659,6 +660,8 @@ def cancel_room(room_id: str, user: User = Depends(get_current_user), db: Sessio
 @router.get("/draft/{room_id}")
 def get_room(room_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """L'état de la partie (appelé chaque seconde par le site : il sert aussi de signe de vie)."""
+    from . import presence
+    presence.mark(user, "draft")
     room, side, now = _mine(db, room_id, user)
     db.commit()
     return room_out(db, room, user, now)
