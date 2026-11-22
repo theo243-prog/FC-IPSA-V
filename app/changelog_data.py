@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-comparer-collections", "date": "2026-11-22", "category": "cartes", "title": "🔄 Compare ta collection",
+     "text": "Sur le profil d'un joueur, touche « Comparer nos collections » : tu vois ses doublons qui te manquent et les tiens qui lui manquent, et tu proposes l'échange en un clic."},
     {"id": "2026-11-historique-credits", "date": "2026-11-22", "category": "autre", "title": "💰 Historique de tes crédits",
      "text": "Touche tes crédits en haut du site pour voir d'où ils viennent et où ils sont partis : Loup, mises, ventes, Pass, shop… avec tes gains et dépenses du jour et de la semaine. L'historique commence avec cette mise à jour."},
     {"id": "2026-11-noire-3-par-jour", "date": "2026-11-21", "category": "économie", "title": "🖤 3 Édition Noire par jour",

@@ -86,6 +86,36 @@ def player_doubles(pseudo: str, user: User = Depends(get_current_user), db: Sess
     return [{**_cout(o.card), "quantity": o.quantity} for o in rows if _tradeable(o.card)]
 
 
+@router.get("/swaps/compare/{pseudo}")
+def compare_collections(pseudo: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Comparer sa collection avec celle d'un joueur (22/11/2026, branche comparer-collections) : ses doublons qui me manquent, mes doublons
+    qui lui manquent (de quoi proposer un échange en un clic), et des nombres (cartes en commun, que lui seul a, que moi seul ai).
+    Une carte qu'aucun des deux n'a n'apparaît jamais ; les cartes que lui seul possède ne sont montrées que si elles sont en double chez
+    lui (comme GET /swaps/doubles), sinon seulement comptées. Cartes communauté en essai : cachées à qui n'y a pas accès."""
+    target = db.query(User).filter_by(pseudo=pseudo).first()
+    if target is None:
+        raise HTTPException(status_code=404, detail="Joueur introuvable")
+    if target.id == user.id:
+        raise HTTPException(status_code=400, detail="Choisis un autre joueur pour comparer vos collections")
+    hidden = {Tier.saison, Tier.numerotee}
+    if not game_logic.community_allowed(db, user):
+        hidden.add(Tier.communaute)
+    mine = {o.card_id: o for o in db.query(OwnedCard).filter(OwnedCard.user_id == user.id, OwnedCard.quantity >= 1).all()}
+    theirs = {o.card_id: o for o in db.query(OwnedCard).filter(OwnedCard.user_id == target.id, OwnedCard.quantity >= 1).all()}
+    ok = lambda o: o.card is not None and o.card.tier not in hidden
+    mine = {k: o for k, o in mine.items() if ok(o)}
+    theirs = {k: o for k, o in theirs.items() if ok(o)}
+    rank = {t: i for i, t in enumerate(game_logic.TIER_ORDER)}
+    order = lambda o: (-rank.get(o.card.tier.value, 0), (o.card.player.name if o.card.player else "").lower())      # rareté la plus haute d'abord, puis A → Z
+    for_me = sorted((o for k, o in theirs.items() if k not in mine and o.quantity >= 2 and _tradeable(o.card)), key=order)
+    for_them = sorted((o for k, o in mine.items() if k not in theirs and o.quantity >= 2 and _tradeable(o.card)), key=order)
+    return {"pseudo": target.pseudo,
+            "common": len(mine.keys() & theirs.keys()), "only_me": len(mine.keys() - theirs.keys()), "only_them": len(theirs.keys() - mine.keys()),
+            "their_doubles_i_lack": [{**_cout(o.card), "quantity": o.quantity} for o in for_me],
+            "my_doubles_they_lack": [{**_cout(o.card), "quantity": o.quantity} for o in for_them],
+            "open_swaps": db.query(CardSwap).filter_by(proposer_id=user.id, status="open").count(), "max_open": MAX_OPEN}
+
+
 @router.get("/swaps")
 def my_swaps(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Mes propositions reçues et envoyées, plus les derniers échanges réalisés au club."""
