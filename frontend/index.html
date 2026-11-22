@@ -957,6 +957,18 @@
   @keyframes brCard{0%{opacity:0;transform:scale(.2) rotateY(180deg);}60%{opacity:1;transform:scale(1.12) rotateY(0);}100%{opacity:1;transform:scale(1) rotateY(0);}}
   @keyframes brUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
   @media (prefers-reduced-motion: reduce){.card.bonus-card .bx-ring,.card.bonus-card .bx-sheen,.card.bonus-card .bx-crown,.card.bonus-card .bx-sparks i,.card.bonus-card .card-tier-label,.bonus-reveal *{animation:none !important;opacity:1 !important;transform:none !important;}.bonus-reveal .br-burst{display:none;}}
+  /* ---- divisions de saison 1v1 (Fer → Élite selon l'Elo) ---- */
+  .div-bar{margin:0 0 10px;padding:10px 14px;border-radius:14px;background:var(--bg-elevated);border:1px solid var(--border);}
+  .div-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:14px;} .div-top small{color:var(--text-muted);font-size:12.5px;}
+  .div-ico{font-size:20px;vertical-align:-2px;margin-right:4px;}
+  .div-track{height:8px;border-radius:99px;background:var(--bg-sunk);overflow:hidden;margin:7px 0 4px;}
+  .div-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--div-a),var(--div-b));transition:width .4s;}
+  .div-bar details{font-size:13px;} .div-bar summary{cursor:pointer;color:var(--text-muted);font-size:12.5px;}
+  .div-list{display:grid;gap:3px;margin-top:6px;} .div-row{display:flex;gap:8px;align-items:center;padding:3px 6px;border-radius:6px;} .div-row.cur{background:var(--bg-sunk);font-weight:700;}
+  .div-row .dr-min{width:72px;color:var(--text-muted);font-size:12px;} .div-row .dr-rw{margin-left:auto;font-size:12px;text-align:right;}
+  .div-fer{--div-a:#6B6F76;--div-b:#9AA0A6;} .div-bronze{--div-a:#8C5A2B;--div-b:#C98A4B;} .div-argent{--div-a:#8E99A6;--div-b:#C9D1DA;}
+  .div-or{--div-a:#C99A1C;--div-b:#F2CF5B;} .div-platine{--div-a:#3AA6A0;--div-b:#8FE0D6;} .div-diamant{--div-a:#3B7DD8;--div-b:#9CC8FF;}
+  .div-champion{--div-a:#8A3FD1;--div-b:#D49CFF;} .div-elite{--div-a:#D6336C;--div-b:#FFB347;}
   .ultra-bar{margin:0 0 14px;padding:12px 14px;border-radius:14px;background:var(--surface,#fff);box-shadow:0 2px 10px rgba(0,0,0,.08);position:relative;overflow:hidden;}
   .ultra-bar .ub-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--font-head);font-weight:700;font-size:15px;margin-bottom:8px;}
   .ultra-bar .ub-top small{font-family:var(--font-body);font-weight:600;font-size:12px;color:var(--text-muted);}
@@ -1477,6 +1489,7 @@
     </section>
     <section id="tab-duels" class="tab-panel">
       <div class="help-row"><button class="help-btn" type="button" data-help="duels"><span class="help-q">?</span> Aide</button></div>
+      <div class="div-bar" id="divBar" hidden></div>
       <div class="ultra-bar" id="ultraBar" hidden></div>
       <div class="gel-line" id="gelLine" hidden></div>
       <div class="draft-week-banner" id="draftWeekBanner" hidden></div>
@@ -2539,7 +2552,7 @@
       const list = await fetch(API_BASE + '/duel/seasons').then(r => r.json());
       document.getElementById('modalTitle').textContent = 'Historique des saisons';
       document.getElementById('modalBody').innerHTML = (list.length ? '<p class="duel-hint">Le podium de chaque saison terminée (il faut avoir joué le nombre de matchs minimum). Les 3 premiers reçoivent un trophée à leur nom. Touche un pseudo pour voir son profil.</p>' + list.map(se => '<div class="profile-section">' + escapeHtml(se.label.charAt(0).toUpperCase() + se.label.slice(1)) + '</div><table class="duel-table season-hist"><thead><tr><th></th><th>Joueur</th><th class="num">Elo</th><th class="num">M</th><th class="num">V</th></tr></thead><tbody>' +
-        se.podium.map(r => '<tr class="' + (r.pseudo === myPseudo ? 'me' : '') + '"><td>' + r.medal + '</td><td><button type="button" class="pseudo-link" data-pseudo="' + escapeHtml(r.pseudo) + '">' + escapeHtml(r.pseudo) + '</button>' + (r.pseudo === myPseudo ? ' (toi)' : '') + '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.matches + '</td><td class="num">' + r.wins + '</td></tr>').join('') + '</tbody></table>').join('')
+        se.podium.map(r => '<tr class="' + (r.pseudo === myPseudo ? 'me' : '') + '"><td>' + r.medal + '</td><td><button type="button" class="pseudo-link" data-pseudo="' + escapeHtml(r.pseudo) + '">' + escapeHtml(r.pseudo) + '</button>' + (r.pseudo === myPseudo ? ' (toi)' : '') + '</td><td class="num">' + (r.division ? '<span title="Division ' + escapeHtml(r.division.name) + '">' + r.division.icon + '</span> ' : '') + '<b>' + r.elo + '</b></td><td class="num">' + r.matches + '</td><td class="num">' + r.wins + '</td></tr>').join('') + '</tbody></table>').join('')
         : '<div class="empty-state">Aucune saison terminée pour l\'instant. La première se termine à la fin du mois en cours : le podium et ses trophées apparaîtront ici.</div>');
       document.querySelectorAll('#modalBody .season-hist .pseudo-link').forEach(b => b.addEventListener('click', () => openProfile(b.dataset.pseudo)));
       document.getElementById('userCollectionModal').style.display = 'flex';
@@ -2600,8 +2613,9 @@
       (p.rank ? '<br>Classement : n°' + p.rank + ' sur ' + p.players_ranked : '') + '</div></div></div>' +
       '<div class="profile-tiles"><div class="profile-tile"><b>' + String(p.completion_pct).replace('.', ',') + ' %</b><span>collection (' + p.cards_owned + '/' + p.cards_total + ')' + (p.game_completion_pct != null ? '<br>jeu complété à ' + String(p.game_completion_pct).replace('.', ',') + ' %' : '') + '</span></div>' +
       '<div class="profile-tile"><b>' + d.played + '</b><span>matchs 1v1' + (d.played ? ' · ' + d.won + 'V ' + d.drawn + 'N ' + d.lost + 'D' : '') + '</span></div>' +
-      '<div class="profile-tile"><b>' + p.elo + '</b><span>Elo' + (d.win_rate !== null ? ' · ' + d.win_rate + ' % de victoires' : '') + '</span></div></div>' +
+      '<div class="profile-tile"><b>' + (p.division ? p.division.icon + ' ' : '') + p.elo + '</b><span>Elo' + (p.division ? ' · ' + escapeHtml(p.division.name) : '') + (d.win_rate !== null ? ' · ' + d.win_rate + ' % de victoires' : '') + '</span></div></div>' +
       (p.podiums && (p.podiums[1] || p.podiums[2] || p.podiums[3]) ? '<div class="profile-meta" style="text-align:center;margin:6px 0;">🏆 Podiums de saison : 🥇 ' + (p.podiums[1] || 0) + ' · 🥈 ' + (p.podiums[2] || 0) + ' · 🥉 ' + (p.podiums[3] || 0) + '</div>' : '') +
+      ((p.division_history || []).length ? '<div class="profile-meta" style="text-align:center;margin:6px 0;">🎖️ Meilleures divisions : ' + p.division_history.slice(0, 6).map(h => h.icon + ' ' + escapeHtml(h.name) + ' <span class="muted">(' + escapeHtml(h.label) + ')</span>').join(' · ') + '</div>' : '') +
       trendsHTML(p.tactic_trends) +
       (mine ? '' : '<div id="versusBox"></div>') +
       '<div class="profile-section">Vitrine' + (mine ? ' <button class="btn-small ghost" type="button" id="profShowcaseEdit">Modifier</button>' : '<small>' + (p.showcase_auto ? 'ses cartes les plus rares' : 'ses cartes préférées') + '</small>') + '</div>' +
@@ -2659,7 +2673,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.22.2';
+  const SITE_VERSION = '2026.11.22.5';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2677,7 +2691,7 @@
       let rankE = 0;
       const table = s.standings.length ? '<table class="duel-table"><thead><tr><th></th><th>Joueur</th><th class="num">Elo</th><th class="num">M</th><th class="num">V</th></tr></thead><tbody>' + s.standings.map(r => {
         const medal = r.eligible && ++rankE <= 3 ? ['🥇', '🥈', '🥉'][rankE - 1] : '#' + r.rank;
-        return '<tr class="' + (r.pseudo === myPseudo ? 'me' : '') + (r.eligible ? '' : ' dim') + '"><td><span class="rank-num">' + medal + '</span></td><td>' + pseudoLink(r.pseudo) + (r.pseudo === myPseudo ? ' (toi)' : '') + '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.matches + '</td><td class="num">' + r.wins + '</td></tr>';
+        return '<tr class="' + (r.pseudo === myPseudo ? 'me' : '') + (r.eligible ? '' : ' dim') + '"><td><span class="rank-num">' + medal + '</span></td><td>' + pseudoLink(r.pseudo) + (r.pseudo === myPseudo ? ' (toi)' : '') + '</td><td class="num">' + (r.division ? '<span title="Division ' + escapeHtml(r.division.name) + '">' + r.division.icon + '</span> ' : '') + '<b>' + r.elo + '</b></td><td class="num">' + r.matches + '</td><td class="num">' + r.wins + '</td></tr>';
       }).join('') + '</tbody></table>' : '<div class="empty-state">Personne n\'a encore joué ce mois-ci : sois le premier !</div>';
       const me = s.me ? '<div class="season-me">Ta place : n°' + s.me.rank + ' · Elo ' + s.me.elo + ' · ' + s.me.matches + ' match' + (s.me.matches > 1 ? 's' : '') + (s.me.eligible ? ' · tu peux monter sur le podium 🎯' : ' · encore ' + (s.min_matches - s.me.matches) + ' match' + (s.min_matches - s.me.matches > 1 ? 's' : '') + ' pour être éligible') + '</div>' : (token ? '<div class="season-me">Joue un match pour entrer au classement du mois.</div>' : '');
       byId('seasonStandings').innerHTML = '<div class="season-scroll">' + table + '</div>' + me;
@@ -3498,6 +3512,25 @@
   // Barre « pack ultra » (onglet 1v1) : les matchs 1v1 du jour vers le prochain pack ultra ; après le 1er pack ultra elle prend feu
   // (orange), après le 2e elle brûle en bleu. Elle se met à jour à chaque /me (donc après chaque match).
   var ultraLast = null;          // (var : lu avant que le script soit fini de charger)
+  // ---------- Divisions de saison 1v1 : rang d'après l'Elo, récompense la première fois du mois (Or et au-dessus) ----------
+  let divList = null;
+  const divPack = { rare: 'pack rare', match: 'pack match', epique: 'pack épique', ultra: 'pack ultra' };
+  const divReward = r => r ? '+' + r.credits + ' crédits' + (r.pack ? ' + ' + (divPack[r.pack] || 'pack ' + r.pack) : '') : '';
+  function renderDivisionBar(){
+    const el = byId('divBar'), d = meInfo && meInfo.division; if (!el || !d) { if (el) el.hidden = true; return; }
+    const cur = d.division, nx = d.next, open = !!(el.querySelector('details') && el.querySelector('details').open);
+    el.hidden = false; el.className = 'div-bar div-' + (nx ? nx.id : cur.id);
+    const goal = nx ? 'encore <b>' + (nx.min - d.elo) + '</b> Elo pour ' + nx.icon + ' ' + escapeHtml(nx.name) + (nx.reward ? (d.rewarded.includes(nx.id) ? ' (récompense déjà prise ce mois-ci)' : ' : <b>' + divReward(nx.reward) + '</b>') : '')
+      : 'tout en haut ! L\'Elo n\'a pas de limite';
+    el.innerHTML = '<div class="div-top"><span><span class="div-ico" aria-hidden="true">' + cur.icon + '</span>Division <b>' + escapeHtml(cur.name) + '</b> · Elo ' + d.elo + '</span><small>' + goal + '</small></div>' +
+      (nx ? '<div class="div-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + d.progress + '" aria-label="Progression vers la division ' + escapeHtml(nx.name) + '"><div class="div-fill" style="width:' + d.progress + '%"></div></div>' : '') +
+      '<details' + (open ? ' open' : '') + '><summary>Les 8 divisions et leurs récompenses</summary><div class="div-list" id="divList">Chargement…</div><p class="duel-hint" style="margin:6px 0 0;">Chaque mois, l\'Elo repart à 1000 (Argent). La récompense est versée la première fois du mois que tu atteins une division, et tu la gardes si tu redescends. Ta meilleure division de chaque saison reste sur ton profil.' + (d.season_best.id !== cur.id ? ' Meilleure ce mois-ci : ' + d.season_best.icon + ' ' + escapeHtml(d.season_best.name) + '.' : '') + '</p></details>';
+    const det = el.querySelector('details');
+    const fill = () => { const box = byId('divList'); if (!box || !divList) return;
+      box.innerHTML = divList.slice().reverse().map(x => '<div class="div-row' + (x.id === cur.id ? ' cur' : '') + '"><span>' + x.icon + '</span><span>' + escapeHtml(x.name) + '</span><span class="dr-min">' + (x.min == null ? '< 800' : x.min + '+') + '</span><span class="dr-rw">' +
+        (x.reward ? (d.rewarded.includes(x.id) ? '✅ ' : '') + divReward(x.reward) : '<span class="muted">—</span>') + '</span></div>').join(''); };
+    if (divList) fill(); else det.addEventListener('toggle', async () => { if (det.open && !divList) { try { divList = (await fetch(API_BASE + '/divisions').then(r => r.json())).divisions; } catch(e) { return; } fill(); } });
+  }
   function renderUltraBar(){
     const el = byId('ultraBar'), u = meInfo && meInfo.ultra_progress; if (!el || !u) { if (el) el.hidden = true; return; }
     const pct = Math.round(100 * u.progress / u.every), lap = u.lap || 0;
@@ -3524,6 +3557,7 @@
       if (meInfo.notices_unread !== noticeSeen) loadNotices();  // encadré « Notifications » : du nouveau
       updateNewsDot();                                         // point rouge de l'onglet Actualité (un vote « homme du match » à faire)
       try { renderUltraBar(); } catch(e) { /* la barre ne doit jamais bloquer /me */ }       // barre « pack ultra » de l'onglet 1v1
+      try { renderDivisionBar(); } catch(e) { /* idem */ }                                     // division de saison 1v1
       try { renderGelLine(); } catch(e) { /* idem */ }
       try { renderDraftWeekBanner(); } catch(e) { /* idem */ }
       try { renderOnline(meInfo.online); } catch(e) { /* idem */ }                                          // gel de fatigue (ligne sous la barre)
@@ -5555,6 +5589,8 @@
         ' (' + signed(recap.elo_challenger_after - recap.elo_challenger_before) + ')' + refereeLine(recap, true);
       if (recap.pack_match_won) html += '<br>🎁 Tu gagnes un <b>pack match</b> !<br><button class="btn-small" id="msGoPacks" style="margin-top:6px;">Aller l\'ouvrir</button>';
       else if (recap.result === 'défaite') html += ((recap.pack_none_to || []).includes(recap.defender) ? '<br>💰 ' + pseudoLink(recap.defender) + ' a déjà gagné ses ' + (recap.duel_pack_cap || 10) + ' packs 1v1 du jour : il reçoit des crédits à la place.' : '<br>🎁 Le pack match revient à ' + pseudoLink(recap.defender) + '.');
+      const divUp = (recap.divisions_up || {})[recap.challenger];
+      if (divUp && divUp.length) { const top = divUp[divUp.length - 1]; html += '<br>' + top.icon + ' Division <b>' + escapeHtml(top.name) + '</b> atteinte ! ' + divUp.map(x => divReward(x)).filter(Boolean).join(', ') + '.'; }
       const myBonus = (recap.credits_instead || {})[recap.challenger];
       if (myBonus) html += '<br>💰 Tu as déjà gagné tes <b>' + (recap.duel_pack_cap || 10) + ' packs du jour en 1v1</b> : tu reçois <b>+' + myBonus + ' crédit' + (myBonus > 1 ? 's' : '') + '</b> à la place, pour acheter des packs au Shop. Les packs reviennent à minuit.';
       if ((recap.gel_to || []).includes(recap.challenger)) html += '<br>🧊 <b>Gel de fatigue</b> : tes cartes n\'ont pas perdu de forme pendant ce match.';

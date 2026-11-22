@@ -243,6 +243,8 @@ def close_season(db: Session, key: str) -> dict:
         push.enqueue(db, user.id, "duels", "🏮 Surprise de fin de saison !", "Tu finis dernier du classement de %s… mais tu repars avec une carte collector : « %s ». La saison prochaine sera la bonne !" % (label_of(key), card.player.name), url="/#collection", tag="season-lantern")
         from . import chat
         chat.add_event(db, "🏮 %s termine lanterne rouge de la saison de %s et gagne une carte souvenir unique ! Courage pour la prochaine 😄" % (user.pseudo, label_of(key)))
+    from . import divisions
+    divisions.close(db, key, {r["user_id"]: r["elo"] for r in rows})        # meilleure division de la saison (avant la remise à 1000)
     db.query(User).update({User.elo: ELO_START}, synchronize_session=False)
     nxt = label_of(next_key(key))
     for u in db.query(User).filter(User.is_test == False).all():          # noqa: E712
@@ -276,6 +278,12 @@ def _prize_rows(db: Session, key: str) -> list:
                       "trophy": {"rank": r, "title": RANK_TITLES[r], "label": label_of(key), "season": key}}} for r in (1, 2, 3)]
 
 
+def _div(elo):
+    from . import divisions
+    d = divisions.division_of(elo)
+    return {"id": d["id"], "name": d["name"], "icon": d["icon"]}
+
+
 @router.get("/duel/season")
 def current_season(viewer=Depends(optional_user), db: Session = Depends(get_db)):
     """La saison en cours : classement du mois, récompenses, temps restant, et le podium de la saison précédente."""
@@ -288,7 +296,7 @@ def current_season(viewer=Depends(optional_user), db: Session = Depends(get_db))
     last_key = last[0].season if last else None
     return {
         "key": key, "label": label_of(key), "ends_at": end.isoformat(), "seconds_left": max(0, int((end - now).total_seconds())),
-        "min_matches": MIN_MATCHES, "standings": [{k: v for k, v in r.items() if k not in ("user_id", "draws", "losses")} for r in rows[:10]],
+        "min_matches": MIN_MATCHES, "standings": [{**{k: v for k, v in r.items() if k not in ("user_id", "draws", "losses")}, "division": _div(r["elo"])} for r in rows[:10]],
         "me": ({k: v for k, v in mine.items() if k != "user_id"} if mine else None), "prizes": _prize_rows(db, key),
         "last": {"key": last_key, "label": label_of(last_key), "podium": [{"rank": r.rank, "medal": MEDALS[r.rank], "pseudo": r.pseudo, "elo": r.elo} for r in last if r.season == last_key]} if last_key else None,
     }
