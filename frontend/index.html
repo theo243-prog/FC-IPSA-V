@@ -1105,6 +1105,11 @@
   .draft-beta[hidden]{display:none;} .draft-beta{font-size:12px;font-weight:700;background:#7A4EC9;color:#fff;border-radius:999px;padding:2px 8px;vertical-align:middle;}
   .draft-create{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;} .draft-create input,.draft-create select{flex:1;min-width:180px;}
   .draft-sub{margin:14px 0 6px;font-size:15px;}
+  .live-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#E5484D;margin-right:6px;vertical-align:middle;animation:livePulse 1.4s ease-in-out infinite;}
+  @keyframes livePulse{50%{opacity:.35;}}
+  @media (prefers-reduced-motion: reduce){.live-dot{animation:none;}}
+  .draft-spect{font-size:12.5px;color:var(--text-muted);text-align:center;margin-bottom:6px;}
+  .draft-watch-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
   .draft-open-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;background:var(--bg-sunk);}
   .draft-open-row.invited{border-color:#7A4EC9;}
   .draft-room{display:flex;flex-direction:column;gap:12px;}
@@ -2659,7 +2664,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.22.2';
+  const SITE_VERSION = '2026.11.22.4';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -5532,6 +5537,11 @@
       root.innerHTML = '<div class="match-result"><div class="big">🏆 ' + pseudoLink(tn.winner) + ' se qualifie</div>' + escapeHtml(tn.round_name) + ' du tournoi de ' + escapeHtml(tn.label) + (tn.pens ? ' · égalité, tirs au but : <b>' + tn.pens[0] + '–' + tn.pens[1] + '</b>' : '') + '<br><span class="muted">Match de tournoi : il ne compte ni pour l\'Elo ni pour les statistiques, et ne rapporte ni pack ni crédits.</span></div>';
       return;
     }
+    if (recap.spectator) {
+      const r = recap.spectator.result, w = r === 'draw' ? null : (r === 'host' ? recap.challenger : recap.defender);
+      root.innerHTML = '<div class="match-result"><div class="big">' + (w ? '🏆 ' + pseudoLink(w) + ' gagne' : '🤝 Match nul') + '</div>🃏 Match draft en direct · ' + pseudoLink(recap.challenger) + ' ' + recap.score_challenger + ' - ' + recap.score_defender + ' ' + pseudoLink(recap.defender) + '</div>';
+      return;
+    }
     if (recap.draft) {
       const dr = recap.draft, head = dr.result === 'me' ? '🏆 Victoire !' : (dr.result === 'draw' ? '🤝 Match nul' : '😔 Défaite');
       root.innerHTML = '<div class="match-result"><div class="big">' + head + '</div>🃏 Match draft · classement du mois ' + dr.elo.before + ' → ' + dr.elo.after + ' (' + signed(dr.elo.after - dr.elo.before) + ')' + draftRewardLine(dr.reward) + '</div>';
@@ -5592,7 +5602,7 @@
   async function showMatch(recap, opts){
     matchState.recap = recap; matchState.isNew = !!opts.isNew;
     const token = ++matchState.token;
-    byId('msTitle').textContent = opts.isNew ? 'Match en direct' : 'Récap du match';
+    byId('msTitle').textContent = opts.isNew || (recap.spectator && opts.startAt) ? 'Match en direct' : 'Récap du match';
     byId('msNameA').innerHTML = recapName(recap, recap.challenger); byId('msNameB').innerHTML = recapName(recap, recap.defender);
     byId('msTimeline').innerHTML = ''; byId('msResult').innerHTML = ''; byId('msStats').innerHTML = ''; byId('msLineups').innerHTML = ''; byId('msRematch').style.display = 'none';
     setMatchScore(0, 0, false); byId('msClock').textContent = "0'";
@@ -5622,7 +5632,7 @@
   byId('msReplay').addEventListener('click', () => showMatch(matchState.recap, { isNew: matchState.isNew, animate: true }));
 
   // ---------- Mode draft : match en direct, équipe construite aux enchères (comptes choisis dans l'administration) ----------
-  const draft = { room: null, timer: null, lobbyTimer: null, key: null, at: 0, busy: false, shownMatch: null, lineupFor: null, logLen: 0, checked: false, rules: null };
+  const draft = { watch: null, watchTimer: null, watchKey: null, watchShown: null, room: null, timer: null, lobbyTimer: null, key: null, at: 0, busy: false, shownMatch: null, lineupFor: null, logLen: 0, checked: false, rules: null };
   const DRAFT_ACTIVE = ['waiting', 'bidding', 'lineup'];
   const fmtSec = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
   function draftTabVisible(){ const t = byId('tab-draft'); return !!t && t.classList.contains('active'); }
@@ -5660,7 +5670,8 @@
     draft.rules = d.rules; renderDraftRanking(d); renderDraftWeekBox(d.week, d.access);
     if (d.online != null) setOnlineDot('onlineDraft', d.online, 'sur la page draft en ce moment');
     if (!d.access && !d.my_room) { draft.room = null; main.innerHTML = '<div class="empty-state">' + draftWeekClosedText(d.week) + '</div>'; return; }
-    if (d.my_room) { draft.room = d.my_room; draft.at = Date.now(); draft.key = null; renderDraftRoom(); startDraftPoll(); return; }
+    if (d.my_room) { stopWatch(); draft.room = d.my_room; draft.at = Date.now(); draft.key = null; renderDraftRoom(); startDraftPoll(); return; }
+    if (draft.watch) { draft.watchKey = null; renderDraftWatch(); startWatchPoll(); return; }
     if (draft.room && draft.room.status === 'done') { renderDraftRoom(); return; }          // le résultat reste affiché jusqu'au retour au salon
     draft.room = null; renderDraftLobby(d);
   }
@@ -5724,7 +5735,8 @@
       main.innerHTML = '<p class="duel-hint">Un match à deux, <b>en même temps devant vos écrans</b>. Le jeu tire en secret <b>' + r.players + ' joueurs et ' + r.fans + ' fans</b> parmi les cartes du jeu (pas les vôtres), présentés un par un : on ne sait jamais combien de gardiens, défenseurs, milieux ou attaquants il reste. Chacun a <b>' + r.budget + ' pièces</b>, pour ce match seulement. À chaque carte, celui qui parle en premier change : il mise (dès 0) ou passe, puis on surenchérit d\'au moins ' + r.min_step + ' pièces. Passer sans mise laisse la carte à l\'adversaire pour 0. ' + r.bid_seconds + ' secondes pour répondre. Chaque équipe a 5 joueurs et 1 fan au plus. Si tu tombes à 0 pièce, l\'adversaire choisit pour toi ce qui reste.</p>' +
         '<p class="duel-hint">Ensuite, <b>' + r.lineup_seconds + ' secondes</b> pour choisir formation, tactique, postes et capitaine, et le match se joue en direct sur les deux écrans. Cartes au niveau 0 et à 100 % de forme. Récompenses comme en 1v1 : pack match au gagnant, pack classique au perdant ou aux deux en cas de nul, dans la même limite de ' + r.pack_cap + ' packs par jour. Le classement repart de zéro à chaque semaine draft ; podium à la fin.</p>' +
         '<div class="draft-create"><select id="draftInvite" aria-label="Inviter un joueur en particulier"><option value="">— n\'importe qui (partie ouverte) —</option></select><button class="btn-primary" id="draftCreateBtn" type="button">🃏 Créer une partie</button></div>' +
-        '<h3 class="draft-sub">Parties qui attendent un adversaire</h3><div id="draftOpen"></div><p class="duel-hint" id="draftMine"></p>';
+        '<h3 class="draft-sub">Parties qui attendent un adversaire</h3><div id="draftOpen"></div><p class="duel-hint" id="draftMine"></p>' +
+        '<h3 class="draft-sub">🔴 En direct</h3><div id="draftLive"></div>';
       api('/duel/opponents').then(list => {                    // invitation : choisir le joueur dans une liste (comme un défi 1v1), sans taper son pseudo
         const sel = byId('draftInvite'); if (!sel) return;
         list.slice().sort((a, b) => a.pseudo.localeCompare(b.pseudo, 'fr', { sensitivity: 'base' })).forEach(o => { const op = document.createElement('option'); op.value = o.pseudo; op.textContent = o.pseudo; sel.appendChild(op); });
@@ -5749,8 +5761,18 @@
       });
       row.appendChild(b); open.appendChild(row);
     });
+    const live = byId('draftLive'); live.innerHTML = '';
+    if (!(d.live_rooms || []).length) live.innerHTML = '<div class="empty-state">Aucune partie en cours : quand deux joueurs s\'affrontent, tu peux les regarder ici.</div>';
+    (d.live_rooms || []).forEach(o => {
+      const row = document.createElement('div'); row.className = 'draft-open-row';
+      const what = o.status === 'bidding' ? 'enchères, carte ' + o.lot + ' sur ' + o.total_lots : o.status === 'lineup' ? 'composition des équipes' : 'match en cours';
+      row.innerHTML = '<span><span class="live-dot" aria-hidden="true"></span><b>' + pseudoLink(o.host) + '</b> contre <b>' + pseudoLink(o.guest) + '</b> <span class="muted">· ' + what + (o.spectators ? ' · 👀 ' + o.spectators : '') + '</span></span>';
+      const b = document.createElement('button'); b.className = 'btn-secondary'; b.type = 'button'; b.textContent = '👀 Regarder';
+      b.addEventListener('click', () => startWatch(o.id));
+      row.appendChild(b); live.appendChild(row);
+    });
     clearTimeout(draft.lobbyTimer);
-    draft.lobbyTimer = setTimeout(() => { if (draftTabVisible() && !draft.room) loadDraft(); }, 4000);
+    draft.lobbyTimer = setTimeout(() => { if (draftTabVisible() && !draft.room && !draft.watch) loadDraft(); }, 4000);
   }
 
   function draftClockLeft(){ const s = draft.room; return s && s.remaining != null ? s.remaining - (Date.now() - draft.at) / 1000 : null; }
@@ -5781,7 +5803,7 @@
   function renderDraftRoom(){
     const s = draft.room, main = byId('draftMain'); if (!s || !main) return;
     if (!draftTabVisible()) { updateDraftDot(); if (s.status !== 'done') return; }
-    const key = JSON.stringify([s.id, s.status, s.lot && [s.lot.number, s.lot.high, s.lot.turn], s.coins, s.picks && [s.picks.me.length, s.picks.opp.length], s.lineup && [!!s.lineup.mine, s.lineup.submitted_opp], !!s.match]);
+    const key = JSON.stringify([s.spectators, s.id, s.status, s.lot && [s.lot.number, s.lot.high, s.lot.turn], s.coins, s.picks && [s.picks.me.length, s.picks.opp.length], s.lineup && [!!s.lineup.mine, s.lineup.submitted_opp], !!s.match]);
     if (key === draft.key && byId('draftRoomBox')) { updateDraftClock(); return; }
     draft.key = key;
     const opp = draftOpp(s) || '?';
@@ -5798,7 +5820,91 @@
       main.innerHTML = '<div id="draftRoomBox" class="draft-room"><div class="draft-wait">' + (s.status === 'expired' ? '⌛ Personne n\'a rejoint la partie à temps.' : '✖️ Partie annulée' + (s.cancel_reason ? ' : ' + escapeHtml(s.cancel_reason) : '') + '.') + '</div><button class="btn-primary" type="button" id="draftBack">Retour au salon</button></div>';
       byId('draftBack').addEventListener('click', backToLobby);
     }
+    const box = byId('draftRoomBox');
+    if (box && s.spectators && ['bidding', 'lineup', 'done'].includes(s.status)) box.insertAdjacentHTML('afterbegin', '<div class="draft-spect">👀 ' + s.spectators + ' spectateur' + (s.spectators > 1 ? 's' : '') + ' regarde' + (s.spectators > 1 ? 'nt' : '') + ' la partie</div>');
     updateDraftClock();
+  }
+
+
+  // ---------- Draft en direct : regarder une partie en cours (spectateur ; jamais plus que ce que voient les joueurs) ----------
+  function startWatch(id){ stopWatch(); draft.watch = { id }; draft.watchKey = null; draft.watchShown = null; byId('draftMain').innerHTML = '<div class="empty-state">Connexion à la partie…</div>'; pollWatch(); startWatchPoll(); }
+  function startWatchPoll(){ if (!draft.watchTimer) draft.watchTimer = setInterval(pollWatch, 1000); }
+  function stopWatch(){ clearInterval(draft.watchTimer); draft.watchTimer = null; draft.watch = null; draft.watchKey = null; }
+  function leaveWatch(){ stopWatch(); byId('draftMain').innerHTML = ''; loadDraft(); }
+  async function pollWatch(){
+    const w = draft.watch; if (!w || w.busy || !draftTabVisible()) return;
+    w.busy = true;
+    try { w.data = await api('/draft/' + w.id + '/watch'); w.at = Date.now(); if (draft.watch === w) renderDraftWatch(); }
+    catch(e) { if (draft.watch === w) { toast(e.message); leaveWatch(); } }
+    finally { w.busy = false; }
+    if (draft.watch === w && w.data && !DRAFT_ACTIVE.includes(w.data.status)) { clearInterval(draft.watchTimer); draft.watchTimer = null; }
+  }
+  function watchClock(){
+    const w = draft.watch; if (!w || !w.data) return;
+    const s = w.data, left = s.remaining != null ? s.remaining - (Date.now() - w.at) / 1000 : null;
+    document.querySelectorAll('#draftMain .draft-clock').forEach(el => { el.textContent = left == null ? '' : fmtSec(left); el.classList.toggle('urgent', left != null && left <= 5); });
+    const bar = byId('draftBar'); if (bar && left != null) { const tot = s.status === 'lineup' ? s.lineup_seconds : s.bid_seconds; bar.style.width = Math.max(0, Math.min(100, left / tot * 100)) + '%'; }
+  }
+  setInterval(() => { if (draft.watch && draft.watch.data && DRAFT_ACTIVE.includes(draft.watch.data.status)) watchClock(); }, 250);
+  function renderDraftWatch(){
+    const w = draft.watch, main = byId('draftMain'); if (!w || !main) return;
+    const s = w.data; if (!s) return;
+    const key = JSON.stringify([s.status, s.spectators, s.lot && [s.lot.number, s.lot.high, s.lot.turn], s.coins, s.picks && [s.picks.host.length, s.picks.guest.length], s.ready, !!s.match]);
+    if (key === draft.watchKey && byId('draftWatchBox')) { watchClock(); return; }
+    draft.watchKey = key;
+    const N = { host: s.host, guest: s.guest }, nm = side => escapeHtml(N[side] || '?');
+    const head = '<div class="draft-watch-head"><span><span class="live-dot" aria-hidden="true"></span><b>' + pseudoLink(s.host) + '</b> contre <b>' + pseudoLink(s.guest) + '</b></span>' +
+      '<span class="muted" style="font-size:12.5px;">👀 ' + s.spectators + ' spectateur' + (s.spectators > 1 ? 's' : '') + '</span><button class="btn-small ghost" type="button" id="watchLeave">← Retour au salon</button></div>';
+    const teams = () => '<div class="draft-teams">' + ['host', 'guest'].map(side => { const j = s.picks[side].filter(c => c.kind === 'joueur').length, f = s.picks[side].some(c => c.kind === 'fan');
+      return '<div><h4>' + nm(side) + ' · ' + j + '/5 joueurs' + (f ? ' · fan ✓' : '') + '</h4><div class="draft-picks" id="watchPicks-' + side + '"></div></div>'; }).join('') + '</div>';
+    const fillTeams = () => ['host', 'guest'].forEach(side => { const root = byId('watchPicks-' + side); if (!root) return;
+      if (!s.picks[side].length) root.innerHTML = '<div class="muted" style="font-size:13px;">Aucune carte pour l\'instant</div>';
+      s.picks[side].forEach(c => root.appendChild(draftCardEl(c, c.price + ' 🪙'))); });
+    const how = l => { const h = { given: ' (laissée)', auto: ' (d\'office : l\'autre équipe était complète)', timeout: ' (temps écoulé)', bid: '' }[l.how] || '';
+      return 'Carte ' + l.lot + ' : <b>' + escapeHtml(l.card.player_name) + '</b> → ' + nm(l.to) + ' pour ' + l.price + ' 🪙' + h; };
+    let html = '<div id="draftWatchBox" class="draft-room">' + head;
+    if (s.status === 'bidding' && s.lot) {
+      const lot = s.lot;
+      html += '<div class="draft-top"><span>🪙 ' + nm('host') + ' : <b>' + s.coins.host + '</b></span><span class="draft-clock-wrap">⏱ <b class="draft-clock"></b></span><span>' + nm('guest') + ' : <b>' + s.coins.guest + '</b> 🪙</span></div>' +
+        '<div class="draft-bar"><div id="draftBar"></div></div>' +
+        '<div class="draft-lot"><div class="draft-lot-card" id="watchLotCard"></div><div class="draft-lot-info">' +
+        '<div class="draft-lot-num">Carte ' + lot.number + ' sur ' + s.total_lots + (s.left ? ' · encore ' + s.left + ' après celle-ci' : ' · la dernière') + '</div>' +
+        '<div class="draft-lot-kind">' + draftKindLabel(lot.card) + '</div>' +
+        '<div class="draft-high">' + (lot.high ? nm(lot.high.by) + ' mise <b>' + lot.high.amount + '</b> 🪙' : 'Aucune mise pour l\'instant') + '</div>' +
+        '<div class="draft-turn">⏳ ' + nm(lot.turn) + ' réfléchit…</div></div></div>' + teams() +
+        '<div class="draft-log">' + s.log.slice(0, 6).map(l => '<div>' + how(l) + '</div>').join('') + '</div>';
+    } else if (s.status === 'lineup') {
+      const r = s.ready || {};
+      html += '<div class="draft-wait">🧠 Les deux joueurs composent leur équipe (formation, tactique, capitaine) : <b class="draft-clock"></b><br>' +
+        ['host', 'guest'].map(side => nm(side) + ' : ' + (r[side] ? '✅ prêt' : '⏳ en train de choisir')).join(' · ') + '<br><span class="muted">Les choix restent secrets jusqu\'au coup d\'envoi.</span></div>' +
+        '<div class="draft-bar"><div id="draftBar"></div></div>' + teams();
+    } else if (s.status === 'done' && s.match) {
+      const m = s.match;
+      if (m.forfeit) html += '<div class="draft-wait">🏳️ ' + nm(m.forfeit_by) + ' a abandonné : victoire de ' + nm(m.result) + ' par forfait.</div>';
+      else {
+        const pending = draft.watchShown !== s.id && (m.starts_in || 0) > 0;
+        const res = m.result === 'draw' ? '🤝 Match nul ' : '🏆 ' + nm(m.result) + ' gagne ';
+        html += '<div class="draft-wait" id="watchKick">' + (pending ? '⚽ Coup d\'envoi dans <b id="watchKickN">' + Math.ceil(m.starts_in || 0) + '</b> s…'
+          : '<b>' + res + m.score_challenger + ' - ' + m.score_defender + '</b><br>Classement draft : ' + nm('host') + ' ' + m.elo.host.before + ' → ' + m.elo.host.after + ' · ' + nm('guest') + ' ' + m.elo.guest.before + ' → ' + m.elo.guest.after) + '</div>' +
+          '<div class="draft-lu-actions"><button class="btn-secondary" type="button" id="watchReplay">▶ Revoir le match</button></div>' + teams();
+      }
+    } else {
+      html += '<div class="draft-wait">' + (s.status === 'cancelled' ? '✖️ Partie annulée' + (s.cancel_reason ? ' : ' + escapeHtml(s.cancel_reason) : '') + '.' : 'Cette partie n\'est plus en cours.') + '</div>';
+    }
+    main.innerHTML = html + '</div>';
+    byId('watchLeave').addEventListener('click', leaveWatch);
+    const lc = byId('watchLotCard'); if (lc && s.lot) lc.appendChild(makeMiniCard(s.lot.card, { hideCount: true }));
+    if (s.picks) fillTeams();
+    watchClock();
+    if (s.status !== 'done' || !s.match || s.match.forfeit) return;
+    const recap = Object.assign({}, s.match, { spectator: { result: s.match.result } });
+    byId('watchReplay').addEventListener('click', () => showMatch(recap, { isNew: false, animate: true }));
+    if (draft.watchShown === s.id || !((s.match.starts_in || 0) > 0)) { draft.watchShown = s.id; return; }
+    draft.watchShown = s.id;
+    const start = Date.now() + s.match.starts_in * 1000;
+    const tick = setInterval(() => { const n = byId('watchKickN'); const left = (start - Date.now()) / 1000;
+      if (n) n.textContent = Math.max(0, Math.ceil(left));
+      if (left <= 0) { clearInterval(tick); if (draft.watch && draft.watch.data === s) { draft.watchKey = null; renderDraftWatch(); showMatch(recap, { isNew: false, animate: true, startAt: start }); } } }, 200);
   }
 
   function draftTeams(s, opp){

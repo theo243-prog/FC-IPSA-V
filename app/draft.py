@@ -490,7 +490,7 @@ def room_out(db: Session, room: DraftRoom, user: User, now=None) -> dict:
     out = {"id": room.id, "status": room.status, "host": _pseudo(db, room.host_id), "guest": _pseudo(db, room.guest_id),
            "invited": _pseudo(db, room.invited_id), "me": me,
            "remaining": max(0.0, (room.deadline - now).total_seconds()) if room.deadline and room.status in ACTIVE else None,
-           "cancel_reason": st.get("cancel_reason")}
+           "cancel_reason": st.get("cancel_reason"), "spectators": spectators(room.id, now)}
     if room.status == "waiting" or not st.get("lots"):
         return out
     ids = [p["card_id"] for s in SIDES for p in st["picks"][s]] + [l["card_id"] for l in st["log"]]
@@ -516,6 +516,79 @@ def room_out(db: Session, room: DraftRoom, user: User, now=None) -> dict:
                         "starts_in": max(0.0, (datetime.fromisoformat(m["starts_at"]) - now).total_seconds()) if m.get("starts_at") else None,
                         "forfeit_by": rel(st["forfeit_by"]) if st.get("forfeit_by") else None}
         out["match"].pop("starts_at", None)
+    return out
+
+
+# --------------------------------------------------------------------------------- spectateurs (draft en direct) ----
+# Branche draft-en-direct (22/11/2026) : tout joueur qui a accès au draft peut regarder une partie en cours (enchères, composition, match),
+# depuis la liste « 🔴 En direct » du salon. Le spectateur ne reçoit JAMAIS plus que les joueurs : la carte en jeu et celles déjà attribuées
+# (jamais les cartes à venir du tirage), pendant la composition seulement « équipe prête » (jamais la formation, la tactique ni les postes,
+# dévoilés par le récit du match), ni les récompenses. Les spectateurs sont comptés EN MÉMOIRE (comme presence.py : remis à zéro au
+# redémarrage) et les joueurs voient « 👀 N spectateurs ». Regarder ne compte jamais comme un signe de vie d'un joueur.
+WATCH_WINDOW = 10                # secondes : un spectateur qui n'a pas rafraîchi depuis plus longtemps n'est plus compté
+LIVE_DONE_SECONDS = 150          # une partie terminée reste dans « En direct » ce temps-là (le temps de regarder le match)
+_WATCHERS = {}                   # room_id -> {user_id: dernier passage}
+
+
+def _watch_mark(room_id: str, user, now) -> None:
+    _WATCHERS.setdefault(room_id, {})[user.id] = now
+
+
+def spectators(room_id: str, now=None) -> int:
+    now = now or _now()
+    seen = _WATCHERS.get(room_id) or {}
+    for uid in [u for u, t in seen.items() if (now - t).total_seconds() > WATCH_WINDOW]:
+        seen.pop(uid, None)
+    if not seen:
+        _WATCHERS.pop(room_id, None)
+    return len(seen)
+
+
+def live_rooms(db: Session, user=None, now=None) -> list:
+    """Les parties qu'on peut regarder : enchères, composition, ou match terminé il y a moins de LIVE_DONE_SECONDS (sans forfait)."""
+    now = now or _now()
+    rooms = db.query(DraftRoom).filter(or_(DraftRoom.status.in_(("bidding", "lineup")),
+                                           (DraftRoom.status == "done") & (DraftRoom.forfeit == False)        # noqa: E712
+                                           & (DraftRoom.finished_at >= now - timedelta(seconds=LIVE_DONE_SECONDS)))).order_by(DraftRoom.created_at).all()
+    out = []
+    for r in rooms:
+        if user is not None and side_of(r, user):
+            continue                                              # (sa propre partie : il la joue, il ne la regarde pas)
+        st = _st(r)
+        out.append({"id": r.id, "host": _pseudo(db, r.host_id), "guest": _pseudo(db, r.guest_id), "status": r.status,
+                    "lot": min(st.get("i", 0) + 1, len(st.get("lots") or [])) if r.status == "bidding" else None,
+                    "total_lots": len(st.get("lots") or []), "spectators": spectators(r.id, now)})
+    return out
+
+
+def watch_out(db: Session, room: DraftRoom, now=None) -> dict:
+    """La partie vue par un spectateur : les deux équipes nommées (host / guest), sans rien de secret."""
+    now = now or _now()
+    st = _st(room)
+    out = {"id": room.id, "status": room.status, "host": _pseudo(db, room.host_id), "guest": _pseudo(db, room.guest_id),
+           "remaining": max(0.0, (room.deadline - now).total_seconds()) if room.deadline and room.status in ACTIVE else None,
+           "spectators": spectators(room.id, now), "cancel_reason": st.get("cancel_reason")}
+    if room.status == "waiting" or not st.get("lots"):
+        return out
+    cur = st["lots"][st["i"]] if room.status == "bidding" else None
+    ids = {p["card_id"] for s in SIDES for p in st["picks"][s]} | {l["card_id"] for l in st["log"]} | ({cur["card_id"]} if cur else set())
+    cards = _cards(db, ids)
+    co = lambda cid, extra: ({**card_out(cards[cid]), **extra} if cid in cards else {"id": cid, "player_name": "?", **extra})
+    out.update({"coins": dict(st["coins"]),
+                "picks": {s: [co(p["card_id"], {"kind": p["kind"], "price": p["price"]}) for p in st["picks"][s]] for s in SIDES},
+                "log": [{"lot": l["lot"], "card": co(l["card_id"], {"kind": l["kind"]}), "to": l["to"], "price": l["price"], "how": l["how"]} for l in st["log"]][::-1],
+                "total_lots": len(st["lots"]), "budget": BUDGET, "bid_seconds": BID_SECONDS, "lineup_seconds": LINEUP_SECONDS})
+    if cur:
+        out["lot"] = {"number": st["i"] + 1, "card": co(cur["card_id"], {"kind": cur["kind"]}), "opener": st["opener"], "turn": st["turn"],
+                      "high": {"by": st["high"]["side"], "amount": st["high"]["amount"]} if st["high"] else None}
+        out["left"] = len(st["lots"]) - st["i"] - 1
+    if room.status == "lineup" and st.get("lineups"):
+        out["ready"] = {s: bool(st["lineups"][s]) for s in SIDES}                 # (jamais leur contenu)
+    if room.status == "done" and st.get("match"):
+        m = st["match"]
+        out["match"] = {k: v for k, v in m.items() if k not in ("rewards", "starts_at")}
+        out["match"]["starts_in"] = max(0.0, (datetime.fromisoformat(m["starts_at"]) - now).total_seconds()) if m.get("starts_at") else None
+        out["match"]["forfeit_by"] = st.get("forfeit_by")
     return out
 
 
@@ -586,7 +659,7 @@ def get_draft(user: User = Depends(get_current_user), db: Session = Depends(get_
            "open_rooms": [{"id": r.id, "host": _pseudo(db, r.host_id), "invited": r.invited_id == user.id,
                            "remaining": max(0, int((r.deadline - now).total_seconds()))} for r in waiting if r.status == "waiting"],
            "ranking": ranking(db), "my_rating": {"elo": my_rating.elo, "played": my_rating.played} if my_rating else {"elo": ELO_START, "played": 0},
-           "rules": rules}
+           "rules": rules, "live_rooms": live_rooms(db, user, now) if access else []}
     db.commit()
     return out
 
@@ -656,6 +729,24 @@ def cancel_room(room_id: str, user: User = Depends(get_current_user), db: Sessio
     room.status, room.finished_at = "cancelled", now
     db.commit()
     return {"status": "ok"}
+
+
+@router.get("/draft/{room_id}/watch")
+def watch_room(room_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Regarder une partie en cours (appelé chaque seconde par le site). Réservé à ceux qui ont accès au draft ; jamais un signe de vie."""
+    from . import presence
+    _require_access(db, user)
+    presence.mark(user, "draft")
+    room = _locked(db, room_id)
+    if room.status == "waiting":
+        db.commit()
+        raise HTTPException(status_code=400, detail="Cette partie n'a pas encore commencé")
+    now = _now()
+    advance(db, room, now)
+    if not side_of(room, user):
+        _watch_mark(room.id, user, now)
+    db.commit()
+    return watch_out(db, room, now)
 
 
 @router.get("/draft/{room_id}")
