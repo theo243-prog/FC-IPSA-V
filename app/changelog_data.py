@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-divisions", "date": "2026-11-22", "category": "règles", "title": "🏅 Les divisions de saison",
+     "text": "En 1v1, ton Elo te place dans une division : Fer, Bronze, Argent, Or, Platine, Diamant, Champion ou Élite. La première fois du mois que tu atteins une division, tu gagnes une récompense : Or 50 crédits, Platine 100 crédits et un pack rare, Diamant 150 crédits et un pack match, Champion 200 crédits et un pack épique, Élite 300 crédits et un pack ultra. Ta meilleure division de chaque saison reste sur ton profil."},
     {"id": "2026-11-draft-en-direct", "date": "2026-11-22", "category": "modes", "title": "👀 Le draft en direct",
      "text": "Dans l'onglet Draft, la liste « En direct » montre les parties en cours : regarde les enchères, la composition et le match en même temps que les joueurs. Les joueurs voient combien de spectateurs les regardent."},
     {"id": "2026-11-comparer-collections", "date": "2026-11-22", "category": "cartes", "title": "🔄 Compare ta collection",

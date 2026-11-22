@@ -817,11 +817,18 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     from . import tactic_trends
     db.flush()                                                           # (l'identifiant du duel, pour les tendances)
     tactic_trends.record(db, "1v1", [(challenger.id, tactic, formation), (creator.id, proposal.tactic, proposal.formation)], ref=duel.id)
+    from . import divisions
+    divisions_up = {}                                                    # divisions de saison atteintes pour la première fois du mois (récompense)
+    for p in (challenger, creator):
+        new = divisions.check(db, p)
+        if new:
+            divisions_up[p.pseudo] = new
     db.delete(proposal)   # le défi est consommé
     db.commit()
 
     return {
         "duel_id": duel.id,
+        "divisions_up": divisions_up,                                  # {pseudo: [{id, name, icon, credits, pack}]}
         "challenger": challenger.pseudo, "defender": creator.pseudo,
         "score_challenger": score_c, "score_defender": score_d,
         "result": outcome, "stake": stake,

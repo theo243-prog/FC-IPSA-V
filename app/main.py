@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon, communaute, secret_achievements, dupe_upgrade, fatigue_gel, rename_player, edition_packs, draft_week, collection_bonus, presence, credit_log
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon, communaute, secret_achievements, dupe_upgrade, fatigue_gel, rename_player, edition_packs, draft_week, collection_bonus, presence, credit_log, divisions
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -80,6 +80,7 @@ app.include_router(ownership.router)        # part des joueurs qui possèdent ch
 app.include_router(changelog.router)        # historique des changements du jeu (bouton « 📜 Nouveautés »)
 app.include_router(player_packs.router)     # packs joueur du shop (une carte d'un joueur garantie, offres du jour)
 app.include_router(dupe_upgrade.router)     # 5 doublons d'une commune → la rare de la même personne
+app.include_router(divisions.router)        # divisions de saison 1v1 (Fer → Élite selon l'Elo)
 app.include_router(credit_log.router)       # historique des crédits (toucher ses crédits en haut du site)
 app.include_router(admin_page.router)      # la page d'administration (/admin-panel) et le numéro de version (/version)
 
@@ -188,6 +189,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     unseen_badges = profiles.safe_unseen(db, user)       # succès gagnés depuis la dernière visite (les crédits sont déjà ajoutés ci-dessous)
     bonus_unseen = collection_bonus.safe_unseen(db, user)    # récompenses secrètes (Prisme, Couronne noire) pas encore révélées
     presence.mark(user, "site")                               # joueurs connectés : /me est appelé toutes les 30 s par une page ouverte
+    divisions.safe_check(db, user)                            # divisions de saison : récompense d'une montée pas encore versée (rattrapage)
     welcome_info = welcome.status(db, user)              # pop-up de bienvenue d'un compte tout neuf (sinon None)
     tokens = pack_tokens_out(user)
     if user.is_test:
@@ -218,6 +220,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "draft_week": draft_week.status(db),                  # semaine draft du mois (annonce, ouverte, terminée) : bandeau de l'onglet 1v1
             "features": features.flags_for(db, user),             # fonctions en essai : {nom: accès} (draft, pantheon…)
             "features_public": features.public_flags(db),         # {nom: ouverte à tous} : plus de badge « essai » sur le site
+            "division": divisions.state(db, user),                # division de saison 1v1 (barre de l'onglet 1v1)
         }
     return {
         "pseudo": user.pseudo,
@@ -245,6 +248,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             "draft_week": draft_week.status(db),                  # semaine draft du mois (annonce, ouverte, terminée) : bandeau de l'onglet 1v1
             "features": features.flags_for(db, user),             # fonctions en essai : {nom: accès} (draft, pantheon…)
             "features_public": features.public_flags(db),         # {nom: ouverte à tous} : plus de badge « essai » sur le site
+            "division": divisions.state(db, user),                # division de saison 1v1 (barre de l'onglet 1v1)
     }
 
 
@@ -901,6 +905,9 @@ def user_profile(pseudo: str, db: Session = Depends(get_db), authorization: str 
     out["title"], out["frame"] = cosmetics.user_display(db, user.id)
     out.update(battlepass.user_display(db, user.id))      # bannière, badge, couleur de pseudo, étoiles de prestige
     out["players_ranked"] = len(rows)
+    dv = divisions.division_of(user.elo or 1000)
+    out["division"] = {k: dv[k] for k in ("id", "name", "icon")}                        # division de saison 1v1 (d'après l'Elo, public comme lui)
+    out["division_history"] = divisions.history(db, user.id)                             # meilleure division de chaque saison passée
     lb_row = next((r for r in rows if r["pseudo"] == user.pseudo), None)                          # (déjà calculée par le classement : on ne la recalcule pas)
     out["game_completion_pct"] = lb_row["game_completion_pct"] if lb_row and "game_completion_pct" in lb_row else card_levels.game_completion(db, [user.id]).get(user.id, 0.0)      # cartes ET niveaux (100 % = tout, évolué au max)
     viewer = None
@@ -1007,6 +1014,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     inbox.on_user_deleted(db, user.id)                                                    # ses notifications du site
     communaute.on_user_deleted(db, user.id)                                               # ses voix et ses propositions pas encore sorties
     secret_achievements.on_user_deleted(db, user.id)                                      # ses succès secrets
+    divisions.on_user_deleted(db, user.id)                                                # ses divisions de saison
     credit_log.on_user_deleted(db, user.id)                                               # son historique des crédits (après les remboursements ci-dessus)
     db.query(CardUsage).filter_by(user_id=user.id).delete()                               # ses cartes alignées (tournoi, défi du club), comme ses matchs 1v1
     db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
