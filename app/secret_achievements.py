@@ -19,6 +19,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, event, inspect, or_
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .database import Base
 from .models import Card, Duel, OwnedCard, Tier, User
 
@@ -355,7 +356,7 @@ def check(db, user, force: bool = False) -> list:
     new = [s for s in SECRETS if s["id"] in got]
     for s in new:
         db.add(SecretAchievement(user_id=user.id, secret_id=s["id"], earned_at=datetime.utcnow(), seen=False))
-        user.credits += REWARD
+        credit_log.add(user, REWARD, "Succès secret")
     if new:
         if not user.is_test:
             from . import chat

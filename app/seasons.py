@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Integer, String
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .database import Base, get_db
 from .models import Card, Duel, OwnedCard, Player, Tier, User
 from . import game_logic, push
@@ -210,7 +211,7 @@ def close_season(db: Session, key: str) -> dict:
         user = db.query(User).filter_by(id=r["user_id"]).first()
         card = get_or_create_trophy(db, key, r["rank"])
         credits = PODIUM_CREDITS.get(r["rank"], 0)
-        user.credits += credits
+        credit_log.add(user, credits, "Podium de saison 1v1", key)
         owned = game_logic.get_or_create_owned(db, user, card)
         owned.quantity = 1                      # un trophée par saison et par rang : jamais de doublon
         db.merge(SeasonResult(season=key, rank=r["rank"], user_id=user.id, pseudo=user.pseudo, elo=r["elo"], matches=r["matches"], wins=r["wins"],

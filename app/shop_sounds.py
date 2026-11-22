@@ -20,6 +20,7 @@ from sqlalchemy import Column, DateTime, Integer, String, UniqueConstraint, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .database import Base, get_db
 from .models import User
 from .common import require_admin
@@ -139,7 +140,7 @@ def buy_shop_sound(payload: BuyRequest, user: User = Depends(get_current_user), 
         raise HTTPException(status_code=400, detail="Tu as déjà ce son")
     if user.credits < PRICE:
         raise HTTPException(status_code=400, detail="Pas assez de crédits (il en faut %d)" % PRICE)
-    user.credits -= PRICE
+    credit_log.add(user, -PRICE, "Son de la semaine")
     db.add(ShopSoundPurchase(user_id=user.id, item_id=it["id"], price=PRICE))
     try:
         db.commit()

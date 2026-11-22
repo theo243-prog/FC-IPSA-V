@@ -34,6 +34,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .game_logic import (card_note, TIER_FAN_BONUS, TIER_MASCOT_BONUS, TIER_EQUIPMENT_BONUS, MAX_EQUIPMENT,
                          LOUP_CREDITS_BY_TIER, LOUP_DAILY_CAP, EQUIPMENT_FATIGUE_REDUCTION, EQUIPMENT_FATIGUE_MAX, equipment_fatigue_reduction,
                          card_kind, is_fan, is_equipment, is_mascot)
@@ -555,7 +556,8 @@ def _lineup_snapshot(side, fan_card, equipment_cards=(), mascot_card=None, refer
 
 def cancel_proposal(db: Session, proposal: MatchProposal):
     """Supprime un défi et rend à son créateur sa mise ET son enveloppe, séquestrées (l'appelant fait le commit)."""
-    proposal.creator.credits += proposal.stake + (proposal.referee_bid or 0)
+    credit_log.add(proposal.creator, proposal.stake, "Défi 1v1 annulé : mise rendue")
+    credit_log.add(proposal.creator, proposal.referee_bid or 0, "Défi 1v1 annulé : enveloppe rendue")
     db.delete(proposal)
 
 
@@ -611,7 +613,7 @@ def create_proposal(db: Session, user: User, formation, tactic, stake, slots, ca
         raise DuelError("Pas assez de crédits : mise %d%s" % (stake, (" + enveloppe de l'arbitre %d = %d" % (referee_bid, stake + referee_bid)) if referee_bid else ""))
     validate_team(db, user, formation, tactic, slots, captain_card_id, fan_card_id, equipment_card_ids, mascot_card_id)
 
-    user.credits -= stake + referee_bid   # séquestre : rendu si le défi est annulé ; la mise est jouée, l'enveloppe est dépensée
+    credit_log.add(user, -stake, "Mise 1v1 (défi publié)"); credit_log.add(user, -referee_bid, "Enveloppe de l'arbitre")   # séquestre : rendu si le défi est annulé ; la mise est jouée, l'enveloppe est dépensée
     proposal = MatchProposal(creator_id=user.id, stake=stake, referee_bid=referee_bid, formation=formation, tactic=tactic,
                              captain_card_id=captain_card_id or None, fan_card_id=fan_card_id or None,
                              mascot_card_id=mascot_card_id or None)
@@ -651,7 +653,7 @@ def loup_credits(db: Session, player: User, mascot_card) -> int:
     n = min(LOUP_CREDITS_BY_TIER.get(mascot_card.tier.value, 0) + game_logic.LOUP_LEVEL_CREDITS[lvl],
             max(0, LOUP_DAILY_CAP + game_logic.LOUP_LEVEL_DAILY_CAP[lvl] - missions.daily_count(db, player, "loup_credits")))
     if n > 0:
-        player.credits += n
+        credit_log.add(player, n, "Loup", "match 1v1")
         missions.daily_add(db, player, "loup_credits", n)
     return n
 
@@ -739,20 +741,20 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
 
     # crédits : la mise et l'enveloppe du créateur sont déjà séquestrées, celles du challenger sont prélevées maintenant.
     # Les DEUX enveloppes sont dépensées (celle de l'arbitre n'est jamais rendue, même au joueur qui a mis le moins)
-    challenger.credits -= stake + referee_bid
+    credit_log.add(challenger, -stake, "Mise 1v1", "défi de " + creator.pseudo); credit_log.add(challenger, -referee_bid, "Enveloppe de l'arbitre")
     pot = 2 * stake
     pack_winner = None
     if outcome == "victoire":
-        challenger.credits += pot
+        credit_log.add(challenger, pot, "Victoire 1v1 (mises)", "contre " + creator.pseudo)
         pack_winner = challenger
         classic_to = [creator]                                # le perdant
     elif outcome == "défaite":
-        creator.credits += pot
+        credit_log.add(creator, pot, "Victoire 1v1 (mises)", "contre " + challenger.pseudo)
         pack_winner = creator
         classic_to = [challenger]                             # le perdant
     else:   # nul : chacun récupère sa mise
-        challenger.credits += stake
-        creator.credits += stake
+        credit_log.add(challenger, stake, "Nul 1v1 : mise rendue", "contre " + creator.pseudo)
+        credit_log.add(creator, stake, "Nul 1v1 : mise rendue", "contre " + challenger.pseudo)
         classic_to = [challenger, creator]                    # les deux joueurs
     from . import missions
     no_pack = []                                              # ceux qui ont déjà gagné leurs 10 packs 1v1 du jour : des crédits à la place
@@ -780,7 +782,7 @@ def play_proposal(db: Session, challenger: User, proposal_id: str, formation, ta
     for player in no_pack:                                    # 10 packs déjà gagnés aujourd'hui : 5 à 15 crédits à la place, 150 par jour au plus
         n = min(random.randint(*AFTER_CAP_CREDITS), max(0, AFTER_CAP_DAILY_MAX - missions.daily_count(db, player, "after_cap_credits")))
         if n > 0:
-            player.credits += n
+            credit_log.add(player, n, "1v1 (après les 10 packs du jour)")
             missions.daily_add(db, player, "after_cap_credits", n)
             credits_instead[player.pseudo] = n
     loup = {challenger.pseudo: loup_credits(db, challenger, mascot_c), creator.pseudo: loup_credits(db, creator, mascot_d)}      # chaque équipe pour elle-même (compte aussi le match du jour)

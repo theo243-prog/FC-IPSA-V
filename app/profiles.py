@@ -18,6 +18,7 @@ from pydantic import BaseModel
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, and_, func, or_
 from sqlalchemy.orm import joinedload
 
+from . import credit_log
 from .database import Base
 from .models import Card, Duel, OwnedCard, Tier, User
 from . import game_logic
@@ -221,7 +222,7 @@ def check(db, user) -> list:
         for lv in _levels(ladder):
             if value >= lv["goal"] and (ladder["id"], lv["n"]) not in have:
                 db.add(UserBadge(user_id=user.id, badge_id=ladder["id"], level=lv["n"], earned_at=datetime.utcnow(), seen=False))
-                user.credits += lv["reward"]
+                credit_log.add(user, lv["reward"], "Succès", "%s (%s)" % (ladder.get("title"), lv["name"]))
                 if lv["name"] in ("Diamant", "Légende"):          # annonce dans le chat : une seule par vérification (voir plus bas)
                     big = (ladder["title"], lv["name"])
                 new.append({"id": ladder["id"], "title": ladder["title"], "icon": ladder["icon"], "level": lv["n"], "level_name": lv["name"], "reward": lv["reward"]})

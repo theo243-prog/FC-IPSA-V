@@ -14,6 +14,7 @@ from sqlalchemy import Column, DateTime, Integer, String, UniqueConstraint, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .database import Base, get_db
 from .models import User
 from .common import require_admin
@@ -79,7 +80,7 @@ def buy_cosmetic(payload: BuyCosmeticRequest, user: User = Depends(get_current_u
         raise HTTPException(status_code=400, detail="Achète d'abord le palier %d de cette piste" % (it["level"] - 1))
     if user.credits < it["price"]:
         raise HTTPException(status_code=400, detail="Pas assez de crédits (il en faut %d)" % it["price"])
-    user.credits -= it["price"]
+    credit_log.add(user, -it["price"], "Cosmétique du shop", it.get("name") or it.get("label"))
     db.add(ShopCosmeticPurchase(user_id=user.id, item_id=it["id"], price=it["price"]))
     try:
         db.commit()
@@ -128,7 +129,7 @@ def admin_shop_cosmetics_refund(payload: AdminRefundRequest, db: Session = Depen
         raise HTTPException(status_code=404, detail="Ce joueur n'a pas acheté ce cosmétique (identifiant attendu : shop-<piste>-<palier>, ex. shop-title-5)")
     if it["level"] < len(S.PRICES) and S.shop_item_id(it["kind"], it["level"] + 1) in owned_ids(db, user.id):
         raise HTTPException(status_code=400, detail="Rembourse d'abord le palier %d de cette piste (les paliers se suivent)" % (it["level"] + 1))
-    user.credits += row.price
+    credit_log.add(user, row.price, "Cosmétique remboursé")
     db.delete(row)
     _unequip(db, user.id, it["id"])
     db.commit()

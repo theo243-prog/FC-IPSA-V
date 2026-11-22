@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon, communaute, secret_achievements, dupe_upgrade, fatigue_gel, rename_player, edition_packs, draft_week, collection_bonus, presence
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon, communaute, secret_achievements, dupe_upgrade, fatigue_gel, rename_player, edition_packs, draft_week, collection_bonus, presence, credit_log
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -80,6 +80,7 @@ app.include_router(ownership.router)        # part des joueurs qui possèdent ch
 app.include_router(changelog.router)        # historique des changements du jeu (bouton « 📜 Nouveautés »)
 app.include_router(player_packs.router)     # packs joueur du shop (une carte d'un joueur garantie, offres du jour)
 app.include_router(dupe_upgrade.router)     # 5 doublons d'une commune → la rare de la même personne
+app.include_router(credit_log.router)       # historique des crédits (toucher ses crédits en haut du site)
 app.include_router(admin_page.router)      # la page d'administration (/admin-panel) et le numéro de version (/version)
 
 app.add_middleware(
@@ -647,8 +648,8 @@ def buy_listing(listing_id: str, user: User = Depends(get_current_user), db: Ses
         raise HTTPException(status_code=400, detail="Pas assez de crédits")
 
     seller = listing.seller
-    user.credits -= listing.price
-    seller.credits += listing.price
+    credit_log.add(user, -listing.price, "Achat au marché", credit_log.card_name(listing.card))
+    credit_log.add(seller, listing.price, "Vente au marché", credit_log.card_name(listing.card))
     buyer_owned = game_logic.get_or_create_owned(db, user, listing.card)
     buyer_owned.quantity += 1
     lrow = db.get(card_levels.ListingLevel, listing.id); level = lrow.level if lrow else 0
@@ -844,7 +845,7 @@ def shop_buy(payload: schemas.BuyShopItemRequest, user: User = Depends(get_curre
     price = events.shop_price(db, spec["price"])
     if user.credits < price:
         raise HTTPException(status_code=400, detail="Pas assez de crédits")
-    user.credits -= price
+    credit_log.add(user, -price, "Shop", spec.get("label") or ("pack " + pack_type))
     field = spec["token_field"]
     setattr(user.pack_state, field, getattr(user.pack_state, field) + 1)
     db.commit()
@@ -1006,6 +1007,7 @@ def admin_delete_user(payload: schemas.AdminDeleteUserRequest, db: Session = Dep
     inbox.on_user_deleted(db, user.id)                                                    # ses notifications du site
     communaute.on_user_deleted(db, user.id)                                               # ses voix et ses propositions pas encore sorties
     secret_achievements.on_user_deleted(db, user.id)                                      # ses succès secrets
+    credit_log.on_user_deleted(db, user.id)                                               # son historique des crédits (après les remboursements ci-dessus)
     db.query(CardUsage).filter_by(user_id=user.id).delete()                               # ses cartes alignées (tournoi, défi du club), comme ses matchs 1v1
     db.query(challenges.DirectChallenge).filter_by(target_id=user.id).delete()           # les défis privés qui lui étaient adressés
     db.query(Listing).filter_by(seller_id=user.id).delete()
@@ -2186,7 +2188,7 @@ def admin_grant_credits(payload: schemas.AdminGrantCreditsRequest, db: Session =
     user = db.query(User).filter_by(pseudo=payload.pseudo).first()
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
-    user.credits += payload.amount
+    credit_log.add(user, payload.amount, "Administration")
     db.commit()
     return {"status": "ok", "pseudo": user.pseudo, "credits_total": user.credits}
 
@@ -2231,6 +2233,7 @@ def _background_tick():
     _tick(communaute.tick)                  # cartes de la communauté : résultat du vote du jour (20 h)
     _tick(draft.tick)                       # mode draft : parties abandonnées, tours écoulés
     _tick(draft_week.tick)                  # semaine draft du mois : tirage, annonce 48 h avant, ouverture, podium à la fermeture
+    _tick(credit_log.tick)                  # historique des crédits : lignes de plus de 90 jours effacées
     _tick(backup.tick)                      # sauvegarde automatique (une fois par jour, à partir de 4h)
     _tick(battlepass.tick)                  # étoiles du Pass de la saison qui vient de finir
     _tick(tournament.tick)                  # tournoi mensuel : tirage, tours de 24 h, forfaits, cagnotte

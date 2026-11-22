@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Integer, String, func
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .database import Base, get_db
 from .models import AppSetting, UpcomingMatch, User, gen_id
 from .common import require_admin
@@ -117,7 +118,7 @@ def place_bet(payload: BetRequest, user: User = Depends(get_current_user), db: S
     refund = old.stake if old else 0
     if user.credits + refund < payload.stake:
         raise HTTPException(status_code=400, detail="Pas assez de crédits pour miser %d" % payload.stake)
-    user.credits += refund - payload.stake
+    credit_log.add(user, refund, "Pronostic modifié : ancienne mise rendue"); credit_log.add(user, -payload.stake, "Mise de pronostic")
     if old is None:
         from . import battlepass
         battlepass.add_points(db, user, "prono", 15, 30)                 # Pass de saison : un nouveau pronostic
@@ -136,7 +137,7 @@ def cancel_bet(upcoming_id: str, user: User = Depends(get_current_user), db: Ses
         raise HTTPException(status_code=404, detail="Tu n'as pas de pronostic sur ce match")
     if m is not None and now_paris() >= closes_at(m):
         raise HTTPException(status_code=400, detail="Les pronostics de ce match sont fermés : la mise reste engagée")
-    user.credits += bet.stake
+    credit_log.add(user, bet.stake, "Pronostic annulé : mise rendue")
     db.delete(bet); db.commit()
     return {"status": "ok", "credits_total": user.credits}
 
@@ -201,7 +202,7 @@ def settle(db: Session, upcoming_id: str, score_us: int, score_them: int):
     events = []
     if not shares:                                           # personne n'a trouvé le résultat : tout le monde est remboursé
         for b in bets:
-            if b.user_id in users: users[b.user_id].credits += b.stake
+            if b.user_id in users: credit_log.add(users[b.user_id], b.stake, "Pronostic remboursé")
             b.status, b.payout, b.result = "refunded", b.stake, result
         return []
     paid = set()
@@ -209,7 +210,7 @@ def settle(db: Session, upcoming_id: str, score_us: int, score_them: int):
         total = sum(b.stake for b in group); amounts = [share * b.stake // total for b in group]
         amounts[max(range(len(group)), key=lambda i: (group[i].stake, -i))] += share - sum(amounts)     # le reste va à la plus grosse mise
         for b, amount in zip(group, amounts):
-            if b.user_id in users: users[b.user_id].credits += amount
+            if b.user_id in users: credit_log.add(users[b.user_id], amount, "Gain de pronostic")
             b.status, b.payout, b.result = "won", amount, result; b.exact = 1 if group is exact else 0; paid.add(b.id)
     for b in bets:
         if b.id not in paid:
@@ -235,7 +236,7 @@ def refund_match(db: Session, upcoming_id: str) -> int:
     n = 0
     for b in db.query(PronoBet).filter_by(upcoming_id=upcoming_id, status="open").all():
         u = db.get(User, b.user_id)
-        if u is not None: u.credits += b.stake
+        if u is not None: credit_log.add(u, b.stake, "Pronostic remboursé")
         b.status, b.payout = "refunded", b.stake; n += 1
     return n
 

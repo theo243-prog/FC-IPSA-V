@@ -12,6 +12,7 @@ pas) et continue de remonter de 1 % par heure. Un match consomme un match de gel
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .database import get_db
 from .models import User
 from .security import get_current_user
@@ -61,7 +62,7 @@ def buy_fatigue_gel(user: User = Depends(get_current_user), db: Session = Depend
     price = next_price(db, user)
     if user.credits < price:
         raise HTTPException(status_code=400, detail="Pas assez de crédits : le gel coûte %d crédits" % price)
-    user.credits -= price                                  # crédits détruits (dépense volontaire)
+    credit_log.add(user, -price, "Gel de fatigue")                                  # crédits détruits (dépense volontaire)
     missions.daily_add(db, user, DAILY_KEY)
     row = db.query(UserCounter).filter_by(user_id=user.id, key=LEFT_KEY).first()
     if row is None:

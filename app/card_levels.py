@@ -22,6 +22,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import Column, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Session, contains_eager
 
+from . import credit_log
 from .database import Base, get_db
 from .models import Card, OwnedCard, Player, Tier, User
 from .common import require_admin
@@ -283,7 +284,7 @@ def evolve(card_id: str, user: User = Depends(get_current_user), db: Session = D
     i = info(db, user, card)
     if not i["can"]:
         raise HTTPException(status_code=400, detail=i["reason"] or "Évolution impossible")
-    user.credits -= i["cost"]
+    credit_log.add(user, -i["cost"], "Évolution de carte", credit_log.card_name(card))
     owned = db.query(OwnedCard).filter_by(user_id=user.id, card_id=card.id).first()
     owned.quantity -= i["dupes_needed"]                                   # les doublons demandés sont consommés (il reste toujours la copie évoluée)
     set_level(db, user.id, card.id, i["next_level"])

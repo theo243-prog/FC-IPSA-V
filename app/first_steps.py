@@ -97,7 +97,7 @@ def claim(user: User = Depends(get_current_user), db: Session = Depends(get_db))
     left = [label for k, label in STEPS if not done[k]]
     if left:
         raise HTTPException(status_code=400, detail="Il te reste %d objectif%s : %s" % (len(left), "s" if len(left) > 1 else "", ", ".join(l.lower() for l in left)))
-    missions._grant(user, REWARD)
+    missions._grant(user, REWARD, "Premiers pas")
     db.add(FirstStepsClaim(user_id=user.id, claimed_at=datetime.utcnow()))
     db.commit()
     return {"status": "ok", "credits_gained": REWARD["credits"], "pack": REWARD["pack"], "credits": user.credits}

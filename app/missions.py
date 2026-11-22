@@ -20,6 +20,7 @@ from typing import Optional
 from pydantic import BaseModel
 from sqlalchemy import Column, ForeignKey, Integer, String, Text
 
+from . import credit_log
 from .database import Base
 from . import game_logic, weekly, profiles
 
@@ -182,8 +183,8 @@ def state_out(db, user) -> dict:
 
 
 # ------------------------------------------------------------------ récupérer une récompense
-def _grant(user, reward: dict) -> None:
-    user.credits += int(reward.get("credits", 0))
+def _grant(user, reward: dict, label: str = "Mission du jour") -> None:
+    credit_log.add(user, int(reward.get("credits", 0)), label)
     pack = reward.get("pack")
     if pack:
         ps = user.pack_state
@@ -232,7 +233,7 @@ def claim(db, user, kind: str, mission_id: Optional[str] = None) -> dict:
         info = {}
     else:
         raise ValueError("Récompense inconnue")
-    _grant(user, reward)
+    _grant(user, reward, {"streak": "Série de connexion", "bonus": "Bonus des missions"}.get(kind, "Mission du jour"))
     if kind in ("mission", "bonus"):
         from . import battlepass
         battlepass.add_points(db, user, "mission", 20, battlepass.DAILY_CAPS["mission"])      # chaque mission (et le bonus du jour) : 20 points de Pass

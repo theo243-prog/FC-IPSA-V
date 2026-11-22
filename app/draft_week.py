@@ -26,6 +26,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .database import get_db
 from .common import require_admin
 from .models import AppSetting, User
@@ -194,7 +195,7 @@ def award_podium(db: Session, key: str, data: dict) -> list:
         user = db.query(User).filter_by(pseudo=r["pseudo"]).first()
         if user is None:
             continue
-        user.credits += PODIUM_CREDITS[i]
+        credit_log.add(user, PODIUM_CREDITS[i], "Podium du draft", key)
         card = seasons.get_or_create_trophy(db, key, PODIUM_RANKS[i])
         owned = game_logic.get_or_create_owned(db, user, card); owned.quantity = max(owned.quantity, 1)
         podium.append({"rank": i, "pseudo": user.pseudo, "elo": r["elo"], "played": r["played"], "credits": PODIUM_CREDITS[i], "trophy": card.player.name})

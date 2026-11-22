@@ -27,6 +27,7 @@ from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, UniqueC
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .database import Base, get_db
 from .models import Card, User, gen_id
 from .common import card_out, optional_user, require_admin
@@ -271,7 +272,7 @@ def play(level: str, payload: TeamPayload, user: User = Depends(get_current_user
     first = won and not rewarded_today(db, user.id, level, day)
     credits = pass_points = 0
     if first:
-        credits = spec["credits"]; user.credits += credits
+        credits = spec["credits"]; credit_log.add(user, credits, "Défi du club", "victoire, niveau " + level)
         pass_points = battlepass.add_points(db, user, "club", spec["points"], battlepass.DAILY_CAPS["club"])
     if won and level == "difficile":
         profiles.bump(db, user, "club_hard_wins")

@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Integer, String
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .database import Base, get_db
 from .models import Card, Tier, User, gen_id
 from .common import card_out, optional_user
@@ -82,7 +83,7 @@ def _settle(db: Session, a: Auction) -> None:
     if lrow is not None:
         db.delete(lrow)
     if winner is not None and a.current_bid is not None and card is not None and seller is not None:
-        seller.credits += a.current_bid
+        credit_log.add(seller, a.current_bid, "Vente aux enchères", credit_log.card_name(card))
         game_logic.get_or_create_owned(db, winner, card).quantity += 1
         card_levels.copy_arriving(db, winner.id, card.id, level)            # le niveau suit la carte (le gagnant garde son meilleur niveau)
         t = offers.Trade(kind="enchère", seller_id=seller.id, buyer_id=winner.id, seller_pseudo=seller.pseudo, buyer_pseudo=winner.pseudo, card_id=card.id, card_tier=card.tier.value, price=a.current_bid)
@@ -96,7 +97,7 @@ def _settle(db: Session, a: Auction) -> None:
         won = winner.id
     else:
         if winner is not None and a.current_bid:
-            winner.credits += a.current_bid                       # (le vendeur ou la carte a disparu : on rembourse)
+            credit_log.add(winner, a.current_bid, "Enchère remboursée")                       # (le vendeur ou la carte a disparu : on rembourse)
         if seller is not None and card is not None:
             game_logic.get_or_create_owned(db, seller, card).quantity += 1
             card_levels.copy_arriving(db, seller.id, card.id, level)        # sans enchère : la carte revient avec son niveau
@@ -135,7 +136,7 @@ def cancel_for_cards(db: Session, card_ids: list) -> int:
         if a.top_bidder_id:
             u = db.get(User, a.top_bidder_id)
             if u:
-                u.credits += a.current_bid or 0
+                credit_log.add(u, a.current_bid or 0, "Enchère annulée : remboursement")
         db.delete(a); n += 1
     return n
 
@@ -145,7 +146,7 @@ def on_user_deleted(db: Session, user_id: str) -> None:
         if a.top_bidder_id:
             u = db.get(User, a.top_bidder_id)
             if u:
-                u.credits += a.current_bid or 0
+                credit_log.add(u, a.current_bid or 0, "Enchère annulée : remboursement")
         db.delete(a)
     for a in db.query(Auction).filter(Auction.top_bidder_id == user_id).all():   # ses enchères en tête : l'enchère repart sans mise
         a.top_bidder_id, a.current_bid, a.bids = None, None, 0
@@ -224,9 +225,9 @@ def bid(auction_id: str, payload: BidRequest, user: User = Depends(get_current_u
     if a.top_bidder_id and a.top_bidder_id != user.id:            # le précédent meilleur enchérisseur est remboursé tout de suite
         prev = db.get(User, a.top_bidder_id)
         if prev:
-            prev.credits += a.current_bid or 0
+            credit_log.add(prev, a.current_bid or 0, "Enchère dépassée : remboursement", offers._name(card))
             _tell(db, prev.id, "Tu as été dépassé 🔨", "%s a enchéri %d crédits sur %s. Ton argent t'a été rendu." % (user.pseudo, payload.amount, offers._name(card)))
-    user.credits -= extra
+    credit_log.add(user, -extra, "Enchère", offers._name(card))
     a.current_bid, a.top_bidder_id, a.bids = payload.amount, user.id, (a.bids or 0) + 1
     if (a.ends_at - _now()).total_seconds() < SNIPE_WINDOW:
         a.ends_at = _now() + timedelta(seconds=SNIPE_WINDOW)      # prolongation anti-« dernière seconde »

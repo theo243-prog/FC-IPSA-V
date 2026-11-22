@@ -19,7 +19,7 @@
     /* Maillot FC IPSA V : rose du tissu, violet profond, mauve du loup */
     --rose:#FCC2E2; --violet:#3C1951; --violet-2:#6A2C8F; --mauve:#AE608C;
     --bg:#FCC2E2; --bg-elevated:#FFF4FA; --bg-sunk:#F8DCEC; --input-bg:#FFFFFF;
-    --text:#3C1951; --text-muted:#6B3566; --accent:#3C1951; --accent-text:#FFE9F5;
+    --text:#3C1951; --text-muted:#6B3566; --accent:#3C1951; --accent-text:#FFE9F5; --gain:#1E7A45; --spend:#B0263E;
     --stripe:#3C1951; --collar:#3C1951; --focus:#6A2C8F;
     --line:rgba(174,96,140,.28); --border:rgba(60,25,81,.22); --shadow:0 6px 16px rgba(60,25,81,.18);
     --scrim:rgba(36,10,52,.74); --toast-bg:#3C1951; --toast-text:#FCC2E2;
@@ -39,7 +39,7 @@
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
       --bg:#1B0A28; --bg-elevated:#2A1240; --bg-sunk:#210F33; --input-bg:#1B0A28;
-      --text:#FCE6F2; --text-muted:#C79ABA; --accent:#F8B4D6; --accent-text:#2A0F3D;
+      --text:#FCE6F2; --text-muted:#C79ABA; --accent:#F8B4D6; --accent-text:#2A0F3D; --gain:#6EDC9A; --spend:#FF8FA3;
       --stripe:#FCC2E2; --collar:#2E1145; --focus:#F8B4D6;
       --line:rgba(252,194,226,.12); --border:rgba(252,194,226,.22); --shadow:0 8px 20px rgba(0,0,0,.45);
       --scrim:rgba(12,4,20,.82); --toast-bg:#FCC2E2; --toast-text:#3C1951;
@@ -49,7 +49,7 @@
   }
   :root[data-theme="dark"]{
     --bg:#1B0A28; --bg-elevated:#2A1240; --bg-sunk:#210F33; --input-bg:#1B0A28;
-    --text:#FCE6F2; --text-muted:#C79ABA; --accent:#F8B4D6; --accent-text:#2A0F3D;
+    --text:#FCE6F2; --text-muted:#C79ABA; --accent:#F8B4D6; --accent-text:#2A0F3D; --gain:#6EDC9A; --spend:#FF8FA3;
     --stripe:#FCC2E2; --collar:#2E1145; --focus:#F8B4D6;
     --line:rgba(252,194,226,.12); --border:rgba(252,194,226,.22); --shadow:0 8px 20px rgba(0,0,0,.45);
     --scrim:rgba(12,4,20,.82); --toast-bg:#FCC2E2; --toast-text:#3C1951;
@@ -1076,6 +1076,15 @@
   .panth-top{margin:0;padding-left:20px;font-size:13.5px;} .panth-top li{padding:3px 0;} .panth-top li span{display:inline-block;min-width:60%;}
   @media (max-width:760px){.panth-grid{grid-template-columns:1fr;} .panth-legends{grid-template-columns:repeat(2,minmax(0,1fr));}}
   /* ---- Mes stats 1v1 ---- */
+  /* ---- historique des crédits (toucher ses crédits en haut du site) ---- */
+  .credits-pill{cursor:pointer;font-family:var(--font-body);} .credits-pill:hover{background:rgba(252,194,226,.26);}
+  .cl-totals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px;}
+  .cl-day{font-size:12px;font-weight:700;color:var(--text-muted);margin:12px 0 4px;}
+  .cl-day::first-letter{text-transform:uppercase;}
+  .cl-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13.5px;}
+  .cl-ico{font-size:18px;width:24px;text-align:center;flex:none;} .cl-txt{flex:1;min-width:0;} .cl-txt small{display:block;color:var(--text-muted);font-size:11.5px;overflow-wrap:anywhere;}
+  .cl-amt{font-weight:800;white-space:nowrap;text-align:right;} .cl-amt small{display:block;font-weight:500;color:var(--text-muted);font-size:11px;}
+  .cl-plus, .mys-tile span.cl-plus{color:var(--gain);font-size:inherit;} .cl-minus, .mys-tile span.cl-minus{color:var(--spend);font-size:inherit;}
   .mys-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
   .mys-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px;}
   .mys-tile{background:var(--bg-sunk);border-radius:10px;padding:8px;text-align:center;display:flex;flex-direction:column;gap:2px;} .mys-tile b{font-size:18px;} .mys-tile span{font-size:11.5px;color:var(--text-muted);}
@@ -1250,7 +1259,7 @@
         </div>
       </div>
       <div class="stats-chip">
-        <span class="stat-pill">💰 <span id="chipCredits">0</span></span>
+        <button class="stat-pill credits-pill" id="creditsBtn" type="button" title="Historique de mes crédits" aria-label="Historique de mes crédits">💰 <span id="chipCredits">0</span></button>
         <span class="stat-pill"><span class="lab">Packs</span> <span id="chipPacks">0/3</span></span>
         <span class="stat-pill" id="chipPseudo">…</span>
         <button class="sound-btn" id="soundBtn" type="button" aria-pressed="true" aria-label="Couper le son" title="Couper le son">🔊</button>
@@ -1561,6 +1570,12 @@
   <div class="modal-box help-box" role="dialog" aria-modal="true" aria-labelledby="myStatsTitle" style="max-width:720px;">
     <div class="modal-header"><h2 id="myStatsTitle">📊 Mes stats 1v1</h2><button class="modal-close" id="myStatsClose" type="button" aria-label="Fermer">✕</button></div>
     <div id="myStatsBody"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="creditsModal">
+  <div class="modal-box help-box" role="dialog" aria-modal="true" aria-labelledby="creditsTitle">
+    <div class="modal-header"><h2 id="creditsTitle">💰 Mes crédits</h2><button class="modal-close" id="creditsClose" type="button" aria-label="Fermer">✕</button></div>
+    <div id="creditsBody"></div>
   </div>
 </div>
 <div class="modal-overlay" id="notifModal">
@@ -2644,7 +2659,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.22.1';
+  const SITE_VERSION = '2026.11.22.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -6036,6 +6051,49 @@
   byId('myStatsBtn').addEventListener('click', () => openMyStats());
   byId('myStatsClose').addEventListener('click', () => { byId('myStatsModal').style.display = 'none'; });
   byId('myStatsModal').addEventListener('click', e => { if (e.target.id === 'myStatsModal') byId('myStatsModal').style.display = 'none'; });
+
+  // ---------- Historique des crédits (toucher ses crédits en haut du site) : visible par moi seul ----------
+  let creditsKind = 'all', creditsItems = [], creditsMore = false;
+  function creditIcon(label){
+    const l = (label || '').toLowerCase();
+    const R = [['loup','🐺'],['arbitre','🧑‍⚖️'],['1v1','⚔️'],['draft','🎯'],['enchère','🔨'],['marché','🛒'],['offre','🤝'],['doublon','♻️'],['shop','🛍️'],['pack','📦'],
+      ['gel','🧊'],['son de','🔊'],['cosmétique','🎨'],['pass','🎟️'],['évolution','⬆️'],['club','🏟️'],['tournoi','🏆'],['podium','🥇'],['pronostic','🔮'],
+      ['succès','🏅'],['mission','✅'],['série','🔥'],['premiers pas','🚀'],['administration','🎁']];
+    for (const [k, e] of R) if (l.includes(k)) return e;
+    return '💰';
+  }
+  const crAmt = n => (n > 0 ? '+' : '−') + Math.abs(n);
+  async function openCredits(kind, more){
+    if (kind) creditsKind = kind;
+    const body = byId('creditsBody'); byId('creditsModal').style.display = 'flex';
+    if (!more) { creditsItems = []; body.innerHTML = '<div class="empty-state">Chargement…</div>'; }
+    let r; try {
+      r = await api('/credits/history?kind=' + creditsKind + (more && creditsItems.length ? '&before=' + creditsItems[creditsItems.length - 1].id : ''));
+    } catch(e) { body.innerHTML = '<div class="empty-state">' + escapeHtml(e.message) + '</div>'; return; }
+    creditsItems = creditsItems.concat(r.items); creditsMore = r.more;
+    const t = r.totals, tile = (v, l) => '<div class="mys-tile"><b><span class="cl-plus">+' + v[0] + '</span> / <span class="cl-minus">−' + v[1] + '</span></b><span>' + l + '</span></div>';
+    const tabs = '<div class="mys-tabs">' + [['all','Tout'],['gains','Gains'],['spent','Dépenses']].map(([k, l]) =>
+      '<button type="button" class="btn-small' + (creditsKind === k ? '' : ' ghost') + '" data-ckind="' + k + '">' + l + '</button>').join('') + '</div>';
+    let html = '<p class="duel-hint" style="margin:0 0 8px;">Tu as <b>' + r.credits + ' crédits</b>. Chaque gain et chaque dépense, du plus récent au plus ancien (' + r.keep_days + ' derniers jours). Visible par toi seul.</p>' +
+      '<div class="cl-totals">' + tile([t.today.gains, t.today.spent], 'aujourd\'hui (gains / dépenses)') + tile([t.week.gains, t.week.spent], 'cette semaine, depuis lundi') + '</div>' + tabs;
+    if (!creditsItems.length) html += '<div class="empty-state">' + (creditsKind === 'all' ? 'Aucun mouvement pour l\'instant : l\'historique commence avec cette mise à jour.' : 'Rien ici pour l\'instant.') + '</div>';
+    let day = '';
+    for (const i of creditsItems) {
+      const d = new Date(/(Z|[+-]\d\d:?\d\d)$/.test(i.at) ? i.at : i.at + 'Z');
+      const dk = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+      if (dk !== day) { day = dk; html += '<div class="cl-day">' + escapeHtml(dk) + '</div>'; }
+      html += '<div class="cl-row"><span class="cl-ico" aria-hidden="true">' + creditIcon(i.label) + '</span><div class="cl-txt">' + escapeHtml(i.label) +
+        '<small>' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + (i.detail ? ' · ' + escapeHtml(i.detail) : '') + '</small></div>' +
+        '<div class="cl-amt ' + (i.delta > 0 ? 'cl-plus' : 'cl-minus') + '">' + crAmt(i.delta) + (i.balance != null ? '<small>solde ' + i.balance + '</small>' : '') + '</div></div>';
+    }
+    if (creditsMore) html += '<div style="text-align:center;margin-top:10px;"><button type="button" class="btn-small ghost" id="creditsMoreBtn">Voir plus</button></div>';
+    body.innerHTML = html;
+    body.querySelectorAll('[data-ckind]').forEach(b => b.addEventListener('click', () => openCredits(b.dataset.ckind)));
+    const m = byId('creditsMoreBtn'); if (m) m.addEventListener('click', () => openCredits(null, true));
+  }
+  byId('creditsBtn').addEventListener('click', () => openCredits('all'));
+  byId('creditsClose').addEventListener('click', () => { byId('creditsModal').style.display = 'none'; });
+  byId('creditsModal').addEventListener('click', e => { if (e.target.id === 'creditsModal') byId('creditsModal').style.display = 'none'; });
 
   // ---------- Notifications push ----------
   // Le joueur active les notifications sur CET appareil. Le navigateur nous donne une « adresse » chiffrée que

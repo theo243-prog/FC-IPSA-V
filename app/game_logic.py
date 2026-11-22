@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from . import credit_log
 from .models import User, Card, OwnedCard, Tier, Player, AppSetting
 
 PACK_REGEN_SECONDS = 2 * 3600          # 2h pour régénérer un pack gratuit
@@ -402,7 +403,7 @@ def open_pack_for_user(db: Session, user: User, pack_type: str = "free") -> dict
         source = "shop"
 
     credits_won = int(_roll_weighted(CREDIT_WEIGHTS))
-    user.credits += credits_won
+    credit_log.add(user, credits_won, "Crédits d'un pack", "Pack gratuit" if pack_type == "free" else (PACK_TYPES.get(effective, {}).get("label") or effective))
 
     weights = pack_weights(db, counts, spec.get("weights") or TIER_WEIGHTS, effective, user)      # (+ cartes communauté si le joueur y a droit)
     if spec.get("slots"):
@@ -593,7 +594,7 @@ def sell_duplicate(db: Session, user: User, card_id: str, count: int = 1) -> int
     n = owned.quantity - 1 if count is None else max(1, min(int(count), owned.quantity - 1))
     value = DUPLICATE_SELL_VALUE[owned.card.tier.value] * n
     owned.quantity -= n
-    user.credits += value
+    credit_log.add(user, value, "Vente de doublon", credit_log.card_name(owned.card))
     db.commit()
     return value
 
