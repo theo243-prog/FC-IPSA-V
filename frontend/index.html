@@ -958,6 +958,7 @@
   @keyframes brUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
   @media (prefers-reduced-motion: reduce){.card.bonus-card .bx-ring,.card.bonus-card .bx-sheen,.card.bonus-card .bx-crown,.card.bonus-card .bx-sparks i,.card.bonus-card .card-tier-label,.bonus-reveal *{animation:none !important;opacity:1 !important;transform:none !important;}.bonus-reveal .br-burst{display:none;}}
   /* ---- divisions de saison 1v1 (Fer → Élite selon l'Elo) ---- */
+  .div-name-ico{margin-right:5px;font-size:15px;vertical-align:-1px;}
   .div-bar{margin:0 0 10px;padding:10px 14px;border-radius:14px;background:var(--bg-elevated);border:1px solid var(--border);}
   .div-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:14px;} .div-top small{color:var(--text-muted);font-size:12.5px;}
   .div-ico{font-size:20px;vertical-align:-2px;margin-right:4px;}
@@ -2571,7 +2572,7 @@
       const list = await fetch(API_BASE + '/duel/seasons').then(r => r.json());
       document.getElementById('modalTitle').textContent = 'Historique des saisons';
       document.getElementById('modalBody').innerHTML = (list.length ? '<p class="duel-hint">Le podium de chaque saison terminée (il faut avoir joué le nombre de matchs minimum). Les 3 premiers reçoivent un trophée à leur nom. Touche un pseudo pour voir son profil.</p>' + list.map(se => '<div class="profile-section">' + escapeHtml(se.label.charAt(0).toUpperCase() + se.label.slice(1)) + '</div><table class="duel-table season-hist"><thead><tr><th></th><th>Joueur</th><th class="num">Elo</th><th class="num">M</th><th class="num">V</th></tr></thead><tbody>' +
-        se.podium.map(r => '<tr class="' + (r.pseudo === myPseudo ? 'me' : '') + '"><td>' + r.medal + '</td><td><button type="button" class="pseudo-link" data-pseudo="' + escapeHtml(r.pseudo) + '">' + escapeHtml(r.pseudo) + '</button>' + (r.pseudo === myPseudo ? ' (toi)' : '') + '</td><td class="num">' + (r.division ? '<span title="Division ' + escapeHtml(r.division.name) + '">' + r.division.icon + '</span> ' : '') + '<b>' + r.elo + '</b></td><td class="num">' + r.matches + '</td><td class="num">' + r.wins + '</td></tr>').join('') + '</tbody></table>').join('')
+        se.podium.map(r => '<tr class="' + (r.pseudo === myPseudo ? 'me' : '') + '"><td>' + r.medal + '</td><td><button type="button" class="pseudo-link" data-pseudo="' + escapeHtml(r.pseudo) + '">' + escapeHtml(r.pseudo) + '</button>' + (r.pseudo === myPseudo ? ' (toi)' : '') + '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.matches + '</td><td class="num">' + r.wins + '</td></tr>').join('') + '</tbody></table>').join('')
         : '<div class="empty-state">Aucune saison terminée pour l\'instant. La première se termine à la fin du mois en cours : le podium et ses trophées apparaîtront ici.</div>');
       document.querySelectorAll('#modalBody .season-hist .pseudo-link').forEach(b => b.addEventListener('click', () => openProfile(b.dataset.pseudo)));
       document.getElementById('userCollectionModal').style.display = 'flex';
@@ -2693,7 +2694,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.22.5';
+  const SITE_VERSION = '2026.11.22.6';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -2711,7 +2712,7 @@
       let rankE = 0;
       const table = s.standings.length ? '<table class="duel-table"><thead><tr><th></th><th>Joueur</th><th class="num">Elo</th><th class="num">M</th><th class="num">V</th></tr></thead><tbody>' + s.standings.map(r => {
         const medal = r.eligible && ++rankE <= 3 ? ['🥇', '🥈', '🥉'][rankE - 1] : '#' + r.rank;
-        return '<tr class="' + (r.pseudo === myPseudo ? 'me' : '') + (r.eligible ? '' : ' dim') + '"><td><span class="rank-num">' + medal + '</span></td><td>' + pseudoLink(r.pseudo) + (r.pseudo === myPseudo ? ' (toi)' : '') + '</td><td class="num">' + (r.division ? '<span title="Division ' + escapeHtml(r.division.name) + '">' + r.division.icon + '</span> ' : '') + '<b>' + r.elo + '</b></td><td class="num">' + r.matches + '</td><td class="num">' + r.wins + '</td></tr>';
+        return '<tr class="' + (r.pseudo === myPseudo ? 'me' : '') + (r.eligible ? '' : ' dim') + '"><td><span class="rank-num">' + medal + '</span></td><td>' + divIcon(r.division) + pseudoLink(r.pseudo) + (r.pseudo === myPseudo ? ' (toi)' : '') + '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.matches + '</td><td class="num">' + r.wins + '</td></tr>';
       }).join('') + '</tbody></table>' : '<div class="empty-state">Personne n\'a encore joué ce mois-ci : sois le premier !</div>';
       const me = s.me ? '<div class="season-me">Ta place : n°' + s.me.rank + ' · Elo ' + s.me.elo + ' · ' + s.me.matches + ' match' + (s.me.matches > 1 ? 's' : '') + (s.me.eligible ? ' · tu peux monter sur le podium 🎯' : ' · encore ' + (s.min_matches - s.me.matches) + ' match' + (s.min_matches - s.me.matches > 1 ? 's' : '') + ' pour être éligible') + '</div>' : (token ? '<div class="season-me">Joue un match pour entrer au classement du mois.</div>' : '');
       byId('seasonStandings').innerHTML = '<div class="season-scroll">' + table + '</div>' + me;
@@ -5031,6 +5032,8 @@
     root.style.maxHeight = (last.offsetTop + last.offsetHeight - first.offsetTop) + 'px';
   }
   function fitDuelCells(){ fitRows(byId('duelHistoryEl'), '.history-row', 5); fitRows(byId('duelProposalsEl'), '.proposal-row', 5); }
+  // icône de division de saison (Fer → Élite) devant un pseudo, dans les classements 1v1
+  const divIcon = d => d ? '<span class="div-name-ico" title="Division ' + escapeHtml(d.name) + '" aria-label="Division ' + escapeHtml(d.name) + '">' + d.icon + '</span>' : '';
   async function loadDuelBoard(){
     loadSeason();
     try {
@@ -5041,7 +5044,7 @@
         '<th class="num" title="Matchs joués">M</th><th class="num" title="Victoires">V</th><th class="num" title="Défaites">D</th><th class="num" title="Nuls">N</th><th class="num" title="Différence de buts : buts marqués moins buts encaissés">Diff</th></tr></thead><tbody>';
       rows.forEach((r, i) => {
         const mine = r.pseudo === myPseudo;
-        html += '<tr class="' + (mine ? 'me' : '') + '"><td><span class="rank-num">#' + (i + 1) + '</span></td><td>' + pseudoLink(r.pseudo) + (mine ? ' (toi)' : '') +
+        html += '<tr class="' + (mine ? 'me' : '') + '"><td><span class="rank-num">#' + (i + 1) + '</span></td><td>' + divIcon(r.division) + pseudoLink(r.pseudo) + (mine ? ' (toi)' : '') +
           '</td><td class="num"><b>' + r.elo + '</b></td><td class="num">' + r.played + '</td><td class="num">' + r.wins + '</td><td class="num">' + r.losses + '</td><td class="num">' + r.draws + '</td>' +
           '<td class="num"><b class="' + (r.goal_diff > 0 ? 'diff-pos' : r.goal_diff < 0 ? 'diff-neg' : '') + '">' + (r.goal_diff > 0 ? '+' + r.goal_diff : r.goal_diff < 0 ? '−' + Math.abs(r.goal_diff) : '0') + '</b></td></tr>';
       });
