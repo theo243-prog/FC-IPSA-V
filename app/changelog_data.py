@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-divisions", "date": "2026-11-22", "category": "règles", "title": "🏅 Les divisions de saison",
+     "text": "En 1v1, ton Elo te place dans une division : Fer, Bronze, Argent, Or, Platine, Diamant, Champion ou Élite. La première fois du mois que tu atteins une division, tu gagnes une récompense : Or 50 crédits, Platine 100 crédits et un pack rare, Diamant 150 crédits et un pack match, Champion 200 crédits et un pack épique, Élite 300 crédits et un pack ultra. Ta meilleure division de chaque saison reste sur ton profil."},
     {"id": "2026-11-historique-credits", "date": "2026-11-22", "category": "autre", "title": "💰 Historique de tes crédits",
      "text": "Touche tes crédits en haut du site pour voir d'où ils viennent et où ils sont partis : Loup, mises, ventes, Pass, shop… avec tes gains et dépenses du jour et de la semaine. L'historique commence avec cette mise à jour."},
     {"id": "2026-11-noire-3-par-jour", "date": "2026-11-21", "category": "économie", "title": "🖤 3 Édition Noire par jour",
