@@ -54,6 +54,12 @@ LINEUP_SECONDS = 60              # temps pour composer l'équipe
 START_DELAY = 4                  # le match démarre sur les deux écrans 4 secondes après la fin de la composition
 AFK_SECONDS = 45                 # sans signe de vie pendant les enchères : forfait
 ELO_START = 1000
+# Classement draft (23/11/2026, branche draft-elo, demandé par Théo) : les gains pèsent BEAUCOUP plus que les pertes, pour que jouer
+# souvent fasse monter et qu'on ne puisse pas rester en haut sans jouer. Même formule que le 1v1 (DE.ELO_K, DE.ELO_SCALE), mais un gain
+# est multiplié par DRAFT_WIN_BOOST (1v1 : 1,25) et une perte, plafonnée à DE.ELO_MAX_LOSS, par DRAFT_LOSS_FACTOR : à Elo égal +32 / −6
+# (1v1 : +20 / −16), perte maximale 8. Les parties jouées avant ne sont pas recalculées.
+DRAFT_WIN_BOOST = 2.0
+DRAFT_LOSS_FACTOR = 0.4
 TIER_WEIGHTS = {"commune": 34, "rare": 28, "edition": 10, "epique": 14, "speciale": 6, "legendaire": 8}
 GB_COUNTS = {1: 15, 2: 60, 3: 25}   # nombre de gardiens dans le tirage (poids)
 LINE_MIN, LINE_MAX = 2, 4           # défenseurs, milieux, attaquants : 2 à 4 de chaque
@@ -376,6 +382,17 @@ def _rewards(db: Session, winner, classic_to) -> dict:
     return out
 
 
+def elo_delta(elo_me: int, elo_other: int, result: float) -> int:
+    """Variation du classement draft d'UN joueur (voir DRAFT_WIN_BOOST et DRAFT_LOSS_FACTOR)."""
+    expected = 1 / (1 + 10 ** ((elo_other - elo_me) / DE.ELO_SCALE))
+    d = DE.ELO_K * (result - expected)
+    if d > 0:
+        d *= DRAFT_WIN_BOOST
+    elif d < 0:
+        d = max(d, -DE.ELO_MAX_LOSS) * DRAFT_LOSS_FACTOR
+    return round(d)
+
+
 def _finish(db, room, st, result, now, recap=None) -> None:
     """Enregistre le résultat : classement du mois, récompenses."""
     users = {s: db.get(User, getattr(room, s + "_id")) for s in SIDES}
@@ -385,7 +402,7 @@ def _finish(db, room, st, result, now, recap=None) -> None:
     ra, rb = rating(db, users["host"].id, room.season), rating(db, users["guest"].id, room.season)
     score_a = {"host": 1.0, "guest": 0.0, "draw": 0.5}[result]
     before = {"host": ra.elo, "guest": rb.elo}
-    ra.elo, rb.elo = DE.elo_update(ra.elo, rb.elo, score_a)
+    ra.elo, rb.elo = ra.elo + elo_delta(ra.elo, rb.elo, score_a), rb.elo + elo_delta(rb.elo, ra.elo, 1 - score_a)
     for r, s in ((ra, "host"), (rb, "guest")):
         r.played += 1
         if result == "draw":
@@ -643,7 +660,7 @@ def get_draft(user: User = Depends(get_current_user), db: Session = Depends(get_
     mine = _active_room(db, user)
     week = draft_week.status(db)
     my_rating = db.query(DraftRating).filter_by(user_id=user.id, season=season_now()).first()
-    rules = {"budget": BUDGET, "min_step": MIN_STEP, "bid_seconds": BID_SECONDS, "lineup_seconds": LINEUP_SECONDS, "players": N_PLAYERS,
+    rules = {"elo_win": elo_delta(ELO_START, ELO_START, 1.0), "elo_loss": -elo_delta(ELO_START, ELO_START, 0.0), "budget": BUDGET, "min_step": MIN_STEP, "bid_seconds": BID_SECONDS, "lineup_seconds": LINEUP_SECONDS, "players": N_PLAYERS,
              "fans": N_FANS, "wait_seconds": WAIT_SECONDS, "pack_cap": DE.DUEL_PACK_DAILY_CAP}
     if not access and mine is None:
         db.commit()
