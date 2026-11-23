@@ -156,4 +156,11 @@ gb = [k for k in db.query(Card).all() if k.player.poste == "GB"][:1]; others = [
 auto = D.auto_lineup(gb + others)
 ok(any(x["slot_category"] == "GB" and x["card_id"] == gb[0].id for x in auto["slots"]), "équipe automatique : le gardien va dans les buts")
 
+print("9) CLASSEMENT : LES GAINS PÈSENT BEAUCOUP PLUS QUE LES PERTES")
+ok((D.elo_delta(1000, 1000, 1), D.elo_delta(1000, 1000, 0), D.elo_delta(1000, 1000, 0.5)) == (32, -6, 0), "à niveau égal : victoire +32, défaite −6, nul 0")
+ok(all(D.elo_delta(a, b, 0) >= -8 for a in range(600, 2601, 100) for b in range(600, 2601, 100)), "une défaite ne coûte jamais plus de 8 points")
+ok(all(D.elo_delta(a, b, 1) > -D.elo_delta(a, b, 0) for a in range(800, 1801, 100) for b in range(800, 1801, 100) if abs(a - b) <= 400), "entre joueurs proches (400 points d'écart au plus), une victoire rapporte toujours plus qu'une défaite ne coûte")
+r = c.get("/draft", headers=H["ana"]).json()["rules"]
+ok(r["elo_win"] == 32 and r["elo_loss"] == 6, "le salon affiche +32 / −6 (%s / %s)" % (r.get("elo_win"), r.get("elo_loss")))
+
 print(); print("BILAN (mode draft) :", "TOUT EST VERT" if not FAILS else f"{len(FAILS)} ÉCHEC(S) : {FAILS}")

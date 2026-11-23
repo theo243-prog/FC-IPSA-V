@@ -2694,7 +2694,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.22.6';
+  const SITE_VERSION = '2026.11.23.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -5787,7 +5787,7 @@
     const main = byId('draftMain'), r = d.rules;
     if (!byId('draftOpen')) {
       main.innerHTML = '<p class="duel-hint">Un match à deux, <b>en même temps devant vos écrans</b>. Le jeu tire en secret <b>' + r.players + ' joueurs et ' + r.fans + ' fans</b> parmi les cartes du jeu (pas les vôtres), présentés un par un : on ne sait jamais combien de gardiens, défenseurs, milieux ou attaquants il reste. Chacun a <b>' + r.budget + ' pièces</b>, pour ce match seulement. À chaque carte, celui qui parle en premier change : il mise (dès 0) ou passe, puis on surenchérit d\'au moins ' + r.min_step + ' pièces. Passer sans mise laisse la carte à l\'adversaire pour 0. ' + r.bid_seconds + ' secondes pour répondre. Chaque équipe a 5 joueurs et 1 fan au plus. Si tu tombes à 0 pièce, l\'adversaire choisit pour toi ce qui reste.</p>' +
-        '<p class="duel-hint">Ensuite, <b>' + r.lineup_seconds + ' secondes</b> pour choisir formation, tactique, postes et capitaine, et le match se joue en direct sur les deux écrans. Cartes au niveau 0 et à 100 % de forme. Récompenses comme en 1v1 : pack match au gagnant, pack classique au perdant ou aux deux en cas de nul, dans la même limite de ' + r.pack_cap + ' packs par jour. Le classement repart de zéro à chaque semaine draft ; podium à la fin.</p>' +
+        '<p class="duel-hint">Ensuite, <b>' + r.lineup_seconds + ' secondes</b> pour choisir formation, tactique, postes et capitaine, et le match se joue en direct sur les deux écrans. Cartes au niveau 0 et à 100 % de forme. Récompenses comme en 1v1 : pack match au gagnant, pack classique au perdant ou aux deux en cas de nul, dans la même limite de ' + r.pack_cap + ' packs par jour. Le classement repart de zéro à chaque semaine draft ; podium à la fin. Une victoire rapporte <b>beaucoup plus</b> de points qu\'une défaite n\'en fait perdre (à niveau égal : <b>+' + r.elo_win + '</b> / <b>−' + r.elo_loss + '</b>) : plus tu joues, plus tu montes.</p>' +
         '<div class="draft-create"><select id="draftInvite" aria-label="Inviter un joueur en particulier"><option value="">— n\'importe qui (partie ouverte) —</option></select><button class="btn-primary" id="draftCreateBtn" type="button">🃏 Créer une partie</button></div>' +
         '<h3 class="draft-sub">Parties qui attendent un adversaire</h3><div id="draftOpen"></div><p class="duel-hint" id="draftMine"></p>' +
         '<h3 class="draft-sub">🔴 En direct</h3><div id="draftLive"></div>';
