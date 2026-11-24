@@ -1156,6 +1156,9 @@
   .draft-foot{display:flex;justify-content:flex-end;}
   .draft-lu-head{display:flex;gap:12px;flex-wrap:wrap;} .draft-lu-head label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;}
   .draft-lu-rows{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;}
+  .draft-lu-group{margin:0 0 10px;} .draft-lu-group h5{margin:0 0 6px;font-size:13px;display:flex;align-items:center;gap:6px;}
+  .draft-lu-count{font-weight:600;font-size:12px;padding:1px 7px;border-radius:999px;background:var(--bg-sunk);} .draft-lu-count.ok{color:#16a34a;} .draft-lu-count.bad{color:#dc2626;}
+  .draft-lu-group.empty .draft-lu-rows::after{content:'Aucun joueur à ce poste';font-size:12px;opacity:.6;padding:6px 2px;}
   .draft-lu-row{display:flex;gap:8px;align-items:center;border:1px solid var(--border);border-radius:10px;padding:6px;} .draft-lu-row .card{zoom:.38;flex:none;}
   .draft-lu-ctl{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:13px;} .draft-lu-name{font-weight:700;} .draft-lu-name .muted{font-weight:400;font-size:12px;}
   .draft-cap{display:flex;gap:4px;align-items:center;font-size:12.5px;}
@@ -2697,7 +2700,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.23.2';
+  const SITE_VERSION = '2026.11.24.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -6063,20 +6066,33 @@
       '<p class="duel-hint">Sans validation à la fin du temps, la meilleure équipe est choisie pour toi (tactique au hasard). ' + (fan ? 'Ton fan : <b>' + escapeHtml(fan.player_name) + '</b> (bonus d\'équipe).' : 'Tu n\'as pas de fan.') + '</p>' +
       draftOppTeamHTML(s, opp) +
       '<div class="draft-lu-head"><label>Formation <select id="draftFormation">' + fOpts + '</select></label><label>Tactique (secrète) <select id="draftTactic">' + tOpts + '</select></label></div>' +
-      '<div class="draft-lu-rows" id="draftLuRows"></div><div class="tm-hint" id="draftLuCheck"></div>' +
+      '<div id="draftLuRows">' + SLOT_ORDER.map(k => '<div class="draft-lu-group" data-slot="' + k + '"><h5>' + SLOT_ICON[k] + ' ' + escapeHtml(duelConfig.slot_labels[k]) + ' <span class="draft-lu-count"></span></h5><div class="draft-lu-rows"></div></div>').join('') + '</div><div class="tm-hint" id="draftLuCheck"></div>' +
       '<div class="draft-lu-actions"><button class="btn-secondary" type="button" id="draftBest">⚡ Meilleure équipe</button><button class="btn-primary" type="button" id="draftSend">✅ Valider mon équipe</button></div></form></div>';
     byId('draftTactic').selectedIndex = Math.floor(Math.random() * 3);
     fillDraftOppTeam(s);
     const rows = byId('draftLuRows');
     players.forEach(c => {
-      const row = document.createElement('div'); row.className = 'draft-lu-row';
+      const row = document.createElement('div'); row.className = 'draft-lu-row'; row.dataset.note = draftNote(c) || 0;
       row.appendChild(makeMiniCard(c, { hideCount: true }));
       const ctl = document.createElement('div'); ctl.className = 'draft-lu-ctl';
       ctl.innerHTML = '<div class="draft-lu-name">' + escapeHtml(c.player_name) + ' · ⭐ ' + (draftNote(c) || '?') + '<div class="muted">' + draftKindLabel(c) + '</div></div>' +
         '<select data-card="' + c.id + '">' + SLOT_ORDER.map(k => '<option value="' + k + '">' + SLOT_ICON[k] + ' ' + escapeHtml(duelConfig.slot_labels[k]) + '</option>').join('') + '</select>' +
         '<label class="draft-cap"><input type="radio" name="draftCap" value="' + c.id + '"> Capitaine</label>';
-      row.appendChild(ctl); rows.appendChild(row);
+      row.appendChild(ctl); rows.querySelector('.draft-lu-rows').appendChild(row);
     });
+    // Range chaque joueur sous le poste choisi (meilleure note d'abord), avec « placés / demandés » par la formation
+    const regroup = () => {
+      const need = duelConfig.formations[byId('draftFormation').value] || {};
+      const all = [...rows.querySelectorAll('.draft-lu-row')].sort((a, b) => b.dataset.note - a.dataset.note);
+      SLOT_ORDER.forEach(k => {
+        const g = rows.querySelector('.draft-lu-group[data-slot="' + k + '"]'), box = g.querySelector('.draft-lu-rows');
+        const mine = all.filter(r => r.querySelector('select[data-card]').value === k);
+        mine.forEach(r => box.appendChild(r));
+        const n = mine.length, w = need[k] || 0, cnt = g.querySelector('.draft-lu-count');
+        cnt.textContent = n + ' / ' + w; cnt.className = 'draft-lu-count ' + (n === w ? 'ok' : 'bad');
+        g.classList.toggle('empty', !n);
+      });
+    };
     const apply = lu => { byId('draftFormation').value = lu.formation; lu.slots.forEach(x => { const sel = rows.querySelector('select[data-card="' + x.card_id + '"]'); if (sel) sel.value = x.slot_category; });
       const r = rows.querySelector('input[value="' + lu.captain_card_id + '"]'); if (r) r.checked = true; check(); };
     const read = () => ({ formation: byId('draftFormation').value, tactic: byId('draftTactic').value,
@@ -6088,7 +6104,7 @@
       const warn = lu.slots.filter(x => { const c = players.find(p => p.id === x.card_id), nat = duelConfig.poste_category[(c.poste || '').toUpperCase()]; return nat && nat !== x.slot_category; }).length;
       byId('draftLuCheck').innerHTML = okk ? '✅ ' + lu.formation + ' complète' + (warn ? ' · ⚠ ' + warn + ' joueur' + (warn > 1 ? 's' : '') + ' hors de son poste (−' + Math.round(duelConfig.out_of_position_malus * 100) + ' %)' : '') + (lu.captain_card_id ? '' : ' · choisis un capitaine (+' + Math.round(duelConfig.captain_bonus * 100) + ' %)')
         : '❌ La formation ' + lu.formation + ' demande ' + SLOT_ORDER.map(k => need[k] + ' ' + duelConfig.slot_labels[k].toLowerCase()).join(', ');
-      byId('draftSend').disabled = !okk; return okk;
+      byId('draftSend').disabled = !okk; regroup(); return okk;
     };
     rows.addEventListener('change', check); byId('draftFormation').addEventListener('change', check);
     byId('draftBest').addEventListener('click', () => apply(draftBestLineup(players)));
