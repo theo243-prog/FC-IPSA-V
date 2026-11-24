@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-draft-compo-adverse", "date": "2026-11-24", "category": "modes", "title": "👀 Draft : l'équipe adverse pendant la composition",
+     "text": "Pendant la minute de composition, tu vois maintenant les cartes de ton adversaire, y compris celles reçues d'office à la fin des enchères, pour adapter ta formation et ta tactique. Ses choix restent secrets jusqu'au coup d'envoi."},
     {"id": "2026-11-draft-elo", "date": "2026-11-23", "category": "règles", "title": "🎯 Draft : jouer fait monter",
      "text": "En draft, une victoire rapporte maintenant beaucoup plus de points qu'une défaite n'en fait perdre : à niveau égal, +32 pour une victoire et seulement −6 pour une défaite (8 au maximum). Plus tu joues, plus tu montes au classement de la semaine draft."},
     {"id": "2026-11-divisions", "date": "2026-11-22", "category": "règles", "title": "🏅 Les divisions de saison",
