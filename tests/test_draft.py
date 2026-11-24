@@ -107,6 +107,10 @@ lu = {"formation": "1-2-1", "tactic": "pressing", "captain_card_id": mine[0],
       "slots": [{"card_id": cid, "slot_category": cat} for cid, cat in zip(mine, ["GB", "DEF", "MC", "MC", "ATT"])]}
 s = c.post("/draft/%s/lineup" % rid, json=lu, headers=H["ana"]).json()
 ok(s["status"] == "lineup" and s["lineup"]["mine"]["formation"] == "1-2-1" and not s["lineup"]["submitted_opp"], "ana a validé ; bob n'a encore rien envoyé")
+sb = G("bob", rid)
+ok(sum(c["kind"] == "joueur" for c in sb["picks"]["opp"]) == 5 and all(c.get("player_name") not in (None, "?") for c in sb["picks"]["opp"]),
+   "pendant la composition, bob voit les 5 joueurs d'ana (pour s'adapter)")
+ok(sb["lineup"]["mine"] is None and "1-2-1" not in str(sb["picks"]) and set(sb["lineup"]) == {"mine", "submitted_opp"}, "… mais jamais la formation, la tactique ni le capitaine d'ana")
 before = {p: (U(p).pack_state.match_pack_tokens, U(p).pack_state.shop_pack_tokens) for p in ("ana", "bob")}
 tick(61); s = G("ana", rid); sb = G("bob", rid)
 m = s["match"]

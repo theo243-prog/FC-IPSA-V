@@ -1148,6 +1148,9 @@
   .draft-teams{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;}
   .draft-teams h4{margin:0 0 6px;font-size:14px;}
   .draft-picks{display:flex;flex-wrap:wrap;gap:4px;}
+  .draft-opp-team{margin:0 0 12px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--bg-sunk);}
+  .draft-opp-team h4{margin:0 0 6px;font-size:14px;} .draft-opp-team p{margin:6px 0 0;font-size:12.5px;}
+  .draft-auto .draft-price{color:var(--accent);}
   .draft-pick{display:flex;flex-direction:column;align-items:center;} .draft-pick .card{zoom:.42;} .draft-price{font-size:12px;font-weight:700;}
   .draft-log{font-size:13px;color:var(--text-muted);display:flex;flex-direction:column;gap:2px;}
   .draft-foot{display:flex;justify-content:flex-end;}
@@ -2694,7 +2697,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.23.1';
+  const SITE_VERSION = '2026.11.23.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -6024,6 +6027,22 @@
     return { formation: best.formation, slots: best.slots, captain_card_id: cap ? cap.id : null };
   }
 
+  // Pendant la composition : l'équipe de l'adversaire (ses cartes, pas ses choix), pour s'adapter. Les cartes données d'office à la fin
+  // des enchères (l'autre équipe était complète) sont signalées : sans ça, on ne les voyait pas passer.
+  function draftOppTeamHTML(s, opp){
+    const pl = s.picks.opp.filter(c => c.kind === 'joueur'), cats = {};
+    pl.forEach(c => { const k = duelConfig && duelConfig.poste_category ? duelConfig.poste_category[(c.poste || '').toUpperCase()] || 'X' : 'X'; cats[k] = (cats[k] || 0) + 1; });
+    const lab = k => k === 'X' ? 'polyvalent' : ((duelConfig.slot_labels || {})[k] || k).toLowerCase();
+    const sum = ['GB', 'DEF', 'MC', 'ATT', 'X'].filter(k => cats[k]).map(k => cats[k] + ' ' + lab(k) + (cats[k] > 1 && k !== 'X' ? 's' : '')).join(', ');
+    const fan = s.picks.opp.find(c => c.kind === 'fan');
+    return '<div class="draft-opp-team"><h4>👀 L\'équipe de ' + escapeHtml(opp) + '</h4><div class="draft-picks" id="draftOppTeam"></div>' +
+      '<p class="muted">' + (sum ? sum : 'aucun joueur') + (fan ? ' · fan : ' + escapeHtml(fan.player_name) : ' · pas de fan') + '. Sa formation, sa tactique et son capitaine restent secrets jusqu\'au coup d\'envoi.</p></div>';
+  }
+  function fillDraftOppTeam(s){
+    const root = byId('draftOppTeam'); if (!root) return;
+    const auto = new Set((s.log || []).filter(l => l.to === 'opp' && l.how === 'auto').map(l => l.card.id));
+    s.picks.opp.forEach(c => { const el = draftCardEl(c, auto.has(c.id) ? '🎁 d\'office' : c.price + ' 🪙'); if (auto.has(c.id)) el.classList.add('draft-auto'); el.title = c.player_name + ' · ' + draftKindLabel(c).replace(/<[^>]+>/g, ''); root.appendChild(el); });
+  }
   function renderDraftLineup(s, opp){
     const main = byId('draftMain');
     if (s.lineup.mine) {
@@ -6042,10 +6061,12 @@
     main.innerHTML = '<div id="draftRoomBox" class="draft-room"><form id="draftLineupForm" onsubmit="return false;">' +
       '<div class="draft-top"><span><b>🧩 Compose ton équipe</b></span><span class="draft-clock-wrap">⏱ <b class="draft-clock"></b></span><span id="draftOppReady"></span></div><div class="draft-bar"><div id="draftBar"></div></div>' +
       '<p class="duel-hint">Sans validation à la fin du temps, la meilleure équipe est choisie pour toi (tactique au hasard). ' + (fan ? 'Ton fan : <b>' + escapeHtml(fan.player_name) + '</b> (bonus d\'équipe).' : 'Tu n\'as pas de fan.') + '</p>' +
+      draftOppTeamHTML(s, opp) +
       '<div class="draft-lu-head"><label>Formation <select id="draftFormation">' + fOpts + '</select></label><label>Tactique (secrète) <select id="draftTactic">' + tOpts + '</select></label></div>' +
       '<div class="draft-lu-rows" id="draftLuRows"></div><div class="tm-hint" id="draftLuCheck"></div>' +
       '<div class="draft-lu-actions"><button class="btn-secondary" type="button" id="draftBest">⚡ Meilleure équipe</button><button class="btn-primary" type="button" id="draftSend">✅ Valider mon équipe</button></div></form></div>';
     byId('draftTactic').selectedIndex = Math.floor(Math.random() * 3);
+    fillDraftOppTeam(s);
     const rows = byId('draftLuRows');
     players.forEach(c => {
       const row = document.createElement('div'); row.className = 'draft-lu-row';
