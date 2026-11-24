@@ -8,6 +8,10 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-secretes-100", "date": "2026-11-24", "category": "règles", "title": "🔮 Les secrètes moins chères",
+     "text": "Débloquer une carte secrète coûte de nouveau 100 points de doublons au lieu de 200 (commune = 1 point, rare = 5 points)."},
+    {"id": "2026-11-rares-multiples", "date": "2026-11-24", "category": "cartes", "title": "💎 Plusieurs rares d'un coup",
+     "text": "Dans la fiche d'une carte commune, choisis combien de cartes rares tu veux : avec 20 doublons, tu fais 4 rares en un seul échange."},
     {"id": "2026-11-draft-compo-adverse", "date": "2026-11-24", "category": "modes", "title": "👀 Draft : l'équipe adverse pendant la composition",
      "text": "Pendant la minute de composition, tu vois maintenant les cartes de ton adversaire, y compris celles reçues d'office à la fin des enchères, pour adapter ta formation et ta tactique. Ses choix restent secrets jusqu'au coup d'envoi."},
     {"id": "2026-11-draft-elo", "date": "2026-11-23", "category": "règles", "title": "🎯 Draft : jouer fait monter",

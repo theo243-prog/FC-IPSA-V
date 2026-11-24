@@ -142,7 +142,7 @@ ok(qty("gus", LC) == 1 and lvl("gus", LC) == 2, "« vendre mes doublons » : il 
 give("gus", LC, 3); give("fred", card("Nathan", "commune"), 3)
 sid = c.post("/swaps", json={"to": "fred", "give_card_id": LC.id, "want_card_id": card("Nathan", "commune").id}, headers=H["gus"]).json()["id"]
 ok(c.post("/swaps/%s/accept" % sid, headers=H["fred"]).status_code == 200 and qty("gus", LC) == 2 and lvl("gus", LC) == 2 and lvl("fred", LC) == 0, "échange d'un doublon : le niveau reste chez gus, fred reçoit une copie normale")
-sec = card("Lucas", "secrete"); give("gus", LC, 201); give("gus", sec, 0)
+sec = card("Lucas", "secrete"); give("gus", LC, GL.SECRET_FUSION_COST + 1); give("gus", sec, 0)                  # (exactement le coût de la fusion en doublons)
 ok(c.post("/collection/unlock-secret", json={"card_id": sec.id}, headers=H["gus"]).status_code == 200 and qty("gus", LC) == 1 and lvl("gus", LC) == 2, "fusion de la secrète avec ses doublons : il reste 1 exemplaire au niveau 2")
 
 print("9) ADMIN ET NETTOYAGE")
