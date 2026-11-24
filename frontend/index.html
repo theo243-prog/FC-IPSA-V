@@ -1156,6 +1156,7 @@
   .draft-foot{display:flex;justify-content:flex-end;}
   .draft-lu-head{display:flex;gap:12px;flex-wrap:wrap;} .draft-lu-head label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;}
   .draft-lu-rows{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;}
+  .up-rare-ctl{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;} .up-rare-ctl label{font-size:13px;display:flex;gap:6px;align-items:center;}
   .draft-lu-group{margin:0 0 10px;} .draft-lu-group h5{margin:0 0 6px;font-size:13px;display:flex;align-items:center;gap:6px;}
   .draft-lu-count{font-weight:600;font-size:12px;padding:1px 7px;border-radius:999px;background:var(--bg-sunk);} .draft-lu-count.ok{color:#16a34a;} .draft-lu-count.bad{color:#dc2626;}
   .draft-lu-group.empty .draft-lu-rows::after{content:'Aucun joueur à ce poste';font-size:12px;opacity:.6;padding:6px 2px;}
@@ -2323,16 +2324,21 @@
     if (!body.isConnected || !i.eligible) return;
     const box = document.createElement('div'); box.className = 'lvl-box up-rare-box';
     box.innerHTML = '<h4>💎 Échanger contre la rare</h4><div><b>' + i.needed + ' doublons</b> de cette commune = <b>1 carte rare</b> de ' + escapeHtml(card.player_name) + (i.rare_owned ? ' (tu en as déjà ' + i.rare_owned + ')' : '') + '. Tu as <b>' + i.dupes + ' doublon' + (i.dupes > 1 ? 's' : '') + '</b>.</div>' +
-      '<div style="margin-top:8px;"><button class="btn-primary" type="button" id="upRareGo"' + (i.can ? '' : ' disabled') + '>💎 Échanger ' + i.needed + ' doublons</button></div>' +
+      '<div class="up-rare-ctl">' + (i.max > 1 ? '<label>Nombre de rares <select id="upRareN">' + Array.from({ length: i.max }, (_, k) => '<option value="' + (k + 1) + '"' + (k + 1 === i.max ? ' selected' : '') + '>' + (k + 1) + ' (' + (k + 1) * i.needed + ' doublons)</option>').join('') + '</select></label>' : '') +
+      '<button class="btn-primary" type="button" id="upRareGo"' + (i.can ? '' : ' disabled') + '></button></div>' +
       (i.reason ? '<p class="lvl-why">' + escapeHtml(i.reason) + '</p>' : '') + '<p class="lvl-why">Les doublons utilisés disparaissent ; ta carte commune (et son niveau) reste.</p>';
     sheetAppend(body, box);
-    const go = box.querySelector('#upRareGo');
+    const go = box.querySelector('#upRareGo'), sel = box.querySelector('#upRareN');
+    const nWanted = () => sel ? +sel.value : 1, rares = n => n + ' carte' + (n > 1 ? 's' : '') + ' rare' + (n > 1 ? 's' : '');
+    const label = () => { const n = nWanted(); go.textContent = '💎 Échanger ' + n * i.needed + ' doublons → ' + rares(n); };
+    label(); if (sel) sel.addEventListener('change', label);
     if (go && i.can) go.addEventListener('click', async () => {
-      if (!(await confirmDialog('Échanger contre la rare de ' + escapeHtml(card.player_name) + ' ?', '<p style="margin:0;"><b>' + i.needed + ' doublons</b> de la commune (il t\'en restera ' + (i.dupes - i.needed) + ') contre <b>1 carte rare</b>. Les doublons utilisés ne pourront plus être vendus, servir aux niveaux ni aux cartes secrètes.</p>', 'Échanger'))) return;
+      const n = nWanted(), used = n * i.needed;
+      if (!(await confirmDialog('Échanger contre la rare de ' + escapeHtml(card.player_name) + ' ?', '<p style="margin:0;"><b>' + used + ' doublons</b> de la commune (il t\'en restera ' + (i.dupes - used) + ') contre <b>' + rares(n) + '</b>. Les doublons utilisés ne pourront plus être vendus, servir aux niveaux ni aux cartes secrètes.</p>', 'Échanger'))) return;
       go.disabled = true;
       try {
-        const r = await api('/cards/' + encodeURIComponent(card.id) + '/upgrade-rare', { method: 'POST' });
-        toast('💎 Tu reçois la carte rare de ' + r.player_name + ' !');
+        const r = await api('/cards/' + encodeURIComponent(card.id) + '/upgrade-rare', { method: 'POST', body: JSON.stringify({ count: n }) });
+        toast('💎 Tu reçois ' + (r.count > 1 ? r.count + ' cartes rares' : 'la carte rare') + ' de ' + r.player_name + ' !');
         await refreshMe(true); await loadCollection();
         const fresh = myCollection.find(c => c.id === r.rare_card_id); fresh ? openPlayerDetail(r.player_name, 'rare', fresh) : openPlayerDetail(card.player_name, card.tier, myCollection.find(c => c.id === card.id) || card);
       } catch(e) { toast(e.message); go.disabled = false; }
@@ -2700,7 +2706,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.24.1';
+  const SITE_VERSION = '2026.11.24.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }

@@ -52,4 +52,12 @@ ok(CL.level_of(db, U("ana").id, com.id) == 2, "la commune garde son niveau")
 r = c.post(url, headers=H["ana"]); ok(r.status_code == 200 and qty("ana", com.id) == 2 and qty("ana", rare.id) == 2, "deuxième échange : 7 → 2, la rare passe à 2 exemplaires")
 ok(c.post(url, headers=H["ana"]).status_code == 400 and qty("ana", com.id) == 2, "plus assez de doublons : refusé, on garde toujours la commune")
 
+print("3) PLUSIEURS RARES D'UN COUP")
+setq("ana", com.id, 21); b = qty("ana", rare.id)
+i = c.get(url, headers=H["ana"]).json(); ok(i["dupes"] == 20 and i["max"] == 4, "21 exemplaires = 20 doublons : jusqu'à 4 rares d'un coup")
+ok(c.post(url, json={"count": 5}, headers=H["ana"]).status_code == 400 and qty("ana", com.id) == 21, "5 rares (25 doublons) : refusé, rien n'est retiré")
+ok(c.post(url, json={"count": 0}, headers=H["ana"]).status_code == 400, "0 rare : refusé")
+r = c.post(url, json={"count": 4}, headers=H["ana"])
+ok(r.status_code == 200 and r.json()["count"] == 4 and r.json()["dupes_used"] == 20 and qty("ana", com.id) == 1 and qty("ana", rare.id) == b + 4, "4 rares d'un coup : 20 doublons consommés, la commune reste")
+
 print(); print("BILAN (doublons vers la rare) :", "TOUT EST VERT" if not FAILS else f"{len(FAILS)} ÉCHEC(S) : {FAILS}")
