@@ -2266,7 +2266,7 @@
     if (!r || !box.isConnected) return;
     const se = r.series;
     const noir = se.title === 'Édition Noire';
-    box.innerHTML = (noir ? '<p class="series-count"><b>' + (se.emitted != null ? se.emitted : se.attributed) + ' / ' + se.total + '</b> émises' + (se.in_club_auction ? ' (dont ' + se.in_club_auction + ' aux enchères du club)' : '') + ' · le n° 1 est gardé par le club</p>'
+    box.innerHTML = (noir ? '<p class="series-count"><b>' + (se.emitted != null ? se.emitted : se.attributed) + ' / ' + se.total + '</b> émises' + (se.in_club_auction ? ' (dont ' + se.in_club_auction + ' aux enchères du club)' : '') + ' · chaque numéro, le n° 1 compris, peut sortir aux enchères du club</p>'
       : '<p class="series-count"><b>' + se.attributed + ' / ' + se.total + '</b> attribués · ' + se.reserve + ' dans la réserve du club</p>') +
       '<button class="btn-small ghost" type="button">Voir les détenteurs</button><ol class="series-holders" hidden>' +
       se.copies.map(c => '<li' + (c.number === r.number ? ' class="me"' : '') + '><span class="num-badge">N° ' + c.number + '/' + se.total + '</span> ' + (c.status === 'attribue' ? pseudoLink(c.holder) + (c.where && c.where !== 'collection' ? ' <small>(' + escapeHtml(c.where) + ')</small>' : '') : '<i>' + escapeHtml(c.where || 'réserve du club') + '</i>') + '</li>').join('') + '</ol>';
@@ -2707,7 +2707,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.24.3';
+  const SITE_VERSION = '2026.11.25.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
