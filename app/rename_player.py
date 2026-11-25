@@ -84,6 +84,37 @@ def _rewrite(rows, attrs, old, new, list_items=False) -> int:
     return changed
 
 
+def _untouched(db: Session, s) -> bool:
+    """Série dont aucun exemplaire n'est sorti : tous dans la réserve du club, aucun possédé, en vente, aux enchères ni déjà vendu."""
+    from . import numbered, club_auctions
+    from .auctions import Auction
+    from .models import OwnedCard, Listing
+    copies = db.query(numbered.NumberedCopy).filter_by(series_id=s.id).all()
+    ids = [c.card_id for c in copies]
+    if any(c.status != "reserve" for c in copies):
+        return False
+    if not ids:
+        return True
+    return not (db.query(OwnedCard).filter(OwnedCard.card_id.in_(ids), OwnedCard.quantity > 0).count()
+                or db.query(Listing).filter(Listing.card_id.in_(ids)).count()
+                or db.query(Auction).filter(Auction.card_id.in_(ids)).count()
+                or db.query(club_auctions.ClubAuctionLot).filter(club_auctions.ClubAuctionLot.series_id == s.id).count())
+
+
+def _drop_series(db: Session, s) -> None:
+    """Supprime une série vide (exemplaires, leurs fiches et cartes)."""
+    from . import numbered
+    from .main import purge_card_rows
+    ids = [c.card_id for c in db.query(numbered.NumberedCopy).filter_by(series_id=s.id).all()]
+    purge_card_rows(db, ids)
+    db.flush()
+    db.query(numbered.NumberedCopy).filter_by(series_id=s.id).delete(synchronize_session=False)
+    for pl in db.query(Player).join(Card, Card.player_id == Player.id).filter(Card.id.in_(ids or [""])).all():
+        db.delete(pl)                                          # (supprime aussi sa carte)
+    db.delete(s)
+    db.flush()
+
+
 def rename(db: Session, old_name: str, new_name: str) -> dict:
     """Renomme la fiche `old_name` en `new_name` partout (sans commit). Lève HTTPException en cas de refus."""
     old_name, new = " ".join((old_name or "").split()), " ".join((new_name or "").split())
@@ -117,6 +148,28 @@ def rename(db: Session, old_name: str, new_name: str) -> dict:
     # 2) séries numérotées dont il est le sujet (Édition Noire…) : sujet + fiche de chaque exemplaire
     from . import numbered
     series = db.query(numbered.NumberedSeries).filter_by(subject=old).all()
+    # (série en double : une série du même titre existe déjà au NOUVEAU nom, ex. « Édition Noire — Matteo » créée à la main pour
+    # « Mattéo ». Celle des deux dont aucun exemplaire n'est sorti est supprimée, de préférence celle de l'ancien nom ; si les deux
+    # en ont un chez un joueur, refus.)
+    dropped = []
+    for s in list(series):
+        twin = next((t for t in db.query(numbered.NumberedSeries).filter_by(title=s.title).all()
+                     if t.id != s.id and (t.subject or "").casefold() == new.casefold()), None)
+        if twin is None:
+            continue
+        if _untouched(db, s):
+            drop = s
+        elif _untouched(db, twin):
+            drop = twin
+        else:
+            raise HTTPException(status_code=400, detail="Renommage impossible : « %s » et « %s » ont toutes les deux des exemplaires sortis"
+                                % (numbered.full_name(s), numbered.full_name(twin)))
+        dropped.append(numbered.full_name(drop))
+        _drop_series(db, drop)
+        if drop is s:
+            series.remove(s)
+    if dropped:
+        taken = {n.casefold(): pid for pid, n in db.query(Player.id, Player.name).all()}
     copies = []
     for s in series:
         for c in db.query(numbered.NumberedCopy).filter_by(series_id=s.id).all():
@@ -139,6 +192,7 @@ def rename(db: Session, old_name: str, new_name: str) -> dict:
     for s in series:
         s.subject = new
     report["gold_cards"], report["numbered_series"], report["numbered_copies"] = len(moments), len(series), len(copies)
+    report["duplicate_series_removed"] = dropped
     report["match_moments"] = db.query(MatchMoment).filter_by(real_player_name=old).update({"real_player_name": new}, synchronize_session=False)
     report["card_usage"] = db.query(CardUsage).filter_by(player_name=old).update({"player_name": new}, synchronize_session=False)
 
