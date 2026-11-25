@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-prono-cotes", "date": "2026-11-25", "category": "économie", "title": "🎯 Pronostics : gains fixes",
+     "text": "Fini la cagnotte partagée : si tu trouves le score exact, tu gagnes 5 fois ta mise ; si tu trouves le bon vainqueur (ou le bon nul), tu gagnes 2 fois ta mise. Un mauvais pronostic perd sa mise. Un petit pari sur le score exact rapporte enfin plus qu'une grosse mise sur le vainqueur !"},
     {"id": "2026-11-secretes-100", "date": "2026-11-24", "category": "règles", "title": "🔮 Les secrètes moins chères",
      "text": "Débloquer une carte secrète coûte de nouveau 100 points de doublons au lieu de 200 (commune = 1 point, rare = 5 points)."},
     {"id": "2026-11-rares-multiples", "date": "2026-11-24", "category": "cartes", "title": "💎 Plusieurs rares d'un coup",
