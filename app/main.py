@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db, SessionLocal
-from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon, communaute, secret_achievements, dupe_upgrade, fatigue_gel, rename_player, edition_packs, draft_week, collection_bonus, presence, credit_log, divisions
+from . import game_logic, duel_engine, schemas, schemas_social, weekly, push, schema_upgrades, missions, profiles, challenges, offers, seasons, version, admin_page, welcome, sessions, collection_tools, admin_tools, avatars, cosmetics, chat, swaps, prono, tournament, battlepass, backup, events, auctions, referral, minigame, club, first_steps, shop_cosmetics, motm, card_levels, fatigue, inbox, changelog, ownership, numbered, club_auctions, tactic_trends, player_packs, shop_sounds, draft, duel_stats, features, pantheon, communaute, secret_achievements, dupe_upgrade, fatigue_gel, rename_player, edition_packs, draft_week, collection_bonus, presence, credit_log, divisions, photo_renames
 from sqlalchemy import or_, func
 from .models import (User, Card, Player, OwnedCard, PackState, Listing, Tier, Match, MatchGoal, MatchAssist,
                      Team, TeamSlot, Duel, MatchProposal, UpcomingMatch, MatchMoment, JobRun, PushSubscription, NotifPref, NotifState, PushOutbox, AppSetting, CardUsage)
@@ -2278,6 +2278,15 @@ async def _startup():
         game_logic.lower_legendary_notes(db)              # légendaires de 95 à 90 : -5 sur leur propre note, une seule fois
     except Exception:
         db.rollback()
+    finally:
+        db.close()
+    db = SessionLocal()
+    try:
+        n = photo_renames.run_once(db)                    # photos renommées (25/11/2026) : les cartes suivent leurs nouveaux noms, une seule fois
+        if n:
+            print("Photos renommées : %d adresses mises à jour" % n)
+    except Exception as exc:
+        db.rollback(); print("Photos renommées : erreur ignorée au démarrage :", exc)
     finally:
         db.close()
     tactic_trends.run_backfill(SessionLocal)              # tendances des tactiques : reprise des anciens matchs (une seule fois)
