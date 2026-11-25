@@ -18,7 +18,8 @@ PHOTOS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))
 on_disk = {unicodedata.normalize("NFC", f) for f in os.listdir(PHOTOS)}
 
 print("1) LES FICHIERS")
-ok(all(unicodedata.normalize("NFC", v) in on_disk for v in PR.RENAMES.values()), "chaque nouveau nom existe dans frontend/photos (%d fichiers)" % len(PR.RENAMES))
+DELETED_LATER = {"Lucas.webp"}                     # supprimé ensuite par Théo sur GitHub (25/11/2026, Lucas.png reste)
+ok(all(unicodedata.normalize("NFC", v) in on_disk for v in PR.RENAMES.values() if v not in DELETED_LATER), "chaque nouveau nom existe dans frontend/photos (%d fichiers, sauf ceux supprimés ensuite)" % len(PR.RENAMES))
 ok(not [k for k in PR.RENAMES if unicodedata.normalize("NFC", k) in on_disk and k.lower() != PR.RENAMES[k].lower()], "aucun ancien nom n'est resté dans le dossier")
 ok(len({v.lower() for v in PR.RENAMES.values()}) == len(PR.RENAMES), "deux anciennes photos ne prennent jamais le même nom")
 ok("tim-orteille.png" in on_disk and "brice-but.png" in on_disk and "leo-secrete.webp" in on_disk, "les autres photos (gold, secrètes) gardent leur nom")
