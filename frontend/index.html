@@ -1984,7 +1984,7 @@
     }
     const bgPhoto = usesBgPhoto(card) ? '<img class="card-bgphoto' + (card.photo_size === 'maxi' ? ' photo-maxi' : '') + '" src="' + escapeHtml(card.player_photo_url) + '" alt=""><span class="card-scrim" aria-hidden="true"></span>' : '';
     if (kind === 'mascotte') midHTML = mascotMedalHTML(card.tier);
-    else if (kind === 'trophee') midHTML = trophyMedalHTML(card);
+    else if (kind === 'trophee') midHTML = bgPhoto ? '' : trophyMedalHTML(card);          // trophée avec une image (ex. carte du Pass) : l'image seule, sans la médaille
     else if (kind === 'ecusson') midHTML = crestImgHTML(card);
     else if (bgPhoto) midHTML = '';
     else if (kind === 'equipement' || kind === 'stade' || kind === 'moment' || kind === 'numerotee' || kind === 'communaute') midHTML = itemMedalHTML(card);
@@ -2707,7 +2707,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.25.4';
+  const SITE_VERSION = '2026.11.25.5';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
