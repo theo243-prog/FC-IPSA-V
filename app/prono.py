@@ -1,13 +1,14 @@
 """
 Pronostics sur les vrais matchs du club.
 
-Avant un match réel (ceux de l'onglet Actualité), chaque joueur peut miser des crédits sur le score. Les mises forment une CAGNOTTE ;
-quand l'administrateur enregistre le résultat, elle est partagée entre les bons pronostics :
-  - SCORE EXACT : 70 % de la cagnotte, partagée entre les scores exacts au prorata des mises ;
-  - BON RÉSULTAT (victoire / nul / défaite) sans le bon score : les 30 % restants, partagés de la même façon ;
-  - s'il n'y a aucun score exact, les bons résultats se partagent toute la cagnotte, et inversement ;
-  - si personne n'a trouvé le résultat, tout le monde est remboursé.
-L'administrateur peut ajouter un BONUS du club à la cagnotte. Les pronostics ferment au coup d'envoi (à midi si l'heure n'est pas indiquée).
+Avant un match réel (ceux de l'onglet Actualité), chaque joueur peut miser des crédits sur le score. Depuis le 25/11/2026 (branche
+prono-cotes, choisi par Théo : avec l'ancienne cagnotte, 1 crédit sur le score exact rapportait moins que 50 sur le bon vainqueur),
+gains FIXES, sans cagnotte, quand l'administrateur enregistre le résultat :
+  - SCORE EXACT : la mise x EXACT_MULT (5) ;
+  - BON RÉSULTAT (victoire / nul / défaite) sans le bon score : la mise x GOOD_MULT (2) ;
+  - mauvais pronostic : la mise est perdue (plus de remboursement quand personne n'a trouvé).
+L'administrateur peut ajouter un BONUS du club : il est partagé EN PLUS entre les bons pronostics (scores exacts et bons résultats),
+au prorata des mises ; sans bon pronostic, il n'est pas versé. Les pronostics ferment au coup d'envoi (à midi si l'heure n'est pas indiquée).
 Un match supprimé sans résultat rembourse tout le monde.
 """
 import os
@@ -27,7 +28,8 @@ from .security import get_current_user
 from . import profiles, push
 
 router = APIRouter()
-MAX_STAKE, MAX_SCORE, EXACT_SHARE = 50, 30, 0.7
+MAX_STAKE, MAX_SCORE = 50, 30
+EXACT_MULT, GOOD_MULT = 5, 2                   # gain (mise comprise) : score exact x5, bon résultat x2
 
 
 class PronoBet(Base):
@@ -104,7 +106,7 @@ def list_prono(user: User = Depends(get_current_user), db: Session = Depends(get
         mine = db.query(PronoBet).filter_by(upcoming_id=m.id, user_id=user.id, status="open").first()
         out.append({"id": m.id, "date": m.date.date().isoformat(), "time": m.date.strftime("%H:%M") if (m.date.hour or m.date.minute) else None, "opponent": m.opponent,
                     "open": now < closes_at(m), "closes_at": closes_at(m).isoformat(), **_pool_info(db, m.id), "mine": _bet_out(mine) if mine else None})
-    return {"matches": out, "max_stake": MAX_STAKE}
+    return {"matches": out, "max_stake": MAX_STAKE, "exact_mult": EXACT_MULT, "good_mult": GOOD_MULT}
 
 
 @router.post("/prono")
@@ -187,34 +189,26 @@ def settle(db: Session, upcoming_id: str, score_us: int, score_them: int):
     bets = db.query(PronoBet).filter_by(upcoming_id=upcoming_id, status="open").all()
     if not bets:
         return []
-    pool = sum(b.stake for b in bets) + _bonus(db, upcoming_id)
     res = _outcome(score_us, score_them); result = "%d-%d" % (score_us, score_them)
     exact = [b for b in bets if b.score_us == score_us and b.score_them == score_them]
     good = [b for b in bets if b not in exact and _outcome(b.score_us, b.score_them) == res]
-    shares = []
-    if exact and good:
-        e = int(pool * EXACT_SHARE); shares = [(exact, e), (good, pool - e)]
-    elif exact:
-        shares = [(exact, pool)]
-    elif good:
-        shares = [(good, pool)]
+    winners = exact + good
+    amounts = {b.id: b.stake * (EXACT_MULT if b in exact else GOOD_MULT) for b in winners}
+    bonus = _bonus(db, upcoming_id)
+    if bonus and winners:                                    # bonus du club : partagé en plus entre les bons pronostics, selon les mises
+        total = sum(b.stake for b in winners); extra = [bonus * b.stake // total for b in winners]
+        extra[max(range(len(winners)), key=lambda k: (winners[k].stake, -k))] += bonus - sum(extra)     # le reste va à la plus grosse mise
+        for b, x in zip(winners, extra):
+            amounts[b.id] += x
     users = {u.id: u for u in db.query(User).filter(User.id.in_({b.user_id for b in bets})).all()}
     events = []
-    if not shares:                                           # personne n'a trouvé le résultat : tout le monde est remboursé
-        for b in bets:
-            if b.user_id in users: credit_log.add(users[b.user_id], b.stake, "Pronostic remboursé")
-            b.status, b.payout, b.result = "refunded", b.stake, result
-        return []
-    paid = set()
-    for group, share in shares:
-        total = sum(b.stake for b in group); amounts = [share * b.stake // total for b in group]
-        amounts[max(range(len(group)), key=lambda i: (group[i].stake, -i))] += share - sum(amounts)     # le reste va à la plus grosse mise
-        for b, amount in zip(group, amounts):
-            if b.user_id in users: credit_log.add(users[b.user_id], amount, "Gain de pronostic")
-            b.status, b.payout, b.result = "won", amount, result; b.exact = 1 if group is exact else 0; paid.add(b.id)
     for b in bets:
-        if b.id not in paid:
-            b.status, b.payout, b.result = "lost", 0, result
+        b.result = result
+        if b.id in amounts:
+            if b.user_id in users: credit_log.add(users[b.user_id], amounts[b.id], "Gain de pronostic", "score exact" if b in exact else "bon résultat")
+            b.status, b.payout, b.exact = "won", amounts[b.id], 1 if b in exact else 0
+        else:
+            b.status, b.payout = "lost", 0
     for b in bets:
         u = users.get(b.user_id)
         if u is None: continue

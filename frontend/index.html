@@ -1479,7 +1479,7 @@
         </div>
         <div class="panel-box">
           <h2>🎯 Pronostics</h2>
-          <p class="duel-hint" style="margin-bottom:8px;">Mise des crédits sur le score des prochains matchs du club : les mises forment une cagnotte, partagée entre les bons pronostics quand le résultat est enregistré. Appuie sur « Pronostiquer » dans « Prochains matchs ».</p>
+          <p class="duel-hint" style="margin-bottom:8px;">Mise des crédits sur le score des prochains matchs du club : score exact = ta mise ×5, bon vainqueur (ou bon nul) = ta mise ×2. Appuie sur « Pronostiquer » dans « Prochains matchs ».</p>
           <div id="pronoEl"></div>
         </div>
         <div class="panel-box">
@@ -2707,7 +2707,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.25.3';
+  const SITE_VERSION = '2026.11.25.4';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3058,11 +3058,11 @@
   document.getElementById('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendChat(); } });
 
   // ---------- Pronostics sur les vrais matchs ----------
-  let pronoMap = {}, pronoMax = 50;
+  let pronoMap = {}, pronoMax = 50, pronoExact = 5, pronoGood = 2;
   function pronoLine(u){
     const p = pronoMap[u.id]; if (!p) return '';
-    const pot = '<span class="prono-pot">🎯 Cagnotte ' + p.pool + ' crédit' + (p.pool > 1 ? 's' : '') + (p.bets ? ' · ' + p.bets + ' pronostic' + (p.bets > 1 ? 's' : '') : '') + '</span>';
-    const mine = p.mine ? '<span class="prono-mine">Ton pronostic : <b>' + p.mine.score_us + '–' + p.mine.score_them + '</b> (' + p.mine.stake + ' cr.)</span>' : '';
+    const pot = '<span class="prono-pot">🎯 Score exact ×' + pronoExact + ' · bon vainqueur ×' + pronoGood + (p.bets ? ' · ' + p.bets + ' pronostic' + (p.bets > 1 ? 's' : '') : '') + (p.bonus ? ' · 🎁 ' + p.bonus + ' cr. offerts' : '') + '</span>';
+    const mine = p.mine ? '<span class="prono-mine">Ton pronostic : <b>' + p.mine.score_us + '–' + p.mine.score_them + '</b> (' + p.mine.stake + ' cr., jusqu\'à ' + (p.mine.stake * pronoExact) + ')</span>' : '';
     if (!p.open) return '<div class="prono-line">' + pot + mine + '<span class="prono-closed">Pronostics fermés</span></div>';
     return '<div class="prono-line">' + pot + mine + '<button type="button" class="btn-small prono-btn" data-id="' + escapeHtml(u.id) + '">' + (p.mine ? 'Modifier' : '🎯 Pronostiquer') + '</button>' + (p.mine ? '<button type="button" class="btn-small ghost prono-del" data-id="' + escapeHtml(u.id) + '">Retirer</button>' : '') + '</div>';
   }
@@ -3072,7 +3072,7 @@
     const html = '<p style="margin:0 0 4px;"><b>FC IPSA V — ' + escapeHtml(p.opponent) + '</b></p><p style="margin:0 0 6px;font-size:13px;color:var(--text-muted);">Les pronostics ferment le ' + escapeHtml(closes) + '.</p>' +
       '<div class="prono-score"><label>FC IPSA V<input type="number" id="pnUs" min="0" max="30" inputmode="numeric" value="' + (my ? my.score_us : 1) + '"></label><b style="font-size:22px;">–</b><label>' + escapeHtml(p.opponent) + '<input type="number" id="pnThem" min="0" max="30" inputmode="numeric" value="' + (my ? my.score_them : 0) + '"></label></div>' +
       '<label class="prono-stake">Ta mise (1 à ' + pronoMax + ' crédits)<input type="number" id="pnStake" min="1" max="' + pronoMax + '" inputmode="numeric" value="' + (my ? my.stake : 5) + '"></label>' +
-      '<p style="font-size:12.5px;line-height:1.45;color:var(--text-muted);margin:12px 0 0;">Cagnotte actuelle : <b>' + p.pool + ' crédit' + (p.pool > 1 ? 's' : '') + '</b>' + (p.bonus ? ' (dont ' + p.bonus + ' offerts par le club)' : '') + '. Quand le résultat est enregistré, elle est partagée : <b>score exact : 70 %</b> (entre les scores exacts, selon les mises), <b>bon résultat (victoire, nul ou défaite) : 30 %</b>. Sans score exact, les bons résultats se partagent tout. Si personne n\'a le bon résultat, tout le monde est remboursé. Ta mise est retirée de tes crédits tout de suite ; tu peux la modifier ou la retirer jusqu\'à la fermeture.</p>';
+      '<p style="font-size:12.5px;line-height:1.45;color:var(--text-muted);margin:12px 0 0;">Quand le résultat est enregistré : <b>score exact : ta mise ×' + pronoExact + '</b>, <b>bon vainqueur (ou bon nul) : ta mise ×' + pronoGood + '</b>, sinon ta mise est perdue (ex. 10 crédits misés : 50 avec le score exact, 20 avec le bon vainqueur).' + (p.bonus ? ' En plus, <b>' + p.bonus + ' crédits offerts par le club</b> sont partagés entre les bons pronostics, selon les mises.' : '') + ' Ta mise est retirée de tes crédits tout de suite ; tu peux la modifier ou la retirer jusqu\'à la fermeture.</p>';
     if (!(await confirmDialog('Pronostic', html, my ? 'Modifier mon pronostic' : 'Parier'))) return;
     const body = { upcoming_id: id, score_us: parseInt(byId('pnUs').value, 10), score_them: parseInt(byId('pnThem').value, 10), stake: parseInt(byId('pnStake').value, 10) };
     if ([body.score_us, body.score_them, body.stake].some(n => Number.isNaN(n))) { toast('Remplis les deux scores et ta mise.'); return; }
@@ -4912,7 +4912,7 @@
   async function loadUpcoming(){
     try {
       const [rows, pr] = await Promise.all([fetch(API_BASE + '/matches/upcoming').then(r => r.json()), api('/prono').catch(() => ({ matches: [], max_stake: 50 }))]);
-      pronoMap = Object.fromEntries(pr.matches.map(m => [m.id, m])); pronoMax = pr.max_stake || 50;
+      pronoMap = Object.fromEntries(pr.matches.map(m => [m.id, m])); pronoMax = pr.max_stake || 50; pronoExact = pr.exact_mult || 5; pronoGood = pr.good_mult || 2;
       const root = byId('upcomingEl');
       if (!rows.length){ root.innerHTML = '<div class="empty-state">Aucun match prévu pour l\'instant.</div>'; return; }
       const today = new Date(); today.setHours(0, 0, 0, 0);
