@@ -1484,12 +1484,12 @@ def admin_set_player_notes(payload: schemas.AdminSetPlayerNotesRequest, db: Sess
 
 def create_moment_card(db: Session, player_name: str, action: str, day: datetime) -> tuple:
     """Un moment mémorable donne naissance à une carte GOLD : une 'fiche' de poste MOMENT (« Petit pont — Mathis ») avec sa carte.
-    Même action pour le même joueur : on distingue par la date (« (12/10) »), puis par des « + ». Renvoie (fiche, joueur réel, action)."""
+    Joueur ou fan (pas de mascotte). Même action pour le même joueur : on distingue par la date (« (12/10) »), puis par des « + ». Renvoie (fiche, joueur réel, action)."""
     actor = db.query(Player).filter_by(name=player_name).first()
     if not actor:
         raise HTTPException(status_code=404, detail=f"Joueur introuvable : {player_name}")
-    if game_logic.card_kind(actor) != "joueur":
-        raise HTTPException(status_code=400, detail=player_name + " n'est pas un joueur de l'effectif")
+    if game_logic.card_kind(actor) not in ("joueur", "fan"):            # joueurs et fans (depuis le 26/11/2026) ; jamais mascotte, équipement…
+        raise HTTPException(status_code=400, detail=player_name + " n'est pas un joueur ni un fan")
     action = " ".join((action or "").split())
     if not action:
         raise HTTPException(status_code=400, detail="Un moment mémorable doit avoir une action (ex. « Petit pont »)")
