@@ -1,9 +1,11 @@
 """
 Échange de cartes entre joueurs : une carte contre une carte, sans crédits.
 
-Règle d'or : on ne peut échanger que des DOUBLONS (au moins 2 exemplaires), de chaque côté, pour que personne ne perde une carte de sa
-collection. Une proposition reste ouverte 7 jours ; les cartes sont vérifiées à nouveau au moment où elle est acceptée.
-Les trophées de saison ne s'échangent jamais.
+Depuis le 26/11/2026 (branche echange-libre), TOUTE carte s'échange, dernier exemplaire compris, des deux côtés (avant : seulement des
+doublons). Le niveau suit la carte comme au marché (card_levels.copy_leaving / copy_arriving) : un doublon part en copie normale, un
+dernier exemplaire part avec son niveau, celui qui la reçoit garde son meilleur niveau. Une proposition reste ouverte 7 jours ; les
+cartes sont vérifiées à nouveau au moment où elle est acceptée. Les trophées de saison et les exemplaires numérotés ne s'échangent
+jamais ; les cartes communauté en essai ne sont montrées qu'à ceux qui y ont accès.
 """
 from datetime import datetime, timedelta
 from typing import List
@@ -86,20 +88,36 @@ def player_doubles(pseudo: str, user: User = Depends(get_current_user), db: Sess
     return [{**_cout(o.card), "quantity": o.quantity} for o in rows if _tradeable(o.card)]
 
 
+def _hidden_tiers(db: Session, user: User) -> set:
+    hidden = {Tier.saison, Tier.numerotee}
+    if not game_logic.community_allowed(db, user):
+        hidden.add(Tier.communaute)                    # cartes communauté en essai : cachées à qui n'y a pas accès
+    return hidden
+
+
+@router.get("/swaps/cards/{pseudo}")
+def player_cards(pseudo: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Les cartes d'un joueur qu'on peut lui demander en échange (toutes, dernier exemplaire compris, depuis le 26/11/2026)."""
+    target = db.query(User).filter_by(pseudo=pseudo).first()
+    if target is None:
+        raise HTTPException(status_code=404, detail="Joueur introuvable")
+    hidden = _hidden_tiers(db, user)
+    rows = db.query(OwnedCard).filter(OwnedCard.user_id == target.id, OwnedCard.quantity >= 1).all()
+    return [{**_cout(o.card), "quantity": o.quantity} for o in rows if o.card is not None and o.card.tier not in hidden and _tradeable(o.card)]
+
+
 @router.get("/swaps/compare/{pseudo}")
 def compare_collections(pseudo: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Comparer sa collection avec celle d'un joueur (22/11/2026, branche comparer-collections) : ses doublons qui me manquent, mes doublons
-    qui lui manquent (de quoi proposer un échange en un clic), et des nombres (cartes en commun, que lui seul a, que moi seul ai).
-    Une carte qu'aucun des deux n'a n'apparaît jamais ; les cartes que lui seul possède ne sont montrées que si elles sont en double chez
-    lui (comme GET /swaps/doubles), sinon seulement comptées. Cartes communauté en essai : cachées à qui n'y a pas accès."""
+    """Comparer sa collection avec celle d'un joueur (22/11/2026, branche comparer-collections) : ses cartes qui me manquent, mes cartes
+    qui lui manquent (de quoi proposer un échange en un clic ; depuis le 26/11/2026 toutes les cartes, plus seulement les doublons),
+    et des nombres (cartes en commun, que lui seul a, que moi seul ai). Une carte qu'aucun des deux n'a n'apparaît jamais.
+    Cartes communauté en essai : cachées à qui n'y a pas accès."""
     target = db.query(User).filter_by(pseudo=pseudo).first()
     if target is None:
         raise HTTPException(status_code=404, detail="Joueur introuvable")
     if target.id == user.id:
         raise HTTPException(status_code=400, detail="Choisis un autre joueur pour comparer vos collections")
-    hidden = {Tier.saison, Tier.numerotee}
-    if not game_logic.community_allowed(db, user):
-        hidden.add(Tier.communaute)
+    hidden = _hidden_tiers(db, user)
     mine = {o.card_id: o for o in db.query(OwnedCard).filter(OwnedCard.user_id == user.id, OwnedCard.quantity >= 1).all()}
     theirs = {o.card_id: o for o in db.query(OwnedCard).filter(OwnedCard.user_id == target.id, OwnedCard.quantity >= 1).all()}
     ok = lambda o: o.card is not None and o.card.tier not in hidden
@@ -107,12 +125,12 @@ def compare_collections(pseudo: str, user: User = Depends(get_current_user), db:
     theirs = {k: o for k, o in theirs.items() if ok(o)}
     rank = {t: i for i, t in enumerate(game_logic.TIER_ORDER)}
     order = lambda o: (-rank.get(o.card.tier.value, 0), (o.card.player.name if o.card.player else "").lower())      # rareté la plus haute d'abord, puis A → Z
-    for_me = sorted((o for k, o in theirs.items() if k not in mine and o.quantity >= 2 and _tradeable(o.card)), key=order)
-    for_them = sorted((o for k, o in mine.items() if k not in theirs and o.quantity >= 2 and _tradeable(o.card)), key=order)
+    for_me = sorted((o for k, o in theirs.items() if k not in mine and _tradeable(o.card)), key=order)
+    for_them = sorted((o for k, o in mine.items() if k not in theirs and _tradeable(o.card)), key=order)
     return {"pseudo": target.pseudo,
             "common": len(mine.keys() & theirs.keys()), "only_me": len(mine.keys() - theirs.keys()), "only_them": len(theirs.keys() - mine.keys()),
-            "their_doubles_i_lack": [{**_cout(o.card), "quantity": o.quantity} for o in for_me],
-            "my_doubles_they_lack": [{**_cout(o.card), "quantity": o.quantity} for o in for_them],
+            "their_cards_i_lack": [{**_cout(o.card), "quantity": o.quantity} for o in for_me],
+            "my_cards_they_lack": [{**_cout(o.card), "quantity": o.quantity} for o in for_them],
             "open_swaps": db.query(CardSwap).filter_by(proposer_id=user.id, status="open").count(), "max_open": MAX_OPEN}
 
 
@@ -139,13 +157,16 @@ def propose_swap(payload: SwapRequest, user: User = Depends(get_current_user), d
     if give is None or want is None:
         raise HTTPException(status_code=404, detail="Carte introuvable")
     if not (_tradeable(give) and _tradeable(want)):
-        raise HTTPException(status_code=400, detail="Les trophées de saison ne s'échangent pas")
+        raise HTTPException(status_code=400, detail="Les trophées de saison et les cartes numérotées ne s'échangent pas")
     if give.id == want.id:
         raise HTTPException(status_code=400, detail="Propose deux cartes différentes")
-    if _qty(db, user.id, give.id) < 2:
-        raise HTTPException(status_code=400, detail="Tu ne peux donner qu'un doublon (il t'en faut au moins 2 exemplaires)")
-    if _qty(db, target.id, want.id) < 2:
-        raise HTTPException(status_code=400, detail="%s n'a pas cette carte en double : choisis parmi ses doublons" % target.pseudo)
+    hidden = _hidden_tiers(db, user)
+    if give.tier in hidden or want.tier in hidden:
+        raise HTTPException(status_code=404, detail="Carte introuvable")
+    if _qty(db, user.id, give.id) < 1:
+        raise HTTPException(status_code=400, detail="Tu n'as pas cette carte")
+    if _qty(db, target.id, want.id) < 1:
+        raise HTTPException(status_code=400, detail="%s n'a pas cette carte : choisis parmi ses cartes" % target.pseudo)
     if db.query(CardSwap).filter_by(proposer_id=user.id, status="open").count() >= MAX_OPEN:
         raise HTTPException(status_code=400, detail="Tu as déjà %d propositions ouvertes : annule-en une d'abord" % MAX_OPEN)
     if db.query(CardSwap).filter_by(proposer_id=user.id, target_id=target.id, give_card_id=give.id, want_card_id=want.id, status="open").first():
@@ -173,14 +194,20 @@ def accept_swap(swap_id: str, user: User = Depends(get_current_user), db: Sessio
     if proposer is None or give is None or want is None:
         s.status, s.resolved_at = "cancelled", datetime.utcnow(); db.commit()
         raise HTTPException(status_code=400, detail="Cet échange n'est plus possible")
-    if _qty(db, proposer.id, give.id) < 2:
-        raise HTTPException(status_code=400, detail="%s n'a plus cette carte en double : l'échange n'est plus possible" % proposer.pseudo)
-    if _qty(db, user.id, want.id) < 2:
-        raise HTTPException(status_code=400, detail="Tu n'as plus cette carte en double : l'échange n'est plus possible")
+    q_give, q_want = _qty(db, proposer.id, give.id), _qty(db, user.id, want.id)
+    if q_give < 1:
+        raise HTTPException(status_code=400, detail="%s n'a plus cette carte : l'échange n'est plus possible" % proposer.pseudo)
+    if q_want < 1:
+        raise HTTPException(status_code=400, detail="Tu n'as plus cette carte : l'échange n'est plus possible")
+    from . import card_levels                          # le niveau suit la carte, comme au marché (un doublon part en copie normale)
+    lvl_give = card_levels.copy_leaving(db, proposer.id, give.id, q_give, False)
+    lvl_want = card_levels.copy_leaving(db, user.id, want.id, q_want, False)
     game_logic.get_or_create_owned(db, proposer, give).quantity -= 1
     game_logic.get_or_create_owned(db, user, want).quantity -= 1
     game_logic.get_or_create_owned(db, proposer, want).quantity += 1
     game_logic.get_or_create_owned(db, user, give).quantity += 1
+    card_levels.copy_arriving(db, proposer.id, want.id, lvl_want)
+    card_levels.copy_arriving(db, user.id, give.id, lvl_give)
     s.status, s.resolved_at = "accepted", datetime.utcnow()
     from . import battlepass, chat
     battlepass.add_points(db, proposer, "swap", 15, battlepass.DAILY_CAPS["swap"]); battlepass.add_points(db, user, "swap", 15, battlepass.DAILY_CAPS["swap"])      # Pass de saison

@@ -1,6 +1,6 @@
 """
-Test : comparer sa collection avec celle d'un joueur (GET /swaps/compare/{pseudo}) : ses doublons qui me manquent, mes doublons qui lui
-manquent, nombres en commun, jamais une carte qu'aucun des deux n'a, échange proposé en un clic avec ces cartes.
+Test : comparer sa collection avec celle d'un joueur (GET /swaps/compare/{pseudo}) : ses cartes qui me manquent, mes cartes qui lui
+manquent (toutes, depuis l'échange libre du 26/11/2026), nombres en commun, jamais une carte qu'aucun des deux n'a, échange proposé en un clic avec ces cartes.
 Lancé par tests/run_tests.py.
 """
 from fastapi.testclient import TestClient
@@ -25,15 +25,15 @@ B = mk("cmpb", [(Y, 1), (W, 2), (V, 1), (Z, 1)])
 print("1) CE QUE CHACUN PEUT DONNER")
 d = c.get("/swaps/compare/cmpb", headers=A).json()
 ids = lambda k: [x["id"] for x in d[k]]
-ok(ids("their_doubles_i_lack") == [W.id], "ses doublons qui me manquent : seulement W (%s)" % ids("their_doubles_i_lack"))
-ok(set(ids("my_doubles_they_lack")) == {X.id, rare.id}, "mes doublons qui lui manquent : X et la rare (Z, il l'a déjà)")
-ok(ids("my_doubles_they_lack")[0] == rare.id, "la rareté la plus haute d'abord")
+ok(set(ids("their_cards_i_lack")) == {W.id, V.id}, "ses cartes qui me manquent : W et V, même en 1 exemplaire (%s)" % ids("their_cards_i_lack"))
+ok(set(ids("my_cards_they_lack")) == {X.id, rare.id}, "mes cartes qui lui manquent : X et la rare (Y et Z, il les a déjà)")
+ok(ids("my_cards_they_lack")[0] == rare.id, "la rareté la plus haute d'abord")
 ok((d["common"], d["only_me"], d["only_them"]) == (2, 2, 2), "en commun 2 (Y, Z), moi seul 2 (X, rare), lui seul 2 (W, V) : %s" % ((d["common"], d["only_me"], d["only_them"]),))
 txt = str(d)
-ok(NOBODY.id not in txt and R2.id not in txt and V.id not in txt, "une carte qu'aucun n'a, ou que lui seul a sans doublon, n'est jamais envoyée")
+ok(NOBODY.id not in txt and R2.id not in txt, "une carte qu'aucun des deux n'a n'est jamais envoyée")
 ok(d["pseudo"] == "cmpb" and d["max_open"] == 5 and d["open_swaps"] == 0, "pseudo et propositions en attente")
 d2 = c.get("/swaps/compare/cmpa", headers=B).json()
-ok([x["id"] for x in d2["my_doubles_they_lack"]] == [W.id] and (d2["only_me"], d2["only_them"]) == (2, 2), "dans l'autre sens, les rôles s'inversent")
+ok({x["id"] for x in d2["my_cards_they_lack"]} == {W.id, V.id} and (d2["only_me"], d2["only_them"]) == (2, 2), "dans l'autre sens, les rôles s'inversent")
 
 print("2) ÉCHANGE EN UN CLIC")
 r = c.post("/swaps", json={"to": "cmpb", "give_card_id": X.id, "want_card_id": W.id}, headers=A)

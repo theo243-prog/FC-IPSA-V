@@ -8,6 +8,8 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 """
 
 ENTRIES = [
+    {"id": "2026-11-echange-libre", "date": "2026-11-26", "category": "économie", "title": "🔁 Échanges : toutes tes cartes",
+     "text": "Tu peux maintenant échanger n'importe quelle carte, même celle que tu n'as qu'en un seul exemplaire (avant, seulement les doublons). Si tu donnes ton seul exemplaire, il part avec son niveau ; si tu en as plusieurs, c'est une copie normale qui part et ta carte évoluée reste chez toi. Les trophées et les cartes numérotées ne s'échangent toujours pas."},
     {"id": "2026-11-prono-cotes", "date": "2026-11-25", "category": "économie", "title": "🎯 Pronostics : gains fixes",
      "text": "Fini la cagnotte partagée : si tu trouves le score exact, tu gagnes 5 fois ta mise ; si tu trouves le bon vainqueur (ou le bon nul), tu gagnes 2 fois ta mise. Un mauvais pronostic perd sa mise. Un petit pari sur le score exact rapporte enfin plus qu'une grosse mise sur le vainqueur !"},
     {"id": "2026-11-secretes-100", "date": "2026-11-24", "category": "règles", "title": "🔮 Les secrètes moins chères",

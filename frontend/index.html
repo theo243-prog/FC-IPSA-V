@@ -1414,7 +1414,7 @@
       </div>
       <div class="panel-box" id="swapsBox">
         <h2>🔁 Échanges de cartes</h2>
-        <p class="duel-hint">Échange une de tes cartes contre une carte d'un autre joueur, sans crédits. On ne peut échanger que des <b>doublons</b> (2 exemplaires ou plus), des deux côtés : personne ne perd une carte de sa collection. Une proposition reste ouverte 7 jours.</p>
+        <p class="duel-hint">Échange une de tes cartes contre une carte d'un autre joueur, sans crédits. <b>Toutes les cartes</b> s'échangent, même ton seul exemplaire (il quitte alors ta collection, avec son niveau). Un doublon part en copie normale : ta carte évoluée reste chez toi. Les trophées et les cartes numérotées ne s'échangent pas. Une proposition reste ouverte 7 jours.</p>
         <div id="swapsEl"></div>
       </div>
       <div class="panel-box trade-box" id="tradeHistoryBox">
@@ -2707,7 +2707,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.25.5';
+  const SITE_VERSION = '2026.11.26.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -3206,13 +3206,14 @@
     try {
       if (!myCollection.length) await loadCollection();
       const [sw, lb] = await Promise.all([api('/swaps'), fetch(API_BASE + '/leaderboard').then(r => r.json())]);
-      const mineDup = azCards(myCollection.filter(c => c.quantity > 1 && c.tier !== 'saison'));
+      const mineDup = azCards(myCollection.filter(c => c.quantity > 0 && c.tier !== 'saison' && c.tier !== 'numerotee'));      // toutes mes cartes échangeables (dernier exemplaire compris)
+      const lastWarn = c => c && c.quantity === 1 ? '<p class="confirm-warn" style="margin:10px 0 0;">⚠️ <b>C\'est ton seul exemplaire de ' + nm(c) + '</b> : il quittera ta collection' + (c.level ? ' avec son niveau ' + c.level : '') + '. S\'il est dans une équipe enregistrée (défi 1v1, tournoi), elle ne sera plus valable.</p>' : '';
       const nm = c => escapeHtml(c.display_name || c.player_name) + ' <small style="color:var(--text-muted);">(' + escapeHtml(tierLabel(c.tier)) + ')</small>';
       const players = lb.filter(r => r.pseudo !== meInfo.pseudo).sort(azBy('pseudo')).map(r => '<option value="' + escapeHtml(r.pseudo) + '">' + escapeHtml(r.pseudo) + '</option>').join('');
       const form = mineDup.length ? '<div class="swap-form"><label>Avec quel joueur ?<select id="swTo"><option value="">— choisis un joueur —</option>' + players + '</select></label>' +
-        '<label>Je donne (un de mes doublons)<select id="swGive">' + mineDup.map(c => '<option value="' + c.id + '">' + escapeHtml(cardDisplayName(c)) + ' (' + escapeHtml(tierLabel(c.tier)) + ') ×' + c.quantity + '</option>').join('') + '</select></label>' +
-        '<label>Je demande (un de ses doublons)<select id="swWant" disabled><option value="">— choisis d\'abord un joueur —</option></select></label>' +
-        '<button class="btn-primary" type="button" id="swGo" disabled>Proposer l\'échange</button></div>' : '<div class="empty-state">Tu n\'as pas de doublon à échanger pour l\'instant : ouvre des packs !</div>';
+        '<label>Je donne<select id="swGive">' + mineDup.map(c => '<option value="' + c.id + '">' + escapeHtml(cardDisplayName(c)) + ' (' + escapeHtml(tierLabel(c.tier)) + ') ×' + c.quantity + (c.quantity === 1 ? ' · seul exemplaire' : '') + '</option>').join('') + '</select></label>' +
+        '<label>Je demande<select id="swWant" disabled><option value="">— choisis d\'abord un joueur —</option></select></label>' +
+        '<button class="btn-primary" type="button" id="swGo" disabled>Proposer l\'échange</button></div>' : '<div class="empty-state">Tu n\'as pas encore de carte à échanger : ouvre des packs !</div>';
       const row = (s, btns) => '<div class="swap-row"><span><b>' + pseudoLink(s.from) + '</b> donne ' + (s.give ? nm(s.give) : '?') + ' contre ' + (s.want ? nm(s.want) : '?') + (btns ? '' : ' à <b>' + pseudoLink(s.to) + '</b>') + '</span>' + (btns ? '<span class="swap-btns">' + btns + '</span>' : '') + '</div>';
       root.innerHTML = form +
         '<div class="prono-sub">Propositions reçues</div>' + (sw.incoming.length ? sw.incoming.map(s => row(s, '<button class="btn-small swap-acc" data-id="' + s.id + '">Accepter</button><button class="btn-small ghost swap-dec" data-id="' + s.id + '">Refuser</button>')).join('') : '<div class="empty-state">Aucune proposition reçue.</div>') +
@@ -3224,18 +3225,20 @@
           go.disabled = true; want.disabled = true;
           if (!toSel.value) { want.innerHTML = '<option value="">— choisis d\'abord un joueur —</option>'; return; }
           try {
-            const d = await api('/swaps/doubles/' + encodeURIComponent(toSel.value));
-            want.innerHTML = d.length ? azCards(d.map(c => Object.assign({}, c, { player_name: c.display_name || c.player_name }))).map(c => '<option value="' + c.id + '">' + escapeHtml(c.display_name || c.player_name) + ' (' + escapeHtml(tierLabel(c.tier)) + ') ×' + c.quantity + '</option>').join('') : '<option value="">' + escapeHtml(toSel.value) + ' n\'a aucun doublon</option>';
+            const d = await api('/swaps/cards/' + encodeURIComponent(toSel.value));
+            want.innerHTML = d.length ? azCards(d.map(c => Object.assign({}, c, { player_name: c.display_name || c.player_name }))).map(c => '<option value="' + c.id + '">' + escapeHtml(c.display_name || c.player_name) + ' (' + escapeHtml(tierLabel(c.tier)) + ') ×' + c.quantity + '</option>').join('') : '<option value="">' + escapeHtml(toSel.value) + ' n\'a aucune carte à échanger</option>';
             want.disabled = !d.length; go.disabled = !d.length;
           } catch(e) { toast(e.message); }
         });
         go.addEventListener('click', async () => {
+          const g = mineDup.find(c => c.id === root.querySelector('#swGive').value);
+          if (g && g.quantity === 1 && !(await confirmDialog('Donner ton seul exemplaire ?', '<p style="margin:0;">Tu proposes <b>' + nm(g) + '</b> à <b>' + escapeHtml(toSel.value) + '</b>.</p>' + lastWarn(g), 'Proposer'))) return;
           try { await api('/swaps', { method: 'POST', body: JSON.stringify({ to: toSel.value, give_card_id: root.querySelector('#swGive').value, want_card_id: want.value }) }); toast('Proposition envoyée 🔁'); loadSwaps(); } catch(e) { toast(e.message); }
         });
       }
       root.querySelectorAll('.swap-acc').forEach(b => b.addEventListener('click', async () => {
         const s = sw.incoming.find(x => x.id === b.dataset.id);
-        if (!(await confirmDialog('Accepter l\'échange ?', '<p style="margin:0;">Tu donnes <b>' + nm(s.want) + '</b> et tu reçois <b>' + nm(s.give) + '</b> de la part de <b>' + escapeHtml(s.from) + '</b>. C\'est définitif.</p>', 'Accepter'))) return;
+        if (!(await confirmDialog('Accepter l\'échange ?', '<p style="margin:0;">Tu donnes <b>' + nm(s.want) + '</b> et tu reçois <b>' + nm(s.give) + '</b> de la part de <b>' + escapeHtml(s.from) + '</b>. C\'est définitif.</p>' + (s.want ? lastWarn(myCollection.find(c => c.id === s.want.id)) : ''), 'Accepter'))) return;
         try { await api('/swaps/' + b.dataset.id + '/accept', { method: 'POST' }); toast('Échange réalisé 🔁'); await loadCollection(); loadSwaps(); } catch(e) { toast(e.message); loadSwaps(); }
       }));
       root.querySelectorAll('.swap-dec').forEach(b => b.addEventListener('click', async () => { try { await api('/swaps/' + b.dataset.id + '/decline', { method: 'POST' }); loadSwaps(); } catch(e) { toast(e.message); } }));
@@ -4053,7 +4056,7 @@
         '<li>Un niveau se paie en <b>crédits</b> et en <b>doublons</b> de cette carte, qui sont <b>utilisés</b> : à toi de choisir entre faire évoluer tes cartes ou garder tes doublons pour les vendre ou débloquer les cartes secrètes. Doublons utilisés pour les niveaux 1 à 5 : commune 5, 10, 20, 50, 100 ; rare 1, 3, 5, 12, 25 ; édition limitée 1, 3, 5, 8, 10. Ta carte évoluée, elle, reste.</li>' +
         '<li>Coût en crédits des niveaux 1 à 5 : commune 15, 30, 60, 100, 160 ; rare 30, 65, 125, 210, 335 ; édition limitée 40, 85, 170, 280, 450. Pas de limite par jour.</li>' +
         '<li>Tout se fait dans la <b>fiche de la carte</b> (touche-la dans ta collection) : niveau, doublons (« 7 sur 10 nécessaires »), coût et bouton « Évoluer ». Un badge « Niv. N » s\'affiche sur la carte.</li>' +
-        '<li>Tu n\'as qu\'<b>une copie évoluée</b> par carte. <b>Le niveau suit la carte</b> : si tu la vends (annonce, enchère, offre d\'achat), l\'acheteur la reçoit avec son niveau, et tes autres copies repassent au niveau 0. Les échanges et la vente des doublons ne touchent jamais ta copie évoluée.</li></ul>' +
+        '<li>Tu n\'as qu\'<b>une copie évoluée</b> par carte. <b>Le niveau suit la carte</b> : si tu la vends (annonce, enchère, offre d\'achat), l\'acheteur la reçoit avec son niveau, et tes autres copies repassent au niveau 0. La vente des doublons ne touche jamais ta copie évoluée ; un échange non plus, sauf si tu donnes ton seul exemplaire (il part alors avec son niveau).</li></ul>' +
         '<h3>Les autres types de cartes</h3><ul><li><b>Fans</b> : pas de note, un petit bonus d\'équipe en match (+0,75 % à +3 %). <b>Le Loup</b> (la mascotte) : des crédits après chaque match 1v1 (1 à 5). <b>Équipements</b> : moins de fatigue pour tes cartes en 1v1 (−5 % à −25 %).</li><li><b>Éditions numérotées</b> 🔢 : des séries limitées à un nombre fixe d\'exemplaires (par exemple 22). Chaque exemplaire porte son numéro (« N° 12/22 »), n\'existe qu\'une fois et appartient à un seul joueur ; une fois tous attribués, il n\'y en aura jamais d\'autre. Ils ne sortent jamais d\'un pack, ne jouent pas en match et ne s\'échangent pas, mais se vendent au marché et aux enchères. Ta collection ne montre que ceux que tu possèdes ; leur fiche indique la série (« 18 / 22 attribués ») et ses détenteurs.</li><li><b>Stades</b>, <b>moments gold</b> et <b>écussons</b> 🛡️ des clubs adverses (gold) : des cartes de collection. Elles ne jouent pas en match, mais se vendent et s\'échangent.</li></ul>';
     } },
     marche: { title: 'Le marché', html(){
@@ -6263,15 +6266,15 @@
     body.innerHTML = '<div class="empty-state">Chargement…</div>';
     let d; try { d = await api('/swaps/compare/' + encodeURIComponent(pseudo)); } catch(e) { body.innerHTML = '<div class="empty-state">' + escapeHtml(e.message) + '</div>'; return; }
     const tile = (v, l) => '<div class="mys-tile"><b>' + v + '</b><span>' + l + '</span></div>';
-    const item = (c, name) => '<label class="cmp-item"><input type="radio" name="' + name + '" value="' + c.id + '"><span>' + escapeHtml(c.display_name || c.player_name) + ' <small>(' + escapeHtml(tierLabel(c.tier)) + ')</small></span><small>×' + c.quantity + '</small></label>';
+    const item = (c, name) => '<label class="cmp-item"><input type="radio" name="' + name + '" value="' + c.id + '"><span>' + escapeHtml(c.display_name || c.player_name) + ' <small>(' + escapeHtml(tierLabel(c.tier)) + ')</small></span><small>×' + c.quantity + (name === 'cmpGive' && c.quantity === 1 ? ' ⚠️' : '') + '</small></label>';
     const list = (arr, name, empty) => arr.length ? '<div class="cmp-list">' + arr.map(c => item(c, name)).join('') + '</div>' : '<div class="empty-state" style="padding:12px;">' + empty + '</div>';
     const who = escapeHtml(d.pseudo);
     body.innerHTML = '<div class="mys-tiles">' + tile(d.common, 'cartes en commun') + tile(d.only_me, 'que tu es seul à avoir') + tile(d.only_them, 'que ' + who + ' est seul à avoir') + '</div>' +
-      '<div class="cmp-cols"><div><h3 class="mys-h">🎁 Ses doublons qui te manquent</h3>' + list(d.their_doubles_i_lack, 'cmpWant', who + ' n\'a aucun doublon d\'une carte qui te manque.') + '</div>' +
-      '<div><h3 class="mys-h">🤲 Tes doublons qui lui manquent</h3>' + list(d.my_doubles_they_lack, 'cmpGive', 'Tu n\'as aucun doublon d\'une carte qui lui manque.') + '</div></div>' +
-      (d.their_doubles_i_lack.length && d.my_doubles_they_lack.length
-        ? '<div class="cmp-go"><button class="btn-primary" type="button" id="cmpGo" disabled>Choisis une carte de chaque côté</button><small class="muted">Un doublon contre un doublon : personne ne perd une carte de sa collection. ' + d.open_swaps + ' / ' + d.max_open + ' propositions envoyées en attente.</small></div>'
-        : '<p class="duel-hint" style="text-align:center;margin-top:10px;">Pas d\'échange possible pour l\'instant : il faut un doublon de chaque côté.</p>') +
+      '<div class="cmp-cols"><div><h3 class="mys-h">🎁 Ses cartes qui te manquent</h3>' + list(d.their_cards_i_lack, 'cmpWant', who + ' n\'a aucune carte qui te manque.') + '</div>' +
+      '<div><h3 class="mys-h">🤲 Tes cartes qui lui manquent</h3>' + list(d.my_cards_they_lack, 'cmpGive', 'Tu n\'as aucune carte qui lui manque.') + '</div></div>' +
+      (d.their_cards_i_lack.length && d.my_cards_they_lack.length
+        ? '<div class="cmp-go"><button class="btn-primary" type="button" id="cmpGo" disabled>Choisis une carte de chaque côté</button><small class="muted">⚠️ = ton seul exemplaire : il quittera ta collection. ' + d.open_swaps + ' / ' + d.max_open + ' propositions envoyées en attente.</small></div>'
+        : '<p class="duel-hint" style="text-align:center;margin-top:10px;">Pas d\'échange possible pour l\'instant : il faut, de chaque côté, une carte qui manque à l\'autre.</p>') +
       '<p class="duel-hint" style="margin-top:8px;">Seules les cartes qu\'au moins l\'un de vous deux possède sont montrées.</p>';
     const go = byId('cmpGo'); if (!go) return;
     const sel = n => body.querySelector('input[name="' + n + '"]:checked');
@@ -6282,7 +6285,9 @@
     });
     go.addEventListener('click', async () => {
       const w = sel('cmpWant').value, g = sel('cmpGive').value;
-      if (!(await confirmDialog('Proposer l\'échange ?', '<p style="margin:0;">Tu donnes <b>' + nameOf(d.my_doubles_they_lack, g) + '</b> et tu demandes <b>' + nameOf(d.their_doubles_i_lack, w) + '</b> à <b>' + who + '</b>. La proposition reste ouverte 7 jours.</p>', 'Proposer'))) return;
+      const gc = d.my_cards_they_lack.find(x => x.id === g);
+      const warn = gc && gc.quantity === 1 ? '<p class="confirm-warn" style="margin:10px 0 0;">⚠️ <b>C\'est ton seul exemplaire</b> : il quittera ta collection, avec son niveau s\'il en a un. S\'il est dans une équipe enregistrée (défi 1v1, tournoi), elle ne sera plus valable.</p>' : '';
+      if (!(await confirmDialog('Proposer l\'échange ?', '<p style="margin:0;">Tu donnes <b>' + nameOf(d.my_cards_they_lack, g) + '</b> et tu demandes <b>' + nameOf(d.their_cards_i_lack, w) + '</b> à <b>' + who + '</b>. La proposition reste ouverte 7 jours.</p>' + warn, 'Proposer'))) return;
       go.disabled = true;
       try { await api('/swaps', { method: 'POST', body: JSON.stringify({ to: d.pseudo, give_card_id: g, want_card_id: w }) }); toast('Proposition envoyée à ' + d.pseudo + ' 🔁'); openCompare(d.pseudo); if (typeof loadSwaps === 'function') loadSwaps(); }
       catch(e) { toast(e.message); go.disabled = false; }
