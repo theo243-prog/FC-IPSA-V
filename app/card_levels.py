@@ -14,8 +14,8 @@ pèsent plus que la tactique et le Fan ; les copies déjà montées profitent du
 - LE NIVEAU SUIT LA CARTE : un joueur a au plus une copie évoluée par carte (table card_levels). Quand cette copie est vendue (annonce,
   enchère, offre d'achat), son niveau voyage avec elle (tables listing_levels, auction_levels, trade_levels) et le vendeur repasse au
   niveau 0. L'acheteur garde son meilleur niveau (le niveau reçu est perdu s'il en a déjà un supérieur ou égal). Une annonce annulée
-  ou une enchère sans preneur rend la carte ET son niveau. Échanges, « vendre mes doublons » et fusion des secrètes ne prennent que
-  des doublons : la copie évoluée reste.
+  ou une enchère sans preneur rend la carte ET son niveau. « Vendre mes doublons » et fusion des secrètes ne prennent que des
+  doublons : la copie évoluée reste. Un échange (swaps.py) aussi, sauf le dernier exemplaire, qui part avec son niveau.
 """
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
