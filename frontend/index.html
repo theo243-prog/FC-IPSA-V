@@ -2727,7 +2727,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.27.1';
+  const SITE_VERSION = '2026.11.27.2';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -4851,7 +4851,7 @@
     buy.addEventListener('click', () => buyFatigueGel(buy));
     row.appendChild(buy); root.appendChild(row);
   }
-  // ---------- Shop : poppers (250 crédits, 1 achat par jour) : une personne remise à 100 % de forme en 1v1 ----------
+  // ---------- Shop : poppers (100 crédits, 1 achat par jour) : une personne remise à 100 % de forme en 1v1 ----------
   function loadShopPoppers(){
     const root = document.getElementById('shopPoppersEl'); if (!root) return;
     const pp = meInfo && meInfo.poppers; if (!pp) { root.innerHTML = ''; return; }

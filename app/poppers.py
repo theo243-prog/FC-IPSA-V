@@ -3,7 +3,7 @@ Poppers au shop (branche poppers, 27/11/2026, demandé par Théo) : un objet qui
 forme en 1v1, d'un coup (sa dette de fatigue, fatigue.PersonFatigue, est effacée). Comme la forme est partagée par toutes les versions d'une
 même personne, toutes ses cartes repassent à 100 %.
 
-- Prix fixe PRICE = 250 crédits (sans promotion), au plus UN achat par jour (heure de Paris, compteur du jour « poppers » de
+- Prix fixe PRICE = 100 crédits (depuis le 27/11/2026 au soir, avant 250 le jour de sa sortie ; sans promotion), au plus UN achat par jour (heure de Paris, compteur du jour « poppers » de
   missions.daily_count). Les crédits sont détruits (dépense volontaire, jamais de taxe).
 - L'objet acheté va dans la réserve du joueur (compteur à vie « poppers_left » de user_counters) : on l'utilise quand on veut, il ne se perd
   pas à minuit ; plusieurs peuvent s'accumuler (un par jour).
@@ -22,7 +22,7 @@ from .profiles import UserCounter
 from .security import get_current_user
 
 router = APIRouter()
-PRICE = 250                  # crédits, prix fixe
+PRICE = 100                  # crédits, prix fixe (250 à la sortie, le 27/11/2026)
 DAILY_MAX = 1                # achats au plus par jour (heure de Paris)
 LEFT_KEY = "poppers_left"    # poppers en réserve (user_counters, ne se perdent pas)
 DAILY_KEY = "poppers"        # poppers achetés aujourd'hui (missions.daily_count)

@@ -9,7 +9,7 @@ Ces textes sont publics : rien d'interne ni de réservé à l'administration.
 
 ENTRIES = [
     {"id": "2026-11-poppers", "date": "2026-11-27", "category": "économie", "title": "💊 Nouveau au shop : le Poppers",
-     "text": "Un de tes joueurs est fatigué ? Le Poppers le remet à 100 % de forme tout de suite, sur toutes ses cartes. Il coûte 250 crédits, un seul achat par jour. Il se garde dans ta réserve : utilise-le quand tu veux depuis la fiche d'une carte fatiguée de ta collection."},
+     "text": "Un de tes joueurs est fatigué ? Le Poppers le remet à 100 % de forme tout de suite, sur toutes ses cartes. Il coûte 100 crédits, un seul achat par jour. Il se garde dans ta réserve : utilise-le quand tu veux depuis la fiche d'une carte fatiguée de ta collection."},
     {"id": "2026-11-echange-libre", "date": "2026-11-26", "category": "économie", "title": "🔁 Échanges : toutes tes cartes",
      "text": "Tu peux maintenant échanger n'importe quelle carte, même celle que tu n'as qu'en un seul exemplaire (avant, seulement les doublons). Si tu donnes ton seul exemplaire, il part avec son niveau ; si tu en as plusieurs, c'est une copie normale qui part et ta carte évoluée reste chez toi. Les trophées et les cartes numérotées ne s'échangent toujours pas."},
     {"id": "2026-11-prono-cotes", "date": "2026-11-25", "category": "économie", "title": "🎯 Pronostics : gains fixes",

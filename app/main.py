@@ -57,7 +57,7 @@ app.include_router(shop_sounds.router)          # son d'ouverture de la semaine 
 app.include_router(collection_bonus.router)    # récompenses secrètes de collection : Prisme et Couronne noire (en essai)
 app.include_router(draft_week.router)          # semaine draft du mois : tirage, annonce, podium (admin)
 app.include_router(rename_player.router)        # admin : renommer une personne du club (fiche, cartes gold, Édition Noire, historique)
-app.include_router(poppers.router)              # poppers au shop : une personne remise à 100 % de forme (250 crédits, 1 achat par jour)
+app.include_router(poppers.router)              # poppers au shop : une personne remise à 100 % de forme (100 crédits, 1 achat par jour)
 app.include_router(fatigue_gel.router)          # gel de fatigue au shop : 5 matchs 1v1 sans fatigue (50 crédits, le prix double à chaque achat du jour)
 app.include_router(features.router)             # fonctions en essai : cachées aux joueurs sauf aux comptes choisis, sorties ensemble
 app.include_router(secret_achievements.router)  # Succès secrets (en essai)
