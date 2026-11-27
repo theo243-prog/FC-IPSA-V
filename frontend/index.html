@@ -1011,7 +1011,7 @@
   @keyframes ubPop{0%{transform:scale(1);}40%{transform:scale(1.04);}100%{transform:scale(1);}}
   @media (prefers-reduced-motion: reduce){.ultra-bar .ub-fill,.ultra-bar .ub-flames span,.ultra-bar.ub-pop{animation:none !important;}}
   .player-note small{display:block;font-family:var(--font-body);font-size:11px;font-weight:600;color:var(--text-muted);}
-  .form-now{text-align:center;margin:-8px auto 14px;padding:6px 12px;border-radius:12px;background:var(--surface-2,rgba(127,127,127,.1));font-size:14px;max-width:340px;} .form-now b{font-size:16px;} .form-now span{display:block;font-size:12px;color:var(--text-muted);margin-top:2px;} .form-now .fn-lvl{font-size:11px;color:var(--text-muted);} .form-now:not(.full){box-shadow:inset 0 0 0 1px rgba(230,120,30,.45);}
+  .form-now{text-align:center;margin:-8px auto 14px;padding:6px 12px;border-radius:12px;background:var(--surface-2,rgba(127,127,127,.1));font-size:14px;max-width:340px;} .form-now b{font-size:16px;} .form-now span{display:block;font-size:12px;color:var(--text-muted);margin-top:2px;} .form-now .fn-lvl{font-size:11px;color:var(--text-muted);} .form-now:not(.full){box-shadow:inset 0 0 0 1px rgba(230,120,30,.45);} .form-now .poppers-use{margin-top:6px;} .form-now .fn-pop{display:block;font-size:11px;color:var(--text-muted);margin-top:4px;}
   .note-box{border-radius:10px;padding:10px 6px;text-align:center;background:var(--bg-sunk);}
   .note-box.active{background:var(--accent);color:var(--accent-text);}
   .note-box .num{font-family:var(--font-head);font-size:20px;font-weight:600;}
@@ -1430,6 +1430,7 @@
       <div id="shopItemsEl"></div>
       <div id="shopSoundEl"></div>
       <div id="shopGelEl"></div>
+      <div id="shopPoppersEl"></div>
       <div id="shopCosmeticsEl"></div>
     </section>
 
@@ -2353,8 +2354,27 @@
     if (!card || !(card.quantity > 0) || card._viewing || card.form == null || !card.display_note || typeof card.display_note.value !== 'number') return '';
     const real = Math.round((card.display_note.value - fatiguePts(card.form)) * 10) / 10, full = card.form >= 100;
     return '<div class="form-now' + (full ? ' full' : '') + '">⚡ Note du moment en 1v1 : <b>' + pctFr(real) + '</b>' + (card.level ? ' <small class="fn-lvl">(niveau ' + card.level + ' compris)</small>' : '') +
-      '<span>Forme ' + pctFr(card.form) + ' % · ' + (full ? 'pleine forme' : '100 % dans <b>' + fullIn(card.form_full_in || Math.ceil((100 - card.form) * 60)) + '</b>') + '</span></div>';
+      '<span>Forme ' + pctFr(card.form) + ' % · ' + (full ? 'pleine forme' : '100 % dans <b>' + fullIn(card.form_full_in || Math.ceil((100 - card.form) * 60)) + '</b>') + '</span>' + poppersBtnHTML(card, full) + '</div>';
   }
+  // Poppers (shop) : remet la personne de cette carte à 100 % de forme d'un coup
+  function poppersBtnHTML(card, full){
+    const pp = meInfo && meInfo.poppers; if (full || !pp) return '';
+    return pp.left > 0
+      ? '<button class="btn-small poppers-use" type="button" data-card="' + escapeHtml(card.id) + '">💊 Utiliser un poppers : 100 % tout de suite (' + pp.left + ' en réserve)</button>'
+      : '<small class="fn-pop">💊 Un poppers du shop (' + pp.price + ' crédits) la remet à 100 % tout de suite</small>';
+  }
+  document.addEventListener('click', async e => {
+    const b = e.target.closest && e.target.closest('.poppers-use'); if (!b) return;
+    const card = myCollection.find(c => c.id === b.dataset.card); if (!card) return;
+    if (!(await confirmDialog('Utiliser un poppers ?', '<p style="margin:0;"><b>' + escapeHtml(card.player_name) + '</b> repasse à <b>100 % de forme</b> en 1v1, sur toutes ses cartes. Il te restera ' + (meInfo.poppers.left - 1) + ' poppers.</p>', 'Utiliser'))) return;
+    b.disabled = true;
+    try {
+      const r = await api('/shop/poppers/use', { method: 'POST', body: JSON.stringify({ card_id: card.id }) });
+      toast('💊 ' + r.player_name + ' est à 100 % de forme !');
+      await refreshMe(true); await loadCollection();
+      openPlayerDetail(card.player_name, card.tier, myCollection.find(c => c.id === card.id) || card);
+    } catch(err) { toast(err.message); b.disabled = false; }
+  });
   function statBox(num, label){
     return '<div class="stat-box"><div class="num">' + num + '</div><div class="lab">' + escapeHtml(label) + '</div></div>';
   }
@@ -2707,7 +2727,7 @@
   })();
 
   // ---------- Numéro de version : « Site » (cette page) et « Serveur » doivent afficher le MÊME numéro ----------
-  const SITE_VERSION = '2026.11.26.2';
+  const SITE_VERSION = '2026.11.27.1';
   (async function showVersions(){
     const el = document.getElementById('siteVersionText'); if (!el) return;
     let srv = null; try { srv = (await (await fetch(API_BASE + '/version')).json()).version; } catch(e) { srv = null; }
@@ -4764,7 +4784,7 @@
   }
 
   async function loadShop(){
-    loadPlayerPacks(); loadShopSound(); loadShopGel();
+    loadPlayerPacks(); loadShopSound(); loadShopGel(); loadShopPoppers();
     try {
       const items = await api('/shop/items');
       const root = document.getElementById('shopItemsEl');
@@ -4829,6 +4849,23 @@
     const buy = document.createElement('button'); buy.className = 'btn-small'; buy.type = 'button'; buy.textContent = 'Acheter';
     if ((meInfo.credits || 0) < g.price) { buy.disabled = true; buy.title = 'Pas assez de crédits'; }
     buy.addEventListener('click', () => buyFatigueGel(buy));
+    row.appendChild(buy); root.appendChild(row);
+  }
+  // ---------- Shop : poppers (250 crédits, 1 achat par jour) : une personne remise à 100 % de forme en 1v1 ----------
+  function loadShopPoppers(){
+    const root = document.getElementById('shopPoppersEl'); if (!root) return;
+    const pp = meInfo && meInfo.poppers; if (!pp) { root.innerHTML = ''; return; }
+    root.innerHTML = '<div class="shopc-head">💊 Poppers</div><p class="shopc-sub">Remet <b>un joueur à 100 % de forme</b> en 1v1, tout de suite (toutes ses cartes). Il se garde dans ta réserve : utilise-le quand tu veux depuis la fiche d\'une carte fatiguée de ta collection. <b>Un achat par jour</b> au plus.</p>';
+    const row = document.createElement('div'); row.className = 'shop-item';
+    row.innerHTML = '<div><div class="shop-item-name">💊 Poppers</div><div class="shop-item-desc">' + (pp.left ? 'Tu en as <b>' + pp.left + '</b> en réserve' : 'Aucun en réserve') + (pp.can_buy ? '' : ' · déjà acheté aujourd\'hui') + '</div><div class="shop-item-price">' + pp.price + ' crédits</div></div>';
+    const buy = document.createElement('button'); buy.className = 'btn-small'; buy.type = 'button'; buy.textContent = pp.can_buy ? 'Acheter' : 'Demain';
+    if (!pp.can_buy) { buy.disabled = true; buy.title = 'Un poppers par jour : reviens demain'; }
+    else if ((meInfo.credits || 0) < pp.price) { buy.disabled = true; buy.title = 'Pas assez de crédits'; }
+    buy.addEventListener('click', async () => {
+      if (!(await confirmDialog('Acheter un poppers ?', '<p style="margin:0;">' + pp.price + ' crédits. Il ira dans ta réserve : utilise-le depuis la fiche d\'une carte fatiguée.</p>', 'Acheter'))) return;
+      try { buy.disabled = true; await api('/shop/poppers/buy', { method: 'POST' }); toast('💊 Poppers acheté : il est dans ta réserve'); await refreshMe(); loadShopPoppers(); }
+      catch(e) { toast(e.message); buy.disabled = false; }
+    });
     row.appendChild(buy); root.appendChild(row);
   }
   function renderGelLine(){
