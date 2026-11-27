@@ -1,5 +1,5 @@
 """
-Test : le poppers du shop (250 crédits, un achat par jour au plus, gardé en réserve ; il remet une personne à 100 % de forme en 1v1).
+Test : le poppers du shop (100 crédits, un achat par jour au plus, gardé en réserve ; il remet une personne à 100 % de forme en 1v1).
 Lancé par tests/run_tests.py.
 """
 from datetime import timedelta
@@ -20,20 +20,20 @@ def mk(p, credits=1000):
         if cd is not None:
             db.add(OwnedCard(user_id=u.id, card_id=cd.id, quantity=1))
     db.commit(); return {"Authorization": "Bearer " + t}
-H = {"popa": mk("popa"), "pauvre": mk("popauvre", 100)}
+H = {"popa": mk("popa"), "pauvre": mk("popauvre", 60)}
 uid = lambda p: (db.expire_all(), db.query(User).filter_by(pseudo=p).first())[1]
 forms = lambda p: (db.expire_all(), fatigue.forms_for(db, uid(p).id))[1]
 
-print("1) ACHAT : 250 CRÉDITS, UN PAR JOUR")
+print("1) ACHAT : 100 CRÉDITS, UN PAR JOUR")
 g = c.get("/shop/poppers", headers=H["popa"]).json()
-ok(g["price"] == 250 and g["left"] == 0 and g["can_buy"], "au départ : 250 crédits, rien en réserve, achat possible (%s)" % g)
+ok(g["price"] == 100 and g["left"] == 0 and g["can_buy"], "au départ : 100 crédits, rien en réserve, achat possible (%s)" % g)
 cr0 = uid("popa").credits
 r = c.post("/shop/poppers/buy", headers=H["popa"])
-ok(r.status_code == 200 and r.json()["left"] == 1 and not r.json()["can_buy"] and uid("popa").credits == cr0 - 250, "achat : -250 crédits, 1 en réserve")
+ok(r.status_code == 200 and r.json()["left"] == 1 and not r.json()["can_buy"] and uid("popa").credits == cr0 - 100, "achat : -100 crédits, 1 en réserve")
 r = c.post("/shop/poppers/buy", headers=H["popa"])
-ok(r.status_code == 400 and "aujourd'hui" in r.json()["detail"] and uid("popa").credits == cr0 - 250, "2e achat le même jour : refusé, rien retiré (%s)" % r.json().get("detail"))
+ok(r.status_code == 400 and "aujourd'hui" in r.json()["detail"] and uid("popa").credits == cr0 - 100, "2e achat le même jour : refusé, rien retiré (%s)" % r.json().get("detail"))
 r = c.post("/shop/poppers/buy", headers=H["pauvre"])
-ok(r.status_code == 400 and "250" in r.json()["detail"] and uid("popauvre").credits == 100, "pas assez de crédits : refus clair, rien retiré")
+ok(r.status_code == 400 and "100" in r.json()["detail"] and uid("popauvre").credits == 60, "pas assez de crédits : refus clair, rien retiré")
 ok(c.get("/shop/poppers", headers=H["pauvre"]).json()["can_buy"], "un achat refusé ne compte pas comme l'achat du jour")
 me = c.get("/me", headers=H["popa"]).json()["poppers"]
 ok(me["left"] == 1 and me["bought_today"] == 1, "/me renvoie poppers (%s)" % me)
